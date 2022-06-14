@@ -56,7 +56,8 @@ def _get_triplet_mask(labels, device='cpu'):
         labels: torch.int32 `Tensor` with shape [batch_size]
     """
     # Check that i, j and k are distinct
-    indices_equal = torch.eye(labels.size()[0]).type(torch.ByteTensor)  # make a index in Bool
+    #indices_equal = torch.eye(labels.size()[0]).type(torch.ByteTensor)  # make a index in Bool
+    indices_equal = torch.eye(len(labels)).type(torch.ByteTensor)  # make a index in Bool
     indices_not_equal = -(indices_equal - 1)  # flip booleans
     i_not_equal_j = torch.unsqueeze(indices_not_equal, 2)
     i_not_equal_k = torch.unsqueeze(indices_not_equal, 1)

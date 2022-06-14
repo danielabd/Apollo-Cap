@@ -22,17 +22,13 @@ from Plot import scatter
 from argparse import ArgumentParser
 import wandb
 
-class Dataset(torch.utils.data.Dataset):
+from sklearn.datasets import load_digits#remove
 
-    def __init__(self, df, labels,tokenizer,inner_batch_size):
-        self.labels = [labels[label] for label in df['User']]
+class Dataset(torch.utils.data.Dataset):
+    def __init__(self, df, labels_set_dict, inner_batch_size):
+        self.labels = [labels_set_dict[label] for label in df['User']]
         self.labels_set = list(set(self.labels))
-        self.texts = [text for text in df['Tweet']]
-        self.tokenizer = tokenizer
-        #self.texts = [tokenizer(text,
-        #                       padding='max_length', max_length = 512, truncation=True,
-        #                        return_tensors="pt") for text in df['Tweet']]
-        self.index = df.index.values
+        self.texts = df['Tweet'] #[text for text in df['Tweet']]
         self.batch_size_per_label = inner_batch_size
         pass
 
@@ -44,13 +40,9 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, item):
         label = self.labels_set[item]
-        #list_idxs_for_label = self.index[np.array(self.labels) == label]
         list_idxs_for_label = [np.array(self.labels) == label]
         full_tweets_list = list(operator.itemgetter(list_idxs_for_label)(np.array(self.texts)))
         batch_tweets = random.sample(full_tweets_list,min(len(full_tweets_list),self.batch_size_per_label))
-        #tweets_list = list(operator.itemgetter(list_idxs_for_label)(np.array(self.texts)))
-        #batch_per_label = self.tokenizer(data_text, padding='max_length', max_length=512, truncation=True,
-        #                                 return_tensors="pt")
         return batch_tweets, label
 
 
@@ -94,56 +86,59 @@ def collate_fn(data):
                                      return_tensors="pt")
     return tokenized_tweets_list, labels_list
 
-
-def plot_graph_on_all_data(train_data, labels, tokenizer, device, fig_path, model,inner_batch_size, state, batch_size):
-    ########plot initial graph#########
-    tsne = TSNE(random_state=0)
-    train = Dataset(train_data, labels, tokenizer,inner_batch_size)
-    train_dataloader = torch.utils.data.DataLoader(train, collate_fn=collate_fn, batch_size = batch_size, shuffle=True,
+def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title):
+    data_set = Dataset(df_data, labels_set_dict, inner_batch_size)
+    data_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size = batch_size, shuffle=True,
                                                    num_workers=0)
-    x_train, y_train = next(iter(train_dataloader))
+    x_train, y_train = next(iter(data_dataloader))
     x_train = x_train.to(device)
+    model.to(device)
     y_train = torch.from_numpy(np.asarray(y_train)).to(device)
-    y_train = y_train.to(device)
+    #y_train = y_train.to(device)
+    outputs = model(x_train['input_ids'], x_train['attention_mask'])
+    outputs = outputs.detach().cpu().numpy()
+    #userdf = pd.DataFrame({'User':  y_train.cpu().numpy()})
+    #userdf = pd.DataFrame({'User': y_train})
+    userdf = pd.DataFrame({'User': [labels_idx_to_str[user_idx] for user_idx in y_train.cpu().numpy()]})
+    embdf = pd.DataFrame(outputs, columns=[f'emb{i}' for i in range(outputs.shape[1])])
+    all_data = pd.concat([userdf, embdf], axis=1, ignore_index=True)
+    all_data.columns = ['User'] + [f'emb{i}' for i in range(outputs.shape[1])]
+    wandb.log({title: all_data})
+    #
+    # # # scatter to wandb
+    # # data = [[x, y] for (x, y) in zip(train_tsne_embeds[0], train_tsne_embeds[1])]
+    # # table = wandb.Table(data=data, columns=["embeded_data", "username"])
+    # # wandb.log({title: wandb.plot.scatter(table, "embeded_data", "username")})
+    #
+    # if False: ########plot straighforward t-SNE graph#########
+    #     tsne = TSNE(random_state=0)
+    #     if state=='final':
+    #         train_tsne_embeds = tsne.fit_transform(outputs.flatten(1).cpu().detach().numpy())
+    #     elif state=='initial':
+    #         train_tsne_embeds = tsne.fit_transform(x_train['input_ids'].flatten(1).cpu().detach().numpy())
+    #     scatter(train_tsne_embeds, y_train.cpu().numpy(),fig_path, subtitle=f'online hard Original MNIST distribution (train set)')
 
-    if state=='final':
-        outputs = model(x_train['input_ids'], x_train['attention_mask'])
-        train_tsne_embeds = tsne.fit_transform(outputs.flatten(1).cpu().detach().numpy())
-    elif state=='initial':
-        train_tsne_embeds = tsne.fit_transform(x_train['input_ids'].flatten(1).cpu().detach().numpy())
 
-    scatter(train_tsne_embeds, y_train.cpu().numpy(),fig_path, subtitle=f'online hard Original MNIST distribution (train set)')
-    #scatter(test_tsne_embeds, y_test.cpu().numpy(), subtitle=f'online hard Original MNIST distribution (test set)')
-    ######## end of plot initial graph #########
-
-
-def train(model, source_train_data,val_data, learning_rate, epochs, labels,  tokenizer,batch_size,margin,inner_batch_size):
+def train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, learning_rate, epochs, batch_size, margin, inner_batch_size):
     print('Starting to train...')
-    # train, val = Dataset(train_data, labels, tokenizer), Dataset(val_data, labels, tokenizer)
-    # train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
-    # val_dataloader = torch.utils.data.DataLoader(val, batch_size=batch_size)
-    source_labels = labels
+    val_batch_size_for_plot = len(set(df_val['User']))
+    train_batch_size_for_plot = len(set(df_train['User']))
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
+    #plot initial graphs
+    # fig_path_train = '/home/bdaniela/zero-shot-style/initial_scatter_train.png'
+    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"initial_train_text")
 
-    fig_path_train = '/home/bdaniela/zero-shot-style/initial_scatter_train.png'
-    plot_graph_on_all_data(source_train_data, labels, tokenizer, device, fig_path_train, model,inner_batch_size, state='initial',
-                           batch_size=len(set(source_train_data['User'])))
+    # fig_path_val = '/home/bdaniela/zero-shot-style/initial_scatter_val.png'
+    plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot, "initial_val_text")
 
-    fig_path_val = '/home/bdaniela/zero-shot-style/initial_scatter_val.png'
-    plot_graph_on_all_data(val_data, labels, tokenizer, device, fig_path_val, model,inner_batch_size, state='initial',
-                           batch_size=len(set(val_data['User'])))
+    train_data_set = Dataset(df_train,labels_set_dict, inner_batch_size)
+    train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=batch_size, shuffle=True, num_workers=0)
 
-    train_data = Dataset(source_train_data, labels, tokenizer,inner_batch_size)
-    train_dataloader = torch.utils.data.DataLoader(train_data, collate_fn=collate_fn, batch_size=batch_size, shuffle=True, num_workers=0)
-
-    #criterion = nn.CrossEntropyLoss()
-    #criterion = torch.jit.script(TripletLoss())
     optimizer = SGD(model.parameters(), lr=learning_rate)
 
     if use_cuda:
         model = model.to(device)
-        #criterion = criterion.to(device)
 
     model.train()
     for epoch in range(epochs):
@@ -157,14 +152,9 @@ def train(model, source_train_data,val_data, learning_rate, epochs, labels,  tok
             outputs = model(input_ids, masks)
 
             #using tripletloss
-
-            loss, num_positive_triplets, num_valid_triplets, all_triplet_loss_avg = Mining.online_mine_all(labels, outputs,margin,device=device)
+            loss, num_positive_triplets, num_valid_triplets, all_triplet_loss_avg = Mining.online_mine_all(labels, outputs, margin,device=device)
             fraction_positive_triplets = num_positive_triplets / (num_valid_triplets + 1e-16)
-            #loss, pos_mask, neg_mask = Mining.online_mine_hard(labels, outputs, margin=margin, squared=True,
-            #                                                   device=device)
 
-
-            #loss = criterion(output,labels)
             loss.backward()
             optimizer.step()
 
@@ -175,67 +165,61 @@ def train(model, source_train_data,val_data, learning_rate, epochs, labels,  tok
                         'train/fraction_positive_triplets': fraction_positive_triplets,
                         'train/num_positive_triplets': num_positive_triplets,
                         'train/all_triplet_loss_avg': all_triplet_loss_avg}
+            wandb.log({"log_dict": log_dict})
             #fig_path_val = '/home/bdaniela/zero-shot-style/'+str(step)+'_scatter_val.png'
-            #plot_graph_on_all_data(val_data, source_labels, tokenizer, device, fig_path_val, model,inner_batch_size, state='initial',
-            #                       batch_size=len(set(val_data['User'])))
-            wandb.log(log_dict)
+            plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot,"val_text")
 
-
-        # save model
+        # save model every epoch
         torch.save({"model_state_dict": model.state_dict(),
                     "optimzier_state_dict": optimizer.state_dict()
                     }, "trained_model.pth")
     print('Finished to train')
     #finally check on all data training
-
-    fig_path = '/home/bdaniela/zero-shot-style/final_scatter_train.png'
-    plot_graph_on_all_data(source_train_data, source_labels, tokenizer, device, fig_path, model, inner_batch_size, state='final',batch_size=len(set(source_train_data['User'])))
-
-    fig_path_val = '/home/bdaniela/zero-shot-style/final_scatter_val.png'
-    plot_graph_on_all_data(val_data, source_labels, tokenizer, device, fig_path_val, model, inner_batch_size, state='final',
-                           batch_size=len(set(val_data['User'])))
-
-    print('finished to plot.')
+    # fig_path = '/home/bdaniela/zero-shot-style/final_scatter_train.png'
+    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text")
+    print('finished to train.')
 
 
-def evaluate(model,val_data, labels, tokenizer,batch_size,inner_batch_size):
-    val = Dataset(val_data, labels, tokenizer,inner_batch_size)
-    val_dataloader = torch.utils.data.DataLoader(val, batch_size=batch_size)
+def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner_batch_size):
+    #evaluation on test set
+    test = Dataset(df_test, labels_set_dict, inner_batch_size)
+    test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    train_results = []
-    labels = []
+    test_results = []
+    labels_results = []
     model.eval()
     with torch.no_grad():
-        for text, _, _, label in tqdm(val_dataloader):
-            #anchor_label = anchor_label.to(device)
-            text_mask = text['attention_mask'].to(device)
-            text_input_id = text['input_ids'].squeeze(1).to(device)
+        for tokenized_tweets_list, labels in tqdm(test_dataloader, desc="Testing", leave=False):
+            labels = torch.from_numpy(np.asarray(labels)).to(device)
+            masks = tokenized_tweets_list['attention_mask'].to(device)
+            input_ids = tokenized_tweets_list['input_ids'].squeeze(1).to(device)
+            outputs = model(input_ids, masks)
+            test_results.append(outputs.cpu().numpy())
+            # train_results.append(model(text.to(device)).cpu().numpy())
+            labels_results.append(labels)
 
-            train_results.append(model(text_input_id, text_mask).cpu().numpy())
-            #train_results.append(model(text.to(device)).cpu().numpy())
-            labels.append(label)
+    test_results = np.concatenate(test_results)
+    labels_results = np.concatenate(labels_results)
 
-    train_results = np.concatenate(train_results)
-    labels = np.concatenate(labels)
-    train_results.shape
+    test_batch_size_for_plot = len(set(df_test['User']))
+    plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, test_batch_size_for_plot,"test_text")
+    print('finished to train.')
 
-    #Visualization
-
-    plt.figure(figsize=(15, 10), facecolor="azure")
-    for label in np.unique(labels):
-        tmp = train_results[labels == label]
-        plt.scatter(tmp[:, 0], tmp[:, 1], label=label)
-
-    plt.legend()
-    plt.show()
+    # plt.figure(figsize=(15, 10), facecolor="azure")
+    # for label in np.unique(labels):
+    #     tmp = train_results[labels == label]
+    #     plt.scatter(tmp[:, 0], tmp[:, 1], label=label)
+    #
+    # plt.legend()
+    # plt.show()
 
 
 def main():
     print('Start!')
     parser = ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=100, help='description')
+    parser.add_argument('--epochs', type=int, default=10, help='description')
     parser.add_argument('--lr', type=float, default=1e-4, help='description')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
     parser.add_argument('--batch_size', type=int, default=2, help='description')
@@ -244,7 +228,7 @@ def main():
     parser.add_argument('--run_id', type=str, default=None, help='wandb run_id')
     parser.add_argument('--tags', type=str, nargs='+', default=None, help='wandb tags')
     parser.add_argument('--wandb_mode', type=str, default='online', help='disabled, offline, online')
-    parser.add_argument('--data_file', type=str, default='', help='')
+    parser.add_argument('--data_file', type=str, default='preprocessed_data.csv', help='')
     args = parser.parse_args()
     config = vars(args)
 
@@ -261,17 +245,13 @@ def main():
     margin = config['margin']
     data_file = config['data_file']
     base_path = '~/zero-shot-style/'
-    #datapath = 'preprocessed_data.csv'
-    datapath = 'preprocessed_data.csv'
-    df = pd.read_csv(base_path + datapath)
+    datapath = os.path.join(base_path,data_file)
+    df = pd.read_csv(datapath)
     df.head()
 
     df.groupby(['User']).size().plot.bar()
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    labels = {}
-    for i, label in enumerate(set(df.iloc[:, 0])):
-        labels[label] = i
 
     np.random.seed(112)
     print('Splitting DB to train, val and test data frames.')
@@ -280,14 +260,19 @@ def main():
 
     #print(len(df_train), len(df_val), len(df_test))
 
-
     model = BertClassifier()
+
+
+    labels_set_dict = {}
+    labels_idx_to_str = {}
+    for i, label in enumerate(set(df_train.iloc[:, 0])):
+        labels_set_dict[label] = i
+        labels_idx_to_str[i] = label
+
     #train model
-    train(model, df_train,df_val, LR, EPOCHS, labels, tokenizer,batch_size,margin,inner_batch_size)
+    train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, LR, EPOCHS, batch_size,margin,inner_batch_size)
 
-
-
-    evaluate(model, df_test, labels, tokenizer,batch_size)
+    evaluate(model, df_test, labels_set_dict, labels_idx_to_str, batch_size, inner_batch_size)
     print('  finish!')
 
 
