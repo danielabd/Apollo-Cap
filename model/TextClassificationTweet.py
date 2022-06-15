@@ -219,7 +219,7 @@ def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner
 def main():
     print('Start!')
     parser = ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=10, help='description')
+    parser.add_argument('--epochs', type=int, default=65, help='description')
     parser.add_argument('--lr', type=float, default=1e-4, help='description')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
     parser.add_argument('--batch_size', type=int, default=2, help='description')
@@ -232,43 +232,78 @@ def main():
     args = parser.parse_args()
     config = vars(args)
 
-    wandb.init(project='zero-shot-learning',
-               config=config,
-               resume=args.resume,
-               id=args.run_id,
-               mode=args.wandb_mode,
-               tags=args.tags)
+    # wandb.init(project='zero-shot-learning',
+    #            config=config,
+    #            resume=args.resume,
+    #            id=args.run_id,
+    #            mode=args.wandb_mode,
+    #            tags=args.tags)
     EPOCHS = config['epochs']
     LR = config['lr']
     batch_size = config['batch_size']
     inner_batch_size = config['inner_batch_size']
     margin = config['margin']
     data_file = config['data_file']
+
+    data_name = 'go_emotions'  # 'Twitter'
+    if data_name=='go_emotions': #https://github.com/google-research/google-research/tree/master/goemotions
+        data_file = ['goemotions_1.csv','goemotions_2.csv','goemotions_3.csv']
+
+
     base_path = '~/zero-shot-style/'
-    datapath = os.path.join(base_path,data_file)
-    df = pd.read_csv(datapath)
+
+
+    if type(data_file)!=list:
+        datapath = os.path.join(base_path, data_file)
+        df = pd.read_csv(datapath)
+    else:
+        df = pd.read_csv(os.path.join(base_path, data_file[0]))
+        for f in data_file[1:]:
+            datapath = os.path.join(base_path, f)
+            cur_df = pd.read_csv(datapath)
+            df = pd.concat([df, cur_df], axis=0, ignore_index=True)
     df.head()
+    #df.groupby(['User']).size().plot.bar()
 
-    df.groupby(['User']).size().plot.bar()
-
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     np.random.seed(112)
     print('Splitting DB to train, val and test data frames.')
     df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),
                                          [int(.8 * len(df)), int(.9 * len(df))])
+    print(len(df_train), len(df_val), len(df_test))
 
-    #print(len(df_train), len(df_val), len(df_test))
+
+    if data_name == 'go_emotions':
+        #go_emotions
+        # labels_set_dict = {dmiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral}
+        labels_set = df.columns()[-28:]
+        #create new df
+        fixed_df = {'text':df['text']}
+        num_of_labels = 28
+        list_of_labels = []
+        for i in range(df.shape[0]):
+            pass
+
+    #        # labels_set[   df.iloc[i+1,-num_of_labels:]
+    #        # list_of_labels.append(df[])
+    #
+    #
+    #     labels_set_dict = {}
+    #     labels_idx_to_str = {}
+    #     for i, label in enumerate(df.columns()[-28:]):
+    #         labels_set_dict[label] = i
+    #         labels_idx_to_str[i] = label
+    #
+    # elif data_name == 'Twitter':
+    #     # users in Twitter
+    #     labels_set_dict = {}
+    #     labels_idx_to_str = {}
+    #     for i, label in enumerate(set(df_train.iloc[:, 0])):
+    #         labels_set_dict[label] = i
+    #         labels_idx_to_str[i] = label
+
 
     model = BertClassifier()
-
-
-    labels_set_dict = {}
-    labels_idx_to_str = {}
-    for i, label in enumerate(set(df_train.iloc[:, 0])):
-        labels_set_dict[label] = i
-        labels_idx_to_str[i] = label
-
     #train model
     train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, LR, EPOCHS, batch_size,margin,inner_batch_size)
 
