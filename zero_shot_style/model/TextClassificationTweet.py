@@ -1,28 +1,13 @@
 import pandas as pd
-import torch
-import numpy as np
 from transformers import BertTokenizer
 from torch import nn
 from transformers import BertModel
-from torch.optim import Adam, SGD
+from torch.optim import SGD
 from tqdm import tqdm
-import matplotlib
-##matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
-#fig = plt.figure()
-#fig.show()
-import random
 import operator
-import random
-import Mining
 from Mining import *
-import sklearn
-from sklearn.manifold import TSNE
-from Plot import scatter
 from argparse import ArgumentParser
 import wandb
-
-from sklearn.datasets import load_digits#remove
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, df, labels_set_dict, inner_batch_size):
@@ -67,7 +52,6 @@ class BertClassifier(nn.Module):
         #relu_output = self.relu(linear1_output)
         #linear2_output = self.linear2(relu_output)
         output = torch.nn.functional.normalize(linear1_output)
-
         #output = torch.nn.functional.normalize(pooled_output)
         return output
 
@@ -80,62 +64,41 @@ def collate_fn(data):
         for tweet in list_for_label[0]:
             tweets_list.append(tweet)
             labels_list.append(list_for_label[1])
-    #tweets_list = [tweet for tweet in list_for_label for list_for_label in data]
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    tokenized_tweets_list = tokenizer(tweets_list, padding=True,#padding='max_length', max_length=512, truncation=True,
+    tokenized_tweets_list = tokenizer(tweets_list, padding='max_length', max_length=512, truncation=True,
                                      return_tensors="pt")
-    return tokenized_tweets_list, labels_list
+    return tokenized_tweets_list, labels_list, tweets_list
 
 def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title):
     data_set = Dataset(df_data, labels_set_dict, inner_batch_size)
     data_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size = batch_size, shuffle=True,
                                                    num_workers=0)
-    x_train, y_train = next(iter(data_dataloader))
+    x_train, y_train, text_tweet_list  = next(iter(data_dataloader))
     x_train = x_train.to(device)
     model.to(device)
     y_train = torch.from_numpy(np.asarray(y_train)).to(device)
-    #y_train = y_train.to(device)
     outputs = model(x_train['input_ids'], x_train['attention_mask'])
     outputs = outputs.detach().cpu().numpy()
-    #userdf = pd.DataFrame({'User':  y_train.cpu().numpy()})
-    #userdf = pd.DataFrame({'User': y_train})
     userdf = pd.DataFrame({'User': [labels_idx_to_str[user_idx] for user_idx in y_train.cpu().numpy()]})
     embdf = pd.DataFrame(outputs, columns=[f'emb{i}' for i in range(outputs.shape[1])])
-    all_data = pd.concat([userdf, embdf], axis=1, ignore_index=True)
-    all_data.columns = ['User'] + [f'emb{i}' for i in range(outputs.shape[1])]
+    textdf = pd.DataFrame({'text': text_tweet_list})
+    all_data = pd.concat([userdf, embdf, textdf], axis=1, ignore_index=True)
+    all_data.columns = ['User'] + [f'emb{i}' for i in range(outputs.shape[1])] + ['text']
     wandb.log({title: all_data})
-    #
-    # # # scatter to wandb
-    # # data = [[x, y] for (x, y) in zip(train_tsne_embeds[0], train_tsne_embeds[1])]
-    # # table = wandb.Table(data=data, columns=["embeded_data", "username"])
-    # # wandb.log({title: wandb.plot.scatter(table, "embeded_data", "username")})
-    #
-    # if False: ########plot straighforward t-SNE graph#########
-    #     tsne = TSNE(random_state=0)
-    #     if state=='final':
-    #         train_tsne_embeds = tsne.fit_transform(outputs.flatten(1).cpu().detach().numpy())
-    #     elif state=='initial':
-    #         train_tsne_embeds = tsne.fit_transform(x_train['input_ids'].flatten(1).cpu().detach().numpy())
-    #     scatter(train_tsne_embeds, y_train.cpu().numpy(),fig_path, subtitle=f'online hard Original MNIST distribution (train set)')
 
 
-def train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, learning_rate, epochs, batch_size, margin, inner_batch_size):
+def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, epochs, batch_size, margin, inner_batch_size, path_for_saving_model):
     print('Starting to train...')
     val_batch_size_for_plot = len(set(df_val['User']))
     train_batch_size_for_plot = len(set(df_train['User']))
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
     #plot initial graphs
-    # fig_path_train = '/home/bdaniela/zero-shot-style/initial_scatter_train.png'
     plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"initial_train_text")
-
-    # fig_path_val = '/home/bdaniela/zero-shot-style/initial_scatter_val.png'
     plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot, "initial_val_text")
 
     train_data_set = Dataset(df_train,labels_set_dict, inner_batch_size)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=batch_size, shuffle=True, num_workers=0)
-
-    optimizer = SGD(model.parameters(), lr=learning_rate)
 
     if use_cuda:
         model = model.to(device)
@@ -143,9 +106,7 @@ def train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, learning_
     model.train()
     for epoch in range(epochs):
         running_loss = []
-        #total_acc_train = 0
-        #total_loss_train = 0
-        for step, (tokenized_tweets_list, labels) in enumerate(tqdm(train_dataloader, desc="Training", leave=False)):
+        for step, (tokenized_tweets_list, labels, text_tweet_list) in enumerate(tqdm(train_dataloader, desc="Training", leave=False)):
             labels = torch.from_numpy(np.asarray(labels)).to(device)
             masks = tokenized_tweets_list['attention_mask'].to(device)
             input_ids = tokenized_tweets_list['input_ids'].squeeze(1).to(device)
@@ -166,13 +127,18 @@ def train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, learning_
                         'train/num_positive_triplets': num_positive_triplets,
                         'train/all_triplet_loss_avg': all_triplet_loss_avg}
             wandb.log({"log_dict": log_dict})
-            #fig_path_val = '/home/bdaniela/zero-shot-style/'+str(step)+'_scatter_val.png'
             plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot,"val_text")
 
         # save model every epoch
-        torch.save({"model_state_dict": model.state_dict(),
-                    "optimzier_state_dict": optimizer.state_dict()
-                    }, "trained_model.pth")
+        torch.save({"epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    'loss': loss
+                    }, path_for_saving_model)
+
+
+
+
     print('Finished to train')
     #finally check on all data training
     # fig_path = '/home/bdaniela/zero-shot-style/final_scatter_train.png'
@@ -191,7 +157,7 @@ def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner
     labels_results = []
     model.eval()
     with torch.no_grad():
-        for tokenized_tweets_list, labels in tqdm(test_dataloader, desc="Testing", leave=False):
+        for tokenized_tweets_list, labels, text_tweet_list in tqdm(test_dataloader, desc="Testing", leave=False):
             labels = torch.from_numpy(np.asarray(labels)).to(device)
             masks = tokenized_tweets_list['attention_mask'].to(device)
             input_ids = tokenized_tweets_list['input_ids'].squeeze(1).to(device)
@@ -219,11 +185,11 @@ def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner
 def main():
     print('Start!')
     parser = ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=10, help='description')
+    parser.add_argument('--epochs', type=int, default=5, help='description')
     parser.add_argument('--lr', type=float, default=1e-4, help='description')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
-    parser.add_argument('--batch_size', type=int, default=2, help='description')
-    parser.add_argument('--inner_batch_size', type=int, default=50, help='description')
+    parser.add_argument('--batch_size', type=int, default=6, help='description')
+    parser.add_argument('--inner_batch_size', type=int, default=5, help='description')
     parser.add_argument('--resume', type=str, default='allow', help='continue logging to run_id')
     parser.add_argument('--run_id', type=str, default=None, help='wandb run_id')
     parser.add_argument('--tags', type=str, nargs='+', default=None, help='wandb tags')
@@ -244,23 +210,38 @@ def main():
     inner_batch_size = config['inner_batch_size']
     margin = config['margin']
     data_file = config['data_file']
-    base_path = '~/zero-shot-style/'
+
+    load_model = True
+    base_path = '/home/bdaniela/zero-shot-style/data'
+    path_for_saving_model = os.path.join(base_path,"trained_model.pth")
     datapath = os.path.join(base_path,data_file)
     df = pd.read_csv(datapath)
     df.head()
 
-    df.groupby(['User']).size().plot.bar()
 
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    df.groupby(['User']).size().plot.bar()
 
     np.random.seed(112)
     print('Splitting DB to train, val and test data frames.')
     df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),
                                          [int(.8 * len(df)), int(.9 * len(df))])
 
-    #print(len(df_train), len(df_val), len(df_test))
+    print(len(df_train), len(df_val), len(df_test))
 
-    model = BertClassifier()
+    if load_model:
+        model = BertClassifier()
+        optimizer = SGD(model.parameters(), lr=LR)
+        checkpoint = torch.load(path_for_saving_model)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        last_epoch = checkpoint['epoch']
+        last_loss = checkpoint['loss']
+        model.train()
+
+    else: #train from scratch
+        model = BertClassifier()
+        optimizer = SGD(model.parameters(), lr=LR)
+
 
 
     labels_set_dict = {}
@@ -270,7 +251,7 @@ def main():
         labels_idx_to_str[i] = label
 
     #train model
-    train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, LR, EPOCHS, batch_size,margin,inner_batch_size)
+    train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, EPOCHS, batch_size,margin,inner_batch_size, path_for_saving_model)
 
     evaluate(model, df_test, labels_set_dict, labels_idx_to_str, batch_size, inner_batch_size)
     print('  finish!')

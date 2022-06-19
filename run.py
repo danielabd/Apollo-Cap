@@ -1,7 +1,7 @@
 import argparse
 import torch
 import clip
-from model.ZeroCLIP import CLIPTextGenerator
+from zero_shot_style.model import CLIPTextGenerator
 from datetime import datetime
 import os.path
 import csv
@@ -102,10 +102,11 @@ if __name__ == "__main__":
     sentiment_scale_list = [2.0, 1.5, 1.0, 0.5, 0.1]
     
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
-    
+
+    base_path = '/home/bdaniela/zero-shot-style/data/imgs'
     for s, sentiment_scale in enumerate(sentiment_scale_list):
-        for i in img_path_list:
-            args.caption_img_path = "imgs/"+str(i)+".jpg" 
+        for i in [33]:#img_path_list:
+            args.caption_img_path = os.path.join(base_path,str(i)+".jpg")#"imgs/"+str(i)+".jpg"
             if not os.path.isfile(args.caption_img_path):
                 continue
             
