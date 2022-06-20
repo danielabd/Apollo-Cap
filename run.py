@@ -1,7 +1,7 @@
 import argparse
 import torch
 import clip
-from zero_shot_style.model import CLIPTextGenerator
+from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
 from datetime import datetime
 import os.path
 import csv
