@@ -5,7 +5,7 @@ from transformers import BertModel
 from torch.optim import SGD
 from tqdm import tqdm
 import operator
-from Mining import *
+from zero_shot_style.model.Mining import *
 from argparse import ArgumentParser
 import wandb
 
@@ -257,5 +257,6 @@ def main():
     print('  finish!')
 
 
-if __name__=='__main__':
-    main()
+
+    # if __name__=='__main__':
+    # main()
