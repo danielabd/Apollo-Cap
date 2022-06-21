@@ -130,6 +130,7 @@ class CLIPTextGenerator:
         self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.text_to_mimic = "Oh my gosh, I don't believe it, It is amazing!!!"
         # self.text_to_mimic = "Today we are going to win and sell this product in million dollar."
+        #self.text_to_mimic = " BLA BLA BLA BLA"
         self.text_style_scale = 1
         MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/trained_model.pth'
 
@@ -203,12 +204,14 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale):
+    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale, text_style_scale,text_to_mimic):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
         self.sentiment_type = sentiment_type
         self.sentiment_scale = sentiment_scale
+        self.text_style_scale = text_style_scale
+        self.text_to_mimic = text_to_mimic
 
         context_tokens = self.lm_tokenizer.encode(self.context_prefix + cond_text)
 
