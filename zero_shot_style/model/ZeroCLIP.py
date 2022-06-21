@@ -128,26 +128,28 @@ class CLIPTextGenerator:
         # TEXT STYLE: adding the text style model
         self.use_text_style = True
         self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        self.text_to_mimic = "Oh my gosh, I don't celieve it, It is amazing!!!"
-        self.text_to_mimic = "Today we are going to win and sell this product in million dollar."
+        self.text_to_mimic = "Oh my gosh, I don't believe it, It is amazing!!!"
+        # self.text_to_mimic = "Today we are going to win and sell this product in million dollar."
         self.text_style_scale = 1
-        MODEL = '/home/bdaniela/zero-shot-style/data/trained_model.pth'
+        MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/trained_model.pth'
 
         self.text_style_model_name = MODEL
         #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
 
-        model = BertClassifier()
+        self.text_style_model = BertClassifier()
         LR = 1e-4
-        optimizer = SGD(model.parameters(), lr=LR)
+        optimizer = SGD(self.text_style_model.parameters(), lr=LR)
         checkpoint = torch.load(self.text_style_model_name)
-        model.load_state_dict(checkpoint['model_state_dict'])
+        self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-
-
-        self.text_style_model = torch.load(self.text_style_model_name)
 
         self.text_style_model.to(self.device)
         self.text_style_model.eval()
+
+        #self.text_style_model = torch.load(self.text_style_model_name)
+
+        #self.text_style_model.to(self.device)
+        # self.text_style_model.eval()
 
         # TEXT_STYLE: Freeze text style model weights
         for param in self.text_style_model.parameters():
@@ -377,9 +379,9 @@ class CLIPTextGenerator:
         tokenized_text_to_mimic = self.text_style_tokenizer(self.text_to_mimic, padding='max_length', max_length=512, truncation=True,
                                           return_tensors="pt")
 
-        masks = tokenized_text_to_mimic['attention_mask'].to(self.device)
-        input_ids = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
-        embedding_of_text_for_mimic = self.text_style_model(input_ids, masks) #embedig vector
+        masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
+        input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
+        embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embedig vector
 
 
         top_size = 512
@@ -399,11 +401,11 @@ class CLIPTextGenerator:
             # get score for text
             with torch.no_grad():
                 inputs = self.text_style_tokenizer(top_texts, padding=True, return_tensors="pt")
-                inputs['input_ids'] = inputs['input_ids'].to(self.text_style_model.device)
-                inputs['attention_mask'] = inputs['attention_mask'].to(self.text_style_model.device)
+                inputs['input_ids'] = inputs['input_ids'].to(self.device)
+                inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
                 #embedding_of_text_to_mimic = self.text_style_model(input_ids, masks)  # embedig vector
                 #logits = self.text_style_model(**inputs)['logits']#check if there is a field of 'logits'
-                logits = self.text_style_model(**inputs)
+                logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
 
                 #calculate the distance between the embedding of the text we want to mimic and the all candidated embedding
                 #todo:check how to do broadcast with embedding_of_text_for_mimic

@@ -98,12 +98,12 @@ if __name__ == "__main__":
     args = get_args()
  
     img_path_list = range(45)
-    sentiment_list = ['negative','positive','neutral', 'none']
+    sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0, 1.5, 1.0, 0.5, 0.1]
     
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
 
-    base_path = '/home/bdaniela/zero-shot-style/data/imgs'
+    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/imgs'
     for s, sentiment_scale in enumerate(sentiment_scale_list):
         for i in [33]:#img_path_list:
             args.caption_img_path = os.path.join(base_path,str(i)+".jpg")#"imgs/"+str(i)+".jpg"
