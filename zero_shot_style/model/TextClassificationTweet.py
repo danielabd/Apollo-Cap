@@ -217,7 +217,7 @@ def main():
 
 
     base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
-    path_for_saving_model = os.path.join(base_path, "trained_model_emotions.pth")
+    path_for_saving_model = os.path.join(base_path, "2_classes_trained_model_emotions.pth")
     data_name = 'go_emotions'  # 'Twitter'
 
     load_model = True
