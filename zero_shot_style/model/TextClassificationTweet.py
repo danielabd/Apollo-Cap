@@ -175,7 +175,6 @@ def create_correct_df(df,num_of_labels,desired_labels):
     # labels_set_dict = {dmiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral}
     labels_set = df.columns[-num_of_labels:]
     #create new df
-    fixed_df = {'text':df['text']}
     list_of_labels = []
     fixed_list_of_texts = []
     for i in range(df.shape[0]):#go over all rows
@@ -198,8 +197,23 @@ def create_correct_df(df,num_of_labels,desired_labels):
     fixed_df = pd.DataFrame({'label': list_of_labels, 'text': fixed_list_of_texts})
     return fixed_df
 
+def senity_check(df):
+    love_text = []
+    anger_text = []
+    for i in range(df.shape[0]):
+        if df.iloc[i, 0]=='love':
+            love_text.append(df.iloc[i, 1])
+        elif df.iloc[i, 0]=='anger':
+            anger_text.append(df.iloc[i, 1])
+    print('love text:')
+    for t in love_text:
+        print(t)
+    print('anger text:')
+    for t in anger_text:
+        print(t)
 
 def main():
+    print('Start!')
     print('Start!')
     parser = ArgumentParser()
     parser.add_argument('--epochs', type=int, default=500, help='description')
@@ -220,7 +234,7 @@ def main():
     path_for_saving_model = os.path.join(base_path, "2_classes_trained_model_emotions.pth")
     data_name = 'go_emotions'  # 'Twitter'
 
-    load_model = True
+    load_model = False
     num_of_labels = 28
     # desired_labels = ['anger','caring','optimism','love']
     desired_labels = ['anger','love']
@@ -277,6 +291,7 @@ def main():
         labels_set_dict[label] = i
         labels_idx_to_str[i] = label
 
+    # senity_check(df_train)
     train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, EPOCHS, batch_size,margin,inner_batch_size, path_for_saving_model)
 
     evaluate(model, df_test, labels_set_dict, labels_idx_to_str, batch_size, inner_batch_size)
