@@ -9,6 +9,10 @@ from datetime import datetime
 import sys
 from transformers import TextClassificationPipeline # SENTIMENT
 from transformers import AutoModelForSequenceClassification, AutoTokenizer # SENTIMENT
+from transformers import BertTokenizer #TEXT_STYLE
+from transformers import BertModel
+from torch.optim import Adam, SGD
+from zero_shot_style.model.TextClassificationTweet import BertClassifier
 
 
 def log_info(text, verbose=True):
@@ -119,9 +123,47 @@ class CLIPTextGenerator:
         
         # SENTIMENT: fields for type and scale of sentiment
         self.sentiment_scale = 1 
-        self.sentiment_type = 'none' 
-        
-        
+        self.sentiment_type = 'none'
+
+        # TEXT STYLE: adding the text style model
+        self.use_text_style = True
+        self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.text_to_mimic = "Oh my gosh, I don't believe it, It is amazing!!!"
+        # self.text_to_mimic = "Today we are going to win and sell this product in million dollar."
+        #self.text_to_mimic = " BLA BLA BLA BLA"
+        self.text_style_scale = 1
+        MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/trained_model.pth'
+
+        self.text_style_model_name = MODEL
+        #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
+
+        self.text_style_model = BertClassifier()
+        LR = 1e-4
+        optimizer = SGD(self.text_style_model.parameters(), lr=LR)
+        checkpoint = torch.load(self.text_style_model_name)
+        self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        self.text_style_model.to(self.device)
+        self.text_style_model.eval()
+
+        #self.text_style_model = torch.load(self.text_style_model_name)
+
+        #self.text_style_model.to(self.device)
+        # self.text_style_model.eval()
+
+        # TEXT_STYLE: Freeze text style model weights
+        for param in self.text_style_model.parameters():
+            param.requires_grad = False
+
+        # TEXT_STYLE: tokenizer for text style analysis module
+        #self.text_style_tokenizer_name = self.text_style_model_name
+        #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
+
+
+
+
+
     def get_img_feature(self, img_path, weights):
         imgs = [Image.open(x) for x in img_path]
         clip_imgs = [self.clip_preprocess(x).unsqueeze(0).to(self.device) for x in imgs]
@@ -162,12 +204,14 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale):
+    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale, text_style_scale,text_to_mimic):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
         self.sentiment_type = sentiment_type
         self.sentiment_scale = sentiment_scale
+        self.text_style_scale = text_style_scale
+        self.text_to_mimic = text_to_mimic
 
         context_tokens = self.lm_tokenizer.encode(self.context_prefix + cond_text)
 
@@ -332,6 +376,68 @@ class CLIPTextGenerator:
             
         return sentiment_loss, losses
 
+    def get_text_style_loss(self, probs, context_tokens):
+        #get initial text style
+        self.text_to_mimic
+        tokenized_text_to_mimic = self.text_style_tokenizer(self.text_to_mimic, padding='max_length', max_length=512, truncation=True,
+                                          return_tensors="pt")
+
+        masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
+        input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
+        embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embedig vector
+
+
+        top_size = 512
+        _, top_indices = probs.topk(top_size, -1)
+
+        prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
+
+        text_style_loss = 0
+        losses = []
+
+        for idx_p in range(probs.shape[0]):  # go over all beams
+            top_texts = []
+            prefix_text = prefix_texts[idx_p]
+            for x in top_indices[idx_p]:  # go over all optional topk next word
+                top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+
+            # get score for text
+            with torch.no_grad():
+                inputs = self.text_style_tokenizer(top_texts, padding=True, return_tensors="pt")
+                inputs['input_ids'] = inputs['input_ids'].to(self.device)
+                inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
+                #embedding_of_text_to_mimic = self.text_style_model(input_ids, masks)  # embedig vector
+                #logits = self.text_style_model(**inputs)['logits']#check if there is a field of 'logits'
+                logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
+
+                #calculate the distance between the embedding of the text we want to mimic and the all candidated embedding
+                #todo:check how to do broadcast with embedding_of_text_for_mimic
+                distances = -abs(logits - embedding_of_text_for_mimic)
+
+                text_style_grades = nn.functional.softmax(distances, dim=-1)[:, 0]
+                text_style_grades = text_style_grades.unsqueeze(0)
+
+                predicted_probs = nn.functional.softmax(text_style_grades / self.clip_loss_temperature, dim=-1).detach()
+                predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+
+            target = torch.zeros_like(probs[idx_p], device=self.device)
+            target[top_indices[idx_p]] = predicted_probs[0]
+
+            target = target.unsqueeze(0)
+            cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
+
+            text_style_loss += cur_text_style_loss
+            losses.append(cur_text_style_loss)
+
+        loss_string = ''
+        for idx_p in range(probs.shape[0]):  # go over all beams
+            if idx_p == 0:
+                loss_string = f'{losses[0]}'
+            else:
+                loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
+
+        return text_style_loss, losses
+
 
     
     def shift_context(self, i, context, last_token, context_tokens, probs_before_shift):
@@ -364,13 +470,18 @@ class CLIPTextGenerator:
             ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
             
             loss += ce_loss.sum()
-            
+
             # SENTIMENT: adding the sentiment component
             if self.sentiment_type!='none':
                 sentiment_loss, sentiment_losses = self.get_sentiment_loss(probs, context_tokens,self.sentiment_type)
-                loss += self.sentiment_scale * sentiment_loss            
-            
-            
+                loss += self.sentiment_scale * sentiment_loss
+
+            # TEXT_STYLE: adding the text_style component
+            if self.use_text_style:
+                text_style_loss, text_style_losses = self.get_text_style_loss(probs, context_tokens)
+                loss += self.text_style_scale * text_style_loss
+
+
             loss.backward()
 
             # ---------- Weights ----------

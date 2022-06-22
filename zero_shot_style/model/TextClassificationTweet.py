@@ -4,31 +4,19 @@ import numpy as np
 from transformers import BertTokenizer
 from torch import nn
 from transformers import BertModel
-from torch.optim import Adam, SGD
+from torch.optim import SGD
 from tqdm import tqdm
-import matplotlib
-##matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
-#fig = plt.figure()
-#fig.show()
-import random
 import operator
-import random
-import Mining
-from Mining import *
-import sklearn
-from sklearn.manifold import TSNE
-from Plot import scatter
+import zero_shot_style.model.Mining as Mining
+from zero_shot_style.model.Mining import *
 from argparse import ArgumentParser
 import wandb
 
-from sklearn.datasets import load_digits#remove
-
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, df, labels_set_dict, inner_batch_size):
-        self.labels = [labels_set_dict[label] for label in df['User']]
+        self.labels = [labels_set_dict[label] for label in df['label']] #create list of idxs for labels
         self.labels_set = list(set(self.labels))
-        self.texts = df['Tweet'] #[text for text in df['Tweet']]
+        self.texts = df['text']#df['Tweet'] #[text for text in df['Tweet']]
         self.batch_size_per_label = inner_batch_size
         pass
 
@@ -67,88 +55,65 @@ class BertClassifier(nn.Module):
         #relu_output = self.relu(linear1_output)
         #linear2_output = self.linear2(relu_output)
         output = torch.nn.functional.normalize(linear1_output)
-
         #output = torch.nn.functional.normalize(pooled_output)
         return output
 
 
 
 def collate_fn(data):
-    tweets_list = []
+    texts_list = []
     labels_list = []
     for list_for_label in data:
-        for tweet in list_for_label[0]:
-            tweets_list.append(tweet)
+        for text in list_for_label[0]:
+            texts_list.append(text)
             labels_list.append(list_for_label[1])
-    #tweets_list = [tweet for tweet in list_for_label for list_for_label in data]
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    tokenized_tweets_list = tokenizer(tweets_list, padding=True,#padding='max_length', max_length=512, truncation=True,
+    tokenized_texts_list = tokenizer(texts_list, padding='max_length', max_length=40, truncation=True,
                                      return_tensors="pt")
-    return tokenized_tweets_list, labels_list
+    return tokenized_texts_list, labels_list, texts_list
 
 def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title):
     data_set = Dataset(df_data, labels_set_dict, inner_batch_size)
     data_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size = batch_size, shuffle=True,
                                                    num_workers=0)
-    x_train, y_train = next(iter(data_dataloader))
+    x_train, y_train, text_list = next(iter(data_dataloader))
     x_train = x_train.to(device)
     model.to(device)
     y_train = torch.from_numpy(np.asarray(y_train)).to(device)
-    #y_train = y_train.to(device)
     outputs = model(x_train['input_ids'], x_train['attention_mask'])
     outputs = outputs.detach().cpu().numpy()
-    #userdf = pd.DataFrame({'User':  y_train.cpu().numpy()})
-    #userdf = pd.DataFrame({'User': y_train})
-    userdf = pd.DataFrame({'User': [labels_idx_to_str[user_idx] for user_idx in y_train.cpu().numpy()]})
+    labeldf = pd.DataFrame({'Label': [labels_idx_to_str[user_idx] for user_idx in y_train.cpu().numpy()]})
     embdf = pd.DataFrame(outputs, columns=[f'emb{i}' for i in range(outputs.shape[1])])
-    all_data = pd.concat([userdf, embdf], axis=1, ignore_index=True)
-    all_data.columns = ['User'] + [f'emb{i}' for i in range(outputs.shape[1])]
+    textdf = pd.DataFrame({'text': text_list})
+    all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
+    all_data.columns = ['Label'] + [f'emb{i}' for i in range(outputs.shape[1])] + ['text']
     wandb.log({title: all_data})
-    #
-    # # # scatter to wandb
-    # # data = [[x, y] for (x, y) in zip(train_tsne_embeds[0], train_tsne_embeds[1])]
-    # # table = wandb.Table(data=data, columns=["embeded_data", "username"])
-    # # wandb.log({title: wandb.plot.scatter(table, "embeded_data", "username")})
-    #
-    # if False: ########plot straighforward t-SNE graph#########
-    #     tsne = TSNE(random_state=0)
-    #     if state=='final':
-    #         train_tsne_embeds = tsne.fit_transform(outputs.flatten(1).cpu().detach().numpy())
-    #     elif state=='initial':
-    #         train_tsne_embeds = tsne.fit_transform(x_train['input_ids'].flatten(1).cpu().detach().numpy())
-    #     scatter(train_tsne_embeds, y_train.cpu().numpy(),fig_path, subtitle=f'online hard Original MNIST distribution (train set)')
 
 
-def train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, learning_rate, epochs, batch_size, margin, inner_batch_size):
+def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, epochs, batch_size, margin, inner_batch_size, path_for_saving_model):
     print('Starting to train...')
-    val_batch_size_for_plot = len(set(df_val['User']))
-    train_batch_size_for_plot = len(set(df_train['User']))
+    val_batch_size_for_plot = len(set(df_val['label'])) #min(batch_size,len(set(df_val['label'])))# suppose that the first column is for label
+    train_batch_size_for_plot = len(set(df_train['label'])) #min(batch_size,len(set(df_train['label'])))
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
     #plot initial graphs
-    # fig_path_train = '/home/bdaniela/zero-shot-style/initial_scatter_train.png'
-    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"initial_train_text")
-
-    # fig_path_val = '/home/bdaniela/zero-shot-style/initial_scatter_val.png'
+    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot, "initial_train_text")
     plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot, "initial_val_text")
 
     train_data_set = Dataset(df_train,labels_set_dict, inner_batch_size)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=batch_size, shuffle=True, num_workers=0)
 
-    optimizer = SGD(model.parameters(), lr=learning_rate)
-
     if use_cuda:
         model = model.to(device)
 
+    ####!todo: continue from here
     model.train()
     for epoch in range(epochs):
         running_loss = []
-        #total_acc_train = 0
-        #total_loss_train = 0
-        for step, (tokenized_tweets_list, labels) in enumerate(tqdm(train_dataloader, desc="Training", leave=False)):
+        for step, (tokenized_texts_list, labels, texts_list) in enumerate(tqdm(train_dataloader, desc="Training", leave=False)):
             labels = torch.from_numpy(np.asarray(labels)).to(device)
-            masks = tokenized_tweets_list['attention_mask'].to(device)
-            input_ids = tokenized_tweets_list['input_ids'].squeeze(1).to(device)
+            masks = tokenized_texts_list['attention_mask'].to(device)
+            input_ids = tokenized_texts_list['input_ids'].squeeze(1).to(device)
             outputs = model(input_ids, masks)
 
             #using tripletloss
@@ -166,13 +131,21 @@ def train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, learning_
                         'train/num_positive_triplets': num_positive_triplets,
                         'train/all_triplet_loss_avg': all_triplet_loss_avg}
             wandb.log({"log_dict": log_dict})
-            #fig_path_val = '/home/bdaniela/zero-shot-style/'+str(step)+'_scatter_val.png'
             plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot,"val_text")
+            if np.mod(epoch,10)==0:
+                plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size,
+                                   train_batch_size_for_plot, "intermediate_train_text")
 
         # save model every epoch
-        torch.save({"model_state_dict": model.state_dict(),
-                    "optimzier_state_dict": optimizer.state_dict()
-                    }, "trained_model.pth")
+        torch.save({"epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    'loss': loss
+                    }, path_for_saving_model)
+
+
+
+
     print('Finished to train')
     #finally check on all data training
     # fig_path = '/home/bdaniela/zero-shot-style/final_scatter_train.png'
@@ -191,7 +164,7 @@ def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner
     labels_results = []
     model.eval()
     with torch.no_grad():
-        for tokenized_tweets_list, labels in tqdm(test_dataloader, desc="Testing", leave=False):
+        for tokenized_tweets_list, labels, text_tweet_list in tqdm(test_dataloader, desc="Testing", leave=False):
             labels = torch.from_numpy(np.asarray(labels)).to(device)
             masks = tokenized_tweets_list['attention_mask'].to(device)
             input_ids = tokenized_tweets_list['input_ids'].squeeze(1).to(device)
@@ -215,15 +188,60 @@ def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner
     # plt.legend()
     # plt.show()
 
+# def create_correct_df(df,num_of_labels):
+#     # labels_set_dict = {dmiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral}
+#     labels_set = df.columns[-num_of_labels:]
+#     #create new df
+#     fixed_df = {'text':df['text']}
+#     list_of_labels = []
+#     fixed_list_of_texts = []
+#     for i in range(df.shape[0]):#go over all rows
+#         if i==100: #todo: remove it
+#             break
+#         relevant_idxs_for_labels =  np.where(df.iloc[i, -num_of_labels:].values == 1)
+#         labels = labels_set[relevant_idxs_for_labels[0]]
+#         for l in labels:
+#             try:
+#                 fixed_list_of_texts.append(df['text'][i])
+#                 list_of_labels.append(l)
+#             except:
+#                 pass
+#     fixed_df = {'label': list_of_labels, 'text': fixed_list_of_texts}
+#     return fixed_df
+def create_correct_df(df,num_of_labels,desired_labels):
+    # labels_set_dict = {dmiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral}
+    labels_set = df.columns[-num_of_labels:]
+    #create new df
+    fixed_df = {'text':df['text']}
+    list_of_labels = []
+    fixed_list_of_texts = []
+    for i in range(df.shape[0]):#go over all rows
+        if i==10000: #todo: remove it
+            break
+        relevant_idxs_for_labels =  np.where(df.iloc[i, -num_of_labels:].values == 1)
+        if len(relevant_idxs_for_labels)>1:
+            continue
+        labels = labels_set[relevant_idxs_for_labels[0]]
+        for l in labels:
+            if l not in desired_labels:
+                continue
+            try:
+                fixed_list_of_texts.append(df['text'][i])
+                list_of_labels.append(l)
+            except:
+                pass
+    fixed_df = pd.DataFrame({'label': list_of_labels, 'text': fixed_list_of_texts})
+    return fixed_df
+
 
 def main():
     print('Start!')
     parser = ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=65, help='description')
+    parser.add_argument('--epochs', type=int, default=500, help='description')
     parser.add_argument('--lr', type=float, default=1e-4, help='description')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
-    parser.add_argument('--batch_size', type=int, default=2, help='description')
-    parser.add_argument('--inner_batch_size', type=int, default=50, help='description')
+    parser.add_argument('--batch_size', type=int, default=4, help='description')
+    parser.add_argument('--inner_batch_size', type=int, default=30, help='description')
     parser.add_argument('--resume', type=str, default='allow', help='continue logging to run_id')
     parser.add_argument('--run_id', type=str, default=None, help='wandb run_id')
     parser.add_argument('--tags', type=str, nargs='+', default=None, help='wandb tags')
@@ -232,12 +250,12 @@ def main():
     args = parser.parse_args()
     config = vars(args)
 
-    # wandb.init(project='zero-shot-learning',
-    #            config=config,
-    #            resume=args.resume,
-    #            id=args.run_id,
-    #            mode=args.wandb_mode,
-    #            tags=args.tags)
+    wandb.init(project='zero-shot-learning',
+               config=config,
+               resume=args.resume,
+               id=args.run_id,
+               mode=args.wandb_mode,
+               tags=args.tags)
     EPOCHS = config['epochs']
     LR = config['lr']
     batch_size = config['batch_size']
@@ -250,42 +268,50 @@ def main():
         data_file = ['goemotions_1.csv','goemotions_2.csv','goemotions_3.csv']
 
 
-    base_path = '~/zero-shot-style/'
-
+    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
 
     if type(data_file)!=list:
         datapath = os.path.join(base_path, data_file)
-        df = pd.read_csv(datapath)
+        s_df = pd.read_csv(datapath)
     else:
-        df = pd.read_csv(os.path.join(base_path, data_file[0]))
+        s_df = pd.read_csv(os.path.join(base_path, data_file[0]))
         for f in data_file[1:]:
             datapath = os.path.join(base_path, f)
             cur_df = pd.read_csv(datapath)
-            df = pd.concat([df, cur_df], axis=0, ignore_index=True)
-    df.head()
+            s_df = pd.concat([s_df, cur_df], axis=0, ignore_index=True)
+
+    load_model = True
+
+    path_for_saving_model = os.path.join(base_path,"trained_model_emotions.pth")
+    # datapath = os.path.join(base_path,data_file)
+    # df = pd.read_csv(datapath)
+    s_df.head()
     #df.groupby(['User']).size().plot.bar()
 
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    num_of_labels = 28
+    desired_labels = ['anger','caring','optimism','love']
+    df = create_correct_df(s_df, num_of_labels ,desired_labels)
 
     np.random.seed(112)
+    # print('Splitting DB to train, val and test data frames.')
+    # s_df_train, s_df_val, s_df_test = np.split(df.sample(frac=1, random_state=42),
+    #                                      [int(.8 * len(df)), int(.9 * len(df))])
+    # print(len(s_df_train), len(s_df_val), len(s_df_test))
+
     print('Splitting DB to train, val and test data frames.')
     df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),
                                          [int(.8 * len(df)), int(.9 * len(df))])
     print(len(df_train), len(df_val), len(df_test))
 
 
-    if data_name == 'go_emotions':
-        #go_emotions
-        # labels_set_dict = {dmiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral}
-        labels_set = df.columns()[-28:]
-        #create new df
-        fixed_df = {'text':df['text']}
-        num_of_labels = 28
-        list_of_labels = []
-        for i in range(df.shape[0]):
-            pass
+    # if data_name == 'go_emotions':
+    #     df_train = create_correct_df(s_df_train,num_of_labels)
+    #     df_val = create_correct_df(s_df_val,num_of_labels)
+    #     df_test = create_correct_df(s_df_test,num_of_labels)
 
-    #        # labels_set[   df.iloc[i+1,-num_of_labels:]
-    #        # list_of_labels.append(df[])
+           #list_of_labels.append(df[])
     #
     #
     #     labels_set_dict = {}
@@ -303,9 +329,30 @@ def main():
     #         labels_idx_to_str[i] = label
 
 
-    model = BertClassifier()
+    if load_model:
+        model = BertClassifier()
+        optimizer = SGD(model.parameters(), lr=LR)
+        checkpoint = torch.load(path_for_saving_model)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        last_epoch = checkpoint['epoch']
+        last_loss = checkpoint['loss']
+        model.train()
+
+    else: #train from scratch
+        model = BertClassifier()
+        optimizer = SGD(model.parameters(), lr=LR)
+
+
+    labels_set_dict = {}
+    labels_idx_to_str = {}
+    # for i, label in enumerate(set(df['label'])):
+    for i, label in enumerate(s_df.columns[-num_of_labels:]):
+        labels_set_dict[label] = i
+        labels_idx_to_str[i] = label
+
     #train model
-    train(model, df_train, df_val, labels_set_dict, labels_idx_to_str, LR, EPOCHS, batch_size,margin,inner_batch_size)
+    train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, EPOCHS, batch_size,margin,inner_batch_size, path_for_saving_model)
 
     evaluate(model, df_test, labels_set_dict, labels_idx_to_str, batch_size, inner_batch_size)
     print('  finish!')

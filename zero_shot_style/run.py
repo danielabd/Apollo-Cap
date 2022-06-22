@@ -1,7 +1,7 @@
 import argparse
 import torch
 import clip
-from model.ZeroCLIP import CLIPTextGenerator
+from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
 from datetime import datetime
 import os.path
 import csv
@@ -49,12 +49,12 @@ def get_args():
 
     return args
 
-def run(args, img_path,sentiment_type, sentiment_scale):
+def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,text_to_mimic):
     text_generator = CLIPTextGenerator(**vars(args))
 
     image_features = text_generator.get_img_feature([img_path], None)
     # SENTIMENT: added scale parameter
-    captions = text_generator.run(image_features, args.cond_text, beam_size=args.beam_size,sentiment_type=sentiment_type,sentiment_scale=sentiment_scale)
+    captions = text_generator.run(image_features, args.cond_text, args.beam_size,sentiment_type,sentiment_scale,text_style_scale,text_to_mimic)
 
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
@@ -97,33 +97,44 @@ def write_results(img_dict):
 if __name__ == "__main__":
     args = get_args()
  
-    img_path_list = range(45)
-    sentiment_list = ['negative','positive','neutral', 'none']
-    sentiment_scale_list = [2.0, 1.5, 1.0, 0.5, 0.1]
-    
+    img_path_list = [33]#range(45)
+    sentiment_list = ['none']#['negative','positive','neutral', 'none']
+    sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
+
+    text_style_scale_list = [3.0]
+    # text_to_mimic_list = ["Oh my gosh, I don't believe it, It is amazing!!!",
+    #                  "Today we are going to win and sell this product in million dollar.",
+    #                  " BLA BLA BLA BLA"]
+
+    text_to_mimic_list = ["I so like this party!!!",
+                          "I succeed to do my business."]
+
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
-    
+
+    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/imgs'
     for s, sentiment_scale in enumerate(sentiment_scale_list):
-        for i in img_path_list:
-            args.caption_img_path = "imgs/"+str(i)+".jpg" 
-            if not os.path.isfile(args.caption_img_path):
-                continue
-            
-            for sentiment_type in sentiment_list:
-            
-                if sentiment_type=='none' and s>0:
-                    continue
+        for text_style_scale in text_style_scale_list:
+            for text_to_mimic in text_to_mimic_list:
+                for i in [33]:#img_path_list:
+                    args.caption_img_path = os.path.join(base_path,str(i)+".jpg")#"imgs/"+str(i)+".jpg"
+                    if not os.path.isfile(args.caption_img_path):
+                        continue
 
-                dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                print(f'~~~~~~~~\n{dt_string} | Work on img path: {args.caption_img_path} with ***{sentiment_type}***  sentiment and sentiment scale=***{sentiment_scale}***.\n~~~~~~~~')
+                    for sentiment_type in sentiment_list:
 
-                if args.run_type == 'caption':
-                    run(args, args.caption_img_path, sentiment_type, sentiment_scale)
-                    write_results(img_dict)
-                elif args.run_type == 'arithmetics':
-                    args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
-                    run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights)
-                else:
-                    raise Exception('run_type must be caption or arithmetics!')
-                    
-                    
+                        if sentiment_type=='none' and s>0:
+                            continue
+
+                        dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                        print(f'~~~~~~~~\n{dt_string} | Work on img path: {args.caption_img_path} with:\n ***{sentiment_type}***  sentiment, sentiment scale=***{sentiment_scale}***'
+                              f'\n text_style_scale=***{text_style_scale}*** with style of: ***{text_to_mimic}***.\n~~~~~~~~')
+
+                        if args.run_type == 'caption':
+                            run(args, args.caption_img_path, sentiment_type, sentiment_scale,text_style_scale,text_to_mimic)
+                            write_results(img_dict)
+                        elif args.run_type == 'arithmetics':
+                            args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
+                            run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights)
+                        else:
+                            raise Exception('run_type must be caption or arithmetics!')
+
