@@ -102,11 +102,9 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
     train_data_set = Dataset(df_train,labels_set_dict, inner_batch_size)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=batch_size, shuffle=True, num_workers=0)
-
     if use_cuda:
         model = model.to(device)
 
-    ####!todo: continue from here
     model.train()
     for epoch in range(epochs):
         running_loss = []
@@ -132,23 +130,16 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                         'train/all_triplet_loss_avg': all_triplet_loss_avg}
             wandb.log({"log_dict": log_dict})
             plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot,"val_text")
-            if np.mod(epoch,10)==0:
+            if np.mod(epoch,10)==0: #plot on training every 10 epochs
                 plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size,
                                    train_batch_size_for_plot, "intermediate_train_text")
 
         # save model every epoch
-        torch.save({"epoch": epoch,
-                    "model_state_dict": model.state_dict(),
+        torch.save({"model_state_dict": model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
-                    'loss': loss
                     }, path_for_saving_model)
-
-
-
-
     print('Finished to train')
     #finally check on all data training
-    # fig_path = '/home/bdaniela/zero-shot-style/final_scatter_train.png'
     plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text")
     print('finished to train.')
 
@@ -178,36 +169,8 @@ def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner
 
     test_batch_size_for_plot = len(set(df_test['User']))
     plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, test_batch_size_for_plot,"test_text")
-    print('finished to train.')
 
-    # plt.figure(figsize=(15, 10), facecolor="azure")
-    # for label in np.unique(labels):
-    #     tmp = train_results[labels == label]
-    #     plt.scatter(tmp[:, 0], tmp[:, 1], label=label)
-    #
-    # plt.legend()
-    # plt.show()
 
-# def create_correct_df(df,num_of_labels):
-#     # labels_set_dict = {dmiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral}
-#     labels_set = df.columns[-num_of_labels:]
-#     #create new df
-#     fixed_df = {'text':df['text']}
-#     list_of_labels = []
-#     fixed_list_of_texts = []
-#     for i in range(df.shape[0]):#go over all rows
-#         if i==100: #todo: remove it
-#             break
-#         relevant_idxs_for_labels =  np.where(df.iloc[i, -num_of_labels:].values == 1)
-#         labels = labels_set[relevant_idxs_for_labels[0]]
-#         for l in labels:
-#             try:
-#                 fixed_list_of_texts.append(df['text'][i])
-#                 list_of_labels.append(l)
-#             except:
-#                 pass
-#     fixed_df = {'label': list_of_labels, 'text': fixed_list_of_texts}
-#     return fixed_df
 def create_correct_df(df,num_of_labels,desired_labels):
     # labels_set_dict = {dmiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral}
     labels_set = df.columns[-num_of_labels:]
@@ -218,8 +181,10 @@ def create_correct_df(df,num_of_labels,desired_labels):
     for i in range(df.shape[0]):#go over all rows
         if i==10000: #todo: remove it
             break
+        if df.iloc[i, -num_of_labels-1]:
+            continue
         relevant_idxs_for_labels =  np.where(df.iloc[i, -num_of_labels:].values == 1)
-        if len(relevant_idxs_for_labels)>1:
+        if len(relevant_idxs_for_labels[0])>1:
             continue
         labels = labels_set[relevant_idxs_for_labels[0]]
         for l in labels:
@@ -250,6 +215,16 @@ def main():
     args = parser.parse_args()
     config = vars(args)
 
+
+    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
+    path_for_saving_model = os.path.join(base_path, "trained_model_emotions.pth")
+    data_name = 'go_emotions'  # 'Twitter'
+
+    load_model = True
+    num_of_labels = 28
+    # desired_labels = ['anger','caring','optimism','love']
+    desired_labels = ['anger','love']
+
     wandb.init(project='zero-shot-learning',
                config=config,
                resume=args.resume,
@@ -263,13 +238,8 @@ def main():
     margin = config['margin']
     data_file = config['data_file']
 
-    data_name = 'go_emotions'  # 'Twitter'
     if data_name=='go_emotions': #https://github.com/google-research/google-research/tree/master/goemotions
         data_file = ['goemotions_1.csv','goemotions_2.csv','goemotions_3.csv']
-
-
-    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
-
     if type(data_file)!=list:
         datapath = os.path.join(base_path, data_file)
         s_df = pd.read_csv(datapath)
@@ -279,55 +249,15 @@ def main():
             datapath = os.path.join(base_path, f)
             cur_df = pd.read_csv(datapath)
             s_df = pd.concat([s_df, cur_df], axis=0, ignore_index=True)
-
-    load_model = True
-
-    path_for_saving_model = os.path.join(base_path,"trained_model_emotions.pth")
-    # datapath = os.path.join(base_path,data_file)
-    # df = pd.read_csv(datapath)
     s_df.head()
     #df.groupby(['User']).size().plot.bar()
-
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
-    num_of_labels = 28
-    desired_labels = ['anger','caring','optimism','love']
     df = create_correct_df(s_df, num_of_labels ,desired_labels)
 
     np.random.seed(112)
-    # print('Splitting DB to train, val and test data frames.')
-    # s_df_train, s_df_val, s_df_test = np.split(df.sample(frac=1, random_state=42),
-    #                                      [int(.8 * len(df)), int(.9 * len(df))])
-    # print(len(s_df_train), len(s_df_val), len(s_df_test))
-
     print('Splitting DB to train, val and test data frames.')
     df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),
                                          [int(.8 * len(df)), int(.9 * len(df))])
     print(len(df_train), len(df_val), len(df_test))
-
-
-    # if data_name == 'go_emotions':
-    #     df_train = create_correct_df(s_df_train,num_of_labels)
-    #     df_val = create_correct_df(s_df_val,num_of_labels)
-    #     df_test = create_correct_df(s_df_test,num_of_labels)
-
-           #list_of_labels.append(df[])
-    #
-    #
-    #     labels_set_dict = {}
-    #     labels_idx_to_str = {}
-    #     for i, label in enumerate(df.columns()[-28:]):
-    #         labels_set_dict[label] = i
-    #         labels_idx_to_str[i] = label
-    #
-    # elif data_name == 'Twitter':
-    #     # users in Twitter
-    #     labels_set_dict = {}
-    #     labels_idx_to_str = {}
-    #     for i, label in enumerate(set(df_train.iloc[:, 0])):
-    #         labels_set_dict[label] = i
-    #         labels_idx_to_str[i] = label
-
 
     if load_model:
         model = BertClassifier()
@@ -335,23 +265,18 @@ def main():
         checkpoint = torch.load(path_for_saving_model)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        last_epoch = checkpoint['epoch']
-        last_loss = checkpoint['loss']
         model.train()
 
     else: #train from scratch
         model = BertClassifier()
         optimizer = SGD(model.parameters(), lr=LR)
 
-
     labels_set_dict = {}
     labels_idx_to_str = {}
-    # for i, label in enumerate(set(df['label'])):
     for i, label in enumerate(s_df.columns[-num_of_labels:]):
         labels_set_dict[label] = i
         labels_idx_to_str[i] = label
 
-    #train model
     train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, EPOCHS, batch_size,margin,inner_batch_size, path_for_saving_model)
 
     evaluate(model, df_test, labels_set_dict, labels_idx_to_str, batch_size, inner_batch_size)
