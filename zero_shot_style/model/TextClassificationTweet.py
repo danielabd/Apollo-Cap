@@ -11,27 +11,39 @@ import zero_shot_style.model.Mining as Mining
 from zero_shot_style.model.Mining import *
 from argparse import ArgumentParser
 import wandb
+import pickle
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, df, labels_set_dict, inner_batch_size):
+    def __init__(self, df, labels_set_dict, inner_batch_size,all_data=False):
         self.labels = [labels_set_dict[label] for label in df['label']] #create list of idxs for labels
         self.labels_set = list(set(self.labels))
-        self.texts = df['text']#df['Tweet'] #[text for text in df['Tweet']]
+        self.texts = list(df['text'])#df['Tweet'] #[text for text in df['Tweet']]
         self.batch_size_per_label = inner_batch_size
+        self.all_data = all_data #boolean
         pass
 
     def classes(self):
         return self.labels
 
     def __len__(self):
-        return len(self.labels_set)
+        if self.all_data:
+            return len(self.labels)
+        else:#get samples from set of labels
+            return len(self.labels_set)
+
 
     def __getitem__(self, item):
-        label = self.labels_set[item]
-        list_idxs_for_label = [np.array(self.labels) == label]
-        full_tweets_list = list(operator.itemgetter(list_idxs_for_label)(np.array(self.texts)))
-        batch_tweets = random.sample(full_tweets_list,min(len(full_tweets_list),self.batch_size_per_label))
-        return batch_tweets, label
+        if self.all_data:
+            label = self.labels[item]
+            text = self.texts[item]
+            return text, label
+
+        else: # get samples from data
+            label = self.labels_set[item]
+            list_idxs_for_label = [np.array(self.labels) == label]
+            full_tweets_list = list(operator.itemgetter(list_idxs_for_label)(np.array(self.texts)))
+            batch_tweets = random.sample(full_tweets_list,min(len(full_tweets_list),self.batch_size_per_label))
+            return batch_tweets, label
 
 
 
@@ -64,16 +76,20 @@ def collate_fn(data):
     texts_list = []
     labels_list = []
     for list_for_label in data:
-        for text in list_for_label[0]:
-            texts_list.append(text)
+        if type(list_for_label[0]) == list:
+            for text in list_for_label[0]:
+                texts_list.append(text)
+                labels_list.append(list_for_label[1])
+        else:
+            texts_list.append(list_for_label[0])
             labels_list.append(list_for_label[1])
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     tokenized_texts_list = tokenizer(texts_list, padding='max_length', max_length=40, truncation=True,
                                      return_tensors="pt")
     return tokenized_texts_list, labels_list, texts_list
 
-def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title):
-    data_set = Dataset(df_data, labels_set_dict, inner_batch_size)
+def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title, wb, all_data=False):
+    data_set = Dataset(df_data, labels_set_dict, inner_batch_size, all_data)
     data_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size = batch_size, shuffle=True,
                                                    num_workers=0)
     x_train, y_train, text_list = next(iter(data_dataloader))
@@ -87,23 +103,22 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
     textdf = pd.DataFrame({'text': text_list})
     all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
     all_data.columns = ['Label'] + [f'emb{i}' for i in range(outputs.shape[1])] + ['text']
-    wandb.log({title: all_data})
+    if wb:
+        wandb.log({title: all_data})
 
 
-def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, epochs, batch_size, margin, inner_batch_size, path_for_saving_model):
+
+def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, epochs, batch_size, margin, inner_batch_size, path_for_saving_model,device, wb):
     print('Starting to train...')
     val_batch_size_for_plot = len(set(df_val['label'])) #min(batch_size,len(set(df_val['label'])))# suppose that the first column is for label
     train_batch_size_for_plot = len(set(df_train['label'])) #min(batch_size,len(set(df_train['label'])))
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
     #plot initial graphs
-    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot, "initial_train_text")
-    plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot, "initial_val_text")
+    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot, "initial_train_text", wb, all_data=True)
+    plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot, "initial_val_text", wb, all_data=True)
 
     train_data_set = Dataset(df_train,labels_set_dict, inner_batch_size)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=batch_size, shuffle=True, num_workers=0)
-    if use_cuda:
-        model = model.to(device)
+    model = model.to(device)
 
     model.train()
     for epoch in range(epochs):
@@ -129,10 +144,10 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                         'train/num_positive_triplets': num_positive_triplets,
                         'train/all_triplet_loss_avg': all_triplet_loss_avg}
             wandb.log({"log_dict": log_dict})
-            plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot,"val_text")
+            plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot,"val_text",wb)
             if np.mod(epoch,10)==0: #plot on training every 10 epochs
                 plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size,
-                                   train_batch_size_for_plot, "intermediate_train_text")
+                                   train_batch_size_for_plot, "intermediate_train_text",wb)
 
         # save model every epoch
         torch.save({"model_state_dict": model.state_dict(),
@@ -140,7 +155,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                     }, path_for_saving_model)
     print('Finished to train')
     #finally check on all data training
-    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text")
+    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text",wb)
     print('finished to train.')
 
 
@@ -212,8 +227,58 @@ def senity_check(df):
     for t in anger_text:
         print(t)
 
+def save_mean_embedding_data(df_train, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,target_file_mean_embedding,wb):
+    print("Calculate mean embedding vectors.")
+    data_set = Dataset(df_train, labels_set_dict, inner_batch_size, all_data=True)
+    data_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size=int(inner_batch_size/3), shuffle=True,
+                                                  num_workers=0)
+    it = iter(data_dataloader)
+    total_labels_list = []
+    total_outputs = np.array([])
+    total_text_list = []
+    first_iter = True
+    while(1):
+        try:
+            x_train, y_train, text_list = next(it)
+        except:
+            break
+        total_text_list.extend(text_list)
+        x_train = x_train.to(device)
+        model.to(device)
+        y_train = torch.from_numpy(np.asarray(y_train)).to(device)
+        outputs = model(x_train['input_ids'], x_train['attention_mask'])
+        outputs = outputs.detach().cpu().numpy()
+        if first_iter:
+            total_outputs = outputs
+            first_iter = False
+        else:
+            total_outputs = np.concatenate((total_outputs, outputs), axis=0)
+        total_labels_list.extend([labels_idx_to_str[user_idx] for user_idx in list(y_train.cpu().numpy())])
+
+    love_embedding = total_outputs[np.where(np.array(total_labels_list) == 'love'), :]
+    anger_embedding = total_outputs[np.where(np.array(total_labels_list) == 'anger'), :]
+    mean_love_embedding = np.mean(love_embedding[0], 0)
+    mean_anger_embedding = np.mean(anger_embedding[0], 0)
+    mean_embedding_vectors_to_save = {'love': mean_love_embedding, 'anger': mean_anger_embedding}
+    print(f'Saving mean of embedding vectors to {target_file_mean_embedding}...')
+    with open(target_file_mean_embedding, 'wb') as fp:
+        pickle.dump(mean_embedding_vectors_to_save, fp)
+    print(f'Finished to save.')
+    if wb:
+        print('print for wandb')
+        # variables with mean
+        total_labels_list.extend(['mean_love','mean_anger'])
+        with_mean_total_outputs = np.concatenate((total_outputs, np.array([mean_love_embedding])), axis=0)
+        with_mean_total_outputs = np.concatenate((with_mean_total_outputs, np.array([mean_anger_embedding])), axis=0)
+        total_text_list.extend(['mean love','mean anger'])
+        labeldf = pd.DataFrame({'Label': total_labels_list})
+        embdf = pd.DataFrame(with_mean_total_outputs, columns=[f'emb{i}' for i in range(with_mean_total_outputs.shape[1])])
+        textdf = pd.DataFrame({'text': total_text_list})
+        all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
+        all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
+        wandb.log({"all data": all_data})
+
 def main():
-    print('Start!')
     print('Start!')
     parser = ArgumentParser()
     parser.add_argument('--epochs', type=int, default=132, help='description')
@@ -229,22 +294,26 @@ def main():
     args = parser.parse_args()
     config = vars(args)
 
-
+    wb=True
     base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
     path_for_saving_model = os.path.join(base_path, "2_classes_trained_model_emotions.pth")
     data_name = 'go_emotions'  # 'Twitter'
-
-    load_model = False
+    target_file_mean_embedding = os.path.join(base_path,'mean_class_embedding.p')
+    load_model = True
     num_of_labels = 28
     # desired_labels = ['anger','caring','optimism','love']
     desired_labels = ['anger','love']
 
-    wandb.init(project='zero-shot-learning',
-               config=config,
-               resume=args.resume,
-               id=args.run_id,
-               mode=args.wandb_mode,
-               tags=args.tags)
+
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+    if wb:
+        wandb.init(project='zero-shot-learning',
+                   config=config,
+                   resume=args.resume,
+                   id=args.run_id,
+                   mode=args.wandb_mode,
+                   tags=args.tags)
     EPOCHS = config['epochs']
     LR = config['lr']
     batch_size = config['batch_size']
@@ -292,7 +361,9 @@ def main():
         labels_idx_to_str[i] = label
 
     # senity_check(df_train)
-    train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, EPOCHS, batch_size,margin,inner_batch_size, path_for_saving_model)
+    save_mean_embedding_data(df, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,target_file_mean_embedding, wb)
+    batch_size_for_plot = len(set(df['label']))  # min(batch_size,len(set(df_train['label'])))
+    train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, EPOCHS, batch_size,margin,inner_batch_size, path_for_saving_model,device,wb)
 
     evaluate(model, df_test, labels_set_dict, labels_idx_to_str, batch_size, inner_batch_size)
     print('  finish!')

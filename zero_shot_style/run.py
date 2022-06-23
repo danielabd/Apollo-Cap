@@ -49,12 +49,12 @@ def get_args():
 
     return args
 
-def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,text_to_mimic):
+def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class):
     text_generator = CLIPTextGenerator(**vars(args))
 
     image_features = text_generator.get_img_feature([img_path], None)
     # SENTIMENT: added scale parameter
-    captions = text_generator.run(image_features, args.cond_text, args.beam_size,sentiment_type,sentiment_scale,text_style_scale,text_to_mimic)
+    captions = text_generator.run(image_features, args.cond_text, args.beam_size,sentiment_type,sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class)
 
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
@@ -98,9 +98,9 @@ if __name__ == "__main__":
     args = get_args()
  
     img_path_list = [33]#range(45)
-    sentiment_list = ['none']#['negative','positive','neutral', 'none']
+    sentiment_list   = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
-
+    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/imgs'
     text_style_scale_list = [3.0]
     # text_to_mimic_list = ["Oh my gosh, I don't believe it, It is amazing!!!",
     #                  "Today we are going to win and sell this product in million dollar.",
@@ -108,10 +108,10 @@ if __name__ == "__main__":
 
     text_to_mimic_list = ["I so like this party!!!",
                           "I succeed to do my business."]
-
+    embedding_path = os.path.join(base_path, 'mean_class_embedding.p')
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
+    desired_class = 'love'#anger
 
-    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/imgs'
     for s, sentiment_scale in enumerate(sentiment_scale_list):
         for text_style_scale in text_style_scale_list:
             for text_to_mimic in text_to_mimic_list:
@@ -130,7 +130,7 @@ if __name__ == "__main__":
                               f'\n text_style_scale=***{text_style_scale}*** with style of: ***{text_to_mimic}***.\n~~~~~~~~')
 
                         if args.run_type == 'caption':
-                            run(args, args.caption_img_path, sentiment_type, sentiment_scale,text_style_scale,text_to_mimic)
+                            run(args, args.caption_img_path, sentiment_type, sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class)
                             write_results(img_dict)
                         elif args.run_type == 'arithmetics':
                             args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]

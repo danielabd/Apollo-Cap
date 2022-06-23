@@ -13,7 +13,7 @@ from transformers import BertTokenizer #TEXT_STYLE
 from transformers import BertModel
 from torch.optim import Adam, SGD
 from zero_shot_style.model.TextClassificationTweet import BertClassifier
-
+import pickle
 
 def log_info(text, verbose=True):
     if verbose:
@@ -156,6 +156,9 @@ class CLIPTextGenerator:
         for param in self.text_style_model.parameters():
             param.requires_grad = False
 
+        self.embedding_path = ''
+        self.desired_class = ''
+        self.desired_mean_embedding = ''
         # TEXT_STYLE: tokenizer for text style analysis module
         #self.text_style_tokenizer_name = self.text_style_model_name
         #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
@@ -204,7 +207,7 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale, text_style_scale,text_to_mimic):
+    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale, text_style_scale,text_to_mimic,embedding_path,desired_class):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
@@ -212,6 +215,11 @@ class CLIPTextGenerator:
         self.sentiment_scale = sentiment_scale
         self.text_style_scale = text_style_scale
         self.text_to_mimic = text_to_mimic
+        self.embedding_path = embedding_path
+        self.desired_class = desired_class
+        with open(self.embedding_path, 'rb') as fp:
+            mean_embedding_vectors_to_save = pickle.load(fp)# mean_embedding_vectors_to_save = {'love': mean_love_embedding, 'anger': mean_anger_embedding}
+        self.desired_mean_embedding = mean_embedding_vectors_to_save[self.desired_class]
 
         context_tokens = self.lm_tokenizer.encode(self.context_prefix + cond_text)
 
@@ -412,7 +420,7 @@ class CLIPTextGenerator:
 
                 #calculate the distance between the embedding of the text we want to mimic and the all candidated embedding
                 #todo:check how to do broadcast with embedding_of_text_for_mimic
-                distances = -abs(logits - embedding_of_text_for_mimic)
+                distances = -abs(logits - self.desired_mean_embedding)
 
                 text_style_grades = nn.functional.softmax(distances, dim=-1)[:, 0]
                 text_style_grades = text_style_grades.unsqueeze(0)
