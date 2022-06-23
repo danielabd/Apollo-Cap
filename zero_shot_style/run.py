@@ -102,12 +102,8 @@ if __name__ == "__main__":
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
     text_style_scale_list = [3.0]
-    # text_to_mimic_list = ["Oh my gosh, I don't believe it, It is amazing!!!",
-    #                  "Today we are going to win and sell this product in million dollar.",
-    #                  " BLA BLA BLA BLA"]
 
-    text_to_mimic_list = ["I so like this party!!!",
-                          "I succeed to do my business."]
+    text_to_mimic_list = ["I so like this party!!!"]#,"I succeed to do my business."]
     embedding_path = os.path.join(base_path, 'mean_class_embedding.p')
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
     desired_class = 'anger'#anger
