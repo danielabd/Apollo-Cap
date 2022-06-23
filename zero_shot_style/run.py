@@ -1,7 +1,7 @@
 import argparse
 import torch
 import clip
-from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
+from model.ZeroCLIP import CLIPTextGenerator
 from datetime import datetime
 import os.path
 import csv
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     img_path_list = [33]#range(45)
     sentiment_list   = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
-    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/imgs'
+    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
     text_style_scale_list = [3.0]
     # text_to_mimic_list = ["Oh my gosh, I don't believe it, It is amazing!!!",
     #                  "Today we are going to win and sell this product in million dollar.",
@@ -110,13 +110,13 @@ if __name__ == "__main__":
                           "I succeed to do my business."]
     embedding_path = os.path.join(base_path, 'mean_class_embedding.p')
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
-    desired_class = 'love'#anger
+    desired_class = 'anger'#anger
 
     for s, sentiment_scale in enumerate(sentiment_scale_list):
         for text_style_scale in text_style_scale_list:
             for text_to_mimic in text_to_mimic_list:
                 for i in [33]:#img_path_list:
-                    args.caption_img_path = os.path.join(base_path,str(i)+".jpg")#"imgs/"+str(i)+".jpg"
+                    args.caption_img_path = os.path.join(base_path,'imgs',str(i)+".jpg")#"imgs/"+str(i)+".jpg"
                     if not os.path.isfile(args.caption_img_path):
                         continue
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
                         dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                         print(f'~~~~~~~~\n{dt_string} | Work on img path: {args.caption_img_path} with:\n ***{sentiment_type}***  sentiment, sentiment scale=***{sentiment_scale}***'
-                              f'\n text_style_scale=***{text_style_scale}*** with style of: ***{text_to_mimic}***.\n~~~~~~~~')
+                              f'\n text_style_scale=***{text_style_scale}*** with style of: ***{desired_class}***.\n~~~~~~~~')
 
                         if args.run_type == 'caption':
                             run(args, args.caption_img_path, sentiment_type, sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class)

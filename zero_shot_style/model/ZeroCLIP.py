@@ -132,7 +132,7 @@ class CLIPTextGenerator:
         # self.text_to_mimic = "Today we are going to win and sell this product in million dollar."
         #self.text_to_mimic = " BLA BLA BLA BLA"
         self.text_style_scale = 1
-        MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/trained_model.pth'
+        MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/2_classes_trained_model_emotions.pth'
 
         self.text_style_model_name = MODEL
         #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
@@ -420,6 +420,8 @@ class CLIPTextGenerator:
 
                 #calculate the distance between the embedding of the text we want to mimic and the all candidated embedding
                 #todo:check how to do broadcast with embedding_of_text_for_mimic
+                logits.to(self.device)
+                self.desired_mean_embedding = torch.tensor(self.desired_mean_embedding).to(self.device)
                 distances = -abs(logits - self.desired_mean_embedding)
 
                 text_style_grades = nn.functional.softmax(distances, dim=-1)[:, 0]
