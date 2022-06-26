@@ -89,10 +89,20 @@ def clean_text(tweet):
 
 
 def create_df_for_user(api, user, num_of_tweets, min_tweet_len, max_tweet_len):
-    tweets = api.user_timeline(screen_name=user, count=num_of_tweets * 10, tweet_mode='extended')
+    num_of_tweets_to_search = num_of_tweets * 10
+    tweets = api.user_timeline(screen_name=user, count=num_of_tweets_to_search, tweet_mode='extended')
+    total_tweets = list(tweets)
+    early_tweets_id = tweets[-1].id_str
+    iterations_to_do = round(num_of_tweets_to_search/len(tweets))
+    for i in range(iterations_to_do):
+        additional_tweets = api.user_timeline(screen_name=user, count=num_of_tweets_to_search, tweet_mode='extended',max_id = early_tweets_id)
+        if len(additional_tweets)==0:
+            break
+        total_tweets.extend(additional_tweets[1:]) #the first one is duplicated from the last iteration
+        early_tweets_id = additional_tweets[-1].id_str
     data_list = []
     sum_of_tweets = 0
-    for tweet in tweets:
+    for tweet in total_tweets:
         cleaned_text = clean_text(tweet.full_text)
         if cleaned_text == '':
             continue
@@ -167,7 +177,7 @@ def main():
 
     # Db of famous names
     datapath = 'DB.csv'
-    base_path = '/home/bdaniela/zero-shot-style/data'
+    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
     df = pd.read_csv(os.path.join(base_path,datapath))
     df.head()
 
