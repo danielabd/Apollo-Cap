@@ -12,6 +12,7 @@ from zero_shot_style.model.Mining import *
 from argparse import ArgumentParser
 import wandb
 import pickle
+from datetime import datetime
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, df, labels_set_dict, inner_batch_size,all_data=False):
@@ -88,42 +89,69 @@ def collate_fn(data):
                                      return_tensors="pt")
     return tokenized_texts_list, labels_list, texts_list
 
-def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title, wb, all_data=False):
+def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title, wb,tgt_file_vec_emb, all_data=False,save_vec_emb = False):
     data_set = Dataset(df_data, labels_set_dict, inner_batch_size, all_data)
-    data_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size = batch_size, shuffle=True,
+    eval_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size = batch_size, shuffle=True,
                                                    num_workers=0)
-    x_train, y_train, text_list = next(iter(data_dataloader))
-    x_train = x_train.to(device)
+    model.eval()
     model.to(device)
-    y_train = torch.from_numpy(np.asarray(y_train)).to(device)
-    outputs = model(x_train['input_ids'], x_train['attention_mask'])
-    outputs = outputs.detach().cpu().numpy()
-    labeldf = pd.DataFrame({'Label': [labels_idx_to_str[user_idx] for user_idx in y_train.cpu().numpy()]})
-    embdf = pd.DataFrame(outputs, columns=[f'emb{i}' for i in range(outputs.shape[1])])
-    textdf = pd.DataFrame({'text': text_list})
-    all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
-    all_data.columns = ['Label'] + [f'emb{i}' for i in range(outputs.shape[1])] + ['text']
-    if wb:
-        wandb.log({title: all_data})
+    with torch.no_grad():
+        for step, (tokenized_texts_list, labels, texts_list) in enumerate(
+                tqdm(eval_dataloader, desc="Evaluation", leave=False)):
+            tokenized_texts_list = tokenized_texts_list.to(device)
+            labels = torch.from_numpy(np.asarray(labels)).to(device)
+            outputs = model(tokenized_texts_list['input_ids'], tokenized_texts_list['attention_mask'])
+            outputs = outputs.detach().cpu().numpy()
+
+            labeldf = pd.DataFrame({'Label': [labels_idx_to_str[user_idx] for user_idx in labels.cpu().numpy()]})
+            embdf = pd.DataFrame(outputs, columns=[f'emb{i}' for i in range(outputs.shape[1])])
+            textdf = pd.DataFrame({'text': texts_list})
+            all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
+            all_data.columns = ['Label'] + [f'emb{i}' for i in range(outputs.shape[1])] + ['text']
+            if wb:
+                wandb.log({title: all_data})
+            if save_vec_emb:
+                save_mean_embedding_data(df_data, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,
+                                         tgt_file_vec_emb['mean'],tgt_file_vec_emb['median'], wb)
 
 
+def get_val_train_args(train_args):
+    model = train_args["model"]
+    optimizer = train_args["optimizer"]
+    df_train = train_args["df_train"]
+    df_val = train_args["df_val"]
+    labels_set_dict = train_args["labels_set_dict"]
+    labels_idx_to_str = train_args["labels_idx_to_str"]
+    epochs = train_args["epochs"]
+    batch_size = train_args["batch_size"]
+    margin = train_args["margin"]
+    inner_batch_size = train_args["inner_batch_size"]
+    path_for_saving_model = train_args["path_for_saving_model"]
+    device = train_args["device"]
+    wb = train_args["wb"]
+    save_mean_embedding = train_args["save_mean_embedding"]
+    tgt_file_vec_emb = train_args["tgt_file_vec_emb"]
+    return model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, epochs, batch_size, margin, inner_batch_size, path_for_saving_model, device, wb, save_mean_embedding, tgt_file_vec_emb
 
-def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, epochs, batch_size, margin, inner_batch_size, path_for_saving_model,device, wb):
+
+def train(train_args):
+    model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, epochs, batch_size, margin, inner_batch_size, path_for_saving_model, device, wb, save_mean_embedding, tgt_file_vec_emb = get_val_train_args(
+        train_args)
     print('Starting to train...')
     val_batch_size_for_plot = len(set(df_val['label'])) #min(batch_size,len(set(df_val['label'])))# suppose that the first column is for label
     train_batch_size_for_plot = len(set(df_train['label'])) #min(batch_size,len(set(df_train['label'])))
     #plot initial graphs
-    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot, "initial_train_text", wb, all_data=False)
-    plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot, "initial_val_text", wb, all_data=False)
+    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot, "initial_train_text", wb, tgt_file_vec_emb, False,False)
+    plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot, "initial_val_text", wb, tgt_file_vec_emb, False, False)
 
     train_data_set = Dataset(df_train,labels_set_dict, inner_batch_size)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=batch_size, shuffle=True, num_workers=0)
     model = model.to(device)
 
-    model.train()
     for epoch in range(epochs):
         running_loss = []
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(tqdm(train_dataloader, desc="Training", leave=False)):
+            model.train()
             labels = torch.from_numpy(np.asarray(labels)).to(device)
             masks = tokenized_texts_list['attention_mask'].to(device)
             input_ids = tokenized_texts_list['input_ids'].squeeze(1).to(device)
@@ -137,53 +165,53 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             optimizer.step()
 
             running_loss.append(loss.cpu().detach().numpy())
-            print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, epochs, np.mean(running_loss)),'\n')
+            # print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, epochs, np.mean(running_loss)),'\n')
+            print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, epochs, all_triplet_loss_avg),'\n')
             log_dict = {'train/epoch': epoch,
                         'train/train_loss': loss.cpu().detach().numpy(),
                         'train/fraction_positive_triplets': fraction_positive_triplets,
                         'train/num_positive_triplets': num_positive_triplets,
                         'train/all_triplet_loss_avg': all_triplet_loss_avg}
-            wandb.log({"log_dict": log_dict})
-            plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot,"val_text",wb)
-            if np.mod(epoch,10)==0: #plot on training every 10 epochs
-                plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size,
-                                   train_batch_size_for_plot, "intermediate_train_text",wb)
+            if wb:
+                wandb.log({"log_dict": log_dict})
+            if np.mod(epoch,10)==0: #plot on every 10 epochs
+                plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size,
+                                       val_batch_size_for_plot, "val_text", wb, tgt_file_vec_emb, True, True)
+                # plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size,
+                #                    train_batch_size_for_plot, "intermediate_train_text", wb, tgt_file_vec_emb, save_vec_emb)
+                # save model every epoch
+                torch.save({"model_state_dict": model.state_dict(),
+                            "optimizer_state_dict": optimizer.state_dict(),
+                            }, path_for_saving_model)    #finally check on all data training
+    # plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text",wb, tgt_file_vec_emb)
+    print('Finished to train.')
 
-        # save model every epoch
-        torch.save({"model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
-                    }, path_for_saving_model)
-    print('Finished to train')
-    #finally check on all data training
-    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text",wb)
-    print('finished to train.')
 
-
-def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner_batch_size):
-    #evaluation on test set
-    test = Dataset(df_test, labels_set_dict, inner_batch_size)
-    test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-
-    test_results = []
-    labels_results = []
-    model.eval()
-    with torch.no_grad():
-        for tokenized_tweets_list, labels, text_tweet_list in tqdm(test_dataloader, desc="Testing", leave=False):
-            labels = torch.from_numpy(np.asarray(labels)).to(device)
-            masks = tokenized_tweets_list['attention_mask'].to(device)
-            input_ids = tokenized_tweets_list['input_ids'].squeeze(1).to(device)
-            outputs = model(input_ids, masks)
-            test_results.append(outputs.cpu().numpy())
-            # train_results.append(model(text.to(device)).cpu().numpy())
-            labels_results.append(labels)
-
-    test_results = np.concatenate(test_results)
-    labels_results = np.concatenate(labels_results)
-
-    test_batch_size_for_plot = len(set(df_test['User']))
-    plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, test_batch_size_for_plot,"test_text")
+# def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner_batch_size):
+#     #evaluation on test set
+#     test = Dataset(df_test, labels_set_dict, inner_batch_size)
+#     test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
+#     use_cuda = torch.cuda.is_available()
+#     device = torch.device("cuda" if use_cuda else "cpu")
+#
+#     test_results = []
+#     labels_results = []
+#     model.eval()
+#     with torch.no_grad():
+#         for tokenized_tweets_list, labels, text_tweet_list in tqdm(test_dataloader, desc="Testing", leave=False):
+#             labels = torch.from_numpy(np.asarray(labels)).to(device)
+#             masks = tokenized_tweets_list['attention_mask'].to(device)
+#             input_ids = tokenized_tweets_list['input_ids'].squeeze(1).to(device)
+#             outputs = model(input_ids, masks)
+#             test_results.append(outputs.cpu().numpy())
+#             # train_results.append(model(text.to(device)).cpu().numpy())
+#             labels_results.append(labels)
+#
+#     test_results = np.concatenate(test_results)
+#     labels_results = np.concatenate(labels_results)
+#
+#     test_batch_size_for_plot = len(set(df_test['User']))
+#     plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, test_batch_size_for_plot,"test_text")
 
 
 def create_correct_df(df,num_of_labels,desired_labels):
@@ -193,8 +221,8 @@ def create_correct_df(df,num_of_labels,desired_labels):
     list_of_labels = []
     fixed_list_of_texts = []
     for i in range(df.shape[0]):#go over all rows
-        # if i==100: #todo:remove
-        #     break
+        if i==100: #todo:remove
+            break
         if df.iloc[i, -num_of_labels-1]:# skip on example_very_unclear
             continue
         relevant_idxs_for_labels = np.where(df.iloc[i, -num_of_labels:].values == 1)
@@ -202,8 +230,9 @@ def create_correct_df(df,num_of_labels,desired_labels):
             continue
         labels = labels_set[relevant_idxs_for_labels[0]]
         for l in labels:
-            # if l not in desired_labels:
-            #     continue
+            if desired_labels==list:
+                if l not in desired_labels:
+                    continue
             try:
                 fixed_list_of_texts.append(df['text'][i])
                 list_of_labels.append(l)
@@ -227,9 +256,10 @@ def senity_check(df):
     for t in anger_text:
         print(t)
 
-def save_mean_embedding_data(df_train, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,target_file_mean_embedding,target_file_median_embedding,wb,num_of_labels):
+
+def save_mean_embedding_data(df, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device, target_file_mean_embedding, target_file_median_embedding, wb):
     print("Calculate mean and median embedding vectors...")
-    data_set = Dataset(df_train, labels_set_dict, inner_batch_size, all_data=True)
+    data_set = Dataset(df, labels_set_dict, inner_batch_size, all_data=True)
     data_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size=int(inner_batch_size/3), shuffle=True,
                                                   num_workers=0)
     it = iter(data_dataloader)
@@ -238,11 +268,15 @@ def save_mean_embedding_data(df_train, labels_set_dict, inner_batch_size, labels
     total_text_list = []
     first_iter = True
     while(1):
+        if len(total_text_list)==10:#todo:remove . This is only for debug
+            break
         try:
             x_train, y_train, text_list = next(it)
         except:
             break
         total_text_list.extend(text_list)
+        if np.mod(len(total_text_list), 10) == 0:
+            print(f'calculate example {len(total_text_list)}/{df.shape[0]}')
         x_train = x_train.to(device)
         model.to(device)
         y_train = torch.from_numpy(np.asarray(y_train)).to(device)
@@ -257,7 +291,7 @@ def save_mean_embedding_data(df_train, labels_set_dict, inner_batch_size, labels
 
     mean_embedding_vectors_to_save = {}
     median_embedding_vectors_to_save = {}
-    for label in df_train.columns[-num_of_labels:]:
+    for label in set(df["label"]):
         vectors_embedding = total_outputs[np.where(np.array(total_labels_list) == label), :]
         median_vector_embedding = np.median(vectors_embedding[0], 0)
         median_embedding_vectors_to_save[label] = median_vector_embedding
@@ -274,7 +308,7 @@ def save_mean_embedding_data(df_train, labels_set_dict, inner_batch_size, labels
         print('print for wandb')
         # variables with mean
         total_outputs_with_representation = total_outputs
-        for label in df_train.columns[-num_of_labels:]:
+        for label in set(df["label"]):
             total_labels_list.extend([f'mean_{label}',f'median_{label}'])
             total_text_list.extend([f'mean_{label}',f'median_{label}'])
             total_outputs_with_representation = np.concatenate((total_outputs_with_representation, np.array([mean_embedding_vectors_to_save[label]])), axis=0)
@@ -286,10 +320,12 @@ def save_mean_embedding_data(df_train, labels_set_dict, inner_batch_size, labels
         all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
         wandb.log({"all data": all_data})
 
+
 def main():
     print('Start!')
     parser = ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=10000, help='description')
+    # parser.add_argument('--epochs', type=int, default=10000, help='description')
+    parser.add_argument('--epochs', type=int, default=2, help='description')
     parser.add_argument('--lr', type=float, default=1e-4, help='description')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
     parser.add_argument('--batch_size', type=int, default=28, help='description')
@@ -301,17 +337,32 @@ def main():
     parser.add_argument('--data_file', type=str, default='preprocessed_data.csv', help='')
     args = parser.parse_args()
     config = vars(args)
-
-    wb=True
-    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
-    path_for_saving_model = os.path.join(base_path, "28_classes_trained_model_emotions.pth")
-    data_name = 'go_emotions'  # 'Twitter'
-    target_file_mean_embedding = os.path.join(base_path,'28_mean_class_embedding.p')
-    target_file_median_embedding = os.path.join(base_path,'28_median_class_embedding.p')
+    wb=False#True
     load_model = False
-    num_of_labels = 28
-    # desired_labels = ['anger','caring','optimism','love']
-    desired_labels = ['anger','love']
+    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
+    results_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/reults'
+    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    cur_results_path = os.path.join(results_path,cur_time)
+    os.makedirs(cur_results_path)
+
+    data_name = 'Twitter'  # 'go_emotions'
+    # data_name = 'go_emotions'  # 'Twitter'
+    if data_name == 'go_emotions':
+        path_for_saving_model = os.path.join(cur_results_path, "28_classes_trained_model_emotions.pth")
+        tgt_file_vec_emb = {'mean': os.path.join(cur_results_path,"28_mean_class_embedding.p"),
+                            'median': os.path.join(cur_results_path,"28_median_class_embedding.p")}
+        num_of_labels = 28
+        # desired_labels = ['anger','caring','optimism','love']
+        # desired_labels = ['anger','love']
+        desired_labels = 'all'
+    if data_name == 'Twitter': #['justinbieber', 'BillGates','rihanna','KendallJenner','elonmusk','JLo']
+        path_for_saving_model = os.path.join(cur_results_path, "6_classes_trained_model_tweeter.pth")
+        tgt_file_vec_emb = {'mean': os.path.join(cur_results_path, "6_mean_class_embedding.p"),
+                            'median': os.path.join(cur_results_path, "6_median_class_embedding.p")}
+        desired_labels = 'all'
+        config['batch_size'] = 5
+        config['inner_batch_size'] = 3
+
     save_mean_embedding = True
 
     use_cuda = torch.cuda.is_available()
@@ -332,18 +383,25 @@ def main():
 
     if data_name=='go_emotions': #https://github.com/google-research/google-research/tree/master/goemotions
         data_file = ['goemotions_1.csv','goemotions_2.csv','goemotions_3.csv']
-    if type(data_file)!=list:
-        datapath = os.path.join(base_path, data_file)
-        s_df = pd.read_csv(datapath)
-    else:
+    if type(data_file)==list:
         s_df = pd.read_csv(os.path.join(base_path, data_file[0]))
         for f in data_file[1:]:
             datapath = os.path.join(base_path, f)
             cur_df = pd.read_csv(datapath)
             s_df = pd.concat([s_df, cur_df], axis=0, ignore_index=True)
-    s_df.head()
+    else:
+        datapath = os.path.join(base_path, data_file)
+        s_df = pd.read_csv(datapath)
+
+
+    print(s_df.head())
     #df.groupby(['User']).size().plot.bar()
-    df = create_correct_df(s_df, num_of_labels ,desired_labels)
+    if data_name=='go_emotions':
+        df = create_correct_df(s_df, num_of_labels, desired_labels)
+    elif data_name=='Twitter': # change titles to Label and text
+        s_df = s_df.rename(columns={'User': 'label', 'Tweet': 'text'})
+        df = s_df
+
 
     np.random.seed(112)
     print('Splitting DB to train, val and test data frames.')
@@ -365,18 +423,27 @@ def main():
 
     labels_set_dict = {}
     labels_idx_to_str = {}
-    for i, label in enumerate(s_df.columns[-num_of_labels:]):
-        labels_set_dict[label] = i
-        labels_idx_to_str[i] = label
+    if data_name == 'go_emotions':
+        for i, label in enumerate(s_df.columns[-num_of_labels:]):
+            labels_set_dict[label] = i
+            labels_idx_to_str[i] = label
+    elif data_name=='Twitter':
+        for i, label in enumerate(set(s_df['label'])):
+            labels_set_dict[label] = i
+            labels_idx_to_str[i] = label
 
     # senity_check(df_train)
     # if save_mean_embedding:
     #     save_mean_embedding_data(df, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,target_file_mean_embedding, wb,num_of_labels)
-    train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, EPOCHS, batch_size,margin,inner_batch_size, path_for_saving_model,device,wb)
-    if save_mean_embedding:
-        save_mean_embedding_data(df, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,target_file_mean_embedding,target_file_median_embedding, wb,num_of_labels)
+    train_args = {"model": model, "optimizer": optimizer, "df_train": df_train, "df_val": df_val,
+                  "labels_set_dict": labels_set_dict,
+                  "labels_idx_to_str": labels_idx_to_str, "EPOCHS": EPOCHS, "batch_size": batch_size, "margin": margin,
+                  "inner_batch_size": inner_batch_size, "path_for_saving_model": path_for_saving_model,
+                  "device": device, "wb": wb, "save_mean_embedding": save_mean_embedding,
+                  "tgt_file_vec_emb": tgt_file_vec_emb}
+    train(train_args)
 
-    evaluate(model, df_test, labels_set_dict, labels_idx_to_str, batch_size, inner_batch_size)
+    # evaluate(model, df_test, labels_set_dict, labels_idx_to_str, batch_size, inner_batch_size)
     print('  finish!')
 
 

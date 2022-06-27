@@ -98,7 +98,7 @@ if __name__ == "__main__":
     args = get_args()
  
     img_path_list = [33]#range(45)
-    sentiment_list   = ['none']#['negative','positive','neutral', 'none']
+    sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
     text_style_scale_list = [3.0]

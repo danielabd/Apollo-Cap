@@ -184,7 +184,7 @@ def main():
     # create database of twitter
     source_db = os.path.join(base_path,'DB.csv')
     max_users = 100  # maximum users to classify
-    num_of_tweets = 1000  # take number of last tweets
+    num_of_tweets = 949  # take number of last tweets
     target_dir = base_path
     min_tweet_len = 3 #10
     max_tweet_len = 20
