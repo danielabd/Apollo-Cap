@@ -1,0 +1,11 @@
+param_int: 1
+param_float: 1.
+param_str: hi
+param_list_of_everything: [a, 1, '1']
+param_dict:
+  k0: v0
+  k1: v1
+  nested_k:
+    k00: v00
+    and_so_on: more_values
+test_param: "config param"

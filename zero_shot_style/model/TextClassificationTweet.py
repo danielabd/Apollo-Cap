@@ -7,12 +7,14 @@ from transformers import BertModel
 from torch.optim import SGD
 from tqdm import tqdm
 import operator
-import zero_shot_style.model.Mining as Mining
-from zero_shot_style.model.Mining import *
+from zero_shot_style.model import mining
+# from zero_shot_style.model.mining import *
 from argparse import ArgumentParser
 import wandb
 import pickle
 from datetime import datetime
+from zero_shot_style.utils import parser, get_hparams
+import os
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, df, labels_set_dict, inner_batch_size,all_data=False):
@@ -95,6 +97,7 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
                                                    num_workers=0)
     model.eval()
     model.to(device)
+    log_dict = {}
     with torch.no_grad():
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
                 tqdm(eval_dataloader, desc="Evaluation", leave=False)):
@@ -108,11 +111,12 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
             textdf = pd.DataFrame({'text': texts_list})
             all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
             all_data.columns = ['Label'] + [f'emb{i}' for i in range(outputs.shape[1])] + ['text']
-            if wb:
-                wandb.log({title: all_data})
+            log_dict[title] = all_data
+            # wandb.log({title: all_data})  # todo log without commit
             if save_vec_emb:
                 save_mean_embedding_data(df_data, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,
                                          tgt_file_vec_emb['mean'],tgt_file_vec_emb['median'], wb)
+    return log_dict
 
 
 def get_val_train_args(train_args):
@@ -134,20 +138,20 @@ def get_val_train_args(train_args):
     return model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, epochs, batch_size, margin, inner_batch_size, path_for_saving_model, device, wb, save_mean_embedding, tgt_file_vec_emb
 
 
-def train(train_args):
+def train(train_args, **kwargs):
+    # some_var = kwargs.get('some_var_name', None)  # todo function call: train(train_args, some_var_name=some_var)
     model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, epochs, batch_size, margin, inner_batch_size, path_for_saving_model, device, wb, save_mean_embedding, tgt_file_vec_emb = get_val_train_args(
         train_args)
     print('Starting to train...')
-    val_batch_size_for_plot = len(set(df_val['label'])) #min(batch_size,len(set(df_val['label'])))# suppose that the first column is for label
-    train_batch_size_for_plot = len(set(df_train['label'])) #min(batch_size,len(set(df_train['label'])))
-    #plot initial graphs
-    plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot, "initial_train_text", wb, tgt_file_vec_emb, False,False)
-    plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, val_batch_size_for_plot, "initial_val_text", wb, tgt_file_vec_emb, False, False)
+    # val_batch_size_for_plot = len(set(df_val['label'])) #min(batch_size,len(set(df_val['label'])))# suppose that the first column is for label
+    # train_batch_size_for_plot = len(set(df_train['label'])) #min(batch_size,len(set(df_train['label'])))
 
     train_data_set = Dataset(df_train,labels_set_dict, inner_batch_size)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=batch_size, shuffle=True, num_workers=0)
+    sanity_dataloader = torch.utils.data.DataLoader(train_data_set[np.arange(0, 5000, 50)], collate_fn=collate_fn, batch_size=batch_size, shuffle=False, num_workers=0)
     model = model.to(device)
-
+    plot_initial = True
+    best_loss = 1e16
     for epoch in range(epochs):
         running_loss = []
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(tqdm(train_dataloader, desc="Training", leave=False)):
@@ -157,32 +161,46 @@ def train(train_args):
             input_ids = tokenized_texts_list['input_ids'].squeeze(1).to(device)
             outputs = model(input_ids, masks)
 
-            #using tripletloss
-            loss, num_positive_triplets, num_valid_triplets, all_triplet_loss_avg = Mining.online_mine_all(labels, outputs, margin,device=device)
+            # triplet loss
+            loss, num_positive_triplets, num_valid_triplets, all_triplet_loss_avg = mining.online_mine_all(labels, outputs, margin, device=device)
             fraction_positive_triplets = num_positive_triplets / (num_valid_triplets + 1e-16)
 
             loss.backward()
             optimizer.step()
 
-            running_loss.append(loss.cpu().detach().numpy())
-            # print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, epochs, np.mean(running_loss)),'\n')
-            print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, epochs, all_triplet_loss_avg),'\n')
-            log_dict = {'train/epoch': epoch,
-                        'train/train_loss': loss.cpu().detach().numpy(),
-                        'train/fraction_positive_triplets': fraction_positive_triplets,
-                        'train/num_positive_triplets': num_positive_triplets,
-                        'train/all_triplet_loss_avg': all_triplet_loss_avg}
-            if wb:
+            # running_loss.append(loss.cpu().detach().numpy())
+            running_loss.append(all_triplet_loss_avg)
+            tqdm.set_description("Epoch: {}/{} - Loss: {:.4f}".format(epoch + 1, epochs, all_triplet_loss_avg))
+            # print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, epochs, all_triplet_loss_avg),'\n')
+            # save model every epoch
+            torch.save({"model_state_dict": model.state_dict(),
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        }, path_for_saving_model)  # finally check on all data training
+            if np.mod(epoch, 10) == 0:  # plot on every 10 epochs
+                log_dict = {'train/epoch': epoch,
+                            'train/train_loss': loss.cpu().detach().numpy(),
+                            'train/fraction_positive_triplets': fraction_positive_triplets,
+                            'train/num_positive_triplets': num_positive_triplets,
+                            'train/all_triplet_loss_avg': all_triplet_loss_avg}
+
+                log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
+                                                        inner_batch_size,
+                                                        train_batch_size_for_plot, "initial_train_text", wb,
+                                                        tgt_file_vec_emb, False, False)
+                log_dict_val = plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model,
+                                                      inner_batch_size,
+                                                      val_batch_size_for_plot, "initial_val_text", wb, tgt_file_vec_emb,
+                                                      False, False)
+                log_dict = {**log_dict, **log_dict_train, **log_dict_val}
                 wandb.log({"log_dict": log_dict})
-            if np.mod(epoch,10)==0: #plot on every 10 epochs
-                plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size,
-                                       val_batch_size_for_plot, "val_text", wb, tgt_file_vec_emb, True, True)
-                # plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size,
-                #                    train_batch_size_for_plot, "intermediate_train_text", wb, tgt_file_vec_emb, save_vec_emb)
-                # save model every epoch
-                torch.save({"model_state_dict": model.state_dict(),
-                            "optimizer_state_dict": optimizer.state_dict(),
-                            }, path_for_saving_model)    #finally check on all data training
+                # todo - with every log save the latest model (so we can resume training from the same point.)
+
+        avg_loss = np.mean(running_loss)
+        if avg_loss<best_loss:
+            best_loss = avg_loss
+            raise NotImplementedError  # log best loss, checkpoint best model...
+
+
     # plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text",wb, tgt_file_vec_emb)
     print('Finished to train.')
 
@@ -322,104 +340,108 @@ def save_mean_embedding_data(df, labels_set_dict, inner_batch_size, labels_idx_t
 
 
 def main():
-    print('Start!')
-    parser = ArgumentParser()
-    # parser.add_argument('--epochs', type=int, default=10000, help='description')
-    parser.add_argument('--epochs', type=int, default=2, help='description')
-    parser.add_argument('--lr', type=float, default=1e-4, help='description')
-    parser.add_argument('--margin', type=float, default=0.4, help='description')
-    parser.add_argument('--batch_size', type=int, default=28, help='description')
-    parser.add_argument('--inner_batch_size', type=int, default=20, help='description')
-    parser.add_argument('--resume', type=str, default='allow', help='continue logging to run_id')
-    parser.add_argument('--run_id', type=str, default=None, help='wandb run_id')
-    parser.add_argument('--tags', type=str, nargs='+', default=None, help='wandb tags')
-    parser.add_argument('--wandb_mode', type=str, default='online', help='disabled, offline, online')
-    parser.add_argument('--data_file', type=str, default='preprocessed_data.csv', help='')
-    args = parser.parse_args()
-    config = vars(args)
-    wb=False#True
-    load_model = False
-    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
-    results_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/reults'
-    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
-    cur_results_path = os.path.join(results_path,cur_time)
-    os.makedirs(cur_results_path)
+    np.random.seed(112)  # todo there may be many more seeds to fix
+    torch.cuda.seed(7)
 
-    data_name = 'Twitter'  # 'go_emotions'
+    print('Start!')
+    args = parser.parse_args()
+    config = get_hparams(args)   # todo use utils.get_hparams(args) instead
+    test_param = config["test_param"]
+    print("test_param is: "+test_param)
+    print("wait")
+    # config = vars(args)   # todo use utils.get_hparams(args) instead
+    load_model = False  # todo should be inferred from args.resume
+    data_dir = args.data_dir
+    checkpoints_dir = args.checkpoints_dir
+    # cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    experiment_dir = os.path.join(checkpoints_dir, args.experiment_name)
+    if not os.path.exists(experiment_dir):
+        os.makedirs(experiment_dir)
+    elif not args.override:
+        r = None
+        while r not in ['y', 'n']:
+            r = input(f'{experiment_dir} already exists, do you want to override? (y/n)')
+            if r == 'n':
+                exit(0)
+            elif r == 'y':
+                print('overriding results in ', experiment_dir)
+                break
+
+    data_name = args.data_name  # 'go_emotions'  # todo - move to parser/yaml and use args.<var>
     # data_name = 'go_emotions'  # 'Twitter'
     if data_name == 'go_emotions':
-        path_for_saving_model = os.path.join(cur_results_path, "28_classes_trained_model_emotions.pth")
-        tgt_file_vec_emb = {'mean': os.path.join(cur_results_path,"28_mean_class_embedding.p"),
-                            'median': os.path.join(cur_results_path,"28_median_class_embedding.p")}
+        path_for_saving_model = os.path.join(experiment_dir, "28_classes_trained_model_emotions.pth")
+        tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, "28_mean_class_embedding.p"),
+                            'median': os.path.join(experiment_dir, "28_median_class_embedding.p")}
         num_of_labels = 28
         # desired_labels = ['anger','caring','optimism','love']
         # desired_labels = ['anger','love']
-        desired_labels = 'all'
+        # desired_labels = 'all'  # todo - if this changes often, move to parser/yaml and use args.<var>
     if data_name == 'Twitter': #['justinbieber', 'BillGates','rihanna','KendallJenner','elonmusk','JLo']
-        path_for_saving_model = os.path.join(cur_results_path, "6_classes_trained_model_tweeter.pth")
-        tgt_file_vec_emb = {'mean': os.path.join(cur_results_path, "6_mean_class_embedding.p"),
-                            'median': os.path.join(cur_results_path, "6_median_class_embedding.p")}
-        desired_labels = 'all'
-        config['batch_size'] = 5
-        config['inner_batch_size'] = 3
+        path_for_saving_model = os.path.join(experiment_dir, "6_classes_trained_model_tweeter.pth")
+        tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, "6_mean_class_embedding.p"),
+                            'median': os.path.join(experiment_dir, "6_median_class_embedding.p")}
+        # desired_labels = 'all'
+        config['batch_size'] = 5  # todo - move to parser/yaml and use args.<var>
+        config['inner_batch_size'] = 3  # todo - move to parser/yaml and use args.<var>
 
+    desired_labels = args.desired_labels
     save_mean_embedding = True
 
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    if wb:
-        wandb.init(project='zero-shot-learning',
-                   config=config,
-                   resume=args.resume,
-                   id=args.run_id,
-                   mode=args.wandb_mode,
-                   tags=args.tags)
-    EPOCHS = config['epochs']
-    LR = config['lr']
+    wandb.init(project='zero-shot-learning',
+               config=config,
+               resume=args.resume,
+               id=args.run_id,
+               mode=args.wandb_mode,
+               tags=args.tags)
+    epochs = config['epochs']
+    learning_rate = config['lr']
     batch_size = config['batch_size']
     inner_batch_size = config['inner_batch_size']
     margin = config['margin']
     data_file = config['data_file']
 
-    if data_name=='go_emotions': #https://github.com/google-research/google-research/tree/master/goemotions
-        data_file = ['goemotions_1.csv','goemotions_2.csv','goemotions_3.csv']
-    if type(data_file)==list:
-        s_df = pd.read_csv(os.path.join(base_path, data_file[0]))
+    if data_name == 'go_emotions': #https://github.com/google-research/google-research/tree/master/goemotions
+        data_file = ['goemotions_1.csv', 'goemotions_2.csv', 'goemotions_3.csv']  # todo should be in yaml
+
+    if type(data_file) == list:
+        s_df = pd.read_csv(os.path.join(data_dir, data_file[0]))
         for f in data_file[1:]:
-            datapath = os.path.join(base_path, f)
+            datapath = os.path.join(data_dir, f)
             cur_df = pd.read_csv(datapath)
             s_df = pd.concat([s_df, cur_df], axis=0, ignore_index=True)
     else:
-        datapath = os.path.join(base_path, data_file)
+        datapath = os.path.join(data_dir, data_file)
         s_df = pd.read_csv(datapath)
 
-
     print(s_df.head())
-    #df.groupby(['User']).size().plot.bar()
-    if data_name=='go_emotions':
+    #  df.groupby(['User']).size().plot.bar()
+    if data_name == 'go_emotions':
         df = create_correct_df(s_df, num_of_labels, desired_labels)
-    elif data_name=='Twitter': # change titles to Label and text
+    elif data_name == 'Twitter': # change titles to Label and text
         s_df = s_df.rename(columns={'User': 'label', 'Tweet': 'text'})
         df = s_df
 
 
-    np.random.seed(112)
     print('Splitting DB to train, val and test data frames.')
-    df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),
+    df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),  # todo check sklearn split data func - keeps proportions between classes across all splits
                                          [int(.8 * len(df)), int(.9 * len(df))])
     print(len(df_train), len(df_val), len(df_test))
 
-    if load_model:
+    if load_model:  # todo if args.resume
         model = BertClassifier()
-        optimizer = SGD(model.parameters(), lr=LR)
+        optimizer = SGD(model.parameters(), lr=learning_rate)
         checkpoint = torch.load(path_for_saving_model)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         model.train()
 
-    else: #train from scratch
+    else:
+        #  train from scratch
         model = BertClassifier()
-        optimizer = SGD(model.parameters(), lr=LR)
+        optimizer = SGD(model.parameters(), lr=learning_rate)
 
     labels_set_dict = {}
     labels_idx_to_str = {}
@@ -437,7 +459,7 @@ def main():
     #     save_mean_embedding_data(df, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,target_file_mean_embedding, wb,num_of_labels)
     train_args = {"model": model, "optimizer": optimizer, "df_train": df_train, "df_val": df_val,
                   "labels_set_dict": labels_set_dict,
-                  "labels_idx_to_str": labels_idx_to_str, "EPOCHS": EPOCHS, "batch_size": batch_size, "margin": margin,
+                  "labels_idx_to_str": labels_idx_to_str, "EPOCHS": epochs, "batch_size": batch_size, "margin": margin,
                   "inner_batch_size": inner_batch_size, "path_for_saving_model": path_for_saving_model,
                   "device": device, "wb": wb, "save_mean_embedding": save_mean_embedding,
                   "tgt_file_vec_emb": tgt_file_vec_emb}
@@ -447,5 +469,9 @@ def main():
     print('  finish!')
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
+
+    # references:
+    # https://github.com/avrech/learning2cut/blob/master/experiments/cut_selection_dqn/default_parser.py
+    # https://github.com/avrech/learning2cut
