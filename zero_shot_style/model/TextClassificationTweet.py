@@ -398,7 +398,8 @@ def senity_check(df):
 
 
 def main():
-    torch.cuda.set_device(1)
+    # torch.cuda.set_device(1)
+    torch.cuda.set_device(3)
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)
 
