@@ -1,0 +1,18 @@
+param_int: 1
+param_float: 1.
+param_str: hi
+param_list_of_everything: [a, 1, '1']
+param_dict:
+  k0: v0
+  k1: v1
+  nested_k:
+    k00: v00
+    and_so_on: more_values
+batch_size: 5
+inner_batch_size: 5
+best_model_name: best_28_classes_trained_model_emotions.pth
+model_name: '28_classes_trained_model_emotions.pth'
+mean_vec_emb_file: 28_mean_class_embedding.p
+median_vec_emb_file: 28_median_class_embedding.p
+data_file: ['goemotions_1.csv', 'goemotions_2.csv', 'goemotions_3.csv'] #https://github.com/google-research/google-research/tree/master/goemotions
+experiment_name: 'cur_time'
