@@ -14,6 +14,8 @@ import wandb
 import pickle
 from datetime import datetime
 from zero_shot_style.utils import parser, get_hparams
+from zero_shot_style.create_dataset import clean_text
+
 import os
 import random
 from sklearn.model_selection import train_test_split
@@ -48,7 +50,7 @@ class Dataset(torch.utils.data.Dataset):
 
         else: # get samples from data
             label = self.labels_set[item]
-            list_idxs_for_label = [np.array(self.labels) == label]
+            list_idxs_for_label = np.array(self.labels) == label
             full_tweets_list = list(operator.itemgetter(list_idxs_for_label)(np.array(self.texts)))
             batch_tweets = random.sample(full_tweets_list,min(len(full_tweets_list),self.batch_size_per_label))
             return batch_tweets, label
@@ -106,7 +108,6 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
     with torch.no_grad():
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
                 tqdm(eval_dataloader, desc="Evaluation", leave=False)):
-            # print("step="+str(step))
             tokenized_texts_list = tokenized_texts_list.to(device)
             # labels = torch.from_numpy(np.asarray(labels)).to(device)
             # labels = torch.from_numpy(np.asarray(labels))
@@ -172,7 +173,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
     train_batch_size_for_plot = len(set(df_train['label'])) #min(batch_size,len(set(df_train['label'])))
     val_batch_size_for_plot = len(set(df_test['label'])) #min(batch_size,len(set(df_train['label'])))
 
-    train_data_set = Dataset(df_train, labels_set_dict, config['inner_batch_size'])
+    train_data_set = Dataset(df_train, labels_set_dict, config['inner_batch_size'],True)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=config['batch_size'], shuffle=True, num_workers=config['num_workers'])
 
     print("Sanity check on train df...")
@@ -189,7 +190,6 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
         model.train()
         running_loss = []
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(pbar:= tqdm(train_dataloader, desc="Training", leave=False)):
-            print("step="+str(step))
             labels = torch.from_numpy(np.asarray(labels)).to(device)
             masks = tokenized_texts_list['attention_mask'].to(device)
             input_ids = tokenized_texts_list['input_ids'].squeeze(1).to(device)
@@ -207,18 +207,18 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
         avg_loss = np.mean([loss_elem.item() for loss_elem in running_loss])
         pbar.set_description("Epoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], avg_loss))
         # print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], all_triplet_loss_avg),'\n')
+        log_dict = {'train/epoch': epoch,
+                    'train/train_loss': loss.cpu().detach().numpy(),
+                    'train/fraction_positive_triplets': fraction_positive_triplets,
+                    'train/num_positive_triplets': num_positive_triplets,
+                    'train/all_triplet_loss_avg': all_triplet_loss_avg}
+        wandb.log({"log_dict": log_dict})
         if np.mod(epoch, 10) == 0:  # plot on every 10 epochs
             # save model
-            print("Saving model to: "+path_for_saving_last_model+'...')
+            print(f'Epoch = {epoch},Saving model to: {path_for_saving_last_model}...')
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_last_model)  # finally check on all data training
-            log_dict = {'train/epoch': epoch,
-                        'train/train_loss': loss.cpu().detach().numpy(),
-                        'train/fraction_positive_triplets': fraction_positive_triplets,
-                        'train/num_positive_triplets': num_positive_triplets,
-                        'train/all_triplet_loss_avg': all_triplet_loss_avg}
-            wandb.log({"log_dict": log_dict})
             log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(5000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
                                                     config['inner_batch_size'],train_batch_size_for_plot, "train_text", tgt_file_vec_emb, True, False, config['num_workers'])
             log_dict_val = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
@@ -229,26 +229,17 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             # todo - with every log save the latest model (so we can resume training from the same point.)
 
         if avg_loss<best_loss:
-            print('Loss is improved. Saving the better model to: '+path_for_saving_best_model+'...')
+            print(f'Loss is improved. Epoch = {epoch}, Saving the better model to: {path_for_saving_best_model}...')
             best_loss = avg_loss
-            path_for_saving_best_model = '/'+os.path.join(*path_for_saving_best_model.split('/')[:-1], "best_model_" + path_for_saving_best_model.split('/')[-1])
             # save model
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_best_model)  # finally check on all data training
-            if np.mod(epoch, 10) != 0:
-                log_dict = {'train/epoch': epoch,
-                            'train/train_loss': loss.cpu().detach().numpy(),
-                            'train/fraction_positive_triplets': fraction_positive_triplets,
-                            'train/num_positive_triplets': num_positive_triplets,
-                            'train/all_triplet_loss_avg': all_triplet_loss_avg}
-                wandb.log({"log_dict": log_dict})
-
-            if epoch>last_best_epoch+10:
+            if epoch>last_best_epoch+50:
                 last_best_epoch = epoch
-                log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
-                                                        config['inner_batch_size'], train_batch_size_for_plot, "train_text_for_best_model",
-                                                        tgt_file_vec_emb, True, True, config['num_workers'])
+                # log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
+                #                                         config['inner_batch_size'], train_batch_size_for_plot, "train_text_for_best_model",
+                #                                         tgt_file_vec_emb, True, True, config['num_workers'])
                 log_dict_val = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
                                                       config['inner_batch_size'], val_batch_size_for_plot, "val_text",
                                                       tgt_file_vec_emb,
@@ -256,6 +247,16 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
                 # log_dict = {**log_dict, **log_dict_train, **log_dict_val}
 
     # plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text",wb, tgt_file_vec_emb)
+    model = BertClassifier()
+    optimizer = SGD(model.parameters(), lr=config['lr'])
+    checkpoint = torch.load(path_for_saving_best_model)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    model.eval()
+    print("Finished to train, plotting final embedding of entire training set")
+    log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
+                                            config['inner_batch_size'], train_batch_size_for_plot, "final embedding on trainning set_for_best_model",
+                                            tgt_file_vec_emb, True, True, config['num_workers'])
     print('Finished to train.')
 
 
@@ -308,7 +309,7 @@ def create_correct_df(df,num_of_labels,desired_labels):
                 if l not in desired_labels:
                     continue
             try:
-                fixed_list_of_texts.append(df['text'][i])
+                fixed_list_of_texts.append(clean_text(df['text'][i]))
                 list_of_labels.append(l)
             except:
                 pass
