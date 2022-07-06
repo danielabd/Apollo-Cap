@@ -121,20 +121,21 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
                 total_outputs = np.concatenate((total_outputs, outputs), axis=0)
                 total_labels = np.concatenate((total_labels, labels), axis=0)
                 total_texts_list.extend(texts_list)
+        total_labels_str = [labels_idx_to_str[user_idx] for user_idx in total_labels]
         if save_vec_emb:
             print("Calculate mean and median embedding vectors...")
             mean_embedding_vectors_to_save = {}
             median_embedding_vectors_to_save = {}
             for label in set(df_data["label"]):
-                vectors_embedding = total_outputs[np.where(np.array(total_labels) == label), :]
+                vectors_embedding = total_outputs[np.where(np.array(total_labels_str) == label), :]
                 median_vector_embedding = np.median(vectors_embedding[0], 0)
                 median_embedding_vectors_to_save[label] = median_vector_embedding
                 mean_vector_embedding = np.mean(vectors_embedding[0], 0)
                 mean_embedding_vectors_to_save[label] = mean_vector_embedding
-            print('Saving mean of embedding vectors to: '+{tgt_file_vec_emb['mean']}+'...')
+            print('Saving mean of embedding vectors to: '+tgt_file_vec_emb['mean']+'...')
             with open(tgt_file_vec_emb['mean'], 'wb') as fp:
                 pickle.dump(mean_embedding_vectors_to_save, fp)
-            print(f'Saving median of embedding vectors to: '+{tgt_file_vec_emb['median']}+'...')
+            print(f'Saving median of embedding vectors to: '+tgt_file_vec_emb['median']+'...')
             with open(tgt_file_vec_emb['median'], 'wb') as fp:
                 pickle.dump(median_embedding_vectors_to_save, fp)
             print(f'Finished to save.')
@@ -143,7 +144,7 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
             # variables with mean
             total_outputs_with_representation = total_outputs
             for label in set(df_data["label"]):
-                total_labels.extend([f'mean_{label}', f'median_{label}'])
+                total_labels_str.extend([f'mean_{label}',f'median_{label}'])
                 total_texts_list.extend([f'mean_{label}', f'median_{label}'])
                 total_outputs_with_representation = np.concatenate(
                     (total_outputs_with_representation, np.array([mean_embedding_vectors_to_save[label]])), axis=0)
@@ -246,7 +247,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             if epoch>last_best_epoch+10:
                 last_best_epoch = epoch
                 log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
-                                                        config['inner_batch_size'], train_batch_size_for_plot, "train_text",
+                                                        config['inner_batch_size'], train_batch_size_for_plot, "train_text_for_best_model",
                                                         tgt_file_vec_emb, True, True, config['num_workers'])
                 log_dict_val = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
                                                       config['inner_batch_size'], val_batch_size_for_plot, "val_text",
@@ -399,7 +400,8 @@ def senity_check(df):
 
 def main():
     # torch.cuda.set_device(1)
-    torch.cuda.set_device(3)
+    # torch.cuda.set_device(1)
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)
 
