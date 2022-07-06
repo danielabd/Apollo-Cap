@@ -8,7 +8,7 @@ param_dict:
   nested_k:
     k00: v00
     and_so_on: more_values
-batch_size: 200
+batch_size: 500
 inner_batch_size: 10
 best_model_name: best_28_classes_trained_model_emotions.pth
 model_name: 28_classes_trained_model_emotions.pth
