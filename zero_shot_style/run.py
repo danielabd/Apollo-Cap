@@ -93,8 +93,8 @@ def write_results(img_dict):
                 writer.writerow(cur_row)
                 writer.writerow([])
 
-def write_results_of_text_style(img_dict, embedding_path_idx,labels):
-    with open(f'results_embedding_path_idx_{embedding_path_idx}.csv', 'w') as results_file:
+def write_results_of_text_style(img_dict, embedding_path_idx,labels,reults_dir,style_type):
+    with open(os.path.join(reults_dir,f'results_{style_type}_embedding_path_idx_{embedding_path_idx}.csv'), 'w') as results_file:
         writer = csv.writer(results_file)
         for img in img_dict.keys():
             writer.writerow([img])
@@ -127,6 +127,9 @@ if __name__ == "__main__":
 
     embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_mean_class_embedding.p')#emotions - 2 classes
     embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_median_class_embedding.p')#emotions - 2 classes
+    reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',
+                              'img_2_men')  # emotions - 2 classes
+    style_type = 'emotions'
     # embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model',
     #                                'twitter_mean_class_embedding.p')  # twitter
     # embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model',
@@ -139,7 +142,6 @@ if __name__ == "__main__":
     label = 'gratitude'
     desired_labels_list = ['gratitude', 'anger']
     text_to_mimic = text_to_mimic_list[0]
-
     for embedding_path_idx,embedding_path in enumerate(embedding_path_list):
         img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
         for s, sentiment_scale in enumerate(sentiment_scale_list):
@@ -162,7 +164,7 @@ if __name__ == "__main__":
                             if args.run_type == 'caption':
                                 run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, text_to_mimic, embedding_path, label, cuda_idx)
                                 # write_results(img_dict)
-                                write_results_of_text_style(img_dict,embedding_path_idx,desired_labels_list)
+                                write_results_of_text_style(img_dict,embedding_path_idx,desired_labels_list,reults_dir,style_type)
                             elif args.run_type == 'arithmetics':
                                 args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
                                 run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights)
