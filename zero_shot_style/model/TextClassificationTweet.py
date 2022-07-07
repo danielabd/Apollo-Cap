@@ -1,4 +1,5 @@
 import pandas as pd
+import psutil.tests
 import torch
 import numpy as np
 from transformers import BertTokenizer
@@ -97,9 +98,13 @@ def collate_fn(data):
                                      return_tensors="pt")
     return tokenized_texts_list, labels_list, texts_list
 
-def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title,tgt_file_vec_emb, all_data=False,save_vec_emb = False,num_workers=0):
+def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title,tgt_file_vec_emb, all_data=False,save_vec_emb = False,num_workers=0,desired_labels = 'all'):
     print("Plotting graph for "+title+'...')
-    data_set = Dataset(df_data, labels_set_dict, inner_batch_size, all_data)
+    desired_df = pd.DataFrame()
+    for l in desired_labels:
+        l_df = df_data.iloc[np.where(np.array(df_data["label"]) == l)[0], :]
+        desired_df = pd.concat([desired_df,l_df])
+    data_set = Dataset(desired_df, labels_set_dict, inner_batch_size, all_data)
     eval_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size = batch_size, shuffle=True,
                                                    num_workers=num_workers)
     model.eval()
@@ -127,7 +132,7 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
             print("Calculate mean and median embedding vectors...")
             mean_embedding_vectors_to_save = {}
             median_embedding_vectors_to_save = {}
-            for label in set(df_data["label"]):
+            for label in set(desired_df["label"]):
                 vectors_embedding = total_outputs[np.where(np.array(total_labels_str) == label), :]
                 median_vector_embedding = np.median(vectors_embedding[0], 0)
                 median_embedding_vectors_to_save[label] = median_vector_embedding
@@ -144,26 +149,36 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
             print('print for wandb')
             # variables with mean
             total_outputs_with_representation = total_outputs
-            for label in set(df_data["label"]):
-                total_labels_str.extend([f'mean_{label}',f'median_{label}'])
-                total_texts_list.extend([f'mean_{label}', f'median_{label}'])
+            for label in set(desired_df["label"]):
+                #insert mean and median to the beginning
+                total_labels_str = [f'mean_{label}',f'median_{label}']+total_labels_str
+                total_texts_list = [f'mean_{label}', f'median_{label}'] + total_texts_list
                 total_outputs_with_representation = np.concatenate(
-                    (total_outputs_with_representation, np.array([mean_embedding_vectors_to_save[label]])), axis=0)
-                total_outputs_with_representation = np.concatenate(
-                    (total_outputs_with_representation, np.array([median_embedding_vectors_to_save[label]])), axis=0)
+                    (np.array([mean_embedding_vectors_to_save[label]]),np.array([median_embedding_vectors_to_save[label]]), total_outputs_with_representation), axis=0)
+                # total_labels_str.extend([f'mean_{label}',f'median_{label}'])
+                # total_texts_list.extend([f'mean_{label}', f'median_{label}'])
+                # total_outputs_with_representation = np.concatenate(
+                #     (total_outputs_with_representation, np.array([mean_embedding_vectors_to_save[label]])), axis=0)
+                # total_outputs_with_representation = np.concatenate(
+                #     (total_outputs_with_representation, np.array([median_embedding_vectors_to_save[label]])), axis=0)
             total_outputs = total_outputs_with_representation
             # save_mean_embedding_data(source_df_train, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,
             #                          tgt_file_vec_emb['mean'],tgt_file_vec_emb['median'])
         # labeldf = pd.DataFrame({'Label': [labels_idx_to_str[user_idx] for user_idx in labels.cpu().numpy()]})
 
-        labeldf = pd.DataFrame({'Label': [labels_idx_to_str[user_idx] for user_idx in total_labels]})
+        labeldf = pd.DataFrame({'Label': total_labels_str})
         embdf = pd.DataFrame(total_outputs, columns=[f'emb{i}' for i in range(total_outputs.shape[1])])
         textdf = pd.DataFrame({'text': total_texts_list})
         all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
         all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
         log_dict[title] = all_data
         print("send data to wb")
+        cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+        print(f"cur time is: {cur_time}")
+        t1 = timeit.default_timer()
         wandb.log({title: all_data})  # todo log without commit
+        t2 = timeit.default_timer()
+        print(f'Time to send to wb is: ={(t2-t1)/60} min. = {t2-t1} sec.')
     return log_dict
 
 
@@ -255,7 +270,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
     model.eval()
     print("Finished to train, plotting final embedding of entire training set")
     log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
-                                            config['inner_batch_size'], train_batch_size_for_plot, "final embedding on trainning set_for_best_model",
+                                            config['inner_batch_size'], config['batch_size'], "final embedding on trainning set_for_best_model",
                                             tgt_file_vec_emb, True, True, config['num_workers'])
     print('Finished to train.')
 
@@ -402,7 +417,8 @@ def senity_check(df):
 def main():
     # torch.cuda.set_device(1)
     # torch.cuda.set_device(1)
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    desired_cuda_num = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)
 
@@ -415,7 +431,7 @@ def main():
 
     experiment_name = config['experiment_name']
     if experiment_name=='cur_time':
-        experiment_name =datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+        experiment_name = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print('experiment name is: '+experiment_name)
     experiment_dir = os.path.join(checkpoints_dir, experiment_name)
     if not os.path.exists(experiment_dir):
@@ -432,12 +448,12 @@ def main():
 
     path_for_saving_last_model = os.path.join(experiment_dir, config['model_name'])
     path_for_saving_best_model = os.path.join(experiment_dir, config['best_model_name'])
-    path_for_loading_best_model = os.path.join(checkpoints_dir, config['best_model_name'])
+    path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model', config['best_model_name'])
     tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['mean_vec_emb_file']),
                         'median': os.path.join(experiment_dir, config['median_vec_emb_file'])}
 
     use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
+    device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")
     wandb.init(project='zero-shot-learning',
                config=config,
                resume=config['resume'],
@@ -474,7 +490,7 @@ def main():
             s_df = s_df.rename(columns={'User': 'label', 'Tweet': 'text'})
             df = s_df
 
-        print('Splitting DB to train, val and test data frames.')
+        print(f"Working on {config['data_name']} data. Splitting DB to train, val and test data frames.")
         df_train, df_test = train_test_split(df, test_size = 0.15, random_state = 42)
         # df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),  # todo check sklearn split data func - keeps proportions between classes across all splits
         #                                      [int(.8 * len(df)), int(.9 * len(df))])
@@ -484,22 +500,22 @@ def main():
         df_test.to_csv(os.path.join(config['data_dir'],config['csv_file_name_test']))
 
     if config['resume']: #load_model
+        print(f"Loading model from: {path_for_loading_best_model}")
         model = BertClassifier()
         optimizer = SGD(model.parameters(), lr=config['lr'])
         checkpoint = torch.load(path_for_loading_best_model)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         model.train()
-
     else:
         #  train from scratch
+        print("Train model from scratch")
         model = BertClassifier()
         optimizer = SGD(model.parameters(), lr=config['lr'])
 
     labels_set_dict = {}
     labels_idx_to_str = {}
     if config['data_name'] == 'go_emotions':
-        df_train['label']
         for i, label in enumerate(set(df_train['label'])):
             labels_set_dict[label] = i
             labels_idx_to_str[i] = label
@@ -508,6 +524,20 @@ def main():
             labels_set_dict[label] = i
             labels_idx_to_str[i] = label
 
+    if config['plot_only_clustering']:
+        log_dict_train = plot_graph_on_all_data(df_train,
+                                                labels_set_dict, labels_idx_to_str, device, model,
+                                                config['inner_batch_size'], config['batch_size'],
+                                                "final embedding on trainning set for best model",
+                                                tgt_file_vec_emb, True, True, config['num_workers'],
+                                                config['desired_labels'])
+
+        # log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(100000,len(df_train)), 100),:], labels_set_dict, labels_idx_to_str, device, model,
+        #                                         config['inner_batch_size'], config['batch_size'],
+        #                                         "final embedding on trainning set_for_best_model",
+        #                                         tgt_file_vec_emb, True, True, config['num_workers'],config['desired_labels'])
+        print('finished to plot clustering for the best model.')
+        exit(0)
     # senity_check(df_train)
     train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,path_for_saving_best_model, device, tgt_file_vec_emb,config)
 

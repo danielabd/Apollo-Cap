@@ -95,23 +95,30 @@ def write_results(img_dict):
 
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     args = get_args()
  
-    img_path_list = [33]#range(45)
+    img_path_list = [38]#range(45)
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
-    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
-    text_style_scale_list = [3.0]
+    base_path = '/home/bdaniela/zero-shot-style/data'
+    text_style_scale_list = [0.5,1,2]#[3.0]
 
     text_to_mimic_list = ["I so like this party!!!"]#,"I succeed to do my business."]
-    embedding_path = os.path.join(base_path, 'mean_class_embedding.p')
+    # embedding_path = os.path.join(base_path, 'mean_class_embedding.p')
+    embedding_path = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/11_39_35__07_07_2022', '28_mean_class_embedding.p')
+    # embedding_path = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/11_39_35__07_07_2022', '28_median_class_embedding.p')
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
-    desired_class = 'anger'#anger
+    # desired_class = 'anger'#gratitude
+    desired_class = 'gratitude'
+    # desired_class_list = ['gratitude','anger']
+    desired_class_list = ['anger']
+    text_to_mimic = text_to_mimic_list[0]
 
     for s, sentiment_scale in enumerate(sentiment_scale_list):
         for text_style_scale in text_style_scale_list:
-            for text_to_mimic in text_to_mimic_list:
-                for i in [33]:#img_path_list:
+            for desired_class in desired_class_list:
+                for i in [38]:#img_path_list:
                     args.caption_img_path = os.path.join(base_path,'imgs',str(i)+".jpg")#"imgs/"+str(i)+".jpg"
                     if not os.path.isfile(args.caption_img_path):
                         continue

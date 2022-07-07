@@ -52,7 +52,7 @@ class CLIPTextGenerator:
                  forbidden_factor=20,
                  **kwargs):
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda:1" if torch.cuda.is_available() else "cpu"#todo: change
 
         
         # set Random seed
@@ -107,23 +107,25 @@ class CLIPTextGenerator:
         task='sentiment'
         MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
         
-        self.sentiment_model_name = MODEL 
-        self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name) 
-            
-        self.sentiment_model.to(self.device)
-        self.sentiment_model.eval()
 
-        # SENTIMENT: Freeze sentiment model weights
-        for param in self.sentiment_model.parameters():
-            param.requires_grad = False
+        self.sentiment_model_name = MODEL
+        self.sentiment_model = '' #todo: remove it
+        if False: #todo: remove it
+            self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
+            self.sentiment_model.to(self.device)
+            self.sentiment_model.eval()
+
+            # SENTIMENT: Freeze sentiment model weights
+            for param in self.sentiment_model.parameters():
+                param.requires_grad = False
             
-        # SENTIMENT: tokenizer for sentiment analysis module 
-        self.sentiment_tokenizer_name =  self.sentiment_model_name 
-        self.sentiment_tokenizer = AutoTokenizer.from_pretrained(self.sentiment_tokenizer_name) 
-        
-        # SENTIMENT: fields for type and scale of sentiment
-        self.sentiment_scale = 1 
-        self.sentiment_type = 'none'
+            # SENTIMENT: tokenizer for sentiment analysis module
+            self.sentiment_tokenizer_name =  self.sentiment_model_name
+            self.sentiment_tokenizer = AutoTokenizer.from_pretrained(self.sentiment_tokenizer_name)
+
+            # SENTIMENT: fields for type and scale of sentiment
+            self.sentiment_scale = 1
+            self.sentiment_type = 'none'
 
         # TEXT STYLE: adding the text style model
         self.use_text_style = True
@@ -132,7 +134,8 @@ class CLIPTextGenerator:
         # self.text_to_mimic = "Today we are going to win and sell this product in million dollar."
         #self.text_to_mimic = " BLA BLA BLA BLA"
         self.text_style_scale = 1
-        MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/2_classes_trained_model_emotions.pth'
+        # MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/2_classes_trained_model_emotions.pth'
+        MODEL = '/home/bdaniela/zero-shot-style/checkpoints/best_model/best_28_classes_trained_model_emotions.pth'
 
         self.text_style_model_name = MODEL
         #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
@@ -386,13 +389,13 @@ class CLIPTextGenerator:
 
     def get_text_style_loss(self, probs, context_tokens):
         #get initial text style
-        self.text_to_mimic
-        tokenized_text_to_mimic = self.text_style_tokenizer(self.text_to_mimic, padding='max_length', max_length=512, truncation=True,
-                                          return_tensors="pt")
-
-        masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
-        input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
-        embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embedig vector
+        # self.text_to_mimic
+        # tokenized_text_to_mimic = self.text_style_tokenizer(self.text_to_mimic, padding='max_length', max_length=512, truncation=True,
+        #                                   return_tensors="pt")
+        #
+        # masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
+        # input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
+        # embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embedig vector
 
 
         top_size = 512
@@ -421,7 +424,7 @@ class CLIPTextGenerator:
                 #calculate the distance between the embedding of the text we want to mimic and the all candidated embedding
                 #todo:check how to do broadcast with embedding_of_text_for_mimic
                 logits.to(self.device)
-                self.desired_mean_embedding = torch.tensor(self.desired_mean_embedding).to(self.device)
+                self.desired_mean_embedding = torch.tensor(self.desired_mean_embedding).to(self.device) #todo: check about median instead of mean
                 distances = -abs(logits - self.desired_mean_embedding)
 
                 text_style_grades = nn.functional.softmax(distances, dim=-1)[:, 0]

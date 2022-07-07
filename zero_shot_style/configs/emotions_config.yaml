@@ -19,3 +19,5 @@ experiment_name: cur_time
 csv_file_name_train: 'emotions_train.csv'
 csv_file_name_test: 'emotions_test.csv'
 num_workers: 10
+plot_only_clustering: True
+desired_labels: [gratitude, anger]
