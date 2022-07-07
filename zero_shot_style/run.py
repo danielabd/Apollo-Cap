@@ -116,7 +116,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
  
-    img_path_list = [33]#range(45)
+    img_path_list = [100]#range(45)
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style/data'
@@ -145,8 +145,8 @@ if __name__ == "__main__":
         for s, sentiment_scale in enumerate(sentiment_scale_list):
             for text_style_scale in text_style_scale_list:
                 for label in desired_labels_list:
-                    for i in [38]:#img_path_list:
-                        args.caption_img_path = os.path.join(base_path,'imgs',str(i)+".jpg")#"imgs/"+str(i)+".jpg"
+                    for i in img_path_list:#img_path_list:
+                        args.caption_img_path = os.path.join(base_path,'imgs',str(i)+".jpeg")#"imgs/"+str(i)+".jpg"
                         if not os.path.isfile(args.caption_img_path):
                             continue
 
