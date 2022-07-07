@@ -93,8 +93,8 @@ def write_results(img_dict):
                 writer.writerow(cur_row)
                 writer.writerow([])
 
-def write_results_of_text_style(img_dict, labels):
-    with open('results.csv', 'w') as results_file:
+def write_results_of_text_style(img_dict, embedding_path_idx,labels):
+    with open(f'results_embedding_path_idx_{embedding_path_idx}.csv', 'w') as results_file:
         writer = csv.writer(results_file)
         for img in img_dict.keys():
             writer.writerow([img])
@@ -112,8 +112,8 @@ def write_results_of_text_style(img_dict, labels):
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
     # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
-    cuda_idx = "0"
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    cuda_idx = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
  
     img_path_list = [33]#range(45)
@@ -124,7 +124,15 @@ if __name__ == "__main__":
 
     text_to_mimic_list = ["I so like this party!!!"]#,"I succeed to do my business."]
     # embedding_path = os.path.join(base_path, 'mean_class_embedding.p')
-    embedding_path = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/11_39_35__07_07_2022', '28_mean_class_embedding.p')
+
+    embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_mean_class_embedding.p')#emotions - 2 classes
+    embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_median_class_embedding.p')#emotions - 2 classes
+    # embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model',
+    #                                'twitter_mean_class_embedding.p')  # twitter
+    # embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model',
+    #                                'twitter_median_class_embedding.p')  # twitter
+    embedding_path_list = [embedding_path1, embedding_path2]
+
     # embedding_path = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/11_39_35__07_07_2022', '28_median_class_embedding.p')
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
     # desired_class = 'anger'#gratitude
@@ -132,30 +140,32 @@ if __name__ == "__main__":
     desired_labels_list = ['gratitude', 'anger']
     text_to_mimic = text_to_mimic_list[0]
 
-    for s, sentiment_scale in enumerate(sentiment_scale_list):
-        for text_style_scale in text_style_scale_list:
-            for label in desired_labels_list:
-                for i in [38]:#img_path_list:
-                    args.caption_img_path = os.path.join(base_path,'imgs',str(i)+".jpg")#"imgs/"+str(i)+".jpg"
-                    if not os.path.isfile(args.caption_img_path):
-                        continue
-
-                    for sentiment_type in sentiment_list:
-
-                        if sentiment_type=='none' and s>0:
+    for embedding_path_idx,embedding_path in enumerate(embedding_path_list):
+        img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
+        for s, sentiment_scale in enumerate(sentiment_scale_list):
+            for text_style_scale in text_style_scale_list:
+                for label in desired_labels_list:
+                    for i in [38]:#img_path_list:
+                        args.caption_img_path = os.path.join(base_path,'imgs',str(i)+".jpg")#"imgs/"+str(i)+".jpg"
+                        if not os.path.isfile(args.caption_img_path):
                             continue
 
-                        dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                        print(f'~~~~~~~~\n{dt_string} | Work on img path: {args.caption_img_path} with:\n ***{sentiment_type}***  sentiment, sentiment scale=***{sentiment_scale}***'
-                              f'\n text_style_scale=***{text_style_scale}*** with style of: ***{label}***.\n~~~~~~~~')
+                        for sentiment_type in sentiment_list:
 
-                        if args.run_type == 'caption':
-                            run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, text_to_mimic, embedding_path, label, cuda_idx)
-                            # write_results(img_dict)
-                            write_results_of_text_style(img_dict)
-                        elif args.run_type == 'arithmetics':
-                            args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
-                            run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights)
-                        else:
-                            raise Exception('run_type must be caption or arithmetics!')
+                            if sentiment_type=='none' and s>0:
+                                continue
+
+                            dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                            print(f'~~~~~~~~\n{dt_string} | Work on img path: {args.caption_img_path} with:\n ***{sentiment_type}***  sentiment, sentiment scale=***{sentiment_scale}***'
+                                  f'\n text_style_scale=***{text_style_scale}*** with style of: ***{label}***.\n~~~~~~~~')
+
+                            if args.run_type == 'caption':
+                                run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, text_to_mimic, embedding_path, label, cuda_idx)
+                                # write_results(img_dict)
+                                write_results_of_text_style(img_dict,embedding_path_idx,desired_labels_list)
+                            elif args.run_type == 'arithmetics':
+                                args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
+                                run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights)
+                            else:
+                                raise Exception('run_type must be caption or arithmetics!')
 

@@ -52,7 +52,7 @@ class CLIPTextGenerator:
                  forbidden_factor=20,
                  **kwargs):
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"#todo: change
+        self.device = "cuda:1" if torch.cuda.is_available() else "cpu"#todo: change
 
         
         # set Random seed
