@@ -8,8 +8,8 @@ param_dict:
   nested_k:
     k00: v00
     and_so_on: more_values
-batch_size: 500
-inner_batch_size: 10
+batch_size: 20
+inner_batch_size: 20
 best_model_name: best_twitter_trained_model_emotions.pth
 model_name: twitter_trained_model_emotions.pth
 mean_vec_emb_file: twitter_mean_class_embedding.p

@@ -100,15 +100,20 @@ def collate_fn(data):
 
 def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title,tgt_file_vec_emb, all_data=False,save_vec_emb = False,num_workers=0,desired_labels = 'all'):
     print("Plotting graph for "+title+'...')
-    desired_df = pd.DataFrame()
-    for l in desired_labels:
-        l_df = df_data.iloc[np.where(np.array(df_data["label"]) == l)[0], :]
-        desired_df = pd.concat([desired_df,l_df])
+
+    if desired_labels == 'all':
+        desired_df = df_data
+    else:
+        desired_df = pd.DataFrame()
+        for l in desired_labels:
+            l_df = df_data.iloc[np.where(np.array(df_data["label"]) == l)[0], :]
+            desired_df = pd.concat([desired_df,l_df])
     data_set = Dataset(desired_df, labels_set_dict, inner_batch_size, all_data)
     eval_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size = batch_size, shuffle=True,
                                                    num_workers=num_workers)
-    model.eval()
     model.to(device)
+    model.eval()
+
     log_dict = {}
     with torch.no_grad():
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
@@ -236,7 +241,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
                         }, path_for_saving_last_model)  # finally check on all data training
             log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(5000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
                                                     config['inner_batch_size'],train_batch_size_for_plot, "train_text", tgt_file_vec_emb, True, False, config['num_workers'])
-            log_dict_val = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
+            log_dict_val = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_test)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
                                                   config['inner_batch_size'],val_batch_size_for_plot, "val_text", tgt_file_vec_emb,
                                                   True, False, config['num_workers'])
             # log_dict = {**log_dict, **log_dict_train, **log_dict_val}
@@ -417,7 +422,7 @@ def senity_check(df):
 def main():
     # torch.cuda.set_device(1)
     # torch.cuda.set_device(1)
-    desired_cuda_num = "1"
+    desired_cuda_num = "0" #"1"
     os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)
@@ -495,7 +500,8 @@ def main():
         # df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),  # todo check sklearn split data func - keeps proportions between classes across all splits
         #                                      [int(.8 * len(df)), int(.9 * len(df))])
         # print(len(df_train), len(df_val), len(df_test))
-        print(len(df_train),len(df_test))
+        print(f'len of train = {len(df_train)},len of test = {len(df_test)}')
+        print(f"saving data file splitted to train and test sets to: {os.path.join(config['data_dir'],config['csv_file_name_train'])}\n{os.path.join(config['data_dir'],config['csv_file_name_test'])}")
         df_train.to_csv(os.path.join(config['data_dir'],config['csv_file_name_train']))
         df_test.to_csv(os.path.join(config['data_dir'],config['csv_file_name_test']))
 
@@ -520,7 +526,7 @@ def main():
             labels_set_dict[label] = i
             labels_idx_to_str[i] = label
     elif config['data_name']=='Twitter':
-        for i, label in enumerate(set(s_df['label'])):
+        for i, label in enumerate(set(df_train['label'])):
             labels_set_dict[label] = i
             labels_idx_to_str[i] = label
 
