@@ -98,7 +98,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     args = get_args()
  
-    img_path_list = [38]#range(45)
+    img_path_list = [33]#range(45)
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style/data'
@@ -111,8 +111,7 @@ if __name__ == "__main__":
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
     # desired_class = 'anger'#gratitude
     desired_class = 'gratitude'
-    # desired_class_list = ['gratitude','anger']
-    desired_class_list = ['anger']
+    desired_class_list = ['gratitude','anger']
     text_to_mimic = text_to_mimic_list[0]
 
     for s, sentiment_scale in enumerate(sentiment_scale_list):
