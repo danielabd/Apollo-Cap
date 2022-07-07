@@ -19,7 +19,7 @@ experiment_name: cur_time
 csv_file_name_train: 'twitter_train.csv'
 csv_file_name_test: 'twitter_test.csv'
 num_workers: 10
-plot_only_clustering: False
+plot_only_clustering: True
 desired_labels: all
 data_name: Twitter
-resume: False
+resume: True #load model or not

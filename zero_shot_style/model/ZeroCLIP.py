@@ -52,7 +52,7 @@ class CLIPTextGenerator:
                  forbidden_factor=20,
                  **kwargs):
 
-        self.device = "cuda:1" if torch.cuda.is_available() else "cpu"#todo: change
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"#todo: change
 
         
         # set Random seed
@@ -210,7 +210,7 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale, text_style_scale,text_to_mimic,embedding_path,desired_class):
+    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale, text_style_scale,text_to_mimic,embedding_path,desired_class,cuda_idx):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
@@ -220,6 +220,8 @@ class CLIPTextGenerator:
         self.text_to_mimic = text_to_mimic
         self.embedding_path = embedding_path
         self.desired_class = desired_class
+        self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"
+
         with open(self.embedding_path, 'rb') as fp:
             mean_embedding_vectors_to_save = pickle.load(fp)# mean_embedding_vectors_to_save = {'love': mean_love_embedding, 'anger': mean_anger_embedding}
         self.desired_mean_embedding = mean_embedding_vectors_to_save[self.desired_class]

@@ -177,9 +177,9 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
         all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
         all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
         log_dict[title] = all_data
-        print("send data to wb")
         cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
         print(f"cur time is: {cur_time}")
+        print("send data to wb")
         t1 = timeit.default_timer()
         wandb.log({title: all_data})  # todo log without commit
         t2 = timeit.default_timer()

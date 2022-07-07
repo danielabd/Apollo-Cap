@@ -49,12 +49,12 @@ def get_args():
 
     return args
 
-def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class):
+def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class,cuda_idx):
     text_generator = CLIPTextGenerator(**vars(args))
 
     image_features = text_generator.get_img_feature([img_path], None)
     # SENTIMENT: added scale parameter
-    captions = text_generator.run(image_features, args.cond_text, args.beam_size,sentiment_type,sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class)
+    captions = text_generator.run(image_features, args.cond_text, args.beam_size,sentiment_type,sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class,cuda_idx)
 
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
@@ -95,7 +95,9 @@ def write_results(img_dict):
 
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
+    cuda_idx = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     args = get_args()
  
     img_path_list = [33]#range(45)
@@ -132,7 +134,7 @@ if __name__ == "__main__":
                               f'\n text_style_scale=***{text_style_scale}*** with style of: ***{desired_class}***.\n~~~~~~~~')
 
                         if args.run_type == 'caption':
-                            run(args, args.caption_img_path, sentiment_type, sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class)
+                            run(args, args.caption_img_path, sentiment_type, sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class,cuda_idx)
                             write_results(img_dict)
                         elif args.run_type == 'arithmetics':
                             args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
