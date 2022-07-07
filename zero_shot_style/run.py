@@ -50,7 +50,7 @@ def get_args():
     return args
 
 def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class,cuda_idx):
-    text_generator = CLIPTextGenerator(**vars(args))
+    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,**vars(args))
 
     image_features = text_generator.get_img_feature([img_path], None)
     # SENTIMENT: added scale parameter
@@ -112,7 +112,7 @@ def write_results_of_text_style(img_dict, embedding_path_idx,labels,reults_dir,s
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
     # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
-    cuda_idx = "1"
+    cuda_idx = "1"#"1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
  
@@ -123,25 +123,25 @@ if __name__ == "__main__":
     text_style_scale_list = [0.5,1,2]#[3.0]
 
     text_to_mimic_list = ["I so like this party!!!"]#,"I succeed to do my business."]
+    text_to_mimic = text_to_mimic_list[0]
     # embedding_path = os.path.join(base_path, 'mean_class_embedding.p')
-
-    embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_mean_class_embedding.p')#emotions - 2 classes
-    embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_median_class_embedding.p')#emotions - 2 classes
     reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',
                               'img_2_men')  # emotions - 2 classes
-    style_type = 'emotions'
-    # embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model',
-    #                                'twitter_mean_class_embedding.p')  # twitter
-    # embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model',
-    #                                'twitter_median_class_embedding.p')  # twitter
-    embedding_path_list = [embedding_path1, embedding_path2]
+    img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
 
-    # embedding_path = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/11_39_35__07_07_2022', '28_median_class_embedding.p')
-    img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
-    # desired_class = 'anger'#gratitude
-    label = 'gratitude'
-    desired_labels_list = ['gratitude', 'anger']
-    text_to_mimic = text_to_mimic_list[0]
+    # style_type = 'emotions'#'twitter'
+    style_type = 'twitter'
+    if style_type == 'emotions':
+        embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_mean_class_embedding.p')#emotions - 2 classes
+        embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_median_class_embedding.p')#emotions - 2 classes
+        desired_labels_list = ['gratitude', 'anger']
+    elif style_type == 'twitter':
+        embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model',
+                                       'twitter_mean_class_embedding.p')  # twitter
+        embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model',
+                                       'twitter_median_class_embedding.p')  # twitter
+        desired_labels_list = ['BillGates', 'rihanna', 'justinbieber']
+    embedding_path_list = [embedding_path1, embedding_path2]
     for embedding_path_idx,embedding_path in enumerate(embedding_path_list):
         img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
         for s, sentiment_scale in enumerate(sentiment_scale_list):
@@ -158,8 +158,8 @@ if __name__ == "__main__":
                                 continue
 
                             dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                            print(f'~~~~~~~~\n{dt_string} | Work on img path: {args.caption_img_path} with:\n ***{sentiment_type}***  sentiment, sentiment scale=***{sentiment_scale}***'
-                                  f'\n text_style_scale=***{text_style_scale}*** with style of: ***{label}***.\n~~~~~~~~')
+                            print(f'~~~~~~~~\n{dt_string} | Work on img path: {args.caption_img_path} with:'
+                                  f'\n text_style_scale=***{text_style_scale}*** with style of: ***{label}***, embedding_type={embedding_path_idx}.\n~~~~~~~~')
 
                             if args.run_type == 'caption':
                                 run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, text_to_mimic, embedding_path, label, cuda_idx)

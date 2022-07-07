@@ -50,9 +50,10 @@ class CLIPTextGenerator:
                  end_token='.',
                  end_factor=1.01,
                  forbidden_factor=20,
+                 cuda_idx = None,
                  **kwargs):
 
-        self.device = "cuda:1" if torch.cuda.is_available() else "cpu"#todo: change
+        self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
 
         
         # set Random seed
