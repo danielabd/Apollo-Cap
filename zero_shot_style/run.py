@@ -64,7 +64,7 @@ def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,text_to_
     print('best clip:', args.cond_text + captions[best_clip_idx])
 
     
-    img_dict[img_path][sentiment_scale][sentiment_type] = args.cond_text + captions[best_clip_idx]
+    img_dict[img_path][text_style_scale][label] = args.cond_text + captions[best_clip_idx]
 
 def run_arithmetic(args, imgs_path, img_weights):
     text_generator = CLIPTextGenerator(**vars(args))
@@ -93,6 +93,22 @@ def write_results(img_dict):
                 writer.writerow(cur_row)
                 writer.writerow([])
 
+def write_results_of_text_style(img_dict, labels):
+    with open('results.csv', 'w') as results_file:
+        writer = csv.writer(results_file)
+        for img in img_dict.keys():
+            writer.writerow([img])
+            titles = ['scale/label']
+            titles.extend(labels)
+            writer.writerow(titles)
+            for scale in img_dict[img].keys():
+                cur_row = [scale]
+                for label in img_dict[img][scale].keys():
+                    cur_row.append(img_dict[img][scale][label])
+                writer.writerow(cur_row)
+                writer.writerow([])
+
+
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
     # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
@@ -112,13 +128,13 @@ if __name__ == "__main__":
     # embedding_path = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/11_39_35__07_07_2022', '28_median_class_embedding.p')
     img_dict = defaultdict(lambda: defaultdict(lambda :defaultdict(lambda: "")))
     # desired_class = 'anger'#gratitude
-    desired_class = 'gratitude'
-    desired_class_list = ['gratitude','anger']
+    label = 'gratitude'
+    desired_labels_list = ['gratitude', 'anger']
     text_to_mimic = text_to_mimic_list[0]
 
     for s, sentiment_scale in enumerate(sentiment_scale_list):
         for text_style_scale in text_style_scale_list:
-            for desired_class in desired_class_list:
+            for label in desired_labels_list:
                 for i in [38]:#img_path_list:
                     args.caption_img_path = os.path.join(base_path,'imgs',str(i)+".jpg")#"imgs/"+str(i)+".jpg"
                     if not os.path.isfile(args.caption_img_path):
@@ -131,11 +147,12 @@ if __name__ == "__main__":
 
                         dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                         print(f'~~~~~~~~\n{dt_string} | Work on img path: {args.caption_img_path} with:\n ***{sentiment_type}***  sentiment, sentiment scale=***{sentiment_scale}***'
-                              f'\n text_style_scale=***{text_style_scale}*** with style of: ***{desired_class}***.\n~~~~~~~~')
+                              f'\n text_style_scale=***{text_style_scale}*** with style of: ***{label}***.\n~~~~~~~~')
 
                         if args.run_type == 'caption':
-                            run(args, args.caption_img_path, sentiment_type, sentiment_scale,text_style_scale,text_to_mimic,embedding_path,desired_class,cuda_idx)
-                            write_results(img_dict)
+                            run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, text_to_mimic, embedding_path, label, cuda_idx)
+                            # write_results(img_dict)
+                            write_results_of_text_style(img_dict)
                         elif args.run_type == 'arithmetics':
                             args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
                             run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights)
