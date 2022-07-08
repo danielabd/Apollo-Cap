@@ -112,7 +112,6 @@ def write_results_of_text_style(img_dict, embedding_type,labels,reults_dir,style
                 for label in img_dict[img][scale].keys():
                     cur_row.append(img_dict[img][scale][label])
                 writer.writerow(cur_row)
-                writer.writerow([])
 
 
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
