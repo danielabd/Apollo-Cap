@@ -51,6 +51,7 @@ class CLIPTextGenerator:
                  end_factor=1.01,
                  forbidden_factor=20,
                  cuda_idx = None,
+                 model_path = None,
                  **kwargs):
 
         self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
@@ -136,9 +137,8 @@ class CLIPTextGenerator:
         #self.text_to_mimic = " BLA BLA BLA BLA"
         self.text_style_scale = 1
         # MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/2_classes_trained_model_emotions.pth'
-        MODEL = '/home/bdaniela/zero-shot-style/checkpoints/best_model/best_28_classes_trained_model_emotions.pth'
 
-        self.text_style_model_name = MODEL
+        self.text_style_model_name = model_path
         #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
 
         self.text_style_model = BertClassifier()
