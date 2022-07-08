@@ -139,33 +139,34 @@ if __name__ == "__main__":
     # style_type = 'twitter'
     style_type_list = ['twitter','emotions']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
-    for i in img_path_list:  # img_path_list:
-        args.caption_img_path = os.path.join(base_path,'data', 'imgs', str(i) + ".jpeg")  # "imgs/"+str(i)+".jpg"
-        # reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',str(i))
-        reults_dir = os.path.join(base_path,'results',cur_time)
-        if not os.path.isfile(args.caption_img_path):
-            continue
-        for style_type in style_type_list:
-            if style_type == 'emotions':
-                model_path = os.path.join(base_path,'checkpoints','best_model','best_28_classes_trained_model_emotions.pth')
-                embedding_path1 = os.path.join(base_path,'checkpoints','best_model', 'emotions_mean_class_embedding.p')
-                embedding_path2 = os.path.join(base_path,'checkpoints','best_model', 'emotions_median_class_embedding.p')
-                # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
-                desired_labels_list = 'all'
-            elif style_type == 'twitter':
-                model_path = os.path.join(base_path,'checkpoints','best_model',
-                                          'best_twitter_trained_model_emotions.pth')
-                embedding_path1 = os.path.join(base_path,'checkpoints','best_model',
-                                               'twitter_mean_class_embedding.p')  # twitter
-                embedding_path2 = os.path.join(base_path,'checkpoints','best_model',
-                                               'twitter_median_class_embedding.p')  # twitter
-                desired_labels_list = ['BillGates', 'rihanna', 'justinbieber']
-            embedding_path_list = [embedding_path1, embedding_path2]
-            for embedding_path_idx,embedding_path in enumerate(embedding_path_list):
-                with open(embedding_path, 'rb') as fp:
-                    embedding_vectors_to_load = pickle.load(fp)  # mean_embedding_vectors_to_load = {'love': mean_love_embedding, 'anger': mean_anger_embedding}
-                desired_labels_list = list(embedding_vectors_to_load.keys())
-                img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
+    for style_type in style_type_list:
+        if style_type == 'emotions':
+            model_path = os.path.join(base_path,'checkpoints','best_model','best_28_classes_trained_model_emotions.pth')
+            embedding_path1 = os.path.join(base_path,'checkpoints','best_model', 'emotions_mean_class_embedding.p')
+            embedding_path2 = os.path.join(base_path,'checkpoints','best_model', 'emotions_median_class_embedding.p')
+            # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
+            desired_labels_list = 'all'
+        elif style_type == 'twitter':
+            model_path = os.path.join(base_path,'checkpoints','best_model',
+                                      'best_twitter_trained_model_emotions.pth')
+            embedding_path1 = os.path.join(base_path,'checkpoints','best_model',
+                                           'twitter_mean_class_embedding.p')  # twitter
+            embedding_path2 = os.path.join(base_path,'checkpoints','best_model',
+                                           'twitter_median_class_embedding.p')  # twitter
+            desired_labels_list = ['BillGates', 'rihanna', 'justinbieber']
+        embedding_path_list = [embedding_path1, embedding_path2]
+        for embedding_path_idx,embedding_path in enumerate(embedding_path_list):
+            with open(embedding_path, 'rb') as fp:
+                embedding_vectors_to_load = pickle.load(fp)  # mean_embedding_vectors_to_load = {'love': mean_love_embedding, 'anger': mean_anger_embedding}
+            desired_labels_list = list(embedding_vectors_to_load.keys())
+            img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
+            for i in img_path_list:  # img_path_list:
+                args.caption_img_path = os.path.join(base_path, 'data', 'imgs',
+                                                     str(i) + ".jpeg")  # "imgs/"+str(i)+".jpg"
+                # reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',str(i))
+                reults_dir = os.path.join(base_path, 'results', cur_time)
+                if not os.path.isfile(args.caption_img_path):
+                    continue
                 for label in desired_labels_list:
                     desired_style_embedding_vector = embedding_vectors_to_load[label]
                     for s, sentiment_scale in enumerate(sentiment_scale_list):
