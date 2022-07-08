@@ -103,7 +103,8 @@ def write_results_of_text_style(img_dict, embedding_type,labels,reults_dir,style
     with open(os.path.join(reults_dir,f'results_{style_type}_embedding_type_{embedding_type}.csv'), 'w') as results_file:
         writer = csv.writer(results_file)
         for img in img_dict.keys():
-            writer.writerow([img])
+            img_num_str = img.split('/')[-1].split('.j')[0]
+            writer.writerow([img_num_str])
             titles = ['scale/label']
             titles.extend(labels)
             writer.writerow(titles)
