@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',
     #                           'img_2_men')  # emotions - 2 classes
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
-    embedding_path_idx2str = {1:'mean',2:'median'}
+    embedding_path_idx2str = {0:'mean',1:'median'}
     style_type = 'emotions'
     # style_type = 'twitter'
     style_type_list = ['twitter','emotions']
