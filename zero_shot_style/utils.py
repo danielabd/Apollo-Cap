@@ -38,8 +38,8 @@ parser.add_argument('--data_name', type=str, default='go_emotions', help='data t
 parser.add_argument('--desired_labels', type=str, nargs='+', default='all', help='list labels for triplet training')
 parser.add_argument('--override', type=str2bool, default=False, help='override results without warning')
 # parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','default_config.yaml'), help='full path to config file')
-# parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','emotions_config.yaml'), help='full path to config file')
-parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','twitter_config.yaml'), help='full path to config file')
+parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','emotions_config.yaml'), help='full path to config file')
+# parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','twitter_config.yaml'), help='full path to config file')
 parser.add_argument('--plot_only_clustering', type=str2bool, default=False, help='plot only clustering of the best model')
 # parser.add_argument('--rundry', type=str2bool, default=False)
 

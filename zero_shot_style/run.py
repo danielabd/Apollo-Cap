@@ -6,6 +6,7 @@ from datetime import datetime
 import os.path
 import csv
 from collections import defaultdict
+import numpy as np
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -91,7 +92,6 @@ def write_results(img_dict):
                 for sentiment in img_dict[img][scale].keys():
                     cur_row.append(img_dict[img][scale][sentiment])
                 writer.writerow(cur_row)
-                writer.writerow([])
 
 def write_results_of_text_style(img_dict, embedding_path_idx,labels,reults_dir,style_type):
     with open(os.path.join(reults_dir,f'results_{style_type}_embedding_path_idx_{embedding_path_idx}.csv'), 'w') as results_file:
@@ -116,11 +116,11 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
  
-    img_path_list = [100]#range(45)
+    img_path_list = list(np.arange(100,105))
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style/data'
-    text_style_scale_list = [0.5,1,2]#[3.0]
+    text_style_scale_list = [0.5,1,2,4,8]#[3.0]
 
     text_to_mimic_list = ["I so like this party!!!"]#,"I succeed to do my business."]
     text_to_mimic = text_to_mimic_list[0]
@@ -129,12 +129,13 @@ if __name__ == "__main__":
                               'img_2_men')  # emotions - 2 classes
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
 
-    # style_type = 'emotions'#'twitter'
-    style_type = 'twitter'
+    style_type = 'emotions'
+    # style_type = 'twitter'
     if style_type == 'emotions':
-        embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_mean_class_embedding.p')#emotions - 2 classes
-        embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', '2_classes_28_median_class_embedding.p')#emotions - 2 classes
-        desired_labels_list = ['gratitude', 'anger']
+        embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', 'emotions_mean_class_embedding.p')#emotions - 2 classes
+        embedding_path2 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model', 'emotions_median_class_embedding.p')#emotions - 2 classes
+        # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
+        desired_labels_list = 'all'
     elif style_type == 'twitter':
         embedding_path1 = os.path.join('/home/bdaniela/zero-shot-style/checkpoints/best_model',
                                        'twitter_mean_class_embedding.p')  # twitter
