@@ -184,7 +184,7 @@ if __name__ == "__main__":
                                 print(title2print)
 
                                 if args.run_type == 'caption':
-                                    # run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, text_to_mimic, desired_style_embedding_vector, cuda_idx,title2print,model_path)
+                                    run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, text_to_mimic, desired_style_embedding_vector, cuda_idx,title2print,model_path)
                                     # write_results(img_dict)
                                     write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
                                 elif args.run_type == 'arithmetics':
