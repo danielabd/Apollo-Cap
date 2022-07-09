@@ -137,7 +137,8 @@ if __name__ == "__main__":
     embedding_path_idx2str = {0:'mean',1:'median'}
     style_type = 'emotions'
     # style_type = 'twitter'
-    style_type_list = ['twitter','emotions']
+    #style_type_list = ['twitter','emotions']#todo remove comment
+    style_type_list = ['emotions']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     for style_type in style_type_list:
         if style_type == 'emotions':
