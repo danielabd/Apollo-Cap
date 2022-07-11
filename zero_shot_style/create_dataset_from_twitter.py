@@ -1,18 +1,11 @@
 import os
-
-from tweepy import OAuthHandler
-from tweepy import API
-from tweepy import Cursor
-from datetime import datetime, date, time, timedelta
-from collections import Counter
-import sys
 import pandas as pd
 import csv
 import tweepy
 from bs4 import BeautifulSoup
 import emoji
 import re
-import itertools
+
 #import wandb
 #wandb.init(project="my-test-project", entity="bdaniela")
 
@@ -101,6 +94,7 @@ def create_df_for_user(api, user, num_of_tweets, min_tweet_len, max_tweet_len):
         total_tweets.extend(additional_tweets[1:]) #the first one is duplicated from the last iteration
         early_tweets_id = additional_tweets[-1].id_str
     data_list = []
+    uncleaned_data_list = []
     sum_of_tweets = 0
     for tweet in total_tweets:
         cleaned_text = clean_text(tweet.full_text)
@@ -108,24 +102,30 @@ def create_df_for_user(api, user, num_of_tweets, min_tweet_len, max_tweet_len):
             continue
         # chack validity of tweet len
         if len(cleaned_text.split()) <= max_tweet_len and len(cleaned_text.split()) >= min_tweet_len:
+            uncleaned_data_list.append(tweet.full_text)
             data_list.append(cleaned_text)
             sum_of_tweets += 1
             if sum_of_tweets >= num_of_tweets:
                 break
     print('User ', tweet.user.screen_name, 'has ', len(data_list), 'tweets.')
-    return data_list
+    return data_list, uncleaned_data_list
 
 def create_twitter_db(max_users,auth,source_db,num_of_tweets,target_dir, min_tweet_len, max_tweet_len, desired_users):
     print('Starting to create twitter DB...')
     columns = ['User', 'Tweet']
     api = tweepy.API(auth)
     data = {columns[0]:[],columns[1]:[]}
+    uncleaned_data = {columns[0]:[],columns[1]:[]}
     if len(desired_users)>0:
         for user in desired_users:
-            tweets = create_df_for_user(api, user, num_of_tweets, min_tweet_len, max_tweet_len)
-            for t in tweets:
+            cleaned_tweets, uncleaned_tweets = create_df_for_user(api, user, num_of_tweets, min_tweet_len, max_tweet_len)
+            for t in cleaned_tweets:
                 data[columns[0]].append(user)
                 data[columns[1]].append(t)
+            for t in uncleaned_tweets:
+                uncleaned_data[columns[0]].append(user)
+                uncleaned_data[columns[1]].append(t)
+
     else:
         with open(source_db) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
@@ -135,19 +135,30 @@ def create_twitter_db(max_users,auth,source_db,num_of_tweets,target_dir, min_twe
                 else:
                     # print(f'twitter_username: {row[0]}, twitter_userid: {row[1]}, domain: {row[2]}, name: {row[3]}, followers_count: {row[4]}, tweet_count: {row[5]}.')
                     user = row[0]
-                    tweets =  create_df_for_user(api, user, num_of_tweets, min_tweet_len,
+                   #cleaned
+                    cleaned_tweets, uncleaned_tweets = create_df_for_user(api, user, num_of_tweets, min_tweet_len,
                                                                     max_tweet_len)
-                    for t in tweets:
+                    for t in cleaned_tweets:
                         data[columns[0]].append(user)
                         data[columns[1]].append(t)
+                    for t in uncleaned_tweets:
+                        uncleaned_data[columns[0]].append(user)
+                        uncleaned_data[columns[1]].append(t)
+
             print(f'Processed {len(data)} users\'s tweets.')
 
     df = pd.DataFrame(data, columns=columns)
+    uncleaned_df = pd.DataFrame(uncleaned_data, columns=columns)
     df.head()
 
-    target_file = os.path.join(target_dir,'preprocessed_data.csv')
-    df.to_csv(target_file, index=False)
-    print('created new db in: ', target_file)
+    cleaned_target_file = os.path.join(target_dir,'cleaned_twitter_data.csv')
+    df.to_csv(cleaned_target_file, index=False)
+    print('created new cleaned db in: ', cleaned_target_file)
+
+    uncleaned_target_file = os.path.join(target_dir,'uncleaned_twitter_data.csv')
+    uncleaned_df.to_csv(uncleaned_target_file, index=False)
+    print('created new uncleaned db in: ', uncleaned_target_file)
+
 
 
 
@@ -176,12 +187,12 @@ def main():
     #api = tweepy.API(auth, wait_on_rate_limit=True)
 
     # Db of famous names
-    datapath = 'DB.csv'
-    base_path = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data'
-    df = pd.read_csv(os.path.join(base_path,datapath))
-    df.head()
+    base_path = '/home/bdaniela/zero-shot-style/data'
+    # datapath = 'DB.csv'
+    # df = pd.read_csv(os.path.join(base_path,datapath))
+    # df.head()
 
-    # create database of twitter
+    # create database from twitter
     source_db = os.path.join(base_path,'DB.csv')
     max_users = 100  # maximum users to classify
     num_of_tweets = 949  # take number of last tweets

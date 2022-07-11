@@ -18,6 +18,8 @@ data_file: ['goemotions_1.csv', 'goemotions_2.csv', 'goemotions_3.csv'] #https:/
 experiment_name: cur_time
 csv_file_name_train: 'emotions_train.csv'
 csv_file_name_test: 'emotions_test.csv'
+visual_csv_file_name_train: 'visual_emotions_train.csv'
+visual_csv_file_name_test: 'visual_emotions_test.csv'
 num_workers: 10
 plot_only_clustering: True
 desired_labels: 'all'

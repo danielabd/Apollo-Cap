@@ -1,5 +1,4 @@
 import pandas as pd
-import psutil.tests
 import torch
 import numpy as np
 from transformers import BertTokenizer
@@ -9,13 +8,11 @@ from torch.optim import SGD
 from tqdm import tqdm
 import operator
 from zero_shot_style.model import mining
-# from zero_shot_style.model.mining import *
-from argparse import ArgumentParser
 import wandb
 import pickle
 from datetime import datetime
 from zero_shot_style.utils import parser, get_hparams
-from zero_shot_style.create_dataset import clean_text
+from zero_shot_style.create_dataset_from_twitter import clean_text
 
 import os
 import random
@@ -119,8 +116,6 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
                 tqdm(eval_dataloader, desc="Evaluation", leave=False)):
             tokenized_texts_list = tokenized_texts_list.to(device)
-            # labels = torch.from_numpy(np.asarray(labels)).to(device)
-            # labels = torch.from_numpy(np.asarray(labels))
             labels = np.asarray(labels)
             outputs = model(tokenized_texts_list['input_ids'], tokenized_texts_list['attention_mask'])
             outputs = outputs.detach().cpu().numpy()
@@ -160,16 +155,7 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
                 total_texts_list = [f'mean_{label}', f'median_{label}'] + total_texts_list
                 total_outputs_with_representation = np.concatenate(
                     (np.array([mean_embedding_vectors_to_save[label]]),np.array([median_embedding_vectors_to_save[label]]), total_outputs_with_representation), axis=0)
-                # total_labels_str.extend([f'mean_{label}',f'median_{label}'])
-                # total_texts_list.extend([f'mean_{label}', f'median_{label}'])
-                # total_outputs_with_representation = np.concatenate(
-                #     (total_outputs_with_representation, np.array([mean_embedding_vectors_to_save[label]])), axis=0)
-                # total_outputs_with_representation = np.concatenate(
-                #     (total_outputs_with_representation, np.array([median_embedding_vectors_to_save[label]])), axis=0)
             total_outputs = total_outputs_with_representation
-            # save_mean_embedding_data(source_df_train, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device,
-            #                          tgt_file_vec_emb['mean'],tgt_file_vec_emb['median'])
-        # labeldf = pd.DataFrame({'Label': [labels_idx_to_str[user_idx] for user_idx in labels.cpu().numpy()]})
 
         labeldf = pd.DataFrame({'Label': total_labels_str})
         embdf = pd.DataFrame(total_outputs, columns=[f'emb{i}' for i in range(total_outputs.shape[1])])
@@ -280,33 +266,6 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
     print('Finished to train.')
 
 
-# def evaluate(model,df_test, labels_set_dict, labels_idx_to_str, batch_size,inner_batch_size):
-#     #evaluation on test set
-#     test = Dataset(df_test, labels_set_dict, inner_batch_size)
-#     test_dataloader = torch.utils.data.DataLoader(test, batch_size=batch_size)
-#     use_cuda = torch.cuda.is_available()
-#     device = torch.device("cuda" if use_cuda else "cpu")
-#
-#     test_results = []
-#     labels_results = []
-#     model.eval()
-#     with torch.no_grad():
-#         for tokenized_tweets_list, labels, text_tweet_list in tqdm(test_dataloader, desc="Testing", leave=False):
-#             labels = torch.from_numpy(np.asarray(labels)).to(device)
-#             masks = tokenized_tweets_list['attention_mask'].to(device)
-#             input_ids = tokenized_tweets_list['input_ids'].squeeze(1).to(device)
-#             outputs = model(input_ids, masks)
-#             test_results.append(outputs.cpu().numpy())
-#             # train_results.append(model(text.to(device)).cpu().numpy())
-#             labels_results.append(labels)
-#
-#     test_results = np.concatenate(test_results)
-#     labels_results = np.concatenate(labels_results)
-#
-#     test_batch_size_for_plot = len(set(df_test['User']))
-#     plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, test_batch_size_for_plot,"test_text")
-
-
 def create_correct_df(df,num_of_labels,desired_labels):
     # labels_set_dict = {dmiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral}
     print("Creating corrected df...")
@@ -354,74 +313,7 @@ def senity_check(df):
     for t in anger_text:
         print(t)
 
-
-# def save_mean_embedding_data(df, labels_set_dict, inner_batch_size, labels_idx_to_str, model, device, target_file_mean_embedding, target_file_median_embedding):
-#     print("Calculate mean and median embedding vectors...")
-#     data_set = Dataset(df, labels_set_dict, inner_batch_size, all_data=True)
-#     data_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size=int(inner_batch_size/3), shuffle=True,
-#                                                   num_workers=0)
-#     it = iter(data_dataloader)
-#     total_labels_list = []
-#     total_outputs = np.array([])
-#     total_text_list = []
-#     first_iter = True
-#     while(1):
-#         # if len(total_text_list) == 10:#todo:remove . This is only for debug
-#         #     break
-#         try:
-#             x_train, y_train, text_list = next(it)
-#         except:
-#             break
-#         total_text_list.extend(text_list)
-#         # if np.mod(len(total_text_list), 10) == 0:
-#         #     print(f'calculate example {len(total_text_list)}/{df.shape[0]}')
-#         x_train = x_train.to(device)
-#         model.to(device)
-#         y_train = torch.from_numpy(np.asarray(y_train)).to(device)
-#         outputs = model(x_train['input_ids'], x_train['attention_mask'])
-#         outputs = outputs.detach().cpu().numpy()
-#         if first_iter:
-#             total_outputs = outputs
-#             first_iter = False
-#         else:
-#             total_outputs = np.concatenate((total_outputs, outputs), axis=0)
-#         total_labels_list.extend([labels_idx_to_str[user_idx] for user_idx in list(y_train.cpu().numpy())])
-#
-#     mean_embedding_vectors_to_save = {}
-#     median_embedding_vectors_to_save = {}
-#     for label in set(df["label"]):
-#         vectors_embedding = total_outputs[np.where(np.array(total_labels_list) == label), :]
-#         median_vector_embedding = np.median(vectors_embedding[0], 0)
-#         median_embedding_vectors_to_save[label] = median_vector_embedding
-#         mean_vector_embedding = np.mean(vectors_embedding[0], 0)
-#         mean_embedding_vectors_to_save[label] = mean_vector_embedding
-#     print(f'Saving mean of embedding vectors to {target_file_mean_embedding}...')
-#     with open(target_file_mean_embedding, 'wb') as fp:
-#         pickle.dump(mean_embedding_vectors_to_save, fp)
-#     print(f'Saving median of embedding vectors to {target_file_median_embedding}...')
-#     with open(target_file_median_embedding, 'wb') as fp:
-#         pickle.dump(median_embedding_vectors_to_save, fp)
-#     print(f'Finished to save.')
-#
-#     print('print for wandb')
-#     # variables with mean
-#     total_outputs_with_representation = total_outputs
-#     for label in set(df["label"]):
-#         total_labels_list.extend([f'mean_{label}',f'median_{label}'])
-#         total_text_list.extend([f'mean_{label}',f'median_{label}'])
-#         total_outputs_with_representation = np.concatenate((total_outputs_with_representation, np.array([mean_embedding_vectors_to_save[label]])), axis=0)
-#         total_outputs_with_representation = np.concatenate((total_outputs_with_representation, np.array([median_embedding_vectors_to_save[label]])), axis=0)
-#     labeldf = pd.DataFrame({'Label': total_labels_list})
-#     embdf = pd.DataFrame(total_outputs_with_representation, columns=[f'emb{i}' for i in range(total_outputs_with_representation.shape[1])])
-#     textdf = pd.DataFrame({'text': total_text_list})
-#     all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
-#     all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
-#     wandb.log({"source df train": all_data})
-
-
 def main():
-    # torch.cuda.set_device(1)
-    # torch.cuda.set_device(1)
     desired_cuda_num = "0" #"1"
     os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
     np.random.seed(112)  # todo there may be many more seeds to fix

@@ -18,6 +18,8 @@ data_file: preprocessed_data.csv
 experiment_name: cur_time
 csv_file_name_train: 'twitter_train.csv'
 csv_file_name_test: 'twitter_test.csv'
+visual_csv_file_name_train: 'visual_twitter_train.csv'
+visual_csv_file_name_test: 'visual_twitter_test.csv'
 num_workers: 10
 plot_only_clustering: True
 desired_labels: all
