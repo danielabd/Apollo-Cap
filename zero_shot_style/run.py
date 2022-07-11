@@ -100,7 +100,9 @@ def write_results(img_dict):
 def write_results_of_text_style(img_dict, embedding_type,labels,reults_dir,style_type):
     if not os.path.isdir(reults_dir):
         os.makedirs(reults_dir)
-    with open(os.path.join(reults_dir,f'results_{style_type}_embedding_type_{embedding_type}.csv'), 'w') as results_file:
+    tgt_path = os.path.join(reults_dir,f'results_{style_type}_embedding_type_{embedding_type}.csv')
+    print(f'Writing results into: {tgt_path}')
+    with open(tgt_path, 'w') as results_file:
         writer = csv.writer(results_file)
         for img in img_dict.keys():
             img_num_str = img.split('/')[-1].split('.j')[0]
@@ -118,11 +120,12 @@ def write_results_of_text_style(img_dict, embedding_type,labels,reults_dir,style
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
     # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
+    # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
     cuda_idx = "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
  
-    img_path_list = [100]#[105,104,103,102,101,100] # list(np.arange(100,105))
+    img_path_list = [105,104,103,102,101,100] # list(np.arange(100,105))
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style'
@@ -138,9 +141,10 @@ if __name__ == "__main__":
     embedding_path_idx2str = {0:'mean'}
     # style_type = 'emotions'
     # style_type = 'twitter'
-    style_type_list = ['twitter','emotions']#todo remove comment
-    # style_type_list = ['emotions']
+    # style_type_list = ['twitter','emotions']#todo remove comment
+    style_type_list = ['emotions']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    print(f'Cur time is: {cur_time}')
     for style_type in style_type_list:
         if style_type == 'emotions':
             model_path = os.path.join(base_path,'checkpoints','best_model','best_28_classes_trained_model_emotions.pth')
