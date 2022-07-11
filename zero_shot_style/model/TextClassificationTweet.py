@@ -313,7 +313,7 @@ def senity_check(df):
         print(t)
 
 def main():
-    desired_cuda_num = "3" #"1"
+    desired_cuda_num = "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)
@@ -349,7 +349,8 @@ def main():
                         'median': os.path.join(experiment_dir, config['median_vec_emb_file'])}
 
     use_cuda = torch.cuda.is_available()
-    device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")
+    # device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")#todo: remove
+    device = "cpu"
     wandb.init(project='zero-shot-learning',
                config=config,
                resume=config['resume'],
