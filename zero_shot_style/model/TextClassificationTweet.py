@@ -96,8 +96,7 @@ def collate_fn(data):
     return tokenized_texts_list, labels_list, texts_list
 
 def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size, title,tgt_file_vec_emb, all_data=False,save_vec_emb = False,num_workers=0,desired_labels = 'all'):
-    print("Plotting graph for "+title+'...')
-
+    print(f"Plotting graph for {title} for {desired_labels} labels...")
     if desired_labels == 'all':
         desired_df = df_data
     else:
@@ -314,7 +313,7 @@ def senity_check(df):
         print(t)
 
 def main():
-    desired_cuda_num = "0" #"1"
+    desired_cuda_num = "3" #"1"
     os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)

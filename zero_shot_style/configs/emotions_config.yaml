@@ -22,5 +22,5 @@ visual_csv_file_name_train: 'visual_emotions_train.csv'
 visual_csv_file_name_test: 'visual_emotions_test.csv'
 num_workers: 10
 plot_only_clustering: True
-desired_labels: 'all'
+desired_labels: [embarrassment, joy, anger, love, annoyance, nervousness] #'all'
 resume: True #load model or not
