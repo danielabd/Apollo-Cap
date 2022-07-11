@@ -17,8 +17,8 @@ def get_args():
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
-    parser.add_argument("--cond_text", type=str, default="Image of a")
-    #parser.add_argument("--cond_text", type=str, default="")
+    # parser.add_argument("--cond_text", type=str, default="Image of a")
+    parser.add_argument("--cond_text", type=str, default="")
     parser.add_argument("--reset_context_delta", action="store_true",
                         help="Should we reset the context at each token gen")
     parser.add_argument("--num_iterations", type=int, default=5)
@@ -118,7 +118,7 @@ def write_results_of_text_style(img_dict, embedding_type,labels,reults_dir,style
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
     # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
-    cuda_idx = "1"#"1"
+    cuda_idx = "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
  
@@ -134,11 +134,12 @@ if __name__ == "__main__":
     # reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',
     #                           'img_2_men')  # emotions - 2 classes
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
-    embedding_path_idx2str = {0:'mean',1:'median'}
-    style_type = 'emotions'
+    # embedding_path_idx2str = {0:'mean',1:'median'}
+    embedding_path_idx2str = {0:'mean'}
+    # style_type = 'emotions'
     # style_type = 'twitter'
-    #style_type_list = ['twitter','emotions']#todo remove comment
-    style_type_list = ['emotions']
+    style_type_list = ['twitter','emotions']#todo remove comment
+    # style_type_list = ['emotions']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     for style_type in style_type_list:
         if style_type == 'emotions':
