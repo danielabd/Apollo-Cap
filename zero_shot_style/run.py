@@ -126,9 +126,9 @@ if __name__ == "__main__":
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style'
-    text_style_scale_list = [0.5,1,2,4,8]#[3.0]
+    text_style_scale_list = [1,2,4,8]#[0.5,1,2,4,8]#[3.0]
 
-    text_to_mimic_list = ["I love you honey!!!"," I hate you and I want to kill you", "Let's set a meeting at work","Please say it formal","Please describe it angrily"]
+    text_to_mimic_list = ["I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work","Please say it formal","Please describe it angrily"]
     mimic_text_style = True
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
     # embedding_path_idx2str = {0:'mean',1:'median'}
@@ -174,7 +174,7 @@ if __name__ == "__main__":
                         desired_style_embedding_vector = embedding_vectors_to_load[label]
                         for s, sentiment_scale in enumerate(sentiment_scale_list):
                             for i, text_style_scale in enumerate(text_style_scale_list):
-                                label = str(i)
+                                label = text_to_mimic
                                 for sentiment_type in sentiment_list:
 
                                     if sentiment_type=='none' and s>0:
@@ -192,7 +192,7 @@ if __name__ == "__main__":
                                         run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, text_to_mimic, desired_style_embedding_vector, cuda_idx,title2print,model_path)
                                         # write_results(img_dict)
                                         if text_to_mimic:
-                                            desired_labels_list = list(np.arange(0,len(text_to_mimic_list)))
+                                            desired_labels_list = text_to_mimic_list
                                         write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
                                     elif args.run_type == 'arithmetics':
                                         args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
