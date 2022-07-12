@@ -140,7 +140,7 @@ if __name__ == "__main__":
     # style_type = 'emotions'
     # style_type = 'twitter'
     style_type_list = ['twitter','emotions']#todo remove comment
-    # style_type_list = ['twitter']
+    style_type_list = ['emotions']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     for style_type in style_type_list:
@@ -150,7 +150,7 @@ if __name__ == "__main__":
             embedding_path2 = os.path.join(base_path,'checkpoints','best_model', 'emotions_median_class_embedding.p')
             # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
             desired_labels_list = 'all'
-            text_to_mimic_list = text_to_mimic_list.reverse()
+            text_to_mimic_list.reverse()
         elif style_type == 'twitter':
             model_path = os.path.join(base_path,'checkpoints','best_model',
                                       'best_twitter_trained_model_emotions.pth')
@@ -195,6 +195,7 @@ if __name__ == "__main__":
                                 print(title2print)
 
                                 if args.run_type == 'caption':
+                                    pass
                                     run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, mimic_text_style, desired_style_embedding_vector, cuda_idx,title2print,model_path)
                                     # write_results(img_dict)
                                     write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
