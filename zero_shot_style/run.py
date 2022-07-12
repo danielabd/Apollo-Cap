@@ -120,7 +120,6 @@ def write_results_of_text_style(img_dict, embedding_type,labels,reults_dir,style
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
     # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
-    # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
     cuda_idx = "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
@@ -131,11 +130,7 @@ if __name__ == "__main__":
     base_path = '/home/bdaniela/zero-shot-style'
     text_style_scale_list = [0.5,1,2,4,8]#[3.0]
 
-    text_to_mimic_list = ["I so like this party!!!"]#,"I succeed to do my business."]
-    text_to_mimic = text_to_mimic_list[0]
-    # embedding_path = os.path.join(base_path, 'mean_class_embedding.p')
-    # reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',
-    #                           'img_2_men')  # emotions - 2 classes
+    text_to_mimic_list = ["I love you honey!!!"," I hate you and I want to kill you", "Let's set a meeting at work","Please say it formal","Please describe it angrily"]
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
     # embedding_path_idx2str = {0:'mean',1:'median'}
     embedding_path_idx2str = {0:'mean'}

@@ -134,26 +134,32 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
             for label in set(desired_df["label"]):
                 vectors_embedding = total_outputs[np.where(np.array(total_labels_str) == label), :]
                 median_vector_embedding = np.median(vectors_embedding[0], 0)
-                median_embedding_vectors_to_save[label] = median_vector_embedding
+                #median_embedding_vectors_to_save[label] = median_vector_embedding
                 mean_vector_embedding = np.mean(vectors_embedding[0], 0)
                 mean_embedding_vectors_to_save[label] = mean_vector_embedding
             print('Saving mean of embedding vectors to: '+tgt_file_vec_emb['mean']+'...')
             with open(tgt_file_vec_emb['mean'], 'wb') as fp:
                 pickle.dump(mean_embedding_vectors_to_save, fp)
-            print(f'Saving median of embedding vectors to: '+tgt_file_vec_emb['median']+'...')
-            with open(tgt_file_vec_emb['median'], 'wb') as fp:
-                pickle.dump(median_embedding_vectors_to_save, fp)
+            #print(f'Saving median of embedding vectors to: '+tgt_file_vec_emb['median']+'...')
+            #with open(tgt_file_vec_emb['median'], 'wb') as fp:
+            #    pickle.dump(median_embedding_vectors_to_save, fp)
             print(f'Finished to save.')
 
             print('print for wandb')
             # variables with mean
             total_outputs_with_representation = total_outputs
             for label in set(desired_df["label"]):
-                #insert mean and median to the beginning
-                total_labels_str = [f'mean_{label}',f'median_{label}']+total_labels_str
-                total_texts_list = [f'mean_{label}', f'median_{label}'] + total_texts_list
+                # #insert mean and median to the beginning
+                # total_labels_str = [f'mean_{label}',f'median_{label}']+total_labels_str
+                # total_texts_list = [f'mean_{label}', f'median_{label}'] + total_texts_list
+                # total_outputs_with_representation = np.concatenate(
+                #     (np.array([mean_embedding_vectors_to_save[label]]),
+                #      np.array([median_embedding_vectors_to_save[label]]), total_outputs_with_representation), axis=0)
+                # insert mean and median to the beginning
+                total_labels_str = [f'mean_{label}'] + total_labels_str
+                total_texts_list = [f'mean_{label}'] + total_texts_list
                 total_outputs_with_representation = np.concatenate(
-                    (np.array([mean_embedding_vectors_to_save[label]]),np.array([median_embedding_vectors_to_save[label]]), total_outputs_with_representation), axis=0)
+                    (np.array([mean_embedding_vectors_to_save[label]]), total_outputs_with_representation), axis=0)
             total_outputs = total_outputs_with_representation
 
         labeldf = pd.DataFrame({'Label': total_labels_str})
@@ -313,7 +319,7 @@ def senity_check(df):
         print(t)
 
 def main():
-    desired_cuda_num = "1"
+    desired_cuda_num = "3"#"1"
     os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)
@@ -350,7 +356,7 @@ def main():
 
     use_cuda = torch.cuda.is_available()
     # device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")#todo: remove
-    device = "cpu"
+    device = "cpu"#todo: remove
     wandb.init(project='zero-shot-learning',
                config=config,
                resume=config['resume'],
@@ -361,6 +367,7 @@ def main():
     #load data
     if os.path.isfile(os.path.join(config['data_dir'],config['csv_file_name_train'])):
         df_train = pd.read_csv(os.path.join(config['data_dir'],config['csv_file_name_train']))
+        print(df_train.groupby('label').size())
         df_test = pd.read_csv(os.path.join(config['data_dir'],config['csv_file_name_test']))
     else: #create df_train, df_test
         # desired_labels = ['anger','caring','optimism','love']
