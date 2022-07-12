@@ -132,15 +132,15 @@ if __name__ == "__main__":
     base_path = '/home/bdaniela/zero-shot-style'
     text_style_scale_list = [1,2,4,8]#[0.5,1,2,4,8]#[3.0]
 
-    text_to_mimic_list = ["I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work","Please say it formal","Please describe it angrily"]
+    text_to_mimic_list = ["I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work","Please say it formal","Please describe it angrily", "I love you and I hate you"]
     mimic_text_style = True
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
     # embedding_path_idx2str = {0:'mean',1:'median'}
     embedding_path_idx2str = {0:'mean'}
     # style_type = 'emotions'
     # style_type = 'twitter'
-    # style_type_list = ['twitter','emotions']#todo remove comment
-    style_type_list = ['emotions','twitter']
+    style_type_list = ['twitter','emotions']#todo remove comment
+    # style_type_list = ['twitter']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     for style_type in style_type_list:
@@ -150,6 +150,7 @@ if __name__ == "__main__":
             embedding_path2 = os.path.join(base_path,'checkpoints','best_model', 'emotions_median_class_embedding.p')
             # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
             desired_labels_list = 'all'
+            text_to_mimic_list = text_to_mimic_list.reverse()
         elif style_type == 'twitter':
             model_path = os.path.join(base_path,'checkpoints','best_model',
                                       'best_twitter_trained_model_emotions.pth')
@@ -159,6 +160,7 @@ if __name__ == "__main__":
                                            'twitter_median_class_embedding.p')  # twitter
             desired_labels_list = ['BillGates', 'rihanna', 'justinbieber']
         embedding_path_list = [embedding_path1, embedding_path2]
+        embedding_path_list = [embedding_path1]
         for embedding_path_idx,embedding_path in enumerate(embedding_path_list):
             with open(embedding_path, 'rb') as fp:
                 embedding_vectors_to_load = pickle.load(fp)  # mean_embedding_vectors_to_load = {'love': mean_love_embedding, 'anger': mean_anger_embedding}
@@ -193,7 +195,7 @@ if __name__ == "__main__":
                                 print(title2print)
 
                                 if args.run_type == 'caption':
-                                    run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, mimic_text_style, desired_style_embedding_vector, cuda_idx,title2print,model_path)
+                                    #run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, mimic_text_style, desired_style_embedding_vector, cuda_idx,title2print,model_path)
                                     # write_results(img_dict)
                                     write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
                                 elif args.run_type == 'arithmetics':
