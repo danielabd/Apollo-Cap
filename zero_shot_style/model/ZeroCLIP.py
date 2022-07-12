@@ -132,9 +132,6 @@ class CLIPTextGenerator:
         # TEXT STYLE: adding the text style model
         self.use_text_style = True
         self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        self.text_to_mimic = "Oh my gosh, I don't believe it, It is amazing!!!"
-        # self.text_to_mimic = "Today we are going to win and sell this product in million dollar."
-        #self.text_to_mimic = " BLA BLA BLA BLA"
         self.text_style_scale = 1
         # MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/2_classes_trained_model_emotions.pth'
 
@@ -216,9 +213,18 @@ class CLIPTextGenerator:
         self.sentiment_type = sentiment_type
         self.sentiment_scale = sentiment_scale
         self.text_style_scale = text_style_scale
-        self.text_to_mimic = text_to_mimic
         self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"
-        self.desired_style_embedding_vector = desired_style_embedding_vector
+        if not text_to_mimic:
+            self.desired_style_embedding_vector = desired_style_embedding_vector
+        else: #there is text_to_mimic:
+            tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
+                                                                max_length=512, truncation=True,
+                                                                return_tensors="pt")
+            masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
+            input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
+            embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embedig vector
+            embedding_of_text_for_mimic.to(self.device)
+            self.desired_style_embedding_vector = embedding_of_text_for_mimic
 
         context_tokens = self.lm_tokenizer.encode(self.context_prefix + cond_text)
 
@@ -384,16 +390,6 @@ class CLIPTextGenerator:
         return sentiment_loss, losses
 
     def get_text_style_loss(self, probs, context_tokens):
-        #get initial text style
-        # self.text_to_mimic
-        # tokenized_text_to_mimic = self.text_style_tokenizer(self.text_to_mimic, padding='max_length', max_length=512, truncation=True,
-        #                                   return_tensors="pt")
-        #
-        # masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
-        # input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
-        # embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embedig vector
-
-
         top_size = 512
         _, top_indices = probs.topk(top_size, -1)
 
@@ -413,7 +409,6 @@ class CLIPTextGenerator:
                 inputs = self.text_style_tokenizer(top_texts, padding=True, return_tensors="pt")
                 inputs['input_ids'] = inputs['input_ids'].to(self.device)
                 inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
-                #embedding_of_text_to_mimic = self.text_style_model(input_ids, masks)  # embedig vector
                 #logits = self.text_style_model(**inputs)['logits']#check if there is a field of 'logits'
                 logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
 
