@@ -174,7 +174,10 @@ if __name__ == "__main__":
                 if not os.path.isfile(args.caption_img_path):
                     continue
                 for label in desired_labels_list:
-                    desired_style_embedding_vector = embedding_vectors_to_load[label]
+                    if not mimic_text_style:
+                        desired_style_embedding_vector = embedding_vectors_to_load[label]
+                    else:
+                        desired_style_embedding_vector = ''
                     for s, sentiment_scale in enumerate(sentiment_scale_list):
                         for i, text_style_scale in enumerate(text_style_scale_list):
                             for sentiment_type in sentiment_list:
