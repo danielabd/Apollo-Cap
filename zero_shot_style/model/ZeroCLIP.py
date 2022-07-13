@@ -206,7 +206,7 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale, text_style_scale,text_to_mimic,desired_style_embedding_vector,cuda_idx):
+    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale, text_style_scale,text_to_mimic,desired_style_embedding_vector,cuda_idx,style_type):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
@@ -214,20 +214,23 @@ class CLIPTextGenerator:
         self.sentiment_scale = sentiment_scale
         self.text_style_scale = text_style_scale
         self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"
+        self.style_type = style_type #'clip','twitter','emotions'
         if not text_to_mimic:
             self.desired_style_embedding_vector = desired_style_embedding_vector
         else: #there is text_to_mimic:
             #use clip features
-            self.text_style_features = self.get_txt_features(text_to_mimic)
-            # use my text style model features
-            tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
-                                                                max_length=512, truncation=True,
-                                                                return_tensors="pt")
-            masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
-            input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
-            embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embedig vector
-            embedding_of_text_for_mimic.to(self.device)
-            self.desired_style_embedding_vector = embedding_of_text_for_mimic
+            if style_type=='clip':#'clip','twitter','emotions'
+                self.text_style_features = self.get_txt_features(text_to_mimic)
+                # use my text style model features
+            else: #style_type=='twitter' or 'emotions'
+                tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
+                                                                    max_length=512, truncation=True,
+                                                                    return_tensors="pt")
+                masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
+                input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
+                embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embedig vector
+                embedding_of_text_for_mimic.to(self.device)
+                self.desired_style_embedding_vector = embedding_of_text_for_mimic
 
         context_tokens = self.lm_tokenizer.encode(self.context_prefix + cond_text)
 
@@ -527,9 +530,11 @@ class CLIPTextGenerator:
 
             # TEXT_STYLE: adding the text_style component
             if self.use_text_style:
-                # text_style_loss, text_style_losses = self.get_text_style_loss(probs, context_tokens)
-                #using clip model for text style
-                text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
+                if self.style_type == 'clip': #using clip model for text style
+                    text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
+                else:
+                    text_style_loss, text_style_losses = self.get_text_style_loss(probs, context_tokens)
+
                 loss += self.text_style_scale * text_style_loss
 
 
