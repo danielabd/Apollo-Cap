@@ -12,7 +12,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer # SEN
 from transformers import BertTokenizer #TEXT_STYLE
 from transformers import BertModel
 from torch.optim import Adam, SGD
-from zero_shot_style.model.TextClassificationTweet import BertClassifier
+from zero_shot_style.model.TextClassificationTweet import TextStyleEmbed
 import pickle
 
 def log_info(text, verbose=True):
@@ -138,7 +138,7 @@ class CLIPTextGenerator:
         self.text_style_model_name = model_path
         #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
 
-        self.text_style_model = BertClassifier()
+        self.text_style_model = TextStyleEmbed()
         LR = 1e-4
         optimizer = SGD(self.text_style_model.parameters(), lr=LR)
         checkpoint = torch.load(self.text_style_model_name)
@@ -217,6 +217,9 @@ class CLIPTextGenerator:
         if not text_to_mimic:
             self.desired_style_embedding_vector = desired_style_embedding_vector
         else: #there is text_to_mimic:
+            #use clip features
+            self.text_style_features = self.get_txt_features(text_to_mimic)
+            # use my text style model features
             tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
                                                                 max_length=512, truncation=True,
                                                                 return_tensors="pt")
@@ -389,6 +392,48 @@ class CLIPTextGenerator:
             
         return sentiment_loss, losses
 
+    def get_text_style_loss_with_clip(self, probs, context_tokens):
+        for p_ in self.clip.transformer.parameters():
+            if p_.grad is not None:
+                p_.grad.data.zero_()
+
+        top_size = 512
+        _, top_indices = probs.topk(top_size, -1)
+
+        prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
+
+        text_style_loss = 0
+        losses = []
+
+        for idx_p in range(probs.shape[0]):  # go over all beams
+            top_texts = []
+            prefix_text = prefix_texts[idx_p]
+
+            for x in top_indices[idx_p]:  # go over all optional topk next word
+                top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+
+            top_text_features = self.get_txt_features(top_texts)
+
+            with torch.no_grad():
+                similiraties = (self.text_style_features @ top_text_features.T)
+                target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
+                target_probs = target_probs.type(torch.float32)
+            target = torch.zeros_like(probs[idx_p])
+            target[top_indices[idx_p]] = target_probs[0]
+            target = target.unsqueeze(0)
+            cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
+
+            text_style_loss += cur_text_style_loss
+            losses.append(cur_text_style_loss)
+
+        loss_string = ''
+        for idx_p in range(probs.shape[0]):  # go over all beams
+            if idx_p == 0:
+                loss_string = f'{losses[0]}'
+            else:
+                loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
+        return text_style_loss, losses
+
     def get_text_style_loss(self, probs, context_tokens):
         top_size = 512
         _, top_indices = probs.topk(top_size, -1)
@@ -482,7 +527,9 @@ class CLIPTextGenerator:
 
             # TEXT_STYLE: adding the text_style component
             if self.use_text_style:
-                text_style_loss, text_style_losses = self.get_text_style_loss(probs, context_tokens)
+                # text_style_loss, text_style_losses = self.get_text_style_loss(probs, context_tokens)
+                #using clip model for text style
+                text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
                 loss += self.text_style_scale * text_style_loss
 
 

@@ -140,7 +140,7 @@ if __name__ == "__main__":
     # style_type = 'emotions'
     # style_type = 'twitter'
     style_type_list = ['twitter','emotions']#todo remove comment
-    style_type_list = ['emotions']
+    # style_type_list = ['emotions']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     for style_type in style_type_list:

@@ -55,10 +55,10 @@ class Dataset(torch.utils.data.Dataset):
 
 
 
-class BertClassifier(nn.Module):
+class TextStyleEmbed(nn.Module):
 
     def __init__(self, dropout=0.05):
-        super(BertClassifier, self).__init__()
+        super(TextStyleEmbed, self).__init__()
         self.bert = BertModel.from_pretrained('bert-base-uncased')
         for param in self.bert.parameters():
             param.requires_grad_(True)
@@ -258,7 +258,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
                 # log_dict = {**log_dict, **log_dict_train, **log_dict_val}
 
     # plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text",wb, tgt_file_vec_emb)
-    model = BertClassifier()
+    model = TextStyleEmbed()
     optimizer = SGD(model.parameters(), lr=config['lr'])
     checkpoint = torch.load(path_for_saving_best_model)
     model.load_state_dict(checkpoint['model_state_dict'])
@@ -406,7 +406,7 @@ def main():
 
     if config['resume']: #load_model
         print(f"Loading model from: {path_for_loading_best_model}")
-        model = BertClassifier()
+        model = TextStyleEmbed()
         optimizer = SGD(model.parameters(), lr=config['lr'])
         checkpoint = torch.load(path_for_loading_best_model)
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -415,7 +415,7 @@ def main():
     else:
         #  train from scratch
         print("Train model from scratch")
-        model = BertClassifier()
+        model = TextStyleEmbed()
         optimizer = SGD(model.parameters(), lr=config['lr'])
 
     labels_set_dict = {}
