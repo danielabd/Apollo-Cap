@@ -126,7 +126,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
  
-    img_path_list = [101]#[105,104,103,102,101,100] # list(np.arange(100,105))
+    img_path_list = [101, 105,104,103,102,100] # list(np.arange(100,105))
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style'
