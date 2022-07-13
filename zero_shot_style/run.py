@@ -130,7 +130,7 @@ if __name__ == "__main__":
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style'
-    text_style_scale_list = [1,2,4,8]#[0.5,1,2,4,8]#[3.0]
+    text_style_scale_list = [0]#[1,2,4,8]#[0.5,1,2,4,8]#[3.0]
 
     text_to_mimic_list = ["I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work","Please say it formal","Please describe it angrily", "I love you and I hate you"]
     mimic_text_style = True
