@@ -515,17 +515,20 @@ class CLIPTextGenerator:
 
             # CLIP LOSS
             clip_loss, clip_losses = self.clip_loss(probs, context_tokens)
+            print(f'clip_loss = {clip_loss}, clip_loss_with_scale = {self.clip_scale * clip_loss}')
             loss += self.clip_scale * clip_loss
             
 
             # CE/Fluency loss
             ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
+            print(f'ce_loss = {ce_loss.sum()}')
             
             loss += ce_loss.sum()
 
             # SENTIMENT: adding the sentiment component
             if self.sentiment_type!='none':
                 sentiment_loss, sentiment_losses = self.get_sentiment_loss(probs, context_tokens,self.sentiment_type)
+                print(f'sentiment_loss = {sentiment_loss}, sentiment_loss_with_scale = {self.sentiment_scale * sentiment_loss}')
                 loss += self.sentiment_scale * sentiment_loss
 
             # TEXT_STYLE: adding the text_style component
@@ -534,7 +537,8 @@ class CLIPTextGenerator:
                     text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
                 else:
                     text_style_loss, text_style_losses = self.get_text_style_loss(probs, context_tokens)
-
+                print(
+                    f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                 loss += self.text_style_scale * text_style_loss
 
 

@@ -68,7 +68,11 @@ def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,mimic_te
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
 
     print(captions)
-    print(title2print)
+
+    dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    new_title2print = f'~~~~~~~~\n{dt_string} | Work on img path:' + title2print.split(' | Work on img path:')[1]
+    print(new_title2print)
+
     print('best clip:', args.cond_text + captions[best_clip_idx])
 
     img_dict[img_path][style_type][text_style_scale][label] = args.cond_text + captions[best_clip_idx]
@@ -128,13 +132,15 @@ def write_results_of_text_style_all_models(img_dict, embedding_type,labels,reult
         writer = csv.writer(results_file)
         for img in img_dict.keys():
             img_num_str = img.split('/')[-1].split('.j')[0]
-            writer.writerow([img_num_str] * (scales_len+1))
+            titles0 = ['img_num']
+            titles0.extend([img_num_str] * scales_len*len(labels))
+            writer.writerow(titles0)
             titles1 = ['label']
             for label in labels:
                 titles1.extend([label] * scales_len)
             writer.writerow(titles1)
             titles2 = ['model/scale']
-            titles2.extend(img_dict[img][img_dict[img].keys()[0]].keys() * len(labels))
+            titles2.extend(list(img_dict[img][list(img_dict[img].keys())[0]].keys()) * len(labels))
             writer.writerow(titles2)
             for model_name in img_dict[img]:
                 cur_row = [model_name]
@@ -142,6 +148,16 @@ def write_results_of_text_style_all_models(img_dict, embedding_type,labels,reult
                     for label in img_dict[img][model_name][scale].keys():
                         cur_row.append(img_dict[img][model_name][scale][label])
                 writer.writerow(cur_row)
+
+
+def get_title2print(caption_img_path, style_type, label, text_style_scale, embedding_path_idx):
+    dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    title2print = f'~~~~~~~~\n{dt_string} | Work on img path: {caption_img_path} with:' \
+                  f'\nstyle_type= *** {style_type} ***' \
+                  f'\nstyle of: *** {label} ***\ntext_style_scale= *** {text_style_scale} ***' \
+                  f'\n embedding_type=*** {embedding_path_idx} ***.' \
+                  f'\n~~~~~~~~'
+    return title2print
 
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
@@ -228,12 +244,7 @@ if __name__ == "__main__":
                                     if sentiment_type=='none' and s>0:
                                         continue
 
-                                    dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                                    title2print = f'~~~~~~~~\n{dt_string} | Work on img path: {args.caption_img_path} with:' \
-                                                  f'\nstyle_type= *** {style_type} ***' \
-                                                  f'\nstyle of: *** {label} ***\ntext_style_scale= *** {text_style_scale} ***' \
-                                                  f'\n embedding_type=*** {embedding_path_idx2str[embedding_path_idx]} ***.' \
-                                                  f'\n~~~~~~~~'
+                                    title2print = get_title2print(args.caption_img_path,style_type,label,text_style_scale,embedding_path_idx2str[embedding_path_idx])
                                     print(title2print)
 
                                     if args.run_type == 'caption':
