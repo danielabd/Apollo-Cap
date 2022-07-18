@@ -122,13 +122,12 @@ def write_results_of_text_style(img_dict, embedding_type,labels,reults_dir,style
                     cur_row.append(img_dict[img][scale][label])
                 writer.writerow(cur_row)
 
-def write_results_of_text_style_all_models(img_dict, embedding_type,labels,reults_dir,scales_len):
+def write_results_of_text_style_all_models(img_dict,labels,reults_dir,scales_len,tgt_results_path):
     # img_dict[img_path][style_type][text_style_scale][label]
     if not os.path.isdir(reults_dir):
         os.makedirs(reults_dir)
-    tgt_path = os.path.join(reults_dir,f'results_all_models_embedding_type_{embedding_type}.csv')
-    print(f'Writing results into: {tgt_path}')
-    with open(tgt_path, 'w') as results_file:
+    print(f'Writing results into: {tgt_results_path}')
+    with open(tgt_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
         for img in img_dict.keys():
             img_num_str = img.split('/')[-1].split('.j')[0]
@@ -168,7 +167,7 @@ if __name__ == "__main__":
  
     img_path_list = [101, 105,104,103,102,100] # list(np.arange(100,105))
     img_path_list = list(np.arange(1,106))
-    img_path_list.reverse()
+    # img_path_list.reverse()
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style'
@@ -178,7 +177,7 @@ if __name__ == "__main__":
                               'best_twitter_trained_model_emotions.pth')
     embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
                                    'twitter_mean_class_embedding.p')  # twitter
-    text_to_mimic_list = ["Happy","Love","hungry", "I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work", "I angry and I love","The government is good"]
+    text_to_mimic_list = ["Happy","Love","angry","hungry", "I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work", "I angry and I love","The government is good"]
     mimic_text_style = True
     img_dict = lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
     # embedding_path_idx2str = {0:'mean',1:'median'}
@@ -191,6 +190,10 @@ if __name__ == "__main__":
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
     for mimic_text_style in [True,False]:
+        if mimic_text_style:
+            classes_type = "sentences"
+        else:
+            classes_type = "source"
         for i in img_path_list:  # img_path_list:
             if i not in [38,35,16,7,100,101,102,103,104,105]:
                 continue
@@ -202,6 +205,8 @@ if __name__ == "__main__":
                                                      str(i) + ".jpg")
             # reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',str(i))
             reults_dir = os.path.join(base_path, 'results', cur_time)
+            tgt_results_path = os.path.join(reults_dir,f'results_all_models_{classes_type}_classes.csv')
+
             if not os.path.isfile(args.caption_img_path):
                 continue
             for style_type in style_type_list:
@@ -256,7 +261,7 @@ if __name__ == "__main__":
                                             run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, mimic_text_style, desired_style_embedding_vector, cuda_idx,title2print,model_path,style_type)
                                             # # write_results(img_dict)
                                             # # write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
-                                            write_results_of_text_style_all_models(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,len(text_style_scale_list))
+                                            write_results_of_text_style_all_models(img_dict,desired_labels_list,reults_dir,len(text_style_scale_list),tgt_results_path)
                                         elif args.run_type == 'arithmetics':
                                             args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
                                             run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights)
