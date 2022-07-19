@@ -1,10 +1,12 @@
 import os
+from datetime import datetime
+
 import pandas as pd
 
 def get_set_params(section):
     for line in section:
         if imgs_dir in line:
-            img_num = line.split(imgs_dir)[1][-1]
+            img_num = line.split(imgs_dir)[1].split(' with')[0]
         elif "style_type" in line:
             model = line.split("*** ")[1].split(" ***")[0]
         elif "style of" in line:
@@ -24,7 +26,9 @@ def main():
     # log_file = 'log.txt'
     base_dir = '/home/bdaniela/zero-shot-style/zero_shot_style'
     log_file = os.path.join(base_dir,'log.txt')
-    tgt_path_results = os.path.join(base_dir, "analyzed_results.csv")
+    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    print(f'Cur time is: {cur_time}')
+    tgt_path_results = os.path.join(base_dir, f"{cur_time}_analyzed_results.csv")
     start_of_new_section = False
     end_of_new_section = True
     section = []
