@@ -10,7 +10,7 @@ param_dict:
     and_so_on: more_values
 batch_size: 20
 inner_batch_size: 20
-best_model_name: best_twitter_trained_model_emotions.pth
+best_model_name: best_twitter_trained_model.pth
 model_name: twitter_trained_model_emotions.pth
 mean_vec_emb_file: twitter_mean_class_embedding.p
 median_vec_emb_file: twitter_median_class_embedding.p
@@ -21,7 +21,7 @@ csv_file_name_test: 'twitter_test.csv'
 visual_csv_file_name_train: 'visual_twitter_train.csv'
 visual_csv_file_name_test: 'visual_twitter_test.csv'
 num_workers: 10
-plot_only_clustering: True
+plot_only_clustering: False
 desired_labels: all
 data_name: Twitter
 resume: True #load model or not
