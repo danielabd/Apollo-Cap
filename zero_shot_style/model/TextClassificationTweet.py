@@ -677,7 +677,7 @@ def main():
     os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)
-    overwrite_pairs = True#todo
+    overwrite_pairs = False#todo
 
     print('Start!')
     args = parser.parse_args()

@@ -184,7 +184,8 @@ if __name__ == "__main__":
     embedding_path_idx2str = {0:'mean'}
     # style_type = 'emotions'
     # style_type = 'twitter'
-    style_type_list = ['clip','twitter','emotions']#todo remove comment
+    # style_type_list = ['clip','twitter','emotions']#todo remove comment
+    style_type_list = ['clip','emotions']
     # style_type_list = ['emotions']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
@@ -219,7 +220,7 @@ if __name__ == "__main__":
                     text_to_mimic_list.reverse()
                 elif style_type == 'twitter':
                     model_path = os.path.join(base_path,'checkpoints','best_model',
-                                              'best_twitter_trained_model_emotions.pth')
+                                              'best_twitter_trained_model.pth')
                     embedding_path1 = os.path.join(base_path,'checkpoints','best_model',
                                                    'twitter_mean_class_embedding.p')  # twitter
                     embedding_path2 = os.path.join(base_path,'checkpoints','best_model',
