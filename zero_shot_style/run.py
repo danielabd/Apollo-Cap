@@ -174,7 +174,7 @@ if __name__ == "__main__":
     text_style_scale_list = [0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]
     #default value twitter
     model_path = os.path.join(base_path, 'checkpoints', 'best_model',
-                              'best_twitter_trained_model_emotions.pth')
+                              'best_twitter_trained_model.pth')
     embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
                                    'twitter_mean_class_embedding.p')  # twitter
     text_to_mimic_list = ["Happy","Love","angry","hungry", "I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work", "I angry and I love","The government is good"]
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     # style_type = 'emotions'
     # style_type = 'twitter'
     # style_type_list = ['clip','twitter','emotions']#todo remove comment
-    style_type_list = ['clip','emotions']
+    style_type_list = ['clip']
     # style_type_list = ['emotions']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
