@@ -190,7 +190,7 @@ if __name__ == "__main__":
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
-    for mimic_text_style in [False]:#[True,False]:
+    for mimic_text_style in [True,False]:
         if mimic_text_style:
             classes_type = "sentences"
         else:
