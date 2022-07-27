@@ -185,12 +185,12 @@ if __name__ == "__main__":
     # style_type = 'emotions'
     # style_type = 'twitter'
     # style_type_list = ['clip','twitter','emotions']#todo remove comment
-    style_type_list = ['clip']
-    # style_type_list = ['emotions']
+    # style_type_list = ['clip']
+    style_type_list = ['emotions']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
-    for mimic_text_style in [True]: #  [True,False]:
+    for mimic_text_style in [True,False]:
         if mimic_text_style:
             classes_type = "sentences"
         else:
