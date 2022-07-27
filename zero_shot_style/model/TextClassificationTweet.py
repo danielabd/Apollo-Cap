@@ -363,7 +363,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_best_model)  # finally check on all data training
             # if epoch>last_best_epoch+50:#rodo: remove commentd
-            if True:#rodo: remove commentd
+            if True:#todo: remove comment
                 last_best_epoch = epoch
                 # log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
                 #                                         config['inner_batch_size'], train_batch_size_for_plot, "train_text_for_best_model",
@@ -372,7 +372,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
                 log_dict_val = plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model,
                                                       config['inner_batch_size'], val_batch_size_for_plot, "val_text",
                                                       tgt_file_vec_emb,
-                                                      True, False, config['num_workers'])
+                                                      True, True, config['num_workers'])
                 # log_dict = {**log_dict, **log_dict_train, **log_dict_val}
 
     # plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text",wb, tgt_file_vec_emb)
