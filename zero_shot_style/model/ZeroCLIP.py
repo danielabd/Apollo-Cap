@@ -138,7 +138,7 @@ class CLIPTextGenerator:
         self.text_style_model_name = model_path
         #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
 
-        self.text_style_model = TextStyleEmbed()
+        self.text_style_model = TextStyleEmbed(device=self.device)
         LR = 1e-4
         optimizer = SGD(self.text_style_model.parameters(), lr=LR)
         checkpoint = torch.load(self.text_style_model_name)
@@ -223,12 +223,14 @@ class CLIPTextGenerator:
                 self.text_style_features = self.get_txt_features(text_to_mimic)
                 # use my text style model features
             else: #style_type=='twitter' or 'emotions'
-                tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
-                                                                    max_length=512, truncation=True,
-                                                                    return_tensors="pt")
-                masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
-                input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
-                embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embedig vector
+                #### based on clip
+                # tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
+                #                                                     max_length=512, truncation=True,
+                #                                                     return_tensors="pt")
+                # masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
+                # input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
+                # embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embeding vector
+                embedding_of_text_for_mimic = self.text_style_model(text_to_mimic) #embeding vector
                 embedding_of_text_for_mimic.to(self.device)
                 self.desired_style_embedding_vector = embedding_of_text_for_mimic
 
@@ -454,11 +456,12 @@ class CLIPTextGenerator:
 
             # get score for text
             with torch.no_grad():
-                inputs = self.text_style_tokenizer(top_texts, padding=True, return_tensors="pt")
-                inputs['input_ids'] = inputs['input_ids'].to(self.device)
-                inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
-                #logits = self.text_style_model(**inputs)['logits']#check if there is a field of 'logits'
-                logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
+                ## based on bert
+                # inputs = self.text_style_tokenizer(top_texts, padding=True, return_tensors="pt")
+                # inputs['input_ids'] = inputs['input_ids'].to(self.device)
+                # inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
+                # logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
+                logits = self.text_style_model(top_texts)
 
                 #calculate the distance between the embedding of the text we want to mimic and the all candidated embedding
                 #todo:check how to do broadcast with embedding_of_text_for_mimic
