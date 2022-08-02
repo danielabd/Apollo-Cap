@@ -337,7 +337,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
         epoch_avg_fraction_positive_triplets = np.mean([elem.item() for elem in list_fraction_positive_triplets_batch])
         epoch_avg_list_num_positive_triplets = np.mean([elem.item() for elem in list_num_positive_triplets_batch])
         # pbar.set_description("Epoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], avg_loss))
-        print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], epoch_avg_all_triplet_loss),'\n')
+        print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch, config['epochs'], epoch_avg_all_triplet_loss),'\n')
         log_dict = {'train/epoch': epoch,
                     # 'train/train_loss': loss.cpu().detach().numpy(),
                     'train/train_loss': epoch_avg_positive_loss,

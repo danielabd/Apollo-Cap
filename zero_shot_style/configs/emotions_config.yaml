@@ -25,5 +25,5 @@ num_workers: 10
 plot_only_clustering: False
 desired_labels: 'all' #[embarrassment, joy, anger, love, annoyance, nervousness]
 undesired_label: 'neutral'
-resume: False # resume running in wb
+resume: True # resume running in wb
 load_model: True
