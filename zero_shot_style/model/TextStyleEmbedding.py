@@ -375,7 +375,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             #          neg_combinations_labels)
 
         if epoch_avg_all_triplet_loss<best_loss:
-            print(f'Loss is improved. Epoch = {epoch}, Saving the better model to: {path_for_saving_best_model}...')
+            print(f'Loss is improved. Epoch = {epoch}, cur best loss = {epoch_avg_all_triplet_loss} < {best_loss}. Saving the better model to: {path_for_saving_best_model}...')
             best_loss = epoch_avg_all_triplet_loss
             # save model
             torch.save({"model_state_dict": model.state_dict(),
