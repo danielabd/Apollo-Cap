@@ -24,8 +24,9 @@ def writing_results_to_csv(reults,tgt_path_results):
 
 def main():
     # base_dir = '/home/bdaniela/zero-shot-style/zero_shot_style'
-    base_dir = '/home/bdaniela/zero-shot-style/results/00_27_27__21_07_2022'
-    log_file_name = "00_27_27__21_07_2022_log.txt"
+    base_dir = '/home/bdaniela/zero-shot-style/results/13_16_37__27_07_2022'
+    # log_file_name = "00_27_27__21_07_2022_log.txt"
+    log_file_name = "log.txt"
     log_file = os.path.join(base_dir,log_file_name)
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')

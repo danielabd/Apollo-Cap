@@ -1,3 +1,4 @@
+
 from matplotlib import pyplot as plt
 import pandas as pd
 import torch
@@ -22,6 +23,8 @@ import os
 import random
 from sklearn.model_selection import train_test_split
 import timeit
+# from pytorch_metric_learning import losses
+# losses.NPairsLoss(**kwargs)
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
@@ -108,6 +111,9 @@ class TextStyleEmbed(nn.Module):
         clip_checkpoints = './clip_checkpoints'
         self.clip, clip_preprocess = clip.load("ViT-B/32", device=device,
                                           download_root=clip_checkpoints, jit=False)  # clip_preprocess for images
+        #freeze clip model
+        for param in self.clip.parameters():
+            param.requires_grad = False
         self.device = device
         self.linear1 = nn.Linear(512, 128)
         self.linear2 = nn.Linear(128, 128)
@@ -377,10 +383,8 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
 
     # plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text",wb, tgt_file_vec_emb)
     model = TextStyleEmbed(device=device)
-    optimizer = SGD(model.parameters(), lr=config['lr'])
     checkpoint = torch.load(path_for_saving_best_model)
     model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     model.eval()
     print("Finished to train, plotting final embedding of entire training set")
     log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
@@ -609,7 +613,9 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
     if config['resume']: #load_model
         print(f"Loading model from: {path_for_loading_best_model}")
         model = TextStyleEmbed(device=device)
-        optimizer = SGD(model.parameters(), lr=config['lr'])
+        # optimizer = SGD(model.parameters(), lr=config['lr'])
+        # take only non-frozen params:
+        optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'])
         checkpoint = torch.load(path_for_loading_best_model)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -617,7 +623,9 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         #  train from scratch
         print("Train model from scratch")
         model = TextStyleEmbed(device=device)
-        optimizer = SGD(model.parameters(), lr=config['lr'])
+        # optimizer = SGD(model.parameters(), lr=config['lr'])
+        # take only non-frozen params:
+        optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'])
     return model,optimizer
 
 def get_train_test_data(config, undesired_label = None):

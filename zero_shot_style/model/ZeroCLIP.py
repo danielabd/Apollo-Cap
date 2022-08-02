@@ -12,7 +12,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer # SEN
 from transformers import BertTokenizer #TEXT_STYLE
 from transformers import BertModel
 from torch.optim import Adam, SGD
-from zero_shot_style.model.TextClassificationTweet import TextStyleEmbed
+from zero_shot_style.model.TextStyleEmbedding import TextStyleEmbed
 import pickle
 
 def log_info(text, verbose=True):
