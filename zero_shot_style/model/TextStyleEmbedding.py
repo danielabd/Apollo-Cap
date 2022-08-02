@@ -337,7 +337,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
         epoch_avg_fraction_positive_triplets = np.mean([elem.item() for elem in list_fraction_positive_triplets_batch])
         epoch_avg_list_num_positive_triplets = np.mean([elem.item() for elem in list_num_positive_triplets_batch])
         # pbar.set_description("Epoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], avg_loss))
-        print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], all_triplet_loss_avg),'\n')
+        print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], epoch_avg_all_triplet_loss),'\n')
         log_dict = {'train/epoch': epoch,
                     # 'train/train_loss': loss.cpu().detach().numpy(),
                     'train/train_loss': epoch_avg_positive_loss,
@@ -365,9 +365,13 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             #             'train/num_positive_triplets': num_positive_triplets,
             #             'train/all_triplet_loss_avg': all_triplet_loss_avg,
             #             'train/roc_auc': roc_auc}
-            log_dict_val = plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model,
-                                                  config['inner_batch_size'],val_batch_size_for_plot, "val_text", tgt_file_vec_emb,
-                                                  True, False, config['num_workers'])
+
+            # #I removed it because it take a lot of time
+            # #plot val
+            # log_dict_val = plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model,
+            #                                       config['inner_batch_size'],val_batch_size_for_plot, "val_text", tgt_file_vec_emb,
+            #                                       True, False, config['num_workers'])
+
             # log_dict = {**log_dict, **log_dict_train, **log_dict_val}
             # wandb.log({"log_dict": log_dict})
             # todo - with every log save the latest model (so we can resume training from the same point.)
@@ -381,8 +385,8 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_best_model)  # finally check on all data training
-            # if epoch>last_best_epoch+50:#rodo: remove commentd
-            if True:#todo: remove comment
+            if epoch>last_best_epoch+50:
+            # if True:#todo: remove comment
                 last_best_epoch = epoch
                 # log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
                 #                                         config['inner_batch_size'], train_batch_size_for_plot, "train_text_for_best_model",
