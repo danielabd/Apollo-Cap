@@ -308,7 +308,10 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
     for epoch in range(config['epochs']):
         t000 = timeit.default_timer()
         model.train()
-        running_loss = []
+        list_all_triplet_loss_batch = []
+        list_positive_loss_batch = []
+        list_fraction_positive_triplets_batch = []
+        list_num_positive_triplets_batch = []
         # for step, (tokenized_texts_list, labels, texts_list) in enumerate(pbar:= tqdm(train_dataloader, desc="Training", leave=False,)):
         for step, (labels, texts_list) in enumerate(pbar := tqdm(train_dataloader, desc="Training", leave=False)):
             labels = torch.from_numpy(np.asarray(labels)).to(device)
@@ -323,17 +326,24 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             optimizer.step()
 
             # running_loss.append(loss.cpu().detach().numpy())
-            running_loss.append(all_triplet_loss_avg)
+            list_all_triplet_loss_batch.append(all_triplet_loss_avg)
+            list_positive_loss_batch.append(loss)
+            list_fraction_positive_triplets_batch.append(fraction_positive_triplets)
+            list_num_positive_triplets_batch.append(num_positive_triplets)
         t001 = timeit.default_timer()
         print(f"time for single epoch is {(t001 - t000) / 60} min = {t001 - t000} sec.")
-        avg_loss = np.mean([loss_elem.item() for loss_elem in running_loss])
+        epoch_avg_all_triplet_loss = np.mean([loss_elem.item() for loss_elem in list_all_triplet_loss_batch])
+        epoch_avg_positive_loss = np.mean([elem.item() for elem in list_positive_loss_batch])
+        epoch_avg_fraction_positive_triplets = np.mean([elem.item() for elem in list_fraction_positive_triplets_batch])
+        epoch_avg_list_num_positive_triplets = np.mean([elem.item() for elem in list_num_positive_triplets_batch])
         # pbar.set_description("Epoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], avg_loss))
         print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], all_triplet_loss_avg),'\n')
         log_dict = {'train/epoch': epoch,
-                    'train/train_loss': loss.cpu().detach().numpy(),
-                    'train/fraction_positive_triplets': fraction_positive_triplets,
-                    'train/num_positive_triplets': num_positive_triplets,
-                    'train/all_triplet_loss_avg': all_triplet_loss_avg}
+                    # 'train/train_loss': loss.cpu().detach().numpy(),
+                    'train/train_loss': epoch_avg_positive_loss,
+                    'train/fraction_positive_triplets': epoch_avg_fraction_positive_triplets,
+                    'train/num_positive_triplets': epoch_avg_list_num_positive_triplets,
+                    'train/all_triplet_loss_avg': epoch_avg_all_triplet_loss}
         wandb.log({"log_dict": log_dict})
         if np.mod(epoch, 10) == 0:  # plot on every 10 epochs
             # save model
@@ -363,16 +373,10 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             # todo - with every log save the latest model (so we can resume training from the same point.)
             # roc_auc = evaluate(model, df_test, labels_set_dict, device, config, pos_combinations_labels,
             #          neg_combinations_labels)
-            log_dict = {'train/epoch': epoch,
-                        'train/train_loss': loss.cpu().detach().numpy(),
-                        'train/fraction_positive_triplets': fraction_positive_triplets,
-                        'train/num_positive_triplets': num_positive_triplets,
-                        'train/all_triplet_loss_avg': all_triplet_loss_avg}
-            wandb.log({"log_dict": log_dict})
 
-        if avg_loss<best_loss:
+        if epoch_avg_all_triplet_loss<best_loss:
             print(f'Loss is improved. Epoch = {epoch}, Saving the better model to: {path_for_saving_best_model}...')
-            best_loss = avg_loss
+            best_loss = epoch_avg_all_triplet_loss
             # save model
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
