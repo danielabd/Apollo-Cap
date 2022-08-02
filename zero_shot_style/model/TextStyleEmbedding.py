@@ -327,8 +327,8 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
         t001 = timeit.default_timer()
         print(f"time for single epoch is {(t001 - t000) / 60} min = {t001 - t000} sec.")
         avg_loss = np.mean([loss_elem.item() for loss_elem in running_loss])
-        pbar.set_description("Epoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], avg_loss))
-        # print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], all_triplet_loss_avg),'\n')
+        # pbar.set_description("Epoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], avg_loss))
+        print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], all_triplet_loss_avg),'\n')
         log_dict = {'train/epoch': epoch,
                     'train/train_loss': loss.cpu().detach().numpy(),
                     'train/fraction_positive_triplets': fraction_positive_triplets,
@@ -343,11 +343,21 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
                         }, path_for_saving_last_model)  # finally check on all data training
             log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(5000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
                                                     config['inner_batch_size'],train_batch_size_for_plot, "train_text", tgt_file_vec_emb, True, False, config['num_workers'])
-            # log_dict_val, roc_auc = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_test)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
-            log_dict_val, roc_auc = plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model,
+            # # log_dict_val, roc_auc = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_test)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
+            ## ignore roc_auc because it is not reliable
+            # log_dict_val, roc_auc = plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model,
+            #                                       config['inner_batch_size'],val_batch_size_for_plot, "val_text", tgt_file_vec_emb,
+            #                                       True, False, config['num_workers'],pos_combinations_labels=pos_combinations_labels,
+            #                                            neg_combinations_labels = neg_combinations_labels)
+            # log_dict = {'train/epoch': epoch,
+            #             'train/train_loss': loss.cpu().detach().numpy(),
+            #             'train/fraction_positive_triplets': fraction_positive_triplets,
+            #             'train/num_positive_triplets': num_positive_triplets,
+            #             'train/all_triplet_loss_avg': all_triplet_loss_avg,
+            #             'train/roc_auc': roc_auc}
+            log_dict_val = plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model,
                                                   config['inner_batch_size'],val_batch_size_for_plot, "val_text", tgt_file_vec_emb,
-                                                  True, False, config['num_workers'],pos_combinations_labels=pos_combinations_labels,
-                                                       neg_combinations_labels = neg_combinations_labels)
+                                                  True, False, config['num_workers'])
             # log_dict = {**log_dict, **log_dict_train, **log_dict_val}
             # wandb.log({"log_dict": log_dict})
             # todo - with every log save the latest model (so we can resume training from the same point.)
@@ -357,8 +367,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
                         'train/train_loss': loss.cpu().detach().numpy(),
                         'train/fraction_positive_triplets': fraction_positive_triplets,
                         'train/num_positive_triplets': num_positive_triplets,
-                        'train/all_triplet_loss_avg': all_triplet_loss_avg,
-                        'train/roc_auc': roc_auc}
+                        'train/all_triplet_loss_avg': all_triplet_loss_avg}
             wandb.log({"log_dict": log_dict})
 
         if avg_loss<best_loss:
