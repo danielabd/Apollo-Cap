@@ -351,8 +351,9 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_last_model)  # finally check on all data training
-            log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(5000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
-                                                    config['inner_batch_size'],train_batch_size_for_plot, "train_text", tgt_file_vec_emb, True, False, config['num_workers'])
+            # #todo: remove comment in order to print
+            # log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(5000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
+            #                                         config['inner_batch_size'],train_batch_size_for_plot, "train_text", tgt_file_vec_emb, True, False, config['num_workers'])
             # # log_dict_val, roc_auc = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_test)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
             ## ignore roc_auc because it is not reliable
             # log_dict_val, roc_auc = plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model,
@@ -385,7 +386,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_best_model)  # finally check on all data training
-            if epoch>last_best_epoch+50:
+            if epoch>last_best_epoch+1000: #todo: change 500
             # if True:#todo: remove comment
                 last_best_epoch = epoch
                 # log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
