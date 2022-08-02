@@ -627,7 +627,7 @@ def getting_labels_map(config,df_train):
     return labels_set_dict,labels_idx_to_str
 
 def get_model_and_optimizer(config, path_for_loading_best_model, device):
-    if config['resume']: #load_model
+    if config['load_model']: #load_model
         print(f"Loading model from: {path_for_loading_best_model}")
         model = TextStyleEmbed(device=device)
         # optimizer = SGD(model.parameters(), lr=config['lr'])
