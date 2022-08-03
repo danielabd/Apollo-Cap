@@ -304,7 +304,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
     print('Starting to train...')
     model = model.to(device)
     best_loss = 1e16
-    last_best_epoch = -11
+    last_best_epoch = -1e16
     for epoch in range(config['epochs']):
         t000 = timeit.default_timer()
         model.train()
