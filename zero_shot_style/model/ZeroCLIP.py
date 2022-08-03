@@ -140,10 +140,10 @@ class CLIPTextGenerator:
 
         self.text_style_model = TextStyleEmbed(device=self.device)
         LR = 1e-4
-        optimizer = SGD(self.text_style_model.parameters(), lr=LR)
+        # optimizer = SGD(self.text_style_model.parameters(), lr=LR) #check if to remove mark
         checkpoint = torch.load(self.text_style_model_name)
         self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # optimizer.load_state_dict(checkpoint['optimizer_state_dict']) #check if to remove mark
 
         self.text_style_model.to(self.device)
         self.text_style_model.eval()
