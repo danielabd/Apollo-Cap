@@ -200,6 +200,7 @@ def main():
     min_tweet_len = 3 #10
     max_tweet_len = 20
     desired_users = ['justinbieber', 'BillGates','rihanna','KendallJenner','elonmusk','JLo']
+    desired_users = ['justinbieber', 'BillGates','rihanna','KendallJenner','elonmusk','JLo']
     create_twitter_db(max_users, auth, source_db, num_of_tweets, target_dir, min_tweet_len, max_tweet_len,desired_users)
     print('finish!')
 #justinbieber

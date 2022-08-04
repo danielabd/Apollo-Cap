@@ -24,9 +24,10 @@ def writing_results_to_csv(reults,tgt_path_results):
 
 def main():
     # base_dir = '/home/bdaniela/zero-shot-style/zero_shot_style'
-    base_dir = '/home/bdaniela/zero-shot-style/results/13_16_37__27_07_2022'
-    # log_file_name = "00_27_27__21_07_2022_log.txt"
-    log_file_name = "log.txt"
+    running_time = '15_10_33__03_08_2022'
+    log_file_name = "clip_trained_on_emotions_log.txt"
+    # log_file_name = "log.txt"
+    base_dir = os.path.join('/home/bdaniela/zero-shot-style/results',running_time)
     log_file = os.path.join(base_dir,log_file_name)
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
@@ -50,16 +51,21 @@ def main():
                 img_num,model,label,text_style_scale = get_set_params(section)
             elif start_of_new_section:
                 section.append(line)
-            elif "clip_loss" in line:
-                clip_loss = float(line.split("clip_loss_with_scale = ")[1][:-1])
-            elif "ce_loss" in line:
-                ce_loss = float(line.split("ce_loss = ")[1][:-1])
-            elif "text_style_loss" in line:
-                text_style_loss = float(line.split("text_style_loss_with_scale = ")[1][:-1])
+            # elif "clip_loss" in line:
+            #     clip_loss = float(line.split("clip_loss_with_scale = ")[1][:-1])
+            # elif "ce_loss" in line:
+            #     ce_loss = float(line.split("ce_loss = ")[1][:-1])
+            # elif "text_style_loss" in line:
+            #     text_style_loss = float(line.split("text_style_loss_with_scale = ")[1][:-1])
+            # elif "best clip: " in line:
+            #     captioning = line.split("best clip: ")[1]
+            #     new_result = {"img_num":img_num, "model": model, "label":label, "text_style_scale":text_style_scale,
+            #                   "clip_loss":clip_loss, "ce_loss":ce_loss, "text_style_loss":text_style_loss,
+            #                   "captioning":captioning}
+            #     reults.append(new_result)
             elif "best clip: " in line:
                 captioning = line.split("best clip: ")[1]
                 new_result = {"img_num":img_num, "model": model, "label":label, "text_style_scale":text_style_scale,
-                              "clip_loss":clip_loss, "ce_loss":ce_loss, "text_style_loss":text_style_loss,
                               "captioning":captioning}
                 reults.append(new_result)
     print(f"Finished to analyze. There are {len(reults)} params sets")
