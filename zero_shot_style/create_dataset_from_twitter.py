@@ -89,7 +89,7 @@ def create_df_for_user(api, user, num_of_tweets, min_tweet_len, max_tweet_len):
     iterations_to_do = round(num_of_tweets_to_search/len(tweets))
     for i in range(iterations_to_do):
         additional_tweets = api.user_timeline(screen_name=user, count=num_of_tweets_to_search, tweet_mode='extended',max_id = early_tweets_id)
-        if len(additional_tweets)==0:
+        if len(additional_tweets)==1:
             break
         total_tweets.extend(additional_tweets[1:]) #the first one is duplicated from the last iteration
         early_tweets_id = additional_tweets[-1].id_str
@@ -111,7 +111,7 @@ def create_df_for_user(api, user, num_of_tweets, min_tweet_len, max_tweet_len):
     return data_list, uncleaned_data_list
 
 def create_twitter_db(max_users,auth,source_db,num_of_tweets,target_dir, min_tweet_len, max_tweet_len, desired_users):
-    print('Starting to create twitter DB...')
+    print('Starting to create Twitter DB...')
     columns = ['User', 'Tweet']
     api = tweepy.API(auth)
     data = {columns[0]:[],columns[1]:[]}
@@ -151,11 +151,13 @@ def create_twitter_db(max_users,auth,source_db,num_of_tweets,target_dir, min_twe
     uncleaned_df = pd.DataFrame(uncleaned_data, columns=columns)
     df.head()
 
-    cleaned_target_file = os.path.join(target_dir,'cleaned_twitter_data.csv')
+    # cleaned_target_file = os.path.join(target_dir,'cleaned_twitter_data.csv')
+    cleaned_target_file = os.path.join(target_dir,'cleaned_twitter_data_BillGates_KendallJenner.csv')
     df.to_csv(cleaned_target_file, index=False)
     print('created new cleaned db in: ', cleaned_target_file)
 
-    uncleaned_target_file = os.path.join(target_dir,'uncleaned_twitter_data.csv')
+    # uncleaned_target_file = os.path.join(target_dir,'uncleaned_twitter_data_.csv')
+    uncleaned_target_file = os.path.join(target_dir,'uncleaned_twitter_data_BillGates_KendallJenner.csv')
     uncleaned_df.to_csv(uncleaned_target_file, index=False)
     print('created new uncleaned db in: ', uncleaned_target_file)
 
@@ -193,14 +195,16 @@ def main():
     # df.head()
 
     # create database from twitter
-    source_db = os.path.join(base_path,'DB.csv')
+    src_file_name = 'DB.csv'
+    source_db = os.path.join(base_path,src_file_name)
     max_users = 100  # maximum users to classify
-    num_of_tweets = 949  # take number of last tweets
+    # num_of_tweets = 949  # take number of last tweets
+    num_of_tweets = 10000  # take number of last tweets
     target_dir = base_path
     min_tweet_len = 3 #10
     max_tweet_len = 20
-    desired_users = ['justinbieber', 'BillGates','rihanna','KendallJenner','elonmusk','JLo']
-    desired_users = ['justinbieber', 'BillGates','rihanna','KendallJenner','elonmusk','JLo']
+    # desired_users = ['justinbieber', 'BillGates','rihanna','KendallJenner','elonmusk','JLo']
+    desired_users = ['BillGates','KendallJenner']
     create_twitter_db(max_users, auth, source_db, num_of_tweets, target_dir, min_tweet_len, max_tweet_len,desired_users)
     print('finish!')
 #justinbieber
