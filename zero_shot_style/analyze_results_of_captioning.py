@@ -51,18 +51,18 @@ def main():
                 img_num,model,label,text_style_scale = get_set_params(section)
             elif start_of_new_section:
                 section.append(line)
-            # elif "clip_loss" in line:
-            #     clip_loss = float(line.split("clip_loss_with_scale = ")[1][:-1])
-            # elif "ce_loss" in line:
-            #     ce_loss = float(line.split("ce_loss = ")[1][:-1])
-            # elif "text_style_loss" in line:
-            #     text_style_loss = float(line.split("text_style_loss_with_scale = ")[1][:-1])
-            # elif "best clip: " in line:
-            #     captioning = line.split("best clip: ")[1]
-            #     new_result = {"img_num":img_num, "model": model, "label":label, "text_style_scale":text_style_scale,
-            #                   "clip_loss":clip_loss, "ce_loss":ce_loss, "text_style_loss":text_style_loss,
-            #                   "captioning":captioning}
-            #     reults.append(new_result)
+            elif "clip_loss" in line:
+                clip_loss = float(line.split("clip_loss_with_scale = ")[1][:-1])
+            elif "ce_loss" in line:
+                ce_loss = float(line.split("ce_loss = ")[1][:-1])
+            elif "text_style_loss" in line:
+                text_style_loss = float(line.split("text_style_loss_with_scale = ")[1][:-1])
+            elif "best clip: " in line:
+                captioning = line.split("best clip: ")[1]
+                new_result = {"img_num":img_num, "model": model, "label":label, "text_style_scale":text_style_scale,
+                              "clip_loss":clip_loss, "ce_loss":ce_loss, "text_style_loss":text_style_loss,
+                              "captioning":captioning}
+                reults.append(new_result)
             elif "best clip: " in line:
                 captioning = line.split("best clip: ")[1]
                 new_result = {"img_num":img_num, "model": model, "label":label, "text_style_scale":text_style_scale,
