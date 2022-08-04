@@ -19,7 +19,7 @@ def str2bool(v):
 
 parser = ArgumentParser()
 # parser.add_argument('--epochs', type=int, default=15000, help='description')
-parser.add_argument('--epochs', type=int, default=1, help='description')#todo
+parser.add_argument('--epochs', type=int, default=500, help='description')#todo
 parser.add_argument('--lr', type=float, default=1e-4, help='description')
 parser.add_argument('--margin', type=float, default=0.4, help='description')
 parser.add_argument('--batch_size', type=int, default=28, help='description')

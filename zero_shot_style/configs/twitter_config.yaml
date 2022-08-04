@@ -25,6 +25,7 @@ csv_file_name_train: twitter_train_BillGates_KendallJenner.csv
 csv_file_name_test: twitter_test_BillGates_KendallJenner.csv
 visual_csv_file_name_train: visual_twitter_train_BillGates_KendallJenner.csv
 visual_csv_file_name_test: visual_twitter_test_BillGates_KendallJenner.csv
+tgt_file_pairs_list: twitter_pairs_list_BillGates_KendallJenner.p
 num_workers: 10
 plot_only_clustering: False
 desired_labels: all
@@ -32,3 +33,4 @@ undesired_label: ''
 data_name: Twitter
 resume: False # resume running in wb
 run_id: ''
+load_model: False

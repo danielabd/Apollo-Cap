@@ -734,6 +734,7 @@ def main():
                         'median': os.path.join(experiment_dir, config['median_vec_emb_file'])}
     tgt_file_pairs_list = os.path.join(config['data_dir'],config['tgt_file_pairs_list'])
 
+
     use_cuda = torch.cuda.is_available()
     device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")#todo: remove
     wandb.init(project='zero-shot-learning',
