@@ -186,7 +186,8 @@ if __name__ == "__main__":
     # style_type = 'twitter'
     # style_type_list = ['clip','twitter','emotions']#todo remove comment
     # style_type_list = ['clip']
-    style_type_list = ['emotions']
+    # style_type_list = ['emotions']
+    style_type_list = ['twitter']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
