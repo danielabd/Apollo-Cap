@@ -74,80 +74,64 @@ class Dataset(torch.utils.data.Dataset):
             return batch_tweets, label
 
 
-#todo: remove comment
-# class TextStyleEmbed(nn.Module):
-#
-#     def __init__(self, dropout=0.05):
-#         super(TextStyleEmbed, self).__init__()
-#         self.bert = BertModel.from_pretrained('bert-base-uncased')
-#         for param in self.bert.parameters():
-#             param.requires_grad_(True)
-#         self.dropout = nn.Dropout(dropout)
-#         self.linear1 = nn.Linear(768, 128)
-#         self.linear2 = nn.Linear(700, 600)
-#         self.relu = nn.ReLU()
-#
-#     def forward(self, input_id, mask):
-#         _, pooled_output = self.bert(input_ids= input_id, attention_mask=mask,return_dict=False) # pooled_output is the embedding token of the [CLS] token for all batch
-#         #dropout_output = self.dropout(pooled_output)
-#         relu_output = self.relu(pooled_output)
-#         linear1_output = self.linear1(relu_output)
-#         #relu_output = self.relu(linear1_output)
-#         #linear2_output = self.linear2(relu_output)
-#         output = torch.nn.functional.normalize(linear1_output)
-#         #output = torch.nn.functional.normalize(pooled_output)
-#         return output
+#based on bert
+class TextStyleEmbed(nn.Module):
+    def __init__(self, dropout=0.05,device=torch.device('cpu')):
+        super(TextStyleEmbed, self).__init__()
+        self.bert = BertModel.from_pretrained('bert-base-uncased')
+        for param in self.bert.parameters():
+            param.requires_grad_(True)
+        self.dropout = nn.Dropout(dropout)
+        self.linear1 = nn.Linear(768, 128)
+        self.linear2 = nn.Linear(700, 600)
+        self.relu = nn.ReLU()
+
+    def forward(self, input_id, mask):
+        _, pooled_output = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False) # pooled_output is the embedding token of the [CLS] token for all batch
+        #dropout_output = self.dropout(pooled_output)
+        relu_output = self.relu(pooled_output)
+        linear1_output = self.linear1(relu_output)
+        #relu_output = self.relu(linear1_output)
+        #linear2_output = self.linear2(relu_output)
+        output = torch.nn.functional.normalize(linear1_output)
+        #output = torch.nn.functional.normalize(pooled_output)
+        return output
 
 
 
 
 # with torch.no_grad():
 #     text_style_features = clip.tokenize(text).to(device)
-class TextStyleEmbed(nn.Module):
-
-    def __init__(self, dropout=0.05,device=torch.device('cpu')):
-        super(TextStyleEmbed, self).__init__()
-        # Initialize CLIP
-        clip_checkpoints = './clip_checkpoints'
-        self.clip, clip_preprocess = clip.load("ViT-B/32", device=device,
-                                          download_root=clip_checkpoints, jit=False)  # clip_preprocess for images
-        #freeze clip model
-        for param in self.clip.parameters():
-            param.requires_grad = False
-        self.device = device
-        self.linear1 = nn.Linear(512, 128)
-        self.linear2 = nn.Linear(128, 128)
-        self.relu = nn.ReLU()
-
-    def forward(self, text):
-        # clip_texts = clip.tokenize(text, truncate=True).to(self.device)
-        # text_features = self.clip.encode_text(clip_texts)
-        inputs = clip.tokenize(text, truncate=True).to(self.device)
-        x = self.clip.encode_text(inputs)
-        x = self.linear1(x.float())
-        x = self.relu(x)
-        x = self.linear2(x)
-        text_features = x / x.norm(dim=-1, keepdim=True)
-        return text_features
-
-
-# def collate_fn(data): #for bert
-#     texts_list = []
-#     labels_list = []
-#     for list_for_label in data:
-#         if type(list_for_label[0]) == list:
-#             for text in list_for_label[0]:
-#                 texts_list.append(text)
-#                 labels_list.append(list_for_label[1])
-#         else:
-#             texts_list.append(list_for_label[0])
-#             labels_list.append(list_for_label[1])
-#     tokenized_texts_list = tokenizer(texts_list, padding='max_length', max_length=40, truncation=True,
-#                                      return_tensors="pt")
-#     return tokenized_texts_list, labels_list, texts_list
+# #based on clip
+# class TextStyleEmbed(nn.Module):
+#
+#     def __init__(self, dropout=0.05,device=torch.device('cpu')):
+#         super(TextStyleEmbed, self).__init__()
+#         # Initialize CLIP
+#         clip_checkpoints = './clip_checkpoints'
+#         self.clip, clip_preprocess = clip.load("ViT-B/32", device=device,
+#                                           download_root=clip_checkpoints, jit=False)  # clip_preprocess for images
+#         #freeze clip model
+#         for param in self.clip.parameters():
+#             param.requires_grad = False
+#         self.device = device
+#         self.linear1 = nn.Linear(512, 128)
+#         self.linear2 = nn.Linear(128, 128)
+#         self.relu = nn.ReLU()
+#
+#     def forward(self, text):
+#         # clip_texts = clip.tokenize(text, truncate=True).to(self.device)
+#         # text_features = self.clip.encode_text(clip_texts)
+#         inputs = clip.tokenize(text, truncate=True).to(self.device)
+#         x = self.clip.encode_text(inputs)
+#         x = self.linear1(x.float())
+#         x = self.relu(x)
+#         x = self.linear2(x)
+#         text_features = x / x.norm(dim=-1, keepdim=True)
+#         return text_features
 
 
-def collate_fn(data): #for clip
+def collate_fn(data): #for model based on bert
     texts_list = []
     labels_list = []
     for list_for_label in data:
@@ -158,7 +142,23 @@ def collate_fn(data): #for clip
         else:
             texts_list.append(list_for_label[0])
             labels_list.append(list_for_label[1])
-    return labels_list, texts_list
+    tokenized_texts_list = tokenizer(texts_list, padding='max_length', max_length=40, truncation=True,
+                                     return_tensors="pt")
+    return tokenized_texts_list, labels_list, texts_list
+
+
+# def collate_fn(data): #for model based on clip
+#     texts_list = []
+#     labels_list = []
+#     for list_for_label in data:
+#         if type(list_for_label[0]) == list:
+#             for text in list_for_label[0]:
+#                 texts_list.append(text)
+#                 labels_list.append(list_for_label[1])
+#         else:
+#             texts_list.append(list_for_label[0])
+#             labels_list.append(list_for_label[1])
+#     return labels_list, texts_list
 
 def get_auc(all_embeddings,pos_combinations_labels, neg_combinations_labels):
     t01 = timeit.default_timer()
@@ -219,12 +219,13 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
     total_labels = []
     total_texts_list = []
     with torch.no_grad():
-        # for step, (tokenized_texts_list, labels, texts_list) in enumerate(
-        #         tqdm(eval_dataloader, desc="Evaluation", leave=False)):
-        for step, (labels, texts_list) in enumerate(pbar := tqdm(eval_dataloader, desc="Evaluation", leave=False)):
+        for step, (tokenized_texts_list, labels, texts_list) in enumerate(
+                tqdm(eval_dataloader, desc="Evaluation", leave=False)):#for model based on bert
+        # for step, (labels, texts_list) in enumerate(pbar := tqdm(eval_dataloader, desc="Evaluation", leave=False)): #for model based on clip
             # labels = torch.from_numpy(np.asarray(labels)).to(device)
             total_labels.extend(labels)
-            outputs = model(texts_list)
+            # outputs = model(texts_list)#for model based on clip
+            outputs = model(tokenized_texts_list['input_ids'],tokenized_texts_list['attention_mask'])  # model based on bert
             # outputs = torch.nn.functional.normalize(outputs)  # normalize# todo: check if need to do that
             outputs = outputs.to(torch.device('cpu'))
             total_outputs.extend(outputs)
@@ -296,7 +297,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=config['batch_size'], shuffle=True, num_workers=config['num_workers'])
 
     print("Sanity check on train df...")
-    log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(5000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
+    log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(50,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
                                             config['inner_batch_size'],
                                             train_batch_size_for_plot, "sanity_check_initial_train",
                                             tgt_file_vec_emb, True, False,config['num_workers'])
@@ -312,11 +313,12 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
         list_positive_loss_batch = []
         list_fraction_positive_triplets_batch = []
         list_num_positive_triplets_batch = []
-        # for step, (tokenized_texts_list, labels, texts_list) in enumerate(pbar:= tqdm(train_dataloader, desc="Training", leave=False,)):
-        for step, (labels, texts_list) in enumerate(pbar := tqdm(train_dataloader, desc="Training", leave=False)):
+        for step, (tokenized_texts_list, labels, texts_list) in enumerate(pbar:= tqdm(train_dataloader, desc="Training", leave=False,)): #model based on bert
+        # for step, (labels, texts_list) in enumerate(pbar := tqdm(train_dataloader, desc="Training", leave=False)): #model based on clip
             labels = torch.from_numpy(np.asarray(labels)).to(device)
-            outputs = model(texts_list)
-            outputs = torch.nn.functional.normalize(outputs)  # normalize
+            # outputs = model(texts_list) #model based on clip
+            # outputs = torch.nn.functional.normalize(outputs)  # normalize #model based on clip
+            outputs = model(tokenized_texts_list['input_ids'], tokenized_texts_list['attention_mask']) #model based on bert
 
             # triplet loss
             loss, num_positive_triplets, num_valid_triplets, all_triplet_loss_avg = mining.online_mine_all(labels, outputs, config['margin'], device=device)
@@ -520,8 +522,8 @@ def create_correct_df(df,num_of_labels,desired_labels):
     list_of_labels = []
     fixed_list_of_texts = []
     for i in range(df.shape[0]):#go over all rows
-        # if i==100: #todo:remove
-        #     break
+        if i==100: #todo:remove
+            break
         if df.iloc[i, -num_of_labels-1]:# skip on example_very_unclear
             continue
         relevant_idxs_for_labels = np.where(df.iloc[i, -num_of_labels:].values == 1)
@@ -529,7 +531,7 @@ def create_correct_df(df,num_of_labels,desired_labels):
             continue
         labels = labels_set[relevant_idxs_for_labels[0]]
         for l in labels:
-            if desired_labels==list:
+            if type(desired_labels)==list:
                 if l not in desired_labels:
                     continue
             try:
@@ -700,11 +702,11 @@ def get_train_test_data(config, undesired_label = None):
 
 
 def main():
-    desired_cuda_num = "1"
+    desired_cuda_num = "3" # "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)
-    overwrite_pairs = False#todo
+    overwrite_pairs = True  #todo
 
     print('Start!')
     args = parser.parse_args()
