@@ -225,7 +225,7 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
             # labels = torch.from_numpy(np.asarray(labels)).to(device)
             total_labels.extend(labels)
             # outputs = model(texts_list)#for model based on clip
-            outputs = model(tokenized_texts_list['input_ids'],tokenized_texts_list['attention_mask'])  # model based on bert
+            outputs = model(tokenized_texts_list['input_ids'].to(device),tokenized_texts_list['attention_mask'].to(device))  # model based on bert
             # outputs = torch.nn.functional.normalize(outputs)  # normalize# todo: check if need to do that
             outputs = outputs.to(torch.device('cpu'))
             total_outputs.extend(outputs)
