@@ -19,7 +19,7 @@ def str2bool(v):
 
 parser = ArgumentParser()
 # parser.add_argument('--epochs', type=int, default=15000, help='description')
-parser.add_argument('--epochs', type=int, default=500, help='description')#todo
+parser.add_argument('--epochs', type=int, default=600, help='description')#todo
 parser.add_argument('--lr', type=float, default=1e-4, help='description')
 parser.add_argument('--margin', type=float, default=0.4, help='description')
 parser.add_argument('--batch_size', type=int, default=28, help='description')
@@ -28,8 +28,8 @@ parser.add_argument('--resume', type=str, default='allow', help='continue loggin
 parser.add_argument('--load_model', type=str, default='allow', help='loading best model')
 parser.add_argument('--run_id', type=str, default=None, help='wandb run_id')
 parser.add_argument('--tags', type=str, nargs='+', default=None, help='wandb tags')
-# parser.add_argument('--wandb_mode', type=str, default='online', help='disabled, offline, online')
-parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
+parser.add_argument('--wandb_mode', type=str, default='online', help='disabled, offline, online')
+# parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
 parser.add_argument('--data_file', type=str, default='preprocessed_data.csv', help='')
 parser.add_argument('--experiment_name', type=str, default='tmp', help='experiment identifier. results and checkpoints will be saved under directories with this name')
 parser.add_argument('--data_dir', type=str, default=os.path.join(os.path.expanduser('~'), 'zero-shot-style', 'data'), help='data path')
