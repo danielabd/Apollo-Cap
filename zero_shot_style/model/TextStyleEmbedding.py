@@ -297,10 +297,10 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=config['batch_size'], shuffle=True, num_workers=config['num_workers'])
 
     print("Sanity check on train df...")
-    log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(50,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
-                                            config['inner_batch_size'],
-                                            train_batch_size_for_plot, "sanity_check_initial_train",
-                                            tgt_file_vec_emb, True, False,config['num_workers'])
+    # log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(50,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
+    #                                         config['inner_batch_size'],
+    #                                         train_batch_size_for_plot, "sanity_check_initial_train",
+    #                                         tgt_file_vec_emb, True, False,config['num_workers'])
 
     print('Starting to train...')
     model = model.to(device)
