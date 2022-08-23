@@ -318,7 +318,7 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
             labels = torch.from_numpy(np.asarray(labels)).to(device)
             # outputs = model(texts_list) #model based on clip
             # outputs = torch.nn.functional.normalize(outputs)  # normalize #model based on clip
-            outputs = model(tokenized_texts_list['input_ids'], tokenized_texts_list['attention_mask']) #model based on bert
+            outputs = model(tokenized_texts_list['input_ids'].to(device), tokenized_texts_list['attention_mask'].to(device)) #model based on bert
 
             # triplet loss
             loss, num_positive_triplets, num_valid_triplets, all_triplet_loss_avg = mining.online_mine_all(labels, outputs, config['margin'], device=device)
