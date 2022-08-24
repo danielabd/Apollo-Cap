@@ -41,6 +41,7 @@ class CLIPTextGenerator:
                  reset_context_delta=True,
                  num_iterations=5,
                  clip_loss_temperature=0.01,
+                 text_style_loss_temperature = 0.0002,
                  clip_scale=1.,
                  ce_scale=0.2,
                  stepsize=0.3,
@@ -93,6 +94,7 @@ class CLIPTextGenerator:
         self.reset_context_delta = reset_context_delta
         self.num_iterations = num_iterations
         self.clip_loss_temperature = clip_loss_temperature
+        self.text_style_loss_temperature = text_style_loss_temperature
         self.clip_scale = clip_scale
         self.ce_scale = ce_scale
         self.stepsize = stepsize
@@ -422,7 +424,7 @@ class CLIPTextGenerator:
 
             with torch.no_grad():
                 similiraties = (self.text_style_features @ top_text_features.T)
-                target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
+                target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()#todo: check if to change it
                 target_probs = target_probs.type(torch.float32)
             target = torch.zeros_like(probs[idx_p])
             target[top_indices[idx_p]] = target_probs[0]
@@ -474,8 +476,34 @@ class CLIPTextGenerator:
                 text_style_grades = nn.functional.softmax(distances, dim=-1)[:, 0]
                 text_style_grades = text_style_grades.unsqueeze(0)
 
-                predicted_probs = nn.functional.softmax(text_style_grades / self.clip_loss_temperature, dim=-1).detach()
+                predicted_probs = nn.functional.softmax(text_style_grades / self.text_style_loss_temperature, dim=-1).detach()
                 predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+
+                # #####todo: check my sentences
+                # my_texts = ["I love you", "I hate you", "It is disgust"]
+                # my_texts = ["love", "hate", "disgust", "angry", "cute"]
+                # # my_texts = ["you seem like the kind of person i'd like to be best friends with", "it *feels* unethical?"]
+                # inputs = self.text_style_tokenizer(my_texts, padding=True, return_tensors="pt")
+                # inputs['input_ids'] = inputs['input_ids'].to(self.device)
+                # inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
+                # my_logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
+                # # ## based on clip
+                # # logits = self.text_style_model(top_texts)
+                #
+                # # calculate the distance between the embedding of the text we want to mimic and the all candidated embedding
+                # # todo:check how to do broadcast with embedding_of_text_for_mimic
+                # logits.to(self.device)
+                # self.desired_style_embedding_vector = torch.tensor(self.desired_style_embedding_vector).to(
+                #     self.device)  # todo: check about median instead of mean
+                # my_distances = -abs(my_logits - self.desired_style_embedding_vector)
+                #
+                # text_style_grades = nn.functional.softmax(my_distances, dim=-1)[:, 0]
+                # text_style_grades = text_style_grades.unsqueeze(0)
+                #
+                # predicted_probs = nn.functional.softmax(text_style_grades / (self.clip_loss_temperature/50), dim=-1).detach()
+                # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+                # pass
+                # #####
 
             target = torch.zeros_like(probs[idx_p], device=self.device)
             target[top_indices[idx_p]] = predicted_probs[0]
