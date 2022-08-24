@@ -231,7 +231,7 @@ if __name__ == "__main__":
                     desired_labels_list = ['BillGates', 'rihanna', 'justinbieber']
                 elif style_type == 'emotions_love_disgust':
                     model_path = os.path.join(base_path, 'checkpoints', 'best_model',
-                                              'best_love_disgust_classes_trained_model_emotions.pth.pth')
+                                              'best_love_disgust_classes_trained_model_emotions.pth')
                     embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
                                                    'emotions_love_disgust_mean_class_embedding.p')
                     embedding_path2 = os.path.join(base_path, 'checkpoints', 'best_model',
