@@ -233,9 +233,9 @@ if __name__ == "__main__":
                     model_path = os.path.join(base_path, 'checkpoints', 'best_model',
                                               'best_love_disgust_classes_trained_model_emotions.pth.pth')
                     embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
-                                                   'emotions_love_disgust_mean_class_embedding.p.p')
+                                                   'emotions_love_disgust_mean_class_embedding.p')
                     embedding_path2 = os.path.join(base_path, 'checkpoints', 'best_model',
-                                                   'emotions_love_disgust_median_class_embedding.p.p')
+                                                   'emotions_love_disgust_median_class_embedding.p')
                     # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
                     desired_labels_list = 'all'
                     text_to_mimic_list.reverse()
