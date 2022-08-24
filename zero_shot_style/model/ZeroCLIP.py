@@ -458,11 +458,12 @@ class CLIPTextGenerator:
             # get score for text
             with torch.no_grad():
                 ## based on bert
-                # inputs = self.text_style_tokenizer(top_texts, padding=True, return_tensors="pt")
-                # inputs['input_ids'] = inputs['input_ids'].to(self.device)
-                # inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
-                # logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
-                logits = self.text_style_model(top_texts)
+                inputs = self.text_style_tokenizer(top_texts, padding=True, return_tensors="pt")
+                inputs['input_ids'] = inputs['input_ids'].to(self.device)
+                inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
+                logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
+                # ## based on clip
+                # logits = self.text_style_model(top_texts)
 
                 #calculate the distance between the embedding of the text we want to mimic and the all candidated embedding
                 #todo:check how to do broadcast with embedding_of_text_for_mimic
