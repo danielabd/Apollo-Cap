@@ -223,14 +223,15 @@ class CLIPTextGenerator:
                 self.text_style_features = self.get_txt_features(text_to_mimic)
                 # use my text style model features
             else: #style_type=='twitter' or 'emotions'
-                #### based on clip
-                # tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
-                #                                                     max_length=512, truncation=True,
-                #                                                     return_tensors="pt")
-                # masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
-                # input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
-                # embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embeding vector
-                embedding_of_text_for_mimic = self.text_style_model(text_to_mimic) #embeding vector
+                #### based on bert
+                tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
+                                                                    max_length=512, truncation=True,
+                                                                    return_tensors="pt")
+                masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
+                input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
+                embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embeding vector
+                # #### based on clip
+                # embedding_of_text_for_mimic = self.text_style_model(text_to_mimic) #embeding vector
                 embedding_of_text_for_mimic.to(self.device)
                 self.desired_style_embedding_vector = embedding_of_text_for_mimic
 
