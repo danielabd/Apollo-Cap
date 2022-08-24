@@ -177,6 +177,7 @@ if __name__ == "__main__":
                               'best_twitter_trained_model.pth')
     embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
                                    'emotions_mean_class_embedding.p')  # twitter
+
     text_to_mimic_list = ["Happy","Love","angry","hungry", "I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work", "I angry and I love","The government is good"]
     mimic_text_style = True
     img_dict = lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
@@ -187,7 +188,7 @@ if __name__ == "__main__":
     # style_type_list = ['clip','twitter','emotions']#todo remove comment
     # style_type_list = ['clip']
     # style_type_list = ['emotions']
-    style_type_list = ['twitter']
+    style_type_list = ['emotions_love_disgust']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
@@ -212,6 +213,7 @@ if __name__ == "__main__":
             if not os.path.isfile(args.caption_img_path):
                 continue
             for style_type in style_type_list:
+
                 if style_type == 'emotions':
                     model_path = os.path.join(base_path,'checkpoints','best_model','best_28_classes_trained_model_emotions.pth')
                     embedding_path1 = os.path.join(base_path,'checkpoints','best_model', 'emotions_mean_class_embedding.p')
@@ -227,6 +229,17 @@ if __name__ == "__main__":
                     embedding_path2 = os.path.join(base_path,'checkpoints','best_model',
                                                    'twitter_median_class_embedding.p')  # twitter
                     desired_labels_list = ['BillGates', 'rihanna', 'justinbieber']
+                elif style_type == 'emotions_love_disgust':
+                    model_path = os.path.join(base_path, 'checkpoints', 'best_model',
+                                              'best_love_disgust_classes_trained_model_emotions.pth.pth')
+                    embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
+                                                   'emotions_love_disgust_mean_class_embedding.p.p')
+                    embedding_path2 = os.path.join(base_path, 'checkpoints', 'best_model',
+                                                   'emotions_love_disgust_median_class_embedding.p.p')
+                    # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
+                    desired_labels_list = 'all'
+                    text_to_mimic_list.reverse()
+
                 # elif style_type == 'clip' and not mimic_text_style: #todo: remove comment
                 #     continue
                 # embedding_path_list = [embedding_path1, embedding_path2]
