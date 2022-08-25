@@ -534,9 +534,9 @@ class CLIPTextGenerator:
         i=-1
         while(1):
             i=i+1
-            print(f' iteration num = {i}')
-            if i>3:
+            if i>20:
                 break
+            print(f' iteration num = {i}')
             curr_shift = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_]) for p_ in
                           context_delta]
 
