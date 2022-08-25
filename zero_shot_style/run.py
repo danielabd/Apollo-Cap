@@ -263,7 +263,7 @@ if __name__ == "__main__":
                     #     reults_dir = os.path.join(base_path, 'results', cur_time)
                     #     if not os.path.isfile(args.caption_img_path):
                     #         continue
-                    #     desired_labels_list.reverse()#todo:remove
+                        desired_labels_list.reverse()#todo:remove
                         for label in desired_labels_list:
                             if not mimic_text_style:
                                 desired_style_embedding_vector = embedding_vectors_to_load[label]

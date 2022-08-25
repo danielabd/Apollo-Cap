@@ -44,7 +44,8 @@ class CLIPTextGenerator:
                  text_style_loss_temperature = 0.0002,
                  clip_scale=1.,
                  ce_scale=0.2,
-                 stepsize=0.3,
+                 # stepsize=0.3,#todo
+                 stepsize=0.5,#todo
                  grad_norm_factor=0.9,
                  fusion_factor=0.99,
                  repetition_penalty=1.,
