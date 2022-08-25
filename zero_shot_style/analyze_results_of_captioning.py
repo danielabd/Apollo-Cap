@@ -24,7 +24,7 @@ def writing_results_to_csv(reults,tgt_path_results):
 
 def main():
     # base_dir = '/home/bdaniela/zero-shot-style/zero_shot_style'
-    running_time = '23_42_51__04_08_2022'
+    running_time = '15_47_07__24_08_2022'
     log_file_name = "log.txt"
     # log_file_name = "log.txt"
     base_dir = os.path.join('/home/bdaniela/zero-shot-style/results',running_time)

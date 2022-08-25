@@ -530,7 +530,13 @@ class CLIPTextGenerator:
 
         window_mask = torch.ones_like(context[0][0]).to(self.device)
 
-        for i in range(self.num_iterations):
+        # for i in range(self.num_iterations):
+        i=-1
+        while(1):
+            i=i+1
+            print(f' iteration num = {i}')
+            if i>20:
+                break
             curr_shift = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_]) for p_ in
                           context_delta]
 
@@ -555,7 +561,6 @@ class CLIPTextGenerator:
             # CE/Fluency loss
             ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
             print(f'ce_loss = {ce_loss.sum()}')
-            
             loss += ce_loss.sum()
 
             # SENTIMENT: adding the sentiment component
@@ -573,7 +578,6 @@ class CLIPTextGenerator:
                 print(
                     f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                 loss += self.text_style_scale * text_style_loss
-
 
             loss.backward()
 
@@ -630,6 +634,13 @@ class CLIPTextGenerator:
             for p0, p1 in context:
                 new_context.append((p0.detach(), p1.detach()))
             context = new_context
+
+            #todo: daniela add break depend on loss
+            weighted_clip_loss = self.clip_scale * clip_loss
+            ce_loss = ce_loss.sum()
+            weighted_text_style_loss = self.text_style_scale * text_style_loss
+            if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
+                break
 
         context_delta = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_])
                          for p_ in context_delta]
