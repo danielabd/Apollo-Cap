@@ -169,7 +169,7 @@ if __name__ == "__main__":
     img_path_list = list(np.arange(1,106))
     # img_path_list.reverse()
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
-    sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
+    sentiment_scale_list = [1.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style'
     text_style_scale_list = [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
 
