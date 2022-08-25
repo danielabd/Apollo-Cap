@@ -44,8 +44,7 @@ class CLIPTextGenerator:
                  text_style_loss_temperature = 0.0002,
                  clip_scale=1.,
                  ce_scale=0.2,
-                 # stepsize=0.3,#todo
-                 stepsize=0.2,#todo
+                 stepsize=0.3,#todo
                  grad_norm_factor=0.9,
                  fusion_factor=0.99,
                  repetition_penalty=1.,
@@ -536,7 +535,7 @@ class CLIPTextGenerator:
         while(1):
             i=i+1
             print(f' iteration num = {i}')
-            if i>200:
+            if i>20:
                 break
             curr_shift = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_]) for p_ in
                           context_delta]
