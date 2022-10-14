@@ -15,6 +15,44 @@ from torch.optim import Adam, SGD
 from zero_shot_style.model.TextStyleEmbedding import TextStyleEmbed
 import pickle
 
+def write_tmp_text_loss(tmp_text_loss):
+    def write_results_of_text_style_all_models(img_dict, labels, reults_dir, scales_len, tgt_results_path):
+        # img_dict[img_path][style_type][text_style_scale][label]
+        if not os.path.isdir(reults_dir):
+            os.makedirs(reults_dir)
+        print(f'Writing results into: {tgt_results_path}')
+        with open(tgt_results_path, 'w') as results_file:
+            writer = csv.writer(results_file)
+            for img in img_dict.keys():
+                img_num_str = img.split('/')[-1].split('.j')[0]
+                titles0 = ['img_num']
+                titles0.extend([img_num_str] * scales_len * len(labels))
+                writer.writerow(titles0)
+                titles1 = ['label']
+                for label in labels:
+                    titles1.extend([label] * scales_len)
+                writer.writerow(titles1)
+                titles2 = ['model/scale']
+                titles2.extend(list(img_dict[img][list(img_dict[img].keys())[0]].keys()) * len(labels))
+                writer.writerow(titles2)
+                for model_name in img_dict[img]:
+                    cur_row = [model_name]
+                    for scale in img_dict[img][model_name].keys():
+                        for label in img_dict[img][model_name][scale].keys():
+                            cur_row.append(img_dict[img][model_name][scale][label])
+                    writer.writerow(cur_row)
+
+
+    for beam_num in range(len(best_sentences_LM)):
+    self.tmp_text_loss[cur_iter][beam_num]['clip_text'] = best_sentences_clip[beam_num]
+    self.tmp_text_loss[cur_iter][beam_num]['clip_loss'] = clip_losses[beam_num]
+    self.tmp_text_loss[cur_iter][beam_num]['style_text'] = best_sentences_style[beam_num]
+    self.tmp_text_loss[cur_iter][beam_num]['style_loss'] = text_style_losses[beam_num]
+    self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
+    self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
+
+
+
 def log_info(text, verbose=True):
     if verbose:
         dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -53,8 +91,10 @@ class CLIPTextGenerator:
                  forbidden_factor=20,
                  cuda_idx = None,
                  model_path = None,
+                 tmp_text_loss = None,
                  **kwargs):
 
+        self.tmp_text_loss = tmp_text_loss
         self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
 
         
@@ -450,7 +490,7 @@ class CLIPTextGenerator:
 
         text_style_loss = 0
         losses = []
-
+        best_sentences = []
         for idx_p in range(probs.shape[0]):  # go over all beams
             top_texts = []
             prefix_text = prefix_texts[idx_p]
@@ -513,6 +553,7 @@ class CLIPTextGenerator:
 
             text_style_loss += cur_text_style_loss
             losses.append(cur_text_style_loss)
+            best_sentences.append(top_texts[torch.argmax(predicted_probs[0])])
 
         loss_string = ''
         for idx_p in range(probs.shape[0]):  # go over all beams
@@ -521,7 +562,7 @@ class CLIPTextGenerator:
             else:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
 
-        return text_style_loss, losses
+        return text_style_loss, losses, best_sentences
 
 
     
@@ -531,12 +572,14 @@ class CLIPTextGenerator:
         window_mask = torch.ones_like(context[0][0]).to(self.device)
 
         # for i in range(self.num_iterations):
-        i=-1
+        cur_iter=-1
+        tmp_text_loss = {}
         while(1):
-            i=i+1
-            if i>20:
+            cur_iter=cur_iter+1
+            if cur_iter>20:
                 break
-            print(f' iteration num = {i}')
+            print(f' iteration num = {cur_iter}')
+
             curr_shift = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_]) for p_ in
                           context_delta]
 
@@ -553,15 +596,15 @@ class CLIPTextGenerator:
             loss = 0.0
 
             # CLIP LOSS
-            clip_loss, clip_losses = self.clip_loss(probs, context_tokens)
+            clip_loss, clip_losses, best_sentences_clip, best_sentences_LM = self.clip_loss(probs, context_tokens)
             print(f'clip_loss = {clip_loss}, clip_loss_with_scale = {self.clip_scale * clip_loss}')
             loss += self.clip_scale * clip_loss
-            
 
             # CE/Fluency loss
             ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
             print(f'ce_loss = {ce_loss.sum()}')
             loss += ce_loss.sum()
+            ce_losses = (probs * probs_before_shift.log()).sum(-1)
 
             # SENTIMENT: adding the sentiment component
             if self.sentiment_type!='none':
@@ -574,11 +617,20 @@ class CLIPTextGenerator:
                 if self.style_type == 'clip': #using clip model for text style
                     text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
                 else:
-                    text_style_loss, text_style_losses = self.get_text_style_loss(probs, context_tokens)
+                    text_style_loss, text_style_losses, best_sentences_style = self.get_text_style_loss(probs, context_tokens)
                 print(
                     f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                 loss += self.text_style_scale * text_style_loss
 
+            # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
+            for beam_num in range(len(best_sentences_LM)):
+                self.tmp_text_loss[cur_iter][beam_num]['clip_text'] = best_sentences_clip[beam_num]
+                self.tmp_text_loss[cur_iter][beam_num]['clip_loss'] = clip_losses[beam_num]
+                self.tmp_text_loss[cur_iter][beam_num]['style_text'] = best_sentences_style[beam_num]
+                self.tmp_text_loss[cur_iter][beam_num]['style_loss'] = text_style_losses[beam_num]
+                self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
+                self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
+            write_tmp_text_loss(self.tmp_text_loss)
             loss.backward()
 
             # ---------- Weights ----------
@@ -685,12 +737,14 @@ class CLIPTextGenerator:
 
         clip_loss = 0
         losses = []
+        best_sentences_clip = []
+        best_sentences_LM = []
         for idx_p in range(probs.shape[0]): # for beam search
             top_texts = []
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]:
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
-          
+            best_sentences_LM.append(prefix_text + self.lm_tokenizer.decode(probs[idx_p].topk(1).indices[0]))
             text_features = self.get_txt_features(top_texts)
 
             with torch.no_grad():
@@ -704,5 +758,5 @@ class CLIPTextGenerator:
 
             clip_loss += cur_clip_loss
             losses.append(cur_clip_loss)
-
-        return clip_loss, losses
+            best_sentences_clip.append(top_texts[torch.argmax(target_probs[0])])
+        return clip_loss, losses, best_sentences_clip, best_sentences_LM

@@ -53,7 +53,7 @@ def get_args():
     return args
 
 def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,mimic_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,style_type):
-    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path, **vars(args))
+    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, **vars(args))
 
     image_features = text_generator.get_img_feature([img_path], None)
     # SENTIMENT: added scale parameter
@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     text_to_mimic_list = ["Happy","Love","angry","hungry", "I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work", "I angry and I love","The government is good"]
     mimic_text_style = True
-    img_dict = lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
+
     # embedding_path_idx2str = {0:'mean',1:'median'}
     embedding_path_idx2str = {0:'mean'}
     # style_type = 'emotions'
@@ -196,6 +196,10 @@ if __name__ == "__main__":
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
+
+    # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
+    tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
+
     for mimic_text_style in [False,True]:
         if mimic_text_style:
             classes_type = "sentences"
