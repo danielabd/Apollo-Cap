@@ -42,12 +42,8 @@ class PosNegPairsDataset(torch.utils.data.Dataset):
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, df, labels_set_dict, inner_batch_size=1,all_data=False):
-        print("labels_set_dict.keys():")
-        print(labels_set_dict.keys())
-        print("set(df['label']):")
-        print(set(df['label']))
         self.labels = [labels_set_dict[label] for label in df['label']] #create list of idxs for labels
-        self.labels_set = list(set(self.labels))
+        self.labels_set = list(se   t(self.labels))
         self.texts = list(df['text'])#df['Tweet'] #[text for text in df['Tweet']]
         self.batch_size_per_label = inner_batch_size
         self.all_data = all_data #boolean
@@ -325,7 +321,6 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
         list_fraction_positive_triplets_batch = []
         list_num_positive_triplets_batch = []
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(pbar:= tqdm(train_dataloader, desc="Training", leave=False,)): #model based on bert
-            print("step", step)
             # for step, (labels, texts_list) in enumerate(pbar := tqdm(train_dataloader, desc="Training", leave=False)): #model based on clip
             labels = torch.from_numpy(np.asarray(labels)).to(device)
             # outputs = model(texts_list) #model based on clip
@@ -809,8 +804,7 @@ def main():
         exit(0)
     # senity_check(df_train)
     pos_combinations_labels, neg_combinations_labels = get_pos_neg_pairs(df_test, tgt_file_pairs_list, overwrite_pairs)
-    print("labels_set_dict:")
-    print(labels_set_dict)
+
     train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,path_for_saving_best_model, device, tgt_file_vec_emb,config,pos_combinations_labels, neg_combinations_labels)
     # evaluate(model,  filtered_df_test, labels_set_dict, device, config,pos_combinations_labels,neg_combinations_labels)
 
