@@ -43,7 +43,7 @@ class PosNegPairsDataset(torch.utils.data.Dataset):
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, df, labels_set_dict, inner_batch_size=1,all_data=False):
         self.labels = [labels_set_dict[label] for label in df['label']] #create list of idxs for labels
-        self.labels_set = list(se   t(self.labels))
+        self.labels_set = list(set(self.labels))
         self.texts = list(df['text'])#df['Tweet'] #[text for text in df['Tweet']]
         self.batch_size_per_label = inner_batch_size
         self.all_data = all_data #boolean
