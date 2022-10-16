@@ -5,7 +5,6 @@ import yaml
 import pickle
 import sys
 
-
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -28,18 +27,18 @@ parser.add_argument('--resume', type=str, default='allow', help='continue loggin
 parser.add_argument('--load_model', type=str, default='allow', help='loading best model')
 parser.add_argument('--run_id', type=str, default=None, help='wandb run_id')
 parser.add_argument('--tags', type=str, nargs='+', default=None, help='wandb tags')
-parser.add_argument('--wandb_mode', type=str, default='online', help='disabled, offline, online')
-# parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
 parser.add_argument('--data_file', type=str, default='preprocessed_data.csv', help='')
 parser.add_argument('--experiment_name', type=str, default='tmp', help='experiment identifier. results and checkpoints will be saved under directories with this name')
-parser.add_argument('--data_dir', type=str, default=os.path.join(os.path.expanduser('~'), 'zero-shot-style', 'data'), help='data path')
 parser.add_argument('--results_dir', type=str, default=os.path.join(os.path.expanduser('~'), 'zero-shot-style', 'results'), help='results path')
 parser.add_argument('--checkpoints_dir', type=str, default=os.path.join(os.path.expanduser('~'), 'zero-shot-style', 'checkpoints'), help='checkpoints path')
 parser.add_argument('--data_name', type=str, default='go_emotions', help='data to use')# Twitter/go_emotions
 parser.add_argument('--desired_labels', type=str, nargs='+', default='all', help='list labels for triplet training')
 parser.add_argument('--override', type=str2bool, default=False, help='override results without warning')
+parser.add_argument('--data_dir', type=str, default=os.path.join(os.path.expanduser('~'), 'zero-shot-style', 'data', 'flickrstyle10k'), help='data path')
+parser.add_argument('--wandb_mode', type=str, default='online', help='disabled, offline, online')
+#parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
 # parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','default_config.yaml'), help='full path to config file')
-parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','emotions_config.yaml'), help='full path to config file')
+parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','flickrstyle10k_config.yaml'), help='full path to config file')
 # parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','twitter_config.yaml'), help='full path to config file')
 parser.add_argument('--plot_only_clustering', type=str2bool, default=False, help='plot only clustering of the best model')
 # parser.add_argument('--rundry', type=str2bool, default=False)

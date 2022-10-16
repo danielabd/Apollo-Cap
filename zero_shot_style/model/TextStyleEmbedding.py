@@ -1,4 +1,3 @@
-
 from matplotlib import pyplot as plt
 import pandas as pd
 import torch
@@ -43,6 +42,10 @@ class PosNegPairsDataset(torch.utils.data.Dataset):
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, df, labels_set_dict, inner_batch_size=1,all_data=False):
+        print("labels_set_dict.keys():")
+        print(labels_set_dict.keys())
+        print("set(df['label']):")
+        print(set(df['label']))
         self.labels = [labels_set_dict[label] for label in df['label']] #create list of idxs for labels
         self.labels_set = list(set(self.labels))
         self.texts = list(df['text'])#df['Tweet'] #[text for text in df['Tweet']]
@@ -290,17 +293,25 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
 def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_str, path_for_saving_last_model, path_for_saving_best_model, device, tgt_file_vec_emb, config,pos_combinations_labels, neg_combinations_labels, **kwargs):
     # some_var = kwconfig['get('some_var_name', None)  # todo function call: train(train_args, some_var_name=some_var)
     # val_batch_size_for_plot = len(set(df_test['label'])) #min(batch_size,len(set(df_test['label'])))# suppose that the first column is for label
-    train_batch_size_for_plot = len(set(df_train['label'])) #min(batch_size,len(set(df_train['label'])))
-    val_batch_size_for_plot = len(set(df_test['label'])) #min(batch_size,len(set(df_train['label'])))
+    #train_batch_size_for_plot = len(set(df_train['label'])) #min(batch_size,len(set(df_train['label'])))
+    #val_batch_size_for_plot = len(set(df_test['label'])) #min(batch_size,len(set(df_train['label'])))
+    train_batch_size_for_plot = config['batch_size']
+    val_batch_size_for_plot = config['batch_size']
 
     train_data_set = Dataset(df_train, labels_set_dict, config['inner_batch_size'],True)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=config['batch_size'], shuffle=True, num_workers=config['num_workers'])
 
     print("Sanity check on train df...")
-    log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(50,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
+    #log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(50,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
+    #                                        config['inner_batch_size'],
+    #                                        train_batch_size_for_plot, "sanity_check_initial_train",
+    #                                        tgt_file_vec_emb, True, False,config['num_workers'])
+    '''
+    log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, len(df_train), 50),:], labels_set_dict, labels_idx_to_str, device, model,
                                             config['inner_batch_size'],
                                             train_batch_size_for_plot, "sanity_check_initial_train",
                                             tgt_file_vec_emb, True, False,config['num_workers'])
+    '''
 
     print('Starting to train...')
     model = model.to(device)
@@ -314,7 +325,8 @@ def train(model, optimizer, df_train, df_test, labels_set_dict, labels_idx_to_st
         list_fraction_positive_triplets_batch = []
         list_num_positive_triplets_batch = []
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(pbar:= tqdm(train_dataloader, desc="Training", leave=False,)): #model based on bert
-        # for step, (labels, texts_list) in enumerate(pbar := tqdm(train_dataloader, desc="Training", leave=False)): #model based on clip
+            print("step", step)
+            # for step, (labels, texts_list) in enumerate(pbar := tqdm(train_dataloader, desc="Training", leave=False)): #model based on clip
             labels = torch.from_numpy(np.asarray(labels)).to(device)
             # outputs = model(texts_list) #model based on clip
             # outputs = torch.nn.functional.normalize(outputs)  # normalize #model based on clip
@@ -513,7 +525,7 @@ def evaluate(model, df_test, labels_set_dict, device, config,pos_combinations_la
 
 
 
-def create_correct_df(df,num_of_labels,desired_labels):
+def create_correct_df(df,num_of_labels,desired_labels): #for go-emotions dataset
     # labels_set_dict = {dmiration, amusement, anger, annoyance, approval, caring, confusion, curiosity, desire, disappointment, disapproval, disgust, embarrassment, excitement, fear, gratitude, grief, joy, love, nervousness, optimism, pride, realization, relief, remorse, sadness, surprise, neutral}
     print("Creating corrected df...")
     start = timeit.default_timer()
@@ -619,6 +631,10 @@ def get_pos_neg_pairs(df_test,tgt_file_pairs_list,overwrite_pairs):
 def getting_labels_map(config,df_train):
     labels_set_dict = {}
     labels_idx_to_str = {}
+    if config['data_name'] == 'flickrstyle10k':
+        for i, label in enumerate(set(df_train['label'])):
+            labels_set_dict[label] = i
+            labels_idx_to_str[i] = label
     if config['data_name'] == 'go_emotions':
         for i, label in enumerate(set(df_train['label'])):
             labels_set_dict[label] = i
@@ -651,39 +667,73 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
 def get_train_test_data(config, undesired_label = None):
     #load data
     if os.path.isfile(os.path.join(config['data_dir'],config['csv_file_name_train'])):
+        print("Loading data...")
         df_train = pd.read_csv(os.path.join(config['data_dir'],config['csv_file_name_train']))
         print(df_train.groupby('label').size())
         df_test = pd.read_csv(os.path.join(config['data_dir'],config['csv_file_name_test']))
+        unvalid_vars_train = []
+        unvalid_vars_test = []
+        for i,sample_data in enumerate(df_train['text']):
+            if not isinstance(sample_data, str):
+                #print("unvalid variable: ",sample_data)
+                unvalid_vars_train.append(i)
+                continue
+        for j,sample_data in enumerate(df_test['text']):
+            if not isinstance(sample_data, str):
+                #print("unvalid variable: ",sample_data)
+                unvalid_vars_test.append(j)
+                continue
+        df_train = df_train.drop(index=unvalid_vars_train)
+        df_test = df_train.drop(index=unvalid_vars_test)
+
         if undesired_label:
             df_train = df_train.iloc[np.where(np.array(df_train["label"]) != undesired_label)[0], :]
             df_test = df_test.iloc[np.where(np.array(df_test["label"]) != undesired_label)[0], :]
         # df_train = df_train.iloc[:2000,:]#todo:remove
         # df_test = df_test.iloc[:2000,:]#todo:remove
     else: #create df_train, df_test
+        print("Creating data...")
         # desired_labels = ['anger','caring','optimism','love']
         # desired_labels = ['anger','love']
         # desired_labels = 'all'
         desired_labels = config['desired_labels']
         data_file = config['data_file']
-        if type(data_file) == list:
-            s_df = pd.read_csv(os.path.join(config['data_dir'], data_file[0]))
-            for f in data_file[1:]:
-                datapath = os.path.join(config['data_dir'], f)
-                cur_df = pd.read_csv(datapath)
-                s_df = pd.concat([s_df, cur_df], axis=0, ignore_index=True)
-        else:
-            datapath = os.path.join(config['data_dir'], data_file)
-            s_df = pd.read_csv(datapath)
+        if config['data_name'] == 'flickrstyle10k':
+            if type(data_file) == list:
+                data = []
+                for i in range(len(data_file)):
+                    with open(os.path.join(config['data_dir'],data_file[i]),'rb') as f:
+                        lines = f.readlines()
+                        for line in lines:
+                            try:
+                                normal_line = line.decode('ascii')
+                            except:
+                                continue
+                            cleaned_text = clean_text(normal_line)
+                            if not isinstance(cleaned_text, str):
+                                continue
+                            data.append([data_file[i].split('_')[0],cleaned_text])
+            df = pd.DataFrame(data, columns=["label","text"])
+        else: #go_emotions or twitter dataset
+            if type(data_file) == list:
+                s_df = pd.read_csv(os.path.join(config['data_dir'], data_file[0]))
+                for f in data_file[1:]:
+                    datapath = os.path.join(config['data_dir'], f)
+                    cur_df = pd.read_csv(datapath)
+                    s_df = pd.concat([s_df, cur_df], axis=0, ignore_index=True)
+            else:
+                datapath = os.path.join(config['data_dir'], data_file)
+                s_df = pd.read_csv(datapath)
 
-        print(s_df.head())
-        #  df.groupby(['User']).size().plot.bar()
-        if config['data_name'] == 'go_emotions':
-            num_of_labels = 28
-            df = create_correct_df(s_df, num_of_labels, desired_labels)
-        elif config['data_name'] == 'Twitter': # change titles to Label and text
-            s_df = s_df.rename(columns={'User': 'label', 'Tweet': 'text'})
-            df = s_df
-
+            print(s_df.head())
+            #  df.groupby(['User']).size().plot.bar()
+            if config['data_name'] == 'go_emotions':
+                num_of_labels = 28
+                df = create_correct_df(s_df, num_of_labels, desired_labels)
+            elif config['data_name'] == 'Twitter': # change titles to Label and text
+                s_df = s_df.rename(columns={'User': 'label', 'Tweet': 'text'})
+                df = s_df
+        print(df.head())
         if undesired_label:
             df = df.iloc[np.where(np.array(df["label"]) != undesired_label)[0], :]
         # df = df.iloc[:2000,:]#todo:remove
@@ -695,8 +745,8 @@ def get_train_test_data(config, undesired_label = None):
         # print(len(df_train), len(df_val), len(df_test))
         print(f'len of train = {len(df_train)},len of test = {len(df_test)}')
         print(f"saving data file splitted to train and test sets to: {os.path.join(config['data_dir'],config['csv_file_name_train'])}\n{os.path.join(config['data_dir'],config['csv_file_name_test'])}")
-        df_train.to_csv(os.path.join(config['data_dir'],config['csv_file_name_train']))
-        df_test.to_csv(os.path.join(config['data_dir'],config['csv_file_name_test']))
+        df_train.to_csv(os.path.join(config['data_dir'],config['csv_file_name_train']), index=False)
+        df_test.to_csv(os.path.join(config['data_dir'],config['csv_file_name_test']), index=False)
     return df_train,df_test
 
 

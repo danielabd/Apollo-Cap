@@ -15,7 +15,9 @@ def clean_text(tweet):
     #print('source text:\n'+source_text)
 
     # skip rt tweets
-    if tweet.split()[0].lower()=="rt":
+    if len(tweet.split())==0:
+        return ""
+    elif tweet.split()[0].lower() == "rt":
         return ""
     #Remove HTML tags
     tweet = BeautifulSoup(tweet).get_text()
