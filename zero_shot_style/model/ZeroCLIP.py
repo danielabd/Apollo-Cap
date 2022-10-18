@@ -14,6 +14,7 @@ from transformers import BertModel
 from torch.optim import Adam, SGD
 from zero_shot_style.model.TextStyleEmbedding import TextStyleEmbed
 import pickle
+import os
 
 def write_tmp_text_loss(tmp_text_loss):
     def write_results_of_text_style_all_models(img_dict, labels, reults_dir, scales_len, tgt_results_path):
@@ -41,16 +42,6 @@ def write_tmp_text_loss(tmp_text_loss):
                         for label in img_dict[img][model_name][scale].keys():
                             cur_row.append(img_dict[img][model_name][scale][label])
                     writer.writerow(cur_row)
-
-
-    for beam_num in range(len(best_sentences_LM)):
-    self.tmp_text_loss[cur_iter][beam_num]['clip_text'] = best_sentences_clip[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['clip_loss'] = clip_losses[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['style_text'] = best_sentences_style[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['style_loss'] = text_style_losses[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
-
 
 
 def log_info(text, verbose=True):
@@ -576,7 +567,7 @@ class CLIPTextGenerator:
         tmp_text_loss = {}
         while(1):
             cur_iter=cur_iter+1
-            if cur_iter>20:
+            if cur_iter>=5:#todo: chnge
                 break
             print(f' iteration num = {cur_iter}')
 

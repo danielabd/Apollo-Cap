@@ -1,4 +1,7 @@
 import argparse
+import os
+print("cur path:")
+print(os.getcwd())
 import torch
 import clip
 from model.ZeroCLIP import CLIPTextGenerator
@@ -160,6 +163,8 @@ def get_title2print(caption_img_path, style_type, label, text_style_scale, embed
 
 # SENTIMENT: running the model for each image, sentiment and sentiment-scale
 if __name__ == "__main__":
+    print("cur path:")
+    print(os.getcwd())
     # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
     cuda_idx = "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
@@ -176,11 +181,23 @@ if __name__ == "__main__":
     #todo: debug params
     img_path_list = [35]  # list(np.arange(100,105))
     text_style_scale_list = [1]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
-    #default value twitter
+
+    img_path_list =  list(np.arange(10011,10050))  # list(np.arange(100,105))
+    text_style_scale_list = [0,0.5,1,2,4,8]#[3.0]#
+
+
+    # default value twitter
     model_path = os.path.join(base_path, 'checkpoints', 'best_model',
                               'best_twitter_trained_model.pth')
     embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
                                    'emotions_mean_class_embedding.p')  # twitter
+
+
+    # flickrstyle10k
+    model_path = os.path.join(base_path, 'checkpoints', 'best_model',
+                              'best_trained_model_flickrstyle10k.pth')
+    embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
+                                   'flickrstyle10k_mean_class_embedding.p')  # twitter
 
     text_to_mimic_list = ["Happy","Love","angry","hungry", "I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work", "I angry and I love","The government is good"]
     mimic_text_style = True
@@ -192,7 +209,8 @@ if __name__ == "__main__":
     # style_type_list = ['clip','twitter','emotions']#todo remove comment
     # style_type_list = ['clip']
     # style_type_list = ['emotions']
-    style_type_list = ['emotions_love_disgust']
+    # style_type_list = ['emotions_love_disgust']
+    style_type_list = ['flickrstyle10k']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
@@ -206,6 +224,12 @@ if __name__ == "__main__":
         else:
             classes_type = "source"
         for i in img_path_list:  # img_path_list:
+            file_path = os.path.join(base_path, 'data', 'imgs','flickrstyle10k',
+                                                     str(i) + ".png")
+            if not os.path.isfile(file_path):
+                continue
+            args.caption_img_path = file_path
+            '''
             if i not in [38,35,16,7,100,101,102,103,104,105]:
                 continue
             if i in [100,101,102,103,104,105]:
@@ -214,6 +238,7 @@ if __name__ == "__main__":
             else:
                 args.caption_img_path = os.path.join(base_path, 'data', 'imgs',
                                                      str(i) + ".jpg")
+            '''
             # reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',str(i))
             reults_dir = os.path.join(base_path, 'results', cur_time)
             tgt_results_path = os.path.join(reults_dir,f'results_all_models_{classes_type}_classes.csv')
@@ -242,6 +267,17 @@ if __name__ == "__main__":
                                               'best_love_disgust_classes_trained_model_emotions.pth')
                     embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
                                                    'emotions_love_disgust_mean_class_embedding.p')
+                    embedding_path2 = os.path.join(base_path, 'checkpoints', 'best_model',
+                                                   'emotions_love_disgust_median_class_embedding.p')
+                    # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
+                    desired_labels_list = 'all'
+                    text_to_mimic_list.reverse()
+
+                elif style_type == 'flickrstyle10k':
+                    model_path = os.path.join(base_path, 'checkpoints', 'best_model',
+                                              'best_trained_model_flickrstyle10k.pth')
+                    embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
+                                                   'flickrstyle10k_mean_class_embedding.p')
                     embedding_path2 = os.path.join(base_path, 'checkpoints', 'best_model',
                                                    'emotions_love_disgust_median_class_embedding.p')
                     # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
