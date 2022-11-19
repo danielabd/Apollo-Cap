@@ -20,8 +20,8 @@ def get_args():
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
-    # parser.add_argument("--cond_text", type=str, default="Image of a")
-    parser.add_argument("--cond_text", type=str, default="")
+    parser.add_argument("--cond_text", type=str, default="Image of a")
+    #parser.add_argument("--cond_text", type=str, default="")
     parser.add_argument("--reset_context_delta", action="store_true",
                         help="Should we reset the context at each token gen")
     parser.add_argument("--num_iterations", type=int, default=5)
@@ -64,7 +64,7 @@ def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,mimic_te
         text_style = label
     else:
         text_style = ''
-    captions = text_generator.run(image_features, args.cond_text, args.beam_size,sentiment_type,sentiment_scale,text_style_scale,text_style,desired_style_embedding_vector,cuda_idx,style_type)
+    captions = text_generator.run(image_features, args.cond_text, args.beam_size, cuda_idx, sentiment_type,sentiment_scale,text_style_scale,text_style,desired_style_embedding_vector,style_type)
 
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
@@ -80,11 +80,12 @@ def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,mimic_te
 
     img_dict[img_path][style_type][text_style_scale][label] = args.cond_text + captions[best_clip_idx]
 
-def run_arithmetic(args, imgs_path, img_weights):
-    text_generator = CLIPTextGenerator(**vars(args))
+def run_arithmetic(args, imgs_path, img_weights,cuda_idx):
+    #text_generator = CLIPTextGenerator(**vars(args))
+    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(args))
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
-    captions = text_generator.run(image_features, args.cond_text, beam_size=args.beam_size)
+    captions = text_generator.run(image_features, args.cond_text, beam_size=args.beam_size,cuda_idx=cuda_idx)
 
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
@@ -169,7 +170,9 @@ if __name__ == "__main__":
     cuda_idx = "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
- 
+
+    source_imgs = args.arithmetics_imgs
+
     img_path_list = [101, 105,104,103,102,100] # list(np.arange(100,105))
     img_path_list = list(np.arange(1,106))
     # img_path_list.reverse()
@@ -326,7 +329,12 @@ if __name__ == "__main__":
                                             write_results_of_text_style_all_models(img_dict,desired_labels_list,reults_dir,len(text_style_scale_list),tgt_results_path)
                                         elif args.run_type == 'arithmetics':
                                             args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
-                                            run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights)
+
+                                            args.arithmetics_imgs = []
+                                            for idx,v in enumerate(source_imgs):
+                                                args.arithmetics_imgs.append(os.path.join(base_path, 'data', 'imgs', v))
+
+                                            run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights,cuda_idx=cuda_idx)
                                         else:
                                             raise Exception('run_type must be caption or arithmetics!')
 

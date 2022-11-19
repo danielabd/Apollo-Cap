@@ -85,6 +85,8 @@ class CLIPTextGenerator:
                  tmp_text_loss = None,
                  **kwargs):
 
+        self.run_type = kwargs.get('run_type', None)
+
         self.tmp_text_loss = tmp_text_loss
         self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
 
@@ -171,29 +173,31 @@ class CLIPTextGenerator:
         self.text_style_model_name = model_path
         #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
 
-        self.text_style_model = TextStyleEmbed(device=self.device)
-        LR = 1e-4
-        # optimizer = SGD(self.text_style_model.parameters(), lr=LR) #check if to remove mark
-        checkpoint = torch.load(self.text_style_model_name)
-        self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
-        # optimizer.load_state_dict(checkpoint['optimizer_state_dict']) #check if to remove mark
+        if self.run_type != 'arithmetics':
 
-        self.text_style_model.to(self.device)
-        self.text_style_model.eval()
+            self.text_style_model = TextStyleEmbed(device=self.device)
+            LR = 1e-4
+            # optimizer = SGD(self.text_style_model.parameters(), lr=LR) #check if to remove mark
+            checkpoint = torch.load(self.text_style_model_name)
+            self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
+            # optimizer.load_state_dict(checkpoint['optimizer_state_dict']) #check if to remove mark
 
-        #self.text_style_model = torch.load(self.text_style_model_name)
+            self.text_style_model.to(self.device)
+            self.text_style_model.eval()
 
-        #self.text_style_model.to(self.device)
-        # self.text_style_model.eval()
+            #self.text_style_model = torch.load(self.text_style_model_name)
 
-        # TEXT_STYLE: Freeze text style model weights
-        for param in self.text_style_model.parameters():
-            param.requires_grad = False
+            #self.text_style_model.to(self.device)
+            # self.text_style_model.eval()
 
-        self.desired_style_embedding_vector = ''
-        # TEXT_STYLE: tokenizer for text style analysis module
-        #self.text_style_tokenizer_name = self.text_style_model_name
-        #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
+            # TEXT_STYLE: Freeze text style model weights
+            for param in self.text_style_model.parameters():
+                param.requires_grad = False
+
+            self.desired_style_embedding_vector = ''
+            # TEXT_STYLE: tokenizer for text style analysis module
+            #self.text_style_tokenizer_name = self.text_style_model_name
+            #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
 
 
 
@@ -239,34 +243,35 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, sentiment_type,sentiment_scale, text_style_scale,text_to_mimic,desired_style_embedding_vector,cuda_idx,style_type):
+    def run(self, image_features, cond_text, beam_size, cuda_idx, sentiment_type = None, sentiment_scale = None, text_style_scale = None,text_to_mimic = None,desired_style_embedding_vector = None,style_type = None):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
-        self.sentiment_type = sentiment_type
-        self.sentiment_scale = sentiment_scale
-        self.text_style_scale = text_style_scale
         self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"
-        self.style_type = style_type #'clip','twitter','emotions'
-        if not text_to_mimic:
-            self.desired_style_embedding_vector = desired_style_embedding_vector
-        else: #there is text_to_mimic:
-            #use clip features
-            if style_type=='clip':#'clip','twitter','emotions'
-                self.text_style_features = self.get_txt_features(text_to_mimic)
-                # use my text style model features
-            else: #style_type=='twitter' or 'emotions'
-                #### based on bert
-                tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
-                                                                    max_length=512, truncation=True,
-                                                                    return_tensors="pt")
-                masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
-                input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
-                embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embeding vector
-                # #### based on clip
-                # embedding_of_text_for_mimic = self.text_style_model(text_to_mimic) #embeding vector
-                embedding_of_text_for_mimic.to(self.device)
-                self.desired_style_embedding_vector = embedding_of_text_for_mimic
+        if self.run_type != 'arithmetics':
+            self.sentiment_type = sentiment_type
+            self.sentiment_scale = sentiment_scale
+            self.text_style_scale = text_style_scale
+            self.style_type = style_type #'clip','twitter','emotions'
+            if not text_to_mimic:
+                self.desired_style_embedding_vector = desired_style_embedding_vector
+            else: #there is text_to_mimic:
+                #use clip features
+                if style_type=='clip':#'clip','twitter','emotions'
+                    self.text_style_features = self.get_txt_features(text_to_mimic)
+                    # use my text style model features
+                else: #style_type=='twitter' or 'emotions'
+                    #### based on bert
+                    tokenized_text_to_mimic = self.text_style_tokenizer(text_to_mimic, padding='max_length',
+                                                                        max_length=512, truncation=True,
+                                                                        return_tensors="pt")
+                    masks_mimic = tokenized_text_to_mimic['attention_mask'].to(self.device)
+                    input_ids_mimic = tokenized_text_to_mimic['input_ids'].squeeze(1).to(self.device)
+                    embedding_of_text_for_mimic = self.text_style_model(input_ids_mimic, masks_mimic) #embeding vector
+                    # #### based on clip
+                    # embedding_of_text_for_mimic = self.text_style_model(text_to_mimic) #embeding vector
+                    embedding_of_text_for_mimic.to(self.device)
+                    self.desired_style_embedding_vector = embedding_of_text_for_mimic
 
         context_tokens = self.lm_tokenizer.encode(self.context_prefix + cond_text)
 
@@ -567,7 +572,7 @@ class CLIPTextGenerator:
         tmp_text_loss = {}
         while(1):
             cur_iter=cur_iter+1
-            if cur_iter>=5:#todo: chnge
+            if cur_iter>=5:#todo: change
                 break
             print(f' iteration num = {cur_iter}')
 
@@ -596,32 +601,32 @@ class CLIPTextGenerator:
             print(f'ce_loss = {ce_loss.sum()}')
             loss += ce_loss.sum()
             ce_losses = (probs * probs_before_shift.log()).sum(-1)
+            if self.run_type != 'arithmetics':
+                # SENTIMENT: adding the sentiment component
+                if self.sentiment_type!='none':
+                    sentiment_loss, sentiment_losses = self.get_sentiment_loss(probs, context_tokens,self.sentiment_type)
+                    print(f'sentiment_loss = {sentiment_loss}, sentiment_loss_with_scale = {self.sentiment_scale * sentiment_loss}')
+                    loss += self.sentiment_scale * sentiment_loss
 
-            # SENTIMENT: adding the sentiment component
-            if self.sentiment_type!='none':
-                sentiment_loss, sentiment_losses = self.get_sentiment_loss(probs, context_tokens,self.sentiment_type)
-                print(f'sentiment_loss = {sentiment_loss}, sentiment_loss_with_scale = {self.sentiment_scale * sentiment_loss}')
-                loss += self.sentiment_scale * sentiment_loss
+                # TEXT_STYLE: adding the text_style component
+                if self.use_text_style:
+                    if self.style_type == 'clip': #using clip model for text style
+                        text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
+                    else:
+                        text_style_loss, text_style_losses, best_sentences_style = self.get_text_style_loss(probs, context_tokens)
+                    print(
+                        f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+                    loss += self.text_style_scale * text_style_loss
 
-            # TEXT_STYLE: adding the text_style component
-            if self.use_text_style:
-                if self.style_type == 'clip': #using clip model for text style
-                    text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
-                else:
-                    text_style_loss, text_style_losses, best_sentences_style = self.get_text_style_loss(probs, context_tokens)
-                print(
-                    f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
-                loss += self.text_style_scale * text_style_loss
-
-            # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
-            for beam_num in range(len(best_sentences_LM)):
-                self.tmp_text_loss[cur_iter][beam_num]['clip_text'] = best_sentences_clip[beam_num]
-                self.tmp_text_loss[cur_iter][beam_num]['clip_loss'] = clip_losses[beam_num]
-                self.tmp_text_loss[cur_iter][beam_num]['style_text'] = best_sentences_style[beam_num]
-                self.tmp_text_loss[cur_iter][beam_num]['style_loss'] = text_style_losses[beam_num]
-                self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
-                self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
-            write_tmp_text_loss(self.tmp_text_loss)
+                # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
+                for beam_num in range(len(best_sentences_LM)):
+                    self.tmp_text_loss[cur_iter][beam_num]['clip_text'] = best_sentences_clip[beam_num]
+                    self.tmp_text_loss[cur_iter][beam_num]['clip_loss'] = clip_losses[beam_num]
+                    self.tmp_text_loss[cur_iter][beam_num]['style_text'] = best_sentences_style[beam_num]
+                    self.tmp_text_loss[cur_iter][beam_num]['style_loss'] = text_style_losses[beam_num]
+                    self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
+                    self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
+                write_tmp_text_loss(self.tmp_text_loss)
             loss.backward()
 
             # ---------- Weights ----------
@@ -678,12 +683,13 @@ class CLIPTextGenerator:
                 new_context.append((p0.detach(), p1.detach()))
             context = new_context
 
-            #todo: daniela add break depend on loss
-            weighted_clip_loss = self.clip_scale * clip_loss
-            ce_loss = ce_loss.sum()
-            weighted_text_style_loss = self.text_style_scale * text_style_loss
-            if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
-                break
+            if self.run_type != 'arithmetics':
+                #todo: daniela add break depend on loss
+                weighted_clip_loss = self.clip_scale * clip_loss
+                ce_loss = ce_loss.sum()
+                weighted_text_style_loss = self.text_style_scale * text_style_loss
+                if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
+                    break
 
         context_delta = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_])
                          for p_ in context_delta]
