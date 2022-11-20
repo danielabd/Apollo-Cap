@@ -792,7 +792,7 @@ def main():
                tags=config['tags'])
     df_train,df_test = get_train_test_data(config, config['undesired_label'])
     model,optimizer = get_model_and_optimizer(config,path_for_loading_best_model,device)
-    labels_set_dict,labels_idx_to_str = getting_labels_map(config,df_train)
+    labels_set_dict,labels_idx_to_str =    (config,df_train)
     if config['plot_only_clustering']:
         log_dict_train = plot_graph_on_all_data(df_train,
                                                 labels_set_dict, labels_idx_to_str, device, model,
