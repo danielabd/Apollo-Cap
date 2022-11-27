@@ -167,6 +167,7 @@ if __name__ == "__main__":
  
     img_path_list = [101, 105,104,103,102,100] # list(np.arange(100,105))
     img_path_list = list(np.arange(1,106))
+    img_path_list = [101]
     # img_path_list.reverse()
     sentiment_list = ['none']#['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
@@ -192,7 +193,8 @@ if __name__ == "__main__":
     # style_type_list = ['clip','twitter','emotions']#todo remove comment
     # style_type_list = ['clip']
     # style_type_list = ['emotions']
-    style_type_list = ['emotions_love_disgust']
+    style_type_list = ['twitter']
+    #style_type_list = ['emotions_love_disgust']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
