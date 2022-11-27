@@ -43,15 +43,6 @@ def write_tmp_text_loss(tmp_text_loss):
                     writer.writerow(cur_row)
 
 
-    for beam_num in range(len(best_sentences_LM)):
-    self.tmp_text_loss[cur_iter][beam_num]['clip_text'] = best_sentences_clip[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['clip_loss'] = clip_losses[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['style_text'] = best_sentences_style[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['style_loss'] = text_style_losses[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
-    self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
-
-
 
 def log_info(text, verbose=True):
     if verbose:
