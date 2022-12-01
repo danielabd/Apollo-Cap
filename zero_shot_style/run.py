@@ -9,16 +9,17 @@ from collections import defaultdict
 import numpy as np
 import pickle
 from datetime import datetime
+from zero_shot_style.utils import parser, get_hparams
 
 def get_args():
-    parser = argparse.ArgumentParser()
+    #parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
 
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
-    # parser.add_argument("--cond_text", type=str, default="Image of a")
-    parser.add_argument("--cond_text", type=str, default="")
+    parser.add_argument("--cond_text", type=str, default="Image of a")
+    #parser.add_argument("--cond_text", type=str, default="")
     parser.add_argument("--reset_context_delta", action="store_true",
                         help="Should we reset the context at each token gen")
     parser.add_argument("--num_iterations", type=int, default=5)
@@ -52,16 +53,16 @@ def get_args():
 
     return args
 
-def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,mimic_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,style_type):
-    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, **vars(args))
+def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,imitate_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,style_type,tmp_text_loss,label,img_dict,using_style_model):
+    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss,using_style_model = using_style_model,` **vars(args))
 
     image_features = text_generator.get_img_feature([img_path], None)
     # SENTIMENT: added scale parameter
-    if mimic_text_style:
+    if imitate_text_style:
         text_style = label
     else:
         text_style = ''
-    captions = text_generator.run(image_features, args.cond_text, args.beam_size,sentiment_type,sentiment_scale,text_style_scale,text_style,desired_style_embedding_vector,cuda_idx,style_type)
+    captions = text_generator.run(image_features, args.cond_text, args.beam_size,sentiment_type,sentiment_scale,text_style_scale,text_style,desired_style_embedding_vector,style_type)
 
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
@@ -77,8 +78,9 @@ def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,mimic_te
 
     img_dict[img_path][style_type][text_style_scale][label] = args.cond_text + captions[best_clip_idx]
 
-def run_arithmetic(args, imgs_path, img_weights):
-    text_generator = CLIPTextGenerator(**vars(args))
+def run_arithmetic(args, imgs_path, img_weights,cuda_idx):
+    #text_generator = CLIPTextGenerator(**vars(args))
+    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(args))
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
     captions = text_generator.run(image_features, args.cond_text, beam_size=args.beam_size)
@@ -158,142 +160,113 @@ def get_title2print(caption_img_path, style_type, label, text_style_scale, embed
                   f'\n~~~~~~~~'
     return title2print
 
-# SENTIMENT: running the model for each image, sentiment and sentiment-scale
-if __name__ == "__main__":
-    # twitter: 'BillGates', 'rihanna', 'justinbieber', 'JLo', 'elonmusk', 'KendallJenner'
+
+def get_img_full_path(base_path, i):
+    if os.path.isfile(os.path.join(base_path, 'data', 'imgs',
+                                   str(i) + ".jpeg")):
+        return os.path.join(base_path, 'data', 'imgs',
+                            str(i) + ".jpeg")
+    elif os.path.isfile(os.path.join(base_path, 'data', 'imgs',
+                                     str(i) + ".jpg")):
+        return os.path.join(base_path, 'data', 'imgs',
+                            str(i) + ".jpg")
+    if os.path.isfile(os.path.join(base_path, 'data', 'imgs',
+                                   str(i) + ".png")):
+        return os.path.join(base_path, 'data', 'imgs',
+                            str(i) + ".png")
+
+
+def main():
     cuda_idx = "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
- 
-    img_path_list = [101, 105,104,103,102,100] # list(np.arange(100,105))
-    img_path_list = list(np.arange(1,106))
-    img_path_list = [101]
-    # img_path_list.reverse()
-    sentiment_list = ['none']#['negative','positive','neutral', 'none']
-    sentiment_scale_list = [2.0]#[2.0, 1.5, 1.0, 0.5, 0.1]
+    source_imgs = args.arithmetics_imgs
+    config = get_hparams(args)
+    img_path_list = [35]#[101, 105, 104, 103, 102, 100]  # list(np.arange(100,105))
+    sentiment_list = ['none']  # ['negative','positive','neutral', 'none']
+    sentiment_scale_list = [2.0]  # [2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style'
-    text_style_scale_list = [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
+    text_style_scale_list = [1]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
+    text_to_imitate_list = ["Happy", "Love", "angry", "hungry", "I love you!!!", " I hate you and I want to kill you",
+                            "Let's set a meeting at work", "I angry and I love", "The government is good"]
+    imitate_text_style = False
+    embedding_path_idx2str = {0: 'mean'}
 
-    #todo: debug params
-    img_path_list = [35]  # list(np.arange(100,105))
-    text_style_scale_list = [1]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
-    #default value twitter
-    model_path = os.path.join(base_path, 'checkpoints', 'best_model',
-                              'best_twitter_trained_model.pth')
-    embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
-                                   'emotions_mean_class_embedding.p')  # twitter
+    style_type_list = ['twitter']  # ['clip','twitter','emotions']#['emotions_love_disgust']
 
-    text_to_mimic_list = ["Happy","Love","angry","hungry", "I love you!!!"," I hate you and I want to kill you", "Let's set a meeting at work", "I angry and I love","The government is good"]
-    mimic_text_style = True
-
-    # embedding_path_idx2str = {0:'mean',1:'median'}
-    embedding_path_idx2str = {0:'mean'}
-    # style_type = 'emotions'
-    # style_type = 'twitter'
-    # style_type_list = ['clip','twitter','emotions']#todo remove comment
-    # style_type_list = ['clip']
-    # style_type_list = ['emotions']
-    style_type_list = ['twitter']
-    #style_type_list = ['emotions_love_disgust']
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
-
-    # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
     tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
 
-    for mimic_text_style in [False,True]:
-        if mimic_text_style:
+    for imitate_text_style in [False, True]:
+        if imitate_text_style:
             classes_type = "sentences"
         else:
             classes_type = "source"
         for i in img_path_list:  # img_path_list:
-            if i not in [38,35,16,7,100,101,102,103,104,105]:
+            if i not in [38, 35, 16, 7, 100, 101, 102, 103, 104, 105]:
                 continue
-            if i in [100,101,102,103,104,105]:
-                args.caption_img_path = os.path.join(base_path, 'data', 'imgs',
-                                                     str(i) + ".jpeg")
-            else:
-                args.caption_img_path = os.path.join(base_path, 'data', 'imgs',
-                                                     str(i) + ".jpg")
-            # reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',str(i))
+            args.caption_img_path = get_img_full_path(base_path,i)
             reults_dir = os.path.join(base_path, 'results', cur_time)
-            tgt_results_path = os.path.join(reults_dir,f'results_all_models_{classes_type}_classes.csv')
+            tgt_results_path = os.path.join(reults_dir, f'results_all_models_{classes_type}_classes.csv')
 
             if not os.path.isfile(args.caption_img_path):
                 continue
+            model_path = os.path.join(base_path, 'checkpoints', 'best_model',
+                                      config['best_model_name'])
+            mean_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',
+                                                   config['mean_vec_emb_file'])
+            median_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',
+                                                     config['median_vec_emb_file'])
+            desired_labels_list = config['desired_labels']
             for style_type in style_type_list:
-
-                if style_type == 'emotions':
-                    model_path = os.path.join(base_path,'checkpoints','best_model','best_28_classes_trained_model_emotions.pth')
-                    embedding_path1 = os.path.join(base_path,'checkpoints','best_model', 'emotions_mean_class_embedding.p')
-                    embedding_path2 = os.path.join(base_path,'checkpoints','best_model', 'emotions_median_class_embedding.p')
-                    # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
-                    desired_labels_list = 'all'
-                    text_to_mimic_list.reverse()
-                elif style_type == 'twitter':
-                    model_path = os.path.join(base_path,'checkpoints','best_model',
-                                              'best_twitter_trained_model.pth')
-                    embedding_path1 = os.path.join(base_path,'checkpoints','best_model',
-                                                   'twitter_mean_class_embedding.p')  # twitter
-                    embedding_path2 = os.path.join(base_path,'checkpoints','best_model',
-                                                   'twitter_median_class_embedding.p')  # twitter
-                    desired_labels_list = ['BillGates', 'rihanna', 'justinbieber']
-                elif style_type == 'emotions_love_disgust':
-                    model_path = os.path.join(base_path, 'checkpoints', 'best_model',
-                                              'best_love_disgust_classes_trained_model_emotions.pth')
-                    embedding_path1 = os.path.join(base_path, 'checkpoints', 'best_model',
-                                                   'emotions_love_disgust_mean_class_embedding.p')
-                    embedding_path2 = os.path.join(base_path, 'checkpoints', 'best_model',
-                                                   'emotions_love_disgust_median_class_embedding.p')
-                    # desired_labels_list = ['gratitude', 'anger'] - need to be good partition
-                    desired_labels_list = 'all'
-                    text_to_mimic_list.reverse()
-
-                # elif style_type == 'clip' and not mimic_text_style: #todo: remove comment
-                #     continue
-                # embedding_path_list = [embedding_path1, embedding_path2]
-                embedding_path_list = [embedding_path1]
-                for embedding_path_idx,embedding_path in enumerate(embedding_path_list):
+                embedding_path_list = [mean_embedding_vec_path]
+                for embedding_path_idx, embedding_path in enumerate(embedding_path_list):
                     with open(embedding_path, 'rb') as fp:
-                        embedding_vectors_to_load = pickle.load(fp)  # mean_embedding_vectors_to_load = {'love': mean_love_embedding, 'anger': mean_anger_embedding}
+                        embedding_vectors_to_load = pickle.load(
+                            fp)
                     desired_labels_list = list(embedding_vectors_to_load.keys())
-                    if mimic_text_style:
-                        desired_labels_list = text_to_mimic_list
-                    # img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
-                    if True:
-                    # for i in img_path_list:  # img_path_list:
-                    #     args.caption_img_path = os.path.join(base_path, 'data', 'imgs',
-                    #                                          str(i) + ".jpeg")  # "imgs/"+str(i)+".jpg"
-                    #     # reults_dir = os.path.join('/home/bdaniela/zero-shot-style/zero_shot_style/results',str(i))
-                    #     reults_dir = os.path.join(base_path, 'results', cur_time)
-                    #     if not os.path.isfile(args.caption_img_path):
-                    #         continue
-                        desired_labels_list.reverse()#todo:remove
-                        for label in desired_labels_list:
-                            if not mimic_text_style:
-                                desired_style_embedding_vector = embedding_vectors_to_load[label]
-                            else:
-                                desired_style_embedding_vector = ''
-                            for s, sentiment_scale in enumerate(sentiment_scale_list):
-                                for i, text_style_scale in enumerate(text_style_scale_list):
-                                    for sentiment_type in sentiment_list:
-                                        if sentiment_type=='none' and s>0:
-                                            continue
+                    if imitate_text_style:
+                        desired_labels_list = text_to_imitate_list
+                    for label in desired_labels_list:
+                        if not imitate_text_style:
+                            desired_style_embedding_vector = embedding_vectors_to_load[label]
+                        else:
+                            desired_style_embedding_vector = ''
+                        for s, sentiment_scale in enumerate(sentiment_scale_list):
+                            for i, text_style_scale in enumerate(text_style_scale_list):
+                                for sentiment_type in sentiment_list:
+                                    if sentiment_type == 'none' and s > 0:
+                                        continue
 
-                                        title2print = get_title2print(args.caption_img_path,style_type,label,text_style_scale,embedding_path_idx2str[embedding_path_idx])
-                                        print(title2print)
+                                    title2print = get_title2print(args.caption_img_path, style_type, label,
+                                                                  text_style_scale,
+                                                                  embedding_path_idx2str[embedding_path_idx])
+                                    print(title2print)
+                                    if args.run_type == 'caption':
+                                        pass
+                                        run(args, args.caption_img_path, sentiment_type, sentiment_scale,
+                                            text_style_scale, imitate_text_style, desired_style_embedding_vector,
+                                            cuda_idx, title2print, model_path, style_type,tmp_text_loss,label,img_dict,using_style_model= True)
+                                        # # write_results(img_dict)
+                                        # # write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
+                                        write_results_of_text_style_all_models(img_dict, desired_labels_list,
+                                                                               reults_dir,
+                                                                               len(text_style_scale_list),
+                                                                               tgt_results_path)
+                                    elif args.run_type == 'arithmetics':
+                                        args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
+                                        args.arithmetics_imgs = []
+                                        for idx, v in enumerate(source_imgs):
+                                            args.arithmetics_imgs.append(os.path.join(base_path, 'data', 'imgs', v))
 
-                                        if args.run_type == 'caption':
-                                            pass
-                                            run(args, args.caption_img_path, sentiment_type, sentiment_scale, text_style_scale, mimic_text_style, desired_style_embedding_vector, cuda_idx,title2print,model_path,style_type)
-                                            # # write_results(img_dict)
-                                            # # write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
-                                            write_results_of_text_style_all_models(img_dict,desired_labels_list,reults_dir,len(text_style_scale_list),tgt_results_path)
-                                        elif args.run_type == 'arithmetics':
-                                            args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
-                                            run_arithmetic(args, imgs_path=args.arithmetics_imgs, img_weights=args.arithmetics_weights)
-                                        else:
-                                            raise Exception('run_type must be caption or arithmetics!')
+                                        run_arithmetic(args, imgs_path=args.arithmetics_imgs,
+                                                       img_weights=args.arithmetics_weights, cuda_idx=cuda_idx)
+                                    else:
+                                        raise Exception('run_type must be caption or arithmetics!')
 
         print('Finish of program!')
+
+if __name__ == "__main__":
+    main()
