@@ -13,12 +13,15 @@ from zero_shot_style.utils import parser, get_hparams
 
 def get_args():
     #parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
-
+    parser.add_argument("--img_idx", type=int, default=0)
+    parser.add_argument("--use_all_imgs", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
+    #parser.add_argument("--cond_text_list",nargs="*", type=str, default=["a","b"])
     parser.add_argument("--cond_text", type=str, default="Image of a")
+    parser.add_argument("--cond_text2", type=str, default="")
     #parser.add_argument("--cond_text", type=str, default="")
     parser.add_argument("--reset_context_delta", action="store_true",
                         help="Should we reset the context at each token gen")
@@ -54,7 +57,7 @@ def get_args():
     return args
 
 def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,imitate_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,style_type,tmp_text_loss,label,img_dict,using_style_model):
-    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss,using_style_model = using_style_model,` **vars(args))
+    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss,using_style_model = using_style_model, **vars(args))
 
     image_features = text_generator.get_img_feature([img_path], None)
     # SENTIMENT: added scale parameter
@@ -151,6 +154,26 @@ def write_results_of_text_style_all_models(img_dict,labels,reults_dir,scales_len
                 writer.writerow(cur_row)
 
 
+def write_results_prompt_manipulation(img_dict,labels,reults_dir,scales_len,tgt_results_path):
+    # img_dict[img_path][style_type][text_style_scale][label]
+    if not os.path.isdir(reults_dir):
+        os.makedirs(reults_dir)
+    print(f'Writing results into: {tgt_results_path}')
+    with open(tgt_results_path, 'w') as results_file:
+        writer = csv.writer(results_file)
+        for img in img_dict.keys():
+            img_num_str = img.split('/')[-1].split('.j')[0]
+            titles0 = ['prompt_manipulation\img_num']
+            titles0.extend([img_num_str])
+            writer.writerow(titles0)
+            for model_name in img_dict[img]:
+                for scale in img_dict[img][model_name].keys():
+                    for label in img_dict[img][model_name][scale].keys():
+                        cur_row = [label]
+                        cur_row.append(img_dict[img][model_name][scale][label])
+                        writer.writerow(cur_row)
+
+
 def get_title2print(caption_img_path, style_type, label, text_style_scale, embedding_path_idx):
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     title2print = f'~~~~~~~~\n{dt_string} | Work on img path: {caption_img_path} with:' \
@@ -170,25 +193,30 @@ def get_img_full_path(base_path, i):
                                      str(i) + ".jpg")):
         return os.path.join(base_path, 'data', 'imgs',
                             str(i) + ".jpg")
-    if os.path.isfile(os.path.join(base_path, 'data', 'imgs',
+    elif os.path.isfile(os.path.join(base_path, 'data', 'imgs',
                                    str(i) + ".png")):
         return os.path.join(base_path, 'data', 'imgs',
                             str(i) + ".png")
+    else:
+        return None
 
 
 def main():
     cuda_idx = "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
-    source_imgs = args.arithmetics_imgs
     config = get_hparams(args)
-    img_path_list = [35]#[101, 105, 104, 103, 102, 100]  # list(np.arange(100,105))
+    using_style_model = False
+    if not args.img_idx:
+        img_path_list = list(np.arange(0,20000))#[35]#[101, 105, 104, 103, 102, 100]  # list(np.arange(100,105))
+    else:
+        img_path_list = [args.img_idx]
     sentiment_list = ['none']  # ['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]  # [2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style'
     text_style_scale_list = [1]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
-    text_to_imitate_list = ["Happy", "Love", "angry", "hungry", "I love you!!!", " I hate you and I want to kill you",
-                            "Let's set a meeting at work", "I angry and I love", "The government is good"]
+    text_to_imitate_list = ["bla"]#["Happy", "Love", "angry", "hungry", "I love you!!!", " I hate you and I want to kill you",
+                            #"Let's set a meeting at work", "I angry and I love", "The government is good"]
     imitate_text_style = False
     embedding_path_idx2str = {0: 'mean'}
 
@@ -198,16 +226,20 @@ def main():
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
     tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
-
-    for imitate_text_style in [False, True]:
+    cond_text_list = [args.cond_text, args.cond_text2]
+    #for imitate_text_style in [False]:
+    for label in cond_text_list:
+        args.cond_text=label
         if imitate_text_style:
             classes_type = "sentences"
         else:
             classes_type = "source"
         for i in img_path_list:  # img_path_list:
-            if i not in [38, 35, 16, 7, 100, 101, 102, 103, 104, 105]:
-                continue
+            #if i not in [38, 35, 16, 7, 100, 101, 102, 103, 104, 105]:
+            #    continue
             args.caption_img_path = get_img_full_path(base_path,i)
+            if not args.caption_img_path:
+                continue
             reults_dir = os.path.join(base_path, 'results', cur_time)
             tgt_results_path = os.path.join(reults_dir, f'results_all_models_{classes_type}_classes.csv')
 
@@ -220,20 +252,22 @@ def main():
             median_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',
                                                      config['median_vec_emb_file'])
             desired_labels_list = config['desired_labels']
+
             for style_type in style_type_list:
                 embedding_path_list = [mean_embedding_vec_path]
                 for embedding_path_idx, embedding_path in enumerate(embedding_path_list):
-                    with open(embedding_path, 'rb') as fp:
-                        embedding_vectors_to_load = pickle.load(
-                            fp)
-                    desired_labels_list = list(embedding_vectors_to_load.keys())
+                    if using_style_model:
+                        with open(embedding_path, 'rb') as fp:
+                            embedding_vectors_to_load = pickle.load(fp)
+                        desired_labels_list = list(embedding_vectors_to_load.keys())
                     if imitate_text_style:
                         desired_labels_list = text_to_imitate_list
-                    for label in desired_labels_list:
+                    #for label in desired_labels_list:#remove comment when comparing some styles
+                    if True:
+                        desired_style_embedding_vector = ''
                         if not imitate_text_style:
-                            desired_style_embedding_vector = embedding_vectors_to_load[label]
-                        else:
-                            desired_style_embedding_vector = ''
+                            if using_style_model:
+                                desired_style_embedding_vector = embedding_vectors_to_load[label]
                         for s, sentiment_scale in enumerate(sentiment_scale_list):
                             for i, text_style_scale in enumerate(text_style_scale_list):
                                 for sentiment_type in sentiment_list:
@@ -248,17 +282,23 @@ def main():
                                         pass
                                         run(args, args.caption_img_path, sentiment_type, sentiment_scale,
                                             text_style_scale, imitate_text_style, desired_style_embedding_vector,
-                                            cuda_idx, title2print, model_path, style_type,tmp_text_loss,label,img_dict,using_style_model= True)
-                                        # # write_results(img_dict)
+                                            cuda_idx, title2print, model_path, style_type,tmp_text_loss,label,img_dict,using_style_model)
+                                        if not using_style_model:
+                                            write_results_prompt_manipulation(img_dict, desired_labels_list,
+                                                                               reults_dir,
+                                                                               len(text_style_scale_list),
+                                                                               tgt_results_path)
                                         # # write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
-                                        write_results_of_text_style_all_models(img_dict, desired_labels_list,
+                                        if using_style_model:
+                                            write_results_of_text_style_all_models(img_dict, desired_labels_list,
                                                                                reults_dir,
                                                                                len(text_style_scale_list),
                                                                                tgt_results_path)
                                     elif args.run_type == 'arithmetics':
                                         args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
+                                        idxs_imgs = args.arithmetics_imgs
                                         args.arithmetics_imgs = []
-                                        for idx, v in enumerate(source_imgs):
+                                        for idx, v in enumerate(idxs_imgs):
                                             args.arithmetics_imgs.append(os.path.join(base_path, 'data', 'imgs', v))
 
                                         run_arithmetic(args, imgs_path=args.arithmetics_imgs,

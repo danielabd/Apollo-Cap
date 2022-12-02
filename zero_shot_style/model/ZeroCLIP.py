@@ -564,14 +564,14 @@ class CLIPTextGenerator:
 
         window_mask = torch.ones_like(context[0][0]).to(self.device)
 
-        # for i in range(self.num_iterations):
-        cur_iter=-1
-        tmp_text_loss = {}
-        while(1):
-            cur_iter=cur_iter+1
-            if cur_iter>5: #todo: change
-                break
-            print(f' iteration num = {cur_iter}')
+        for i in range(self.num_iterations):
+        #cur_iter=-1
+        #tmp_text_loss = {}
+        #while(1):
+        #    cur_iter=cur_iter+1
+        #    if cur_iter>5: #todo: change
+        #        break
+            #print(f' iteration num = {cur_iter}')
 
             curr_shift = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_]) for p_ in
                           context_delta]
@@ -590,12 +590,12 @@ class CLIPTextGenerator:
 
             # CLIP LOSS
             clip_loss, clip_losses, best_sentences_clip, best_sentences_LM = self.clip_loss(probs, context_tokens)
-            print(f'clip_loss = {clip_loss}, clip_loss_with_scale = {self.clip_scale * clip_loss}')
+            #print(f'clip_loss = {clip_loss}, clip_loss_with_scale = {self.clip_scale * clip_loss}')
             loss += self.clip_scale * clip_loss
 
             # CE/Fluency loss
             ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
-            print(f'ce_loss = {ce_loss.sum()}')
+            #print(f'ce_loss = {ce_loss.sum()}')
             loss += ce_loss.sum()
             ce_losses = (probs * probs_before_shift.log()).sum(-1)
 
@@ -603,7 +603,7 @@ class CLIPTextGenerator:
                 # SENTIMENT: adding the sentiment component
                 if self.sentiment_type!='none':
                     sentiment_loss, sentiment_losses = self.get_sentiment_loss(probs, context_tokens,self.sentiment_type)
-                    print(f'sentiment_loss = {sentiment_loss}, sentiment_loss_with_scale = {self.sentiment_scale * sentiment_loss}')
+                    #print(f'sentiment_loss = {sentiment_loss}, sentiment_loss_with_scale = {self.sentiment_scale * sentiment_loss}')
                     loss += self.sentiment_scale * sentiment_loss
 
                 # TEXT_STYLE: adding the text_style component
@@ -612,8 +612,7 @@ class CLIPTextGenerator:
                         text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
                     else:
                         text_style_loss, text_style_losses, best_sentences_style = self.get_text_style_loss(probs, context_tokens)
-                    print(
-                        f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+                    #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                     loss += self.text_style_scale * text_style_loss
 
                 # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
@@ -681,12 +680,12 @@ class CLIPTextGenerator:
                 new_context.append((p0.detach(), p1.detach()))
             context = new_context
 
-            #todo: daniela add break depend on loss
-            weighted_clip_loss = self.clip_scale * clip_loss
-            ce_loss = ce_loss.sum()
-            weighted_text_style_loss = self.text_style_scale * text_style_loss
-            if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
-                break
+            ##todo: daniela add break depend on loss
+            #weighted_clip_loss = self.clip_scale * clip_loss
+            #ce_loss = ce_loss.sum()
+            #weighted_text_style_loss = self.text_style_scale * text_style_loss
+            #if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
+            #    break
 
         context_delta = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_])
                          for p_ in context_delta]
