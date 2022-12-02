@@ -50,6 +50,11 @@ def get_args():
                         default=['example_images/arithmetics/woman2.jpg',
                                  'example_images/arithmetics/king2.jpg',
                                  'example_images/arithmetics/man2.jpg'])
+
+    parser.add_argument("--arithmetics_style_imgs", nargs="+",
+                        default=['example_images/arithmetics/woman2.jpg',
+                                 'example_images/arithmetics/king2.jpg',
+                                 'example_images/arithmetics/man2.jpg'])
     parser.add_argument("--arithmetics_weights", nargs="+", default=[1, 1, -1])
 
     args = parser.parse_args()
@@ -81,7 +86,7 @@ def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,imitate_
 
     img_dict[img_path][style_type][text_style_scale][label] = args.cond_text + captions[best_clip_idx]
 
-def run_arithmetic(args, imgs_path, img_weights,cuda_idx):
+def run_arithmetic(args, img_dict_img_arithmetic,base_img,style_type, imgs_path, img_weights, cuda_idx):
     #text_generator = CLIPTextGenerator(**vars(args))
     text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(args))
 
@@ -94,6 +99,8 @@ def run_arithmetic(args, imgs_path, img_weights,cuda_idx):
 
     print(captions)
     print('best clip:', args.cond_text + captions[best_clip_idx])
+    img_dict_img_arithmetic[base_img][style_type] = args.cond_text + captions[best_clip_idx]
+
 
 # SENTIMENT: writing results to file
 def write_results(img_dict):
@@ -177,6 +184,25 @@ def write_results_prompt_manipulation(img_dict,labels,reults_dir,scales_len,tgt_
                         cur_row.append(img_dict[img][model_name][scale][label])
             writer.writerow(cur_row)
 
+def write_results_image_manipulation(img_dict_img_arithmetic, labels,reults_dir,scales_len,tgt_results_path,imgs_style_type_dict):
+    if not os.path.isdir(reults_dir):
+        os.makedirs(reults_dir)
+    print(f'Writing results into: {tgt_results_path}')
+    writeTitle = True
+    with open(tgt_results_path, 'w') as results_file:
+        writer = csv.writer(results_file)
+        for i, img in enumerate(img_dict_img_arithmetic.keys()):
+            cur_row = [img]
+            styles = img_dict_img_arithmetic[img].keys()
+            if writeTitle:
+                titles0 = ['img_num\style']
+                titles0.extend(styles)
+                writer.writerow(titles0)
+                writeTitle = False
+            for style_type in styles:
+                cur_row.append(img_dict_img_arithmetic[img][style_type])
+            writer.writerow(cur_row)
+
 
 def get_title2print(caption_img_path, style_type, label, text_style_scale, embedding_path_idx):
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -211,6 +237,7 @@ def main():
     args = get_args()
     config = get_hparams(args)
     using_style_model = False
+    imgs_style_type_dict = {43:'positive', 40:'negative', 45:'humor', 46:'romantic'}
     if not args.img_idx:
         img_path_list = list(np.arange(0,20000))#[35]#[101, 105, 104, 103, 102, 100]  # list(np.arange(100,105))
     else:
@@ -229,16 +256,17 @@ def main():
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
+    img_dict_img_arithmetic = defaultdict(lambda: defaultdict(lambda: "")) #img_path,style_type
     tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
     #for imitate_text_style in [False]:
     if imitate_text_style:
         classes_type = "sentences"
     else:
         classes_type = "source"
-    for i in img_path_list:  # img_path_list:
+    for img_idx in img_path_list:  # img_path_list:
         #if i not in [38, 35, 16, 7, 100, 101, 102, 103, 104, 105]:
         #    continue
-        args.caption_img_path = get_img_full_path(base_path,i)
+        args.caption_img_path = get_img_full_path(base_path,img_idx)
         if not args.caption_img_path:
             continue
         for label in args.cond_text_list:
@@ -272,7 +300,7 @@ def main():
                             if using_style_model:
                                 desired_style_embedding_vector = embedding_vectors_to_load[label]
                         for s, sentiment_scale in enumerate(sentiment_scale_list):
-                            for i, text_style_scale in enumerate(text_style_scale_list):
+                            for text_style_scale_idx, text_style_scale in enumerate(text_style_scale_list):
                                 for sentiment_type in sentiment_list:
                                     if sentiment_type == 'none' and s > 0:
                                         continue
@@ -287,7 +315,7 @@ def main():
                                             text_style_scale, imitate_text_style, desired_style_embedding_vector,
                                             cuda_idx, title2print, model_path, style_type,tmp_text_loss,label,img_dict,using_style_model)
                                         if not using_style_model:
-                                            write_results_prompt_manipulation(img_dict, desired_labels_list,
+                                            write_results_prompt_manipulation(img_dict_img_arithmetic, desired_labels_list,
                                                                                reults_dir,
                                                                                len(text_style_scale_list),
                                                                                tgt_results_path)
@@ -298,14 +326,29 @@ def main():
                                                                                len(text_style_scale_list),
                                                                                tgt_results_path)
                                     elif args.run_type == 'arithmetics':
-                                        args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
-                                        idxs_imgs = args.arithmetics_imgs
-                                        args.arithmetics_imgs = []
-                                        for idx, v in enumerate(idxs_imgs):
-                                            args.arithmetics_imgs.append(os.path.join(base_path, 'data', 'imgs', v))
+                                        #none arithmetic
+                                        img_style = get_img_full_path(base_path, args.arithmetics_style_imgs[0])
+                                        args.arithmetics_imgs = [args.caption_img_path, args.caption_img_path]
+                                        run_arithmetic(args, img_dict_img_arithmetic, img_idx,
+                                                       'none', imgs_path=args.arithmetics_imgs,
+                                                       img_weights=[1, 0], cuda_idx=cuda_idx)
+                                        write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
+                                                                         reults_dir,
+                                                                         len(text_style_scale_list),
+                                                                         tgt_results_path, imgs_style_type_dict)
 
-                                        run_arithmetic(args, imgs_path=args.arithmetics_imgs,
-                                                       img_weights=args.arithmetics_weights, cuda_idx=cuda_idx)
+
+                                        args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
+                                        for idx, v in enumerate(args.arithmetics_style_imgs):
+                                            img_style = get_img_full_path(base_path, v)
+                                            args.arithmetics_imgs = [args.caption_img_path, img_style]
+                                            run_arithmetic(args,img_dict_img_arithmetic,img_idx,imgs_style_type_dict[int(v)], imgs_path=args.arithmetics_imgs,
+                                                           img_weights=args.arithmetics_weights, cuda_idx=cuda_idx)
+                                            write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
+                                                                              reults_dir,
+                                                                              len(text_style_scale_list),
+                                                                              tgt_results_path,imgs_style_type_dict)
+
                                     else:
                                         raise Exception('run_type must be caption or arithmetics!')
 
