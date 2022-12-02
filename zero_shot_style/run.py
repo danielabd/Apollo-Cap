@@ -19,7 +19,7 @@ def get_args():
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
-    #parser.add_argument("--cond_text_list",nargs="*", type=str, default=["a","b"])
+    parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
     parser.add_argument("--cond_text", type=str, default="Image of a")
     parser.add_argument("--cond_text2", type=str, default="")
     #parser.add_argument("--cond_text", type=str, default="")
@@ -159,19 +159,23 @@ def write_results_prompt_manipulation(img_dict,labels,reults_dir,scales_len,tgt_
     if not os.path.isdir(reults_dir):
         os.makedirs(reults_dir)
     print(f'Writing results into: {tgt_results_path}')
+    writeTitle = True
     with open(tgt_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
-        for img in img_dict.keys():
+        for i,img in enumerate(img_dict.keys()):
             img_num_str = img.split('/')[-1].split('.j')[0]
-            titles0 = ['prompt_manipulation\img_num']
-            titles0.extend([img_num_str])
-            writer.writerow(titles0)
+            cur_row = [img_num_str]
             for model_name in img_dict[img]:
                 for scale in img_dict[img][model_name].keys():
-                    for label in img_dict[img][model_name][scale].keys():
-                        cur_row = [label]
+                    labels = img_dict[img][model_name][scale].keys()
+                    if writeTitle:
+                        titles0 = ['img_num\prompt']
+                        titles0.extend(labels)
+                        writer.writerow(titles0)
+                        writeTitle = False
+                    for label in labels:
                         cur_row.append(img_dict[img][model_name][scale][label])
-                        writer.writerow(cur_row)
+            writer.writerow(cur_row)
 
 
 def get_title2print(caption_img_path, style_type, label, text_style_scale, embedding_path_idx):
@@ -226,20 +230,19 @@ def main():
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
     tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
-    cond_text_list = [args.cond_text, args.cond_text2]
     #for imitate_text_style in [False]:
-    for label in cond_text_list:
-        args.cond_text=label
-        if imitate_text_style:
-            classes_type = "sentences"
-        else:
-            classes_type = "source"
-        for i in img_path_list:  # img_path_list:
-            #if i not in [38, 35, 16, 7, 100, 101, 102, 103, 104, 105]:
-            #    continue
-            args.caption_img_path = get_img_full_path(base_path,i)
-            if not args.caption_img_path:
-                continue
+    if imitate_text_style:
+        classes_type = "sentences"
+    else:
+        classes_type = "source"
+    for i in img_path_list:  # img_path_list:
+        #if i not in [38, 35, 16, 7, 100, 101, 102, 103, 104, 105]:
+        #    continue
+        args.caption_img_path = get_img_full_path(base_path,i)
+        if not args.caption_img_path:
+            continue
+        for label in args.cond_text_list:
+            args.cond_text = label
             reults_dir = os.path.join(base_path, 'results', cur_time)
             tgt_results_path = os.path.join(reults_dir, f'results_all_models_{classes_type}_classes.csv')
 
