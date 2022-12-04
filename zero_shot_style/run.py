@@ -19,10 +19,11 @@ def get_args():
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
-    parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
-    parser.add_argument("--cond_text", type=str, default="Image of a")
+    #parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
+    #parser.add_argument("--cond_text", type=str, default="Image of a")
+    parser.add_argument("--cond_text_list", nargs="+", type=str, default=[""])
+    parser.add_argument("--cond_text", type=str, default="")
     parser.add_argument("--cond_text2", type=str, default="")
-    #parser.add_argument("--cond_text", type=str, default="")
     parser.add_argument("--reset_context_delta", action="store_true",
                         help="Should we reset the context at each token gen")
     parser.add_argument("--num_iterations", type=int, default=5)
@@ -56,13 +57,14 @@ def get_args():
                                  'example_images/arithmetics/king2.jpg',
                                  'example_images/arithmetics/man2.jpg'])
     parser.add_argument("--arithmetics_weights", nargs="+", default=[1, 1, -1])
+    parser.add_argument("--use_style_model", type=bool, default=False)
 
     args = parser.parse_args()
 
     return args
 
-def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,imitate_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,style_type,tmp_text_loss,label,img_dict,using_style_model):
-    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss,using_style_model = using_style_model, **vars(args))
+def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,imitate_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,style_type,tmp_text_loss,label,img_dict):
+    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, **vars(args))
 
     image_features = text_generator.get_img_feature([img_path], None)
     # SENTIMENT: added scale parameter
@@ -236,7 +238,6 @@ def main():
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
     config = get_hparams(args)
-    using_style_model = False
     imgs_style_type_dict = {49: 'neutral', 50:'positive', 51:'negative', 52:'humor', 53:'romantic'}
     if not args.img_idx:
         img_path_list = list(np.arange(0,20000))#[35]#[101, 105, 104, 103, 102, 100]  # list(np.arange(100,105))
@@ -269,8 +270,8 @@ def main():
         args.caption_img_path = get_img_full_path(base_path,img_idx)
         if not args.caption_img_path:
             continue
-        for label in args.cond_text_list:
-            args.cond_text = label
+        for prompt in args.cond_text_list:
+            args.cond_text = prompt
             reults_dir = os.path.join(base_path, 'results', cur_time)
             tgt_results_path = os.path.join(reults_dir, f'results_all_models_{classes_type}_classes.csv')
 
@@ -278,6 +279,11 @@ def main():
                 continue
             model_path = os.path.join(base_path, 'checkpoints', 'best_model',
                                       config['best_model_name'])
+
+            model_path = os.path.join(base_path, 'checkpoints', 'best_model',
+                                      'based_on_bert','best_twitter_trained_model_emotions.pth')
+
+
             mean_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',
                                                    config['mean_vec_emb_file'])
             median_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',
@@ -287,17 +293,18 @@ def main():
             for style_type in style_type_list:
                 embedding_path_list = [mean_embedding_vec_path]
                 for embedding_path_idx, embedding_path in enumerate(embedding_path_list):
-                    if using_style_model:
+                    if args.use_style_model:
                         with open(embedding_path, 'rb') as fp:
                             embedding_vectors_to_load = pickle.load(fp)
                         desired_labels_list = list(embedding_vectors_to_load.keys())
+                    else:
+                        desired_labels_list = args.cond_text_list
                     if imitate_text_style:
                         desired_labels_list = text_to_imitate_list
-                    #for label in desired_labels_list:#remove comment when comparing some styles
-                    if True:
+                    for label in desired_labels_list:
                         desired_style_embedding_vector = ''
                         if not imitate_text_style:
-                            if using_style_model:
+                            if args.use_style_model:
                                 desired_style_embedding_vector = embedding_vectors_to_load[label]
                         for s, sentiment_scale in enumerate(sentiment_scale_list):
                             for text_style_scale_idx, text_style_scale in enumerate(text_style_scale_list):
@@ -313,14 +320,14 @@ def main():
                                         pass
                                         run(args, args.caption_img_path, sentiment_type, sentiment_scale,
                                             text_style_scale, imitate_text_style, desired_style_embedding_vector,
-                                            cuda_idx, title2print, model_path, style_type,tmp_text_loss,label,img_dict,using_style_model)
-                                        if not using_style_model:
+                                            cuda_idx, title2print, model_path, style_type,tmp_text_loss,label,img_dict)
+                                        if not args.use_style_model:
                                             write_results_prompt_manipulation(img_dict, desired_labels_list,
                                                                                reults_dir,
                                                                                len(text_style_scale_list),
                                                                                tgt_results_path)
                                         # # write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
-                                        if using_style_model:
+                                        if args.use_style_model:
                                             write_results_of_text_style_all_models(img_dict, desired_labels_list,
                                                                                reults_dir,
                                                                                len(text_style_scale_list),

@@ -82,7 +82,7 @@ class CLIPTextGenerator:
                  cuda_idx = None,
                  model_path = None,
                  tmp_text_loss = None,
-                 using_style_model = False,
+                 use_style_model = False,
                  **kwargs):
 
         self.tmp_text_loss = tmp_text_loss
@@ -171,8 +171,8 @@ class CLIPTextGenerator:
         self.text_style_model_name = model_path
         #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
 
-        self.using_style_model = using_style_model
-        if self.using_style_model:
+        self.use_style_model = use_style_model
+        if self.use_style_model:
             self.text_style_model = TextStyleEmbed(device=self.device)
             LR = 1e-4
             # optimizer = SGD(self.text_style_model.parameters(), lr=LR) #check if to remove mark
@@ -245,7 +245,7 @@ class CLIPTextGenerator:
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
-        if self.using_style_model:
+        if self.use_style_model:
             self.sentiment_type = sentiment_type
             self.sentiment_scale = sentiment_scale
             self.text_style_scale = text_style_scale
@@ -597,7 +597,7 @@ class CLIPTextGenerator:
             loss += ce_loss.sum()
             ce_losses = (probs * probs_before_shift.log()).sum(-1)
 
-            if self.using_style_model:
+            if self.use_style_model:
                 # SENTIMENT: adding the sentiment component
                 if self.sentiment_type!='none':
                     sentiment_loss, sentiment_losses = self.get_sentiment_loss(probs, context_tokens,self.sentiment_type)
@@ -687,6 +687,8 @@ class CLIPTextGenerator:
 
         print(f'{word_loc}: clip_loss_with_scale = {self.clip_scale * clip_loss}')
         print(f'{word_loc}: ce_loss = {ce_loss.sum()}')
+        if self.use_style_model:
+            print(f'{word_loc}: style_loss_with_scale = {self.text_style_scale * text_style_loss}')
 
         context_delta = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_])
                          for p_ in context_delta]
