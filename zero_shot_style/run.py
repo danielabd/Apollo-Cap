@@ -237,7 +237,7 @@ def main():
     args = get_args()
     config = get_hparams(args)
     using_style_model = False
-    imgs_style_type_dict = {43:'positive', 40:'negative', 45:'humor', 46:'romantic'}
+    imgs_style_type_dict = {49: 'neutral', 50:'positive', 51:'negative', 52:'humor', 53:'romantic'}
     if not args.img_idx:
         img_path_list = list(np.arange(0,20000))#[35]#[101, 105, 104, 103, 102, 100]  # list(np.arange(100,105))
     else:
@@ -315,7 +315,7 @@ def main():
                                             text_style_scale, imitate_text_style, desired_style_embedding_vector,
                                             cuda_idx, title2print, model_path, style_type,tmp_text_loss,label,img_dict,using_style_model)
                                         if not using_style_model:
-                                            write_results_prompt_manipulation(img_dict_img_arithmetic, desired_labels_list,
+                                            write_results_prompt_manipulation(img_dict, desired_labels_list,
                                                                                reults_dir,
                                                                                len(text_style_scale_list),
                                                                                tgt_results_path)
@@ -328,20 +328,20 @@ def main():
                                     elif args.run_type == 'arithmetics':
                                         #none arithmetic
                                         img_style = get_img_full_path(base_path, args.arithmetics_style_imgs[0])
-                                        args.arithmetics_imgs = [args.caption_img_path, args.caption_img_path]
+                                        args.arithmetics_imgs = [args.caption_img_path, args.caption_img_path, args.caption_img_path]
                                         run_arithmetic(args, img_dict_img_arithmetic, img_idx,
                                                        'none', imgs_path=args.arithmetics_imgs,
-                                                       img_weights=[1, 0], cuda_idx=cuda_idx)
+                                                       img_weights=[1, 0, 0], cuda_idx=cuda_idx)
                                         write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
                                                                          reults_dir,
                                                                          len(text_style_scale_list),
                                                                          tgt_results_path, imgs_style_type_dict)
 
-
                                         args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
-                                        for idx, v in enumerate(args.arithmetics_style_imgs):
+                                        neutral_img_style = get_img_full_path(base_path, args.arithmetics_style_imgs[0])
+                                        for idx, v in enumerate(args.arithmetics_style_imgs[1:]):
                                             img_style = get_img_full_path(base_path, v)
-                                            args.arithmetics_imgs = [args.caption_img_path, img_style]
+                                            args.arithmetics_imgs = [args.caption_img_path, neutral_img_style, img_style]
                                             run_arithmetic(args,img_dict_img_arithmetic,img_idx,imgs_style_type_dict[int(v)], imgs_path=args.arithmetics_imgs,
                                                            img_weights=args.arithmetics_weights, cuda_idx=cuda_idx)
                                             write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
@@ -352,7 +352,7 @@ def main():
                                     else:
                                         raise Exception('run_type must be caption or arithmetics!')
 
-        print('Finish of program!')
+    print('Finish of program!')
 
 if __name__ == "__main__":
     main()

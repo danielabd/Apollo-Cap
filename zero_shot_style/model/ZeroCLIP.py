@@ -305,13 +305,13 @@ class CLIPTextGenerator:
                 seq_lengths[~is_stopped] += 1
                 scores_sum_average = scores_sum / seq_lengths[:, None]
                 scores_sum_average, next_tokens = scores_sum_average.view(-1).topk(
-                    beam_size, -1)
-                next_tokens_source = next_tokens // scores_sum.shape[1]
+                    beam_size, -1) # flat all beams to one vector and select the topk
+                next_tokens_source = next_tokens // scores_sum.shape[1] # choose the token before end relating to the topk
                 seq_lengths = seq_lengths[next_tokens_source]
                 next_tokens = next_tokens % scores_sum.shape[1]
                 next_tokens = next_tokens.unsqueeze(1)
                 gen_tokens = gen_tokens[next_tokens_source]
-                gen_tokens = torch.cat((gen_tokens, next_tokens), dim=-1)
+                gen_tokens = torch.cat((gen_tokens, next_tokens), dim=-1) #ADD DEBUG
                 context_tokens = context_tokens[next_tokens_source]
                 scores = scores_sum_average * seq_lengths
                 is_stopped = is_stopped[next_tokens_source]
@@ -559,7 +559,7 @@ class CLIPTextGenerator:
 
 
     
-    def shift_context(self, i, context, last_token, context_tokens, probs_before_shift):
+    def shift_context(self, word_loc, context, last_token, context_tokens, probs_before_shift):
         context_delta = [tuple([np.zeros(x.shape).astype("float32") for x in p]) for p in context]
 
         window_mask = torch.ones_like(context[0][0]).to(self.device)
@@ -590,12 +590,10 @@ class CLIPTextGenerator:
 
             # CLIP LOSS
             clip_loss, clip_losses, best_sentences_clip, best_sentences_LM = self.clip_loss(probs, context_tokens)
-            #print(f'clip_loss = {clip_loss}, clip_loss_with_scale = {self.clip_scale * clip_loss}')
             loss += self.clip_scale * clip_loss
 
             # CE/Fluency loss
             ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
-            #print(f'ce_loss = {ce_loss.sum()}')
             loss += ce_loss.sum()
             ce_losses = (probs * probs_before_shift.log()).sum(-1)
 
@@ -616,14 +614,14 @@ class CLIPTextGenerator:
                     loss += self.text_style_scale * text_style_loss
 
                 # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
-                for beam_num in range(len(best_sentences_LM)):
-                    self.tmp_text_loss[cur_iter][beam_num]['clip_text'] = best_sentences_clip[beam_num]
-                    self.tmp_text_loss[cur_iter][beam_num]['clip_loss'] = clip_losses[beam_num]
-                    self.tmp_text_loss[cur_iter][beam_num]['style_text'] = best_sentences_style[beam_num]
-                    self.tmp_text_loss[cur_iter][beam_num]['style_loss'] = text_style_losses[beam_num]
-                    self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
-                    self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
-                write_tmp_text_loss(self.tmp_text_loss)
+                #for beam_num in range(len(best_sentences_LM)):
+                #    self.tmp_text_loss[cur_iter][beam_num]['clip_text'] = best_sentences_clip[beam_num]
+                #    self.tmp_text_loss[cur_iter][beam_num]['clip_loss'] = clip_losses[beam_num]
+                #    self.tmp_text_loss[cur_iter][beam_num]['style_text'] = best_sentences_style[beam_num]
+                #    self.tmp_text_loss[cur_iter][beam_num]['style_loss'] = text_style_losses[beam_num]
+                #    self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
+                #    self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
+                #write_tmp_text_loss(self.tmp_text_loss)
             loss.backward()
 
             # ---------- Weights ----------
@@ -686,6 +684,9 @@ class CLIPTextGenerator:
             #weighted_text_style_loss = self.text_style_scale * text_style_loss
             #if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
             #    break
+
+        print(f'{word_loc}: clip_loss_with_scale = {self.clip_scale * clip_loss}')
+        print(f'{word_loc}: ce_loss = {ce_loss.sum()}')
 
         context_delta = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_])
                          for p_ in context_delta]
