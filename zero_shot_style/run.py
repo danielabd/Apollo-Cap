@@ -16,7 +16,8 @@ def get_args():
     parser.add_argument("--img_idx", type=int, default=0)
     parser.add_argument("--use_all_imgs", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
+    #parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
+    parser.add_argument("--lm_model", type=str, default="gpt-j", help="gpt-2 or gpt-neo or gpt-j")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
     #parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
@@ -246,7 +247,7 @@ def main():
     sentiment_list = ['none']  # ['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]  # [2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = '/home/bdaniela/zero-shot-style'
-    text_style_scale_list = [1]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
+    text_style_scale_list = [4]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
     text_to_imitate_list = ["bla"]#["Happy", "Love", "angry", "hungry", "I love you!!!", " I hate you and I want to kill you",
                             #"Let's set a meeting at work", "I angry and I love", "The government is good"]
     imitate_text_style = False
@@ -279,11 +280,6 @@ def main():
                 continue
             model_path = os.path.join(base_path, 'checkpoints', 'best_model',
                                       config['best_model_name'])
-
-            model_path = os.path.join(base_path, 'checkpoints', 'best_model',
-                                      'based_on_bert','best_twitter_trained_model_emotions.pth')
-
-
             mean_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',
                                                    config['mean_vec_emb_file'])
             median_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',

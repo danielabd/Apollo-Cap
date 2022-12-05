@@ -10,6 +10,8 @@ import sys
 from transformers import TextClassificationPipeline # SENTIMENT
 from transformers import AutoModelForSequenceClassification, AutoTokenizer # SENTIMENT
 from transformers import BertTokenizer #TEXT_STYLE
+from transformers import AutoModelForCausalLM #gpt-J
+
 from transformers import BertModel
 from torch.optim import Adam, SGD
 from zero_shot_style.model.TextStyleEmbedding import TextStyleEmbed
@@ -102,6 +104,11 @@ class CLIPTextGenerator:
         elif lm_model == 'gpt-2':
             self.lm_tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium') #345M parameters
             self.lm_model = GPT2LMHeadModel.from_pretrained('gpt2-medium', output_hidden_states=True)
+            self.context_prefix = self.lm_tokenizer.bos_token
+        elif lm_model == 'gpt-j':
+            self.lm_model = AutoModelForCausalLM.from_pretrained("EleutherAI/gpt-j-6B", output_hidden_states=True)
+            self.lm_tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
+
             self.context_prefix = self.lm_tokenizer.bos_token
 
         self.lm_model.to(self.device)

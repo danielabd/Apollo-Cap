@@ -10,9 +10,9 @@ param_dict:
     and_so_on: more_values
 batch_size: 20
 inner_batch_size: 20
-best_model_name: best_twitter_trained_model.pth
+best_model_name: 'based_on_bert/best_twitter_trained_model_emotions.pth' #best_twitter_trained_model.pth
 model_name: twitter_trained_model_emotions.pth
-mean_vec_emb_file: twitter_mean_class_embedding.p
+mean_vec_emb_file: 'based_on_bert/twitter_mean_class_embedding.p'
 median_vec_emb_file: twitter_median_class_embedding.p
 experiment_name: cur_time
 #data_file: preprocessed_data.csv
