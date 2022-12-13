@@ -9,11 +9,11 @@ from collections import defaultdict
 import numpy as np
 import pickle
 from datetime import datetime
-from zero_shot_style.utils import parser, get_hparams
+from utils import parser, get_hparams
 
 def get_args():
     #parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
-    parser.add_argument("--img_idx", type=int, default=0)
+    parser.add_argument("--img_name", type=int, default=0)
     parser.add_argument("--use_all_imgs", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
     #parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
@@ -44,6 +44,11 @@ def get_args():
                         default='caption',
                         nargs='?',
                         choices=['caption', 'arithmetics'])
+
+    parser.add_argument("--caption_img_dict", type=str, default=[os.path.join(os.path.expanduser('~'),'data','flickrstyle10k'),
+                                                                              os.path.join(os.path.expanduser('~'),
+                                                                                           'data', 'senticap')],
+                        help="Path to images dict for captioning")
 
     parser.add_argument("--caption_img_path", type=str, default='example_images/captions/COCO_val2014_000000008775.jpg',
                         help="Path to image for captioning")
@@ -240,13 +245,15 @@ def main():
     args = get_args()
     config = get_hparams(args)
     imgs_style_type_dict = {49: 'neutral', 50:'positive', 51:'negative', 52:'humor', 53:'romantic'}
-    if not args.img_idx:
+
+    if not args.img_name:
         img_path_list = list(np.arange(0,20000))#[35]#[101, 105, 104, 103, 102, 100]  # list(np.arange(100,105))
     else:
-        img_path_list = [args.img_idx]
+        img_path_list = [args.img_name]
     sentiment_list = ['none']  # ['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]  # [2.0, 1.5, 1.0, 0.5, 0.1]
-    base_path = '/home/bdaniela/zero-shot-style'
+    base_path = os.path.join(os.path.expanduser('~'), 'projects','zero-shot-style')
+
     text_style_scale_list = [4]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
     text_to_imitate_list = ["bla"]#["Happy", "Love", "angry", "hungry", "I love you!!!", " I hate you and I want to kill you",
                             #"Let's set a meeting at work", "I angry and I love", "The government is good"]
@@ -265,12 +272,18 @@ def main():
         classes_type = "sentences"
     else:
         classes_type = "source"
-    for img_idx in img_path_list:  # img_path_list:
-        #if i not in [38, 35, 16, 7, 100, 101, 102, 103, 104, 105]:
+
+    imgs_to_test = []
+    for setdir in args.caption_img_dict:
+        for im in os.listdir(os.path(setdir,'images','test')):
+            imgs_to_test.append(os.path(setdir,'images','test',im))
+    for img_path in imgs_to_test:  # img_path_list:
+        #args.caption_img_path = get_img_full_path(base_path,img_idx)
+        #args.caption_img_path = os.path.join(os.path.expanduser('~'),'data','flickrstyle10k','flickr_images_dataset',img_name)
+        #if not args.caption_img_path:
         #    continue
-        args.caption_img_path = get_img_full_path(base_path,img_idx)
-        if not args.caption_img_path:
-            continue
+        img_name = img_path.split('/')[-1]
+        args.caption_img_path = img_path
         for prompt in args.cond_text_list:
             args.cond_text = prompt
             reults_dir = os.path.join(base_path, 'results', cur_time)
@@ -285,7 +298,6 @@ def main():
             median_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',
                                                      config['median_vec_emb_file'])
             desired_labels_list = config['desired_labels']
-
             for style_type in style_type_list:
                 embedding_path_list = [mean_embedding_vec_path]
                 for embedding_path_idx, embedding_path in enumerate(embedding_path_list):
@@ -332,7 +344,7 @@ def main():
                                         #none arithmetic
                                         img_style = get_img_full_path(base_path, args.arithmetics_style_imgs[0])
                                         args.arithmetics_imgs = [args.caption_img_path, args.caption_img_path, args.caption_img_path]
-                                        run_arithmetic(args, img_dict_img_arithmetic, img_idx,
+                                        run_arithmetic(args, img_dict_img_arithmetic, img_name,
                                                        'none', imgs_path=args.arithmetics_imgs,
                                                        img_weights=[1, 0, 0], cuda_idx=cuda_idx)
                                         write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
@@ -345,7 +357,7 @@ def main():
                                         for idx, v in enumerate(args.arithmetics_style_imgs[1:]):
                                             img_style = get_img_full_path(base_path, v)
                                             args.arithmetics_imgs = [args.caption_img_path, neutral_img_style, img_style]
-                                            run_arithmetic(args,img_dict_img_arithmetic,img_idx,imgs_style_type_dict[int(v)], imgs_path=args.arithmetics_imgs,
+                                            run_arithmetic(args,img_dict_img_arithmetic,img_name,imgs_style_type_dict[int(v)], imgs_path=args.arithmetics_imgs,
                                                            img_weights=args.arithmetics_weights, cuda_idx=cuda_idx)
                                             write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
                                                                               reults_dir,
