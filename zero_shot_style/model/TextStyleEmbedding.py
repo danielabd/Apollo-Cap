@@ -595,6 +595,13 @@ def create_pos_neg_pairs_lists(df_data,tgt_file_pairs_list):
     print(f"Saving pairs list to {tgt_file_pairs_list}")
     combinations_label = {'pos': all_pos_combinations_labels, 'neg': all_neg_combinations_labels}
     print(f"number of positive pairs = {len(all_pos_combinations_labels)}\nnumber of negative pairs = {len(all_neg_combinations_labels)}")
+    tmp_dir='/'.join(tgt_file_pairs_list.split('/')[:-1])
+    print(f'tmp_dir={tmp_dir}')
+    if os.path.isdir(tmp_dir):
+        print("dir exist")
+    else:
+        print("dir does not exist")
+
     with open(tgt_file_pairs_list, 'wb') as fp:
         pickle.dump(combinations_label, fp)
     print('finished to save pairs list.')
@@ -697,6 +704,7 @@ def get_train_test_data(config, undesired_label = None):
             df = pd.DataFrame(data, columns=["label","text"])
         else: #go_emotions or twitter dataset
             if type(data_file) == list:
+                print(os.path.join(config['data_dir'], data_file[0]))
                 s_df = pd.read_csv(os.path.join(config['data_dir'], data_file[0]))
                 for f in data_file[1:]:
                     datapath = os.path.join(config['data_dir'], f)
@@ -733,7 +741,7 @@ def get_train_test_data(config, undesired_label = None):
 
 
 def main():
-    desired_cuda_num = "3" # "1"
+    desired_cuda_num = "2" # "1"
     os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)

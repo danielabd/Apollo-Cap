@@ -110,7 +110,7 @@ class CLIPTextGenerator:
             self.lm_tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
 
             self.context_prefix = self.lm_tokenizer.bos_token
-
+        print(f'lm_model={lm_model}')
         self.lm_model.to(self.device)
         self.lm_model.eval()
 

@@ -15,7 +15,7 @@ model_name: trained_model_flickrstyle10k.pth
 mean_vec_emb_file: flickrstyle10k_mean_class_embedding.p
 median_vec_emb_file: flickrstyle10k_median_class_embedding.p
 data_name: flickrstyle10k
-data_file: ['humor_train.txt', 'romantic_train.txt']
+data_file: ['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 experiment_name: cur_time
 csv_file_name_train: 'flickrstyle10k_train.csv'
 csv_file_name_test: 'flickrstyle10k_test.csv'

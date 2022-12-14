@@ -17,12 +17,12 @@ def get_args():
     parser.add_argument("--use_all_imgs", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
     #parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
-    parser.add_argument("--lm_model", type=str, default="gpt-j", help="gpt-2 or gpt-neo or gpt-j")
+    parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo or gpt-j")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
-    #parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
+    parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
     #parser.add_argument("--cond_text", type=str, default="Image of a")
-    parser.add_argument("--cond_text_list", nargs="+", type=str, default=[""])
+    #parser.add_argument("--cond_text_list", nargs="+", type=str, default=[""])
     parser.add_argument("--cond_text", type=str, default="")
     parser.add_argument("--cond_text2", type=str, default="")
     parser.add_argument("--reset_context_delta", action="store_true",
@@ -50,7 +50,7 @@ def get_args():
                                                                                            'data', 'senticap')],
                         help="Path to images dict for captioning")
 
-    parser.add_argument("--caption_img_path", type=str, default='example_images/captions/COCO_val2014_000000008775.jpg',
+    parser.add_argument("--caption_img_path", type=str, default=os.path.join(os.path.expanduser('~'),'data','imgs','101.jpeg'),
                         help="Path to image for captioning")
 
     parser.add_argument("--arithmetics_imgs", nargs="+",
@@ -59,9 +59,7 @@ def get_args():
                                  'example_images/arithmetics/man2.jpg'])
 
     parser.add_argument("--arithmetics_style_imgs", nargs="+",
-                        default=['example_images/arithmetics/woman2.jpg',
-                                 'example_images/arithmetics/king2.jpg',
-                                 'example_images/arithmetics/man2.jpg'])
+                        default=['49','50','51','52','53'])
     parser.add_argument("--arithmetics_weights", nargs="+", default=[1, 1, -1])
     parser.add_argument("--use_style_model", type=bool, default=False)
 
@@ -94,7 +92,7 @@ def run(args, img_path,sentiment_type, sentiment_scale,text_style_scale,imitate_
 
     img_dict[img_path][style_type][text_style_scale][label] = args.cond_text + captions[best_clip_idx]
 
-def run_arithmetic(args, img_dict_img_arithmetic,base_img,style_type, imgs_path, img_weights, cuda_idx):
+def run_arithmetic(args, img_dict_img_arithmetic,base_img,style_type, imgs_path, img_weights, cuda_idx,title2print):
     #text_generator = CLIPTextGenerator(**vars(args))
     text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(args))
 
@@ -106,6 +104,11 @@ def run_arithmetic(args, img_dict_img_arithmetic,base_img,style_type, imgs_path,
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
 
     print(captions)
+
+    dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    new_title2print = f'~~~~~~~~\n{dt_string} | Work on img path:' + title2print.split(' | Work on img path:')[1]
+    print(new_title2print)
+
     print('best clip:', args.cond_text + captions[best_clip_idx])
     img_dict_img_arithmetic[base_img][style_type] = args.cond_text + captions[best_clip_idx]
 
@@ -222,6 +225,22 @@ def get_title2print(caption_img_path, style_type, label, text_style_scale, embed
     return title2print
 
 
+def get_full_path_of_stylized_images(data_dir, i):
+    if os.path.isfile(os.path.join(data_dir, 'stylized_images',
+                                   str(i) + ".jpeg")):
+        return os.path.join(data_dir, 'stylized_images',
+                            str(i) + ".jpeg")
+    elif os.path.isfile(os.path.join(data_dir, 'stylized_images',
+                                     str(i) + ".jpg")):
+        return os.path.join(data_dir, 'stylized_images',
+                            str(i) + ".jpg")
+    elif os.path.isfile(os.path.join(data_dir, 'stylized_images',
+                                   str(i) + ".png")):
+        return os.path.join(data_dir, 'stylized_images',
+                            str(i) + ".png")
+    else:
+        return None
+
 def get_img_full_path(base_path, i):
     if os.path.isfile(os.path.join(base_path, 'data', 'imgs',
                                    str(i) + ".jpeg")):
@@ -240,7 +259,7 @@ def get_img_full_path(base_path, i):
 
 
 def main():
-    cuda_idx = "1"
+    cuda_idx = "3"#"1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
     config = get_hparams(args)
@@ -253,14 +272,15 @@ def main():
     sentiment_list = ['none']  # ['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]  # [2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = os.path.join(os.path.expanduser('~'), 'projects','zero-shot-style')
-
+    checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
+    data_dir = os.path.join(os.path.expanduser('~'), 'data')
     text_style_scale_list = [4]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
     text_to_imitate_list = ["bla"]#["Happy", "Love", "angry", "hungry", "I love you!!!", " I hate you and I want to kill you",
                             #"Let's set a meeting at work", "I angry and I love", "The government is good"]
     imitate_text_style = False
     embedding_path_idx2str = {0: 'mean'}
 
-    style_type_list = ['twitter']  # ['clip','twitter','emotions']#['emotions_love_disgust']
+    style_type_list = ['emotions']  # ['clip','twitter','emotions']#['emotions_love_disgust']
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
@@ -275,8 +295,9 @@ def main():
 
     imgs_to_test = []
     for setdir in args.caption_img_dict:
-        for im in os.listdir(os.path(setdir,'images','test')):
-            imgs_to_test.append(os.path(setdir,'images','test',im))
+        for im in os.listdir(os.path.join(setdir,'images','test')):
+            imgs_to_test.append(os.path.join(setdir,'images','test',im))
+    #imgs_to_test = [args.caption_img_path]
     for img_path in imgs_to_test:  # img_path_list:
         #args.caption_img_path = get_img_full_path(base_path,img_idx)
         #args.caption_img_path = os.path.join(os.path.expanduser('~'),'data','flickrstyle10k','flickr_images_dataset',img_name)
@@ -286,16 +307,17 @@ def main():
         args.caption_img_path = img_path
         for prompt in args.cond_text_list:
             args.cond_text = prompt
-            reults_dir = os.path.join(base_path, 'results', cur_time)
-            tgt_results_path = os.path.join(reults_dir, f'results_all_models_{classes_type}_classes.csv')
+            #reults_dir = os.path.join(base_path, 'results', cur_time)
+            reults_dir = os.path.join(os.path.expanduser('~'), 'results', cur_time)
+            tgt_results_path = os.path.join(reults_dir, f'results_all_models_{classes_type}_classes_{cur_time}.csv')
 
             if not os.path.isfile(args.caption_img_path):
                 continue
-            model_path = os.path.join(base_path, 'checkpoints', 'best_model',
+            model_path = os.path.join(checkpoints_dir, 'best_model',
                                       config['best_model_name'])
-            mean_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',
+            mean_embedding_vec_path = os.path.join(checkpoints_dir, 'best_model',
                                                    config['mean_vec_emb_file'])
-            median_embedding_vec_path = os.path.join(base_path, 'checkpoints', 'best_model',
+            median_embedding_vec_path = os.path.join(checkpoints_dir, 'best_model',
                                                      config['median_vec_emb_file'])
             desired_labels_list = config['desired_labels']
             for style_type in style_type_list:
@@ -306,7 +328,7 @@ def main():
                             embedding_vectors_to_load = pickle.load(fp)
                         desired_labels_list = list(embedding_vectors_to_load.keys())
                     else:
-                        desired_labels_list = args.cond_text_list
+                        desired_labels_list = [prompt]
                     if imitate_text_style:
                         desired_labels_list = text_to_imitate_list
                     for label in desired_labels_list:
@@ -320,12 +342,13 @@ def main():
                                     if sentiment_type == 'none' and s > 0:
                                         continue
 
-                                    title2print = get_title2print(args.caption_img_path, style_type, label,
-                                                                  text_style_scale,
-                                                                  embedding_path_idx2str[embedding_path_idx])
-                                    print(title2print)
+
                                     if args.run_type == 'caption':
                                         pass
+                                        title2print = get_title2print(args.caption_img_path, style_type, label,
+                                                                      text_style_scale,
+                                                                      embedding_path_idx2str[embedding_path_idx])
+                                        print(title2print)
                                         run(args, args.caption_img_path, sentiment_type, sentiment_scale,
                                             text_style_scale, imitate_text_style, desired_style_embedding_vector,
                                             cuda_idx, title2print, model_path, style_type,tmp_text_loss,label,img_dict)
@@ -342,23 +365,31 @@ def main():
                                                                                tgt_results_path)
                                     elif args.run_type == 'arithmetics':
                                         #none arithmetic
-                                        img_style = get_img_full_path(base_path, args.arithmetics_style_imgs[0])
+                                        title2print = get_title2print(args.caption_img_path, style_type, 'neutral',
+                                                                      text_style_scale,
+                                                                      embedding_path_idx2str[embedding_path_idx])
+                                        print(title2print)
                                         args.arithmetics_imgs = [args.caption_img_path, args.caption_img_path, args.caption_img_path]
                                         run_arithmetic(args, img_dict_img_arithmetic, img_name,
                                                        'none', imgs_path=args.arithmetics_imgs,
-                                                       img_weights=[1, 0, 0], cuda_idx=cuda_idx)
+                                                       img_weights=[1, 0, 0], cuda_idx=cuda_idx,title2print = title2print)
                                         write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
                                                                          reults_dir,
                                                                          len(text_style_scale_list),
                                                                          tgt_results_path, imgs_style_type_dict)
 
                                         args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
-                                        neutral_img_style = get_img_full_path(base_path, args.arithmetics_style_imgs[0])
+                                        neutral_img_style = get_full_path_of_stylized_images(data_dir, args.arithmetics_style_imgs[0])
                                         for idx, v in enumerate(args.arithmetics_style_imgs[1:]):
-                                            img_style = get_img_full_path(base_path, v)
+                                            img_style = get_full_path_of_stylized_images(data_dir, v)
                                             args.arithmetics_imgs = [args.caption_img_path, neutral_img_style, img_style]
+
+                                            title2print = get_title2print(args.caption_img_path, style_type, imgs_style_type_dict[int(v)],
+                                                                          text_style_scale,
+                                                                          embedding_path_idx2str[embedding_path_idx])
+
                                             run_arithmetic(args,img_dict_img_arithmetic,img_name,imgs_style_type_dict[int(v)], imgs_path=args.arithmetics_imgs,
-                                                           img_weights=args.arithmetics_weights, cuda_idx=cuda_idx)
+                                                           img_weights=args.arithmetics_weights, cuda_idx=cuda_idx,title2print = title2print)
                                             write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
                                                                               reults_dir,
                                                                               len(text_style_scale_list),
