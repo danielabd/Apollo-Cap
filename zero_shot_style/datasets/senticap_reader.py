@@ -58,7 +58,6 @@ class SenticapSentence(object):
     def getRawsentence(self):
         return self.raw_sentence
 
-
 class SenticapImage(object):
     """
     Stores details about a sentence.

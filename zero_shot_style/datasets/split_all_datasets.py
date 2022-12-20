@@ -1,14 +1,13 @@
-import yaml
 import shutil
-
+import pickle
 from flickrstyle10k_captions_images_mapping import *
 from senticap_reader import *
 
 
-class  ImageSentiCap:
+class ImageSentiCap:
 
-    def __init__(self,filename = None):
-        self.filename = filename
+    def __init__(self):
+        self.filename = ''
         self.imgpath = ''
         self.imgid = None
         self.positive = []
@@ -82,41 +81,95 @@ def add_factual_sentences_to_senticap_data(sr,factual_file_path_list):
             else:
                 factual_captions[d['image_id']].append(d['caption'])
 
-    senticap_captions = []
+    senticap_captions_test = []
+    num_skip_imgs_because_styles = 0
+    senticap_captions_train = []
     for s in sr.get_images():
         senticap_image = ImageSentiCap()
         img_id = s.getImgID()
-        if img_id in factual_captions:
-            senticap_image.add_sentence(factual_captions,'factual')
         senticap_image.set_imgid(img_id)
         senticap_image.set_filename(s.getFilename)
         senticap_image.set_imgpath(s.get_imgpath())
+        sentiments = []
         for sen in s.getSentences():
             if sen.getSentimentPolarity():
                 sentiment_polarity = 'positive'
             else:
                 sentiment_polarity = 'negative'
+            sentiments.append(sentiment_polarity)
+            raw_sentence = sen.getRawsentence()
             senticap_image.add_sentence(sen.getRawsentence(),sentiment_polarity)
-        senticap_captions.append(senticap_image)
-    return senticap_captions
+        # we take for test set only images which have factual and at least one of positive or negative sentences. suppose for training we don't need a factual caption
+        if 'positive' or 'negative' in sentiments:
+            if img_id in factual_captions:
+                senticap_image.add_sentence(factual_captions[img_id], 'factual')
+                senticap_captions_test.append(senticap_image)
+                continue
+        if 'positive' and 'negative' not in sentiments:
+            num_skip_imgs_because_styles += 1
+            continue
+        #take data for training
+        senticap_captions_train.append(senticap_image)
+    print(f'{num_skip_imgs_because_styles} does not have both positive and negative captions')
+    return senticap_captions_test, senticap_captions_train
 
-def arrange_data(train_data,val_data, test_data,target_dir):
+
+def save_senticap_data(dir_path, train_data, val_data, test_data):
+    data_dict = {}
+    for da in train_data:
+        filename = da.imgpath.split('/')[-1].split('.')[0]
+        data_dict[filename] = {"factual": da.factual, 'positive': da.positive, 'negative': da.negative, 'image_path': da.imgpath}
+    with open(os.path.join(dir_path, 'train.pkl'), 'wb') as file:
+        pickle.dump(data_dict, file)
+    data_dict = {}
+    for da in val_data:
+        filename = da.imgpath.split('/')[-1].split('.')[0]
+        data_dict[filename] = {"factual": da.factual, 'positive': da.positive, 'negative': da.negative, 'image_path': da.imgpath}
+    with open(os.path.join(dir_path, 'val.pkl'), 'wb') as file:
+        pickle.dump(data_dict, file)
+    data_dict = {}
+    for da in test_data:
+        filename = da.imgpath.split('/')[-1].split('.')[0]
+        data_dict[filename] = {"factual": da.factual, 'positive': da.positive, 'negative': da.negative, 'image_path': da.imgpath}
+    with open(os.path.join(dir_path, 'test.pkl'), 'wb') as file:
+        pickle.dump(data_dict, file)
+
+def save_flickrstyle10k_data(dir_path, train_data, val_data, test_data):
+    data_dict = {}
+    for da in train_data:
+        data_dict[da.filename] = {"factual": da.factual, 'humor': da.humor, 'romantic': da.romantic, 'image_path': da.imgpath}
+    with open(os.path.join(dir_path, 'train.pkl'), 'wb') as file:
+        pickle.dump(data_dict, file)
+    data_dict = {}
+    for da in val_data:
+        data_dict[da.filename] = {"factual": da.factual, 'humor': da.humor, 'romantic': da.romantic, 'image_path': da.imgpath}
+    with open(os.path.join(dir_path, 'val.pkl'), 'wb') as file:
+        pickle.dump(data_dict, file)
+    data_dict = {}
+    for da in test_data:
+        data_dict[da.filename] = {"factual": da.factual, 'humor': da.humor, 'romantic': da.romantic, 'image_path': da.imgpath}
+    with open(os.path.join(dir_path, 'test.pkl'), 'wb') as file:
+        pickle.dump(data_dict, file)
+
+
+def arrange_data(train_data,val_data, test_data,target_dir, save_images, save_annotations, dataset_name):
     print("Arranging the data...")
     #copy images
-    for d in train_data:
-        shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','train',d.imgpath.split('/')[-1]))
-    for d in val_data:
-        shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','val',d.imgpath.split('/')[-1]))
-    for d in test_data:
-        shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','test',d.imgpath.split('/')[-1]))
+    if save_images:
+        for d in train_data:
+            shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','train',d.imgpath.split('/')[-1]))
+        for d in val_data:
+            shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','val',d.imgpath.split('/')[-1]))
+        for d in test_data:
+            shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','test',d.imgpath.split('/')[-1]))
     #save annotations
-    annotation_dir = os.path.join(target_dir,'annotations')
-    with open(os.path.join(annotation_dir,'train.yaml'), 'w') as file:
-        documents = yaml.dump(train_data, file)
-    with open(os.path.join(annotation_dir,'val.yaml'), 'w') as file:
-        documents = yaml.dump(val_data, file)
-    with open(os.path.join(annotation_dir,'test.yaml'), 'w') as file:
-        documents = yaml.dump(test_data, file)
+    if save_annotations:
+        annotation_dir = os.path.join(target_dir,'annotations')
+        if dataset_name == 'flickrstyle10k':
+            save_flickrstyle10k_data(annotation_dir, train_data, val_data, test_data)
+        if dataset_name == 'senticap':
+            save_senticap_data(annotation_dir, train_data, val_data, test_data)
+
 
 
 def main():
@@ -141,23 +194,25 @@ def main():
 
 
     sr = SenticapReader(filename_senticap,imgs_folder_senticap,imgs_folder2017)
-    senticap_captions = add_factual_sentences_to_senticap_data(sr,factual_file_path_list_senticap)
+    senticap_captions_test, senticap_captions_train = add_factual_sentences_to_senticap_data(sr,factual_file_path_list_senticap)
 
 
-
-
-    # split datat to train,val,test
-    # train_data_flickrstyle10k, val_test_data_flickrstyle10k = train_test_split(flickrstyle10k_data_list, test_size=0.15, random_state=42)
-    # val_data_flickrstyle10k, test_data_flickrstyle10k = train_test_split(val_test_data_flickrstyle10k, test_size=0.5, random_state=42)
-    # arrange_data(train_data_flickrstyle10k,val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k)
-
-    # train_data_senticap, val_test_data_senticap = train_test_split(senticap_captions, test_size=0.15, random_state=42)
+    ## split datat to train,val,test
+    # flickrstyle10k
+    train_data_flickrstyle10k, val_test_data_flickrstyle10k = train_test_split(flickrstyle10k_data_list, test_size=0.1426, random_state=42)
+    val_data_flickrstyle10k, test_data_flickrstyle10k = train_test_split(val_test_data_flickrstyle10k, test_size=0.5, random_state=42)
+    #arrange_data(train_data_flickrstyle10k,val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k)
+    # senticap
+    #train_data_senticap, val_test_data_senticap = train_test_split(senticap_captions, test_size=0.15, random_state=42)
     # val_data_senticap, test_data_senticap = train_test_split( val_test_data_senticap, test_size=0.5, random_state=42)
+    train_data_senticap, val_data_senticap = train_test_split(senticap_captions_train, test_size=0.1, random_state=42)
+    test_data_senticap = senticap_captions_test
     # arrange_data(train_data_senticap, val_data_senticap, test_data_senticap, target_data_dir_senticap)
-
+    save_images = False
+    save_annotations = False
     #use all annotated data with factual to test
-    arrange_data([],[], flickrstyle10k_data_list,target_data_dir_flickrstyle10k)
-    arrange_data([], [], senticap_captions, target_data_dir_senticap)
+    arrange_data(train_data_flickrstyle10k, val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k,save_images,save_annotations, 'flickrstyle10k')
+    arrange_data(train_data_senticap, val_data_senticap, test_data_senticap, target_data_dir_senticap,save_images,save_annotations, 'senticap')
 
     print('finish')
 

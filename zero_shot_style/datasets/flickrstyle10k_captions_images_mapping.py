@@ -2,8 +2,8 @@
 import os
 from sklearn.model_selection import train_test_split
 
-class  ImageFlickrStyle10k:
 
+class ImageFlickrStyle10k:
     def __init__(self,filename):
         self.filename = filename
         self.imgpath = ''
@@ -13,7 +13,6 @@ class  ImageFlickrStyle10k:
         self.factual = []
         self.split = None#    TEST_SPLIT = 0,   TRAIN_SPLIT = 1,    VAL_SPLIT = 2
 
-
     def set_filename(self,filename):
         self.filename = filename
 
@@ -22,7 +21,6 @@ class  ImageFlickrStyle10k:
 
     def set_imgid(self,id):
         self.imgid = id
-
 
     def add_sentence(self,style,sentence):
         if style == 'humor':
@@ -61,6 +59,7 @@ class  ImageFlickrStyle10k:
     def get_imgid(self):
         return self.imgid
 
+
 def mapping_data(base_path,styles):
     '''
 
@@ -83,11 +82,13 @@ def mapping_data(base_path,styles):
         print(f'Finihsed to map {style}')
     return stylized_mapping_idx_to_img_name
 
+
 def get_stylized_captions(lines, mapping_idx_to_img_name):
     stylized_captions = {}  # key=image name, value=caption
     for i,line in enumerate(lines):
             stylized_captions[mapping_idx_to_img_name[i+1]] = line.split('\n')[0]
     return stylized_captions
+
 
 def get_factual_captions(lines):
     factual_captions = {}
@@ -133,6 +134,7 @@ def merge_all_captions(captions):
     for s in styles[1:]:
         set1 = set(captions[s].keys())
         intersection_set = set1.intersection(intersection_set)
+    #intersection_set have only the keys shared in all styles (include factual)
     for k in intersection_set:
         merged_captions[k] = ImageFlickrStyle10k(k)
         for s in captions.keys():
@@ -143,6 +145,7 @@ def merge_all_captions(captions):
 def set_image_path(merged_captions,imgs_folder):
     for k in merged_captions:
         merged_captions[k].set_imgpath_by_dir_path(imgs_folder,'.jpg')
+
 
 def get_all_flickrstyle10k_data(base_path,imgs_folder,captions_file_path):
     stylized_mapping_idx_to_img_name = mapping_data(base_path, ['humor', 'romantic'])

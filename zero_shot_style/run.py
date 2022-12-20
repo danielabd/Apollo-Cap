@@ -45,11 +45,14 @@ def get_args():
                         nargs='?',
                         choices=['caption', 'arithmetics'])
 
-    parser.add_argument("--caption_img_dict", type=str, default=[os.path.join(os.path.expanduser('~'),'data','flickrstyle10k'),
+    parser.add_argument("--caption_img_dict", type=str, default=[os.path.join(os.path.expanduser('~'),'data','senticap'),
                                                                               os.path.join(os.path.expanduser('~'),
-                                                                                           'data', 'senticap')],
+                                                                                           'data', 'flickrstyle10k')],
                         help="Path to images dict for captioning")
-
+    '''
+    parser.add_argument("--caption_img_dict", type=str, default=[os.path.join(os.path.expanduser('~'),'data','imgs')],
+                        help="Path to images dict for captioning")
+    '''
     parser.add_argument("--caption_img_path", type=str, default=os.path.join(os.path.expanduser('~'),'data','imgs','101.jpeg'),
                         help="Path to image for captioning")
 
@@ -259,7 +262,7 @@ def get_img_full_path(base_path, i):
 
 
 def main():
-    cuda_idx = "3"#"1"
+    cuda_idx = "2"#"1"
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
     config = get_hparams(args)
@@ -280,7 +283,7 @@ def main():
     imitate_text_style = False
     embedding_path_idx2str = {0: 'mean'}
 
-    style_type_list = ['emotions']  # ['clip','twitter','emotions']#['emotions_love_disgust']
+    style_type_list = ['twitter']  # ['clip','twitter','emotions']#['emotions_love_disgust']
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
@@ -295,9 +298,12 @@ def main():
 
     imgs_to_test = []
     for setdir in args.caption_img_dict:
+        print(f'setdir={setdir}')
         for im in os.listdir(os.path.join(setdir,'images','test')):
+            if ('.jpg' or '.jpeg' or '.png') not in im:
+                continue
             imgs_to_test.append(os.path.join(setdir,'images','test',im))
-    #imgs_to_test = [args.caption_img_path]
+    #imgs_to_test = [args.caption_img_path] #for test one image
     for img_path in imgs_to_test:  # img_path_list:
         #args.caption_img_path = get_img_full_path(base_path,img_idx)
         #args.caption_img_path = os.path.join(os.path.expanduser('~'),'data','flickrstyle10k','flickr_images_dataset',img_name)

@@ -806,7 +806,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-    # references:
-    # https://github.com/avrech/learning2cut/blob/master/experiments/cut_selection_dqn/default_parser.py
-    # https://github.com/avrech/learning2cut

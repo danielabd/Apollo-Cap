@@ -20,7 +20,8 @@ def str2bool(v):
 parser = ArgumentParser()
 # parser.add_argument('--epochs', type=int, default=15000, help='description')
 parser.add_argument('--epochs', type=int, default=600, help='description')#todo
-parser.add_argument('--lr', type=float, default=1e-4, help='description')
+parser.add_argument('--lr', type=float, default=1e-3, help='description')
+parser.add_argument('--weight_decay', type=float, default=1e-5, help='description')
 parser.add_argument('--margin', type=float, default=0.4, help='description')
 parser.add_argument('--batch_size', type=int, default=28, help='description')
 parser.add_argument('--inner_batch_size', type=int, default=20, help='description')
@@ -37,13 +38,14 @@ parser.add_argument('--desired_labels', type=str, nargs='+', default='all', help
 parser.add_argument('--override', type=str2bool, default=False, help='override results without warning')
 #parser.add_argument('--data_dir', type=str, default=os.path.join(os.path.expanduser('~'), 'projects', 'zero-shot-style', 'zero_shot_style', 'data'), help='data path')
 parser.add_argument('--data_dir', type=str, default=os.path.join(os.path.expanduser('~'), 'data'), help='data path')
-parser.add_argument('--wandb_mode', type=str, default='online', help='disabled, offline, online')
-#parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
+#parser.add_argument('--wandb_mode', type=str, default='online', help='disabled, offline, online')
+parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
 # parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','default_config.yaml'), help='full path to config file')
 
-parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','emotions_config_all_classes.yaml'), help='full path to config file')
+#parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','emotions_config_all_classes.yaml'), help='full path to config file')
 #parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','twitter_config.yaml'), help='full path to config file')
 #parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','flickrstyle10k_config.yaml'), help='full path to config file')
+parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','text_style_classification.yaml'), help='full path to config file')
 
 parser.add_argument('--plot_only_clustering', type=str2bool, default=False, help='plot only clustering of the best model')
 # parser.add_argument('--rundry', type=str2bool, default=False)
