@@ -1,0 +1,31 @@
+param_int: 1
+param_float: 1.
+param_str: hi
+param_list_of_everything: [a, 1, '1']
+param_dict:
+  k0: v0
+  k1: v1
+  nested_k:
+    k00: v00
+    and_so_on: more_values
+batch_size: 20
+inner_batch_size: 20
+best_model_name: best_text_style_classification_trained_model.pth #best_twitter_trained_model.pth
+model_name: text_style_classification_trained_model.pth
+experiment_name: cur_time
+
+data_file: ''
+csv_file_name_train: ''
+csv_file_name_test: ''
+visual_csv_file_name_train: ''
+visual_csv_file_name_test: ''
+
+
+num_workers: 10
+plot_only_clustering: False
+desired_labels: all
+undesired_label: ''
+data_name: text_style_classification
+resume: False # resume running in wb
+run_id: ''
+load_model: False
