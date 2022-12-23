@@ -1,3 +1,4 @@
+import os.path
 import numpy as np
 from torch import nn
 from transformers.models.gpt2 import GPT2LMHeadModel, GPT2Tokenizer
@@ -7,11 +8,10 @@ import clip
 from PIL import Image
 from datetime import datetime
 import sys
-from transformers import TextClassificationPipeline # SENTIMENT
 from transformers import AutoModelForSequenceClassification, AutoTokenizer # SENTIMENT
 from transformers import BertTokenizer #TEXT_STYLE
 from transformers import AutoModelForCausalLM #gpt-J
-
+#import cv2
 from transformers import BertModel
 from torch.optim import Adam, SGD
 from zero_shot_style.model.TextStyleEmbedding import TextStyleEmbed
@@ -209,6 +209,9 @@ class CLIPTextGenerator:
 
 
     def get_img_feature(self, img_path, weights):
+        #imgs = [Image.fromarray(cv2.imread(x)) for x in img_path]
+        #imgs = [Image.fromarray(cv2.imread(x).astype('uint8'), 'RGB') for x in img_path]
+        #imgs = [Image.fromarray(cv2.imread(x), 'RGB') for x in img_path]
         imgs = [Image.open(x) for x in img_path]
         clip_imgs = [self.clip_preprocess(x).unsqueeze(0).to(self.device) for x in imgs]
 

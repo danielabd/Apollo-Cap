@@ -40,6 +40,9 @@ def get_args():
     parser.add_argument("--forbidden_factor", type=float, default=20, help="Factor to decrease forbidden tokens")
     parser.add_argument("--beam_size", type=int, default=5)
 
+    parser.add_argument("--cuda_idx_num", type=str, default="1")
+    parser.add_argument("--img_idx_to_start_from", type=int, default=0)
+
     parser.add_argument('--run_type',
                         default='caption',
                         nargs='?',
@@ -206,7 +209,8 @@ def write_results_image_manipulation(img_dict_img_arithmetic, labels,reults_dir,
     with open(tgt_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
         for i, img in enumerate(img_dict_img_arithmetic.keys()):
-            cur_row = [img]
+            img_num_str = img.split('/')[-1].split('.j')[0]
+            cur_row = [img_num_str]
             styles = img_dict_img_arithmetic[img].keys()
             if writeTitle:
                 titles0 = ['img_num\style']
@@ -262,8 +266,8 @@ def get_img_full_path(base_path, i):
 
 
 def main():
-    cuda_idx = "2"#"1"
-    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
+    #cuda_idx = "1"
+    #os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
     config = get_hparams(args)
     imgs_style_type_dict = {49: 'neutral', 50:'positive', 51:'negative', 52:'humor', 53:'romantic'}
@@ -272,6 +276,10 @@ def main():
         img_path_list = list(np.arange(0,20000))#[35]#[101, 105, 104, 103, 102, 100]  # list(np.arange(100,105))
     else:
         img_path_list = [args.img_name]
+
+    cuda_idx = args.cuda_idx_num
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
+
     sentiment_list = ['none']  # ['negative','positive','neutral', 'none']
     sentiment_scale_list = [2.0]  # [2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = os.path.join(os.path.expanduser('~'), 'projects','zero-shot-style')
@@ -297,6 +305,7 @@ def main():
         classes_type = "source"
 
     imgs_to_test = []
+
     for setdir in args.caption_img_dict:
         print(f'setdir={setdir}')
         for im in os.listdir(os.path.join(setdir,'images','test')):
@@ -304,7 +313,9 @@ def main():
                 continue
             imgs_to_test.append(os.path.join(setdir,'images','test',im))
     #imgs_to_test = [args.caption_img_path] #for test one image
-    for img_path in imgs_to_test:  # img_path_list:
+    for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
+        if img_path_idx < args.img_idx_to_start_from:
+            continue
         #args.caption_img_path = get_img_full_path(base_path,img_idx)
         #args.caption_img_path = os.path.join(os.path.expanduser('~'),'data','flickrstyle10k','flickr_images_dataset',img_name)
         #if not args.caption_img_path:

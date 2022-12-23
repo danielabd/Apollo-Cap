@@ -27,6 +27,7 @@ def get_data(dataset_name,type_set):
 
 
 def train_perplexity_model(train_sentences,n):
+    print("Trainning perplexity  model...")
     tokenized_text = [list(map(str.lower, nltk.tokenize.word_tokenize(sent)))
                       for sent in train_sentences]
     train_data, padded_vocab = padded_everygram_pipeline(n, tokenized_text)
@@ -69,7 +70,7 @@ def calc_perplexity(test_sentences,n, pp_model):
         pp_scores_wo_inf = [e for e in pp_scores if e != np.inf]
     else:
         pp_scores_wo_inf = pp_scores
-    valid_sentences_percent = len(pp_scores_wo_inf)/pp_scores # pp!=inf
+    valid_sentences_percent = len(pp_scores_wo_inf)/len(pp_scores) # pp!=inf
     avg_pp_score = np.mean(pp_scores_wo_inf)
     print(f'Average perplexity score for test set is: {avg_pp_score}. There are {valid_sentences_percent}% valid sentences (pp!=inf)')
     return avg_pp_score, valid_sentences_percent
@@ -77,7 +78,7 @@ def calc_perplexity(test_sentences,n, pp_model):
 
 def main():
     dataset_name = 'flickrstyle10k' #'flickrstyle10k'/'senticap'
-    n=3 # MSCap used n=3
+    n = 3 # MSCap used n=3
     train_sentences = get_data(dataset_name,'train')
     train_sentences.extend(get_data(dataset_name,'val'))
     test_sentences = get_data(dataset_name,'test')

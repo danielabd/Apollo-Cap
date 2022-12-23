@@ -1,5 +1,8 @@
 import shutil
 import pickle
+
+import pandas as pd
+
 from flickrstyle10k_captions_images_mapping import *
 from senticap_reader import *
 
@@ -71,7 +74,6 @@ def add_factual_sentences_to_senticap_data(sr,factual_file_path_list):
     :return:
     '''
     print("Adding factual sentences to senticap data...")
-
     factual_captions = {}
     for factual_file_path in factual_file_path_list:
         data = json.load(open(factual_file_path, "r"))
@@ -100,7 +102,7 @@ def add_factual_sentences_to_senticap_data(sr,factual_file_path_list):
             raw_sentence = sen.getRawsentence()
             senticap_image.add_sentence(sen.getRawsentence(),sentiment_polarity)
         # we take for test set only images which have factual and at least one of positive or negative sentences. suppose for training we don't need a factual caption
-        if 'positive' or 'negative' in sentiments:
+        if ('positive' in sentiments) or ('negative' in sentiments):
             if img_id in factual_captions:
                 senticap_image.add_sentence(factual_captions[img_id], 'factual')
                 senticap_captions_test.append(senticap_image)
@@ -173,22 +175,25 @@ def arrange_data(train_data,val_data, test_data,target_dir, save_images, save_an
 
 
 def main():
-    #flickrstyle10k
-    base_path_flickrstyle10k = '../../../../data/source/flickrstyle10k'
-    imgs_folder_flickrstyle10k = '../../../../data/source/flickrstyle10k/flickr_images_dataset'
-    captions_file_path_flickrstyle10k= {'humor':os.path.join(base_path_flickrstyle10k,'FlickrStyle_v0.9/humor/funny_train.txt'),
-                         'romantic':os.path.join(base_path_flickrstyle10k,'FlickrStyle_v0.9/romantic/romantic_train.txt'),
-                         'factual':os.path.join(base_path_flickrstyle10k,'FlickrStyle_v0.9/captions.txt')}
-    #senticap
-    filename_senticap = '../../../../data/source/senticap/senticap_dataset/data/senticap_dataset.json'
-    imgs_folder_senticap = '../../../../data/source/coco/2014'
-    imgs_folder2017 = '../../../../data/source/coco/2017/images'
+    data_dir = os.path.join(os.path.expanduser('~'),'data')
+    #flickrstyle10k data
+    base_path_flickrstyle10k = os.path.join(data_dir,'source','flickrstyle10k')
+    imgs_folder_flickrstyle10k = os.path.join(base_path_flickrstyle10k,'flickr_images_dataset')
+    captions_file_path_flickrstyle10k= {'humor':os.path.join(base_path_flickrstyle10k,'FlickrStyle_v0.9','humor','funny_train.txt'),
+                         'romantic':os.path.join(base_path_flickrstyle10k,'FlickrStyle_v0.9','romantic','romantic_train.txt'),
+                         'factual':os.path.join(base_path_flickrstyle10k,'FlickrStyle_v0.9','captions.txt')}
+    target_data_dir_flickrstyle10k = os.path.join(data_dir,'flickrstyle10k')
+    #senticap data
+    filename_senticap = os.path.join(data_dir,'source','senticap','senticap_dataset','data','senticap_dataset.json')
+    imgs_folder_senticap = os.path.join(data_dir,'source','coco','2014')
+    imgs_folder2017 = os.path.join(data_dir,'source','coco','2017','images')
+    target_data_dir_senticap = os.path.join(data_dir,'senticap')
 
-    target_data_dir_flickrstyle10k = os.path.abspath('../../../../data/flickrstyle10k')
     factual_file_path_list_senticap = [
-        '/Users/danielabendavid/data/source/coco/2014/annotations/captions_train2014.json',
-        '/Users/danielabendavid/data/source/coco/2014/annotations/captions_val2014.json']
-    target_data_dir_senticap = os.path.abspath('../../../../data/senticap')
+         os.path.join(data_dir,'source','coco','2014','annotations','captions_train2014.json'),
+         os.path.join(data_dir,'source','coco','2014','annotations','captions_val2014.json')]
+
+
     flickrstyle10k_data = get_all_flickrstyle10k_data(base_path_flickrstyle10k,imgs_folder_flickrstyle10k,captions_file_path_flickrstyle10k)
     flickrstyle10k_data_list = list(flickrstyle10k_data.values())
 
@@ -199,12 +204,10 @@ def main():
 
     ## split datat to train,val,test
     # flickrstyle10k
-    train_data_flickrstyle10k, val_test_data_flickrstyle10k = train_test_split(flickrstyle10k_data_list, test_size=0.1426, random_state=42)
-    val_data_flickrstyle10k, test_data_flickrstyle10k = train_test_split(val_test_data_flickrstyle10k, test_size=0.5, random_state=42)
+    train_val_data_flickrstyle10k, test_data_flickrstyle10k = train_test_split(flickrstyle10k_data_list, test_size=0.3, random_state=42)
+    train_data_flickrstyle10k, val_data_flickrstyle10k = train_test_split(train_val_data_flickrstyle10k, test_size=0.1, random_state=42)
     #arrange_data(train_data_flickrstyle10k,val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k)
     # senticap
-    #train_data_senticap, val_test_data_senticap = train_test_split(senticap_captions, test_size=0.15, random_state=42)
-    # val_data_senticap, test_data_senticap = train_test_split( val_test_data_senticap, test_size=0.5, random_state=42)
     train_data_senticap, val_data_senticap = train_test_split(senticap_captions_train, test_size=0.1, random_state=42)
     test_data_senticap = senticap_captions_test
     # arrange_data(train_data_senticap, val_data_senticap, test_data_senticap, target_data_dir_senticap)
@@ -215,6 +218,27 @@ def main():
     arrange_data(train_data_senticap, val_data_senticap, test_data_senticap, target_data_dir_senticap,save_images,save_annotations, 'senticap')
 
     print('finish')
+
+    '''
+        df_train = pd.read_csv(os.path.join(data_dir, 'train.csv'))
+        df_val = pd.read_csv(os.path.join(data_dir, 'val.csv'))
+        df_test = pd.read_csv(os.path.join(data_dir, 'test.csv'))
+        labels_dict_idxs = {}
+        for i, label in enumerate(list(set(list(df_train['category'])))):
+            labels_dict_idxs[label] = i
+
+
+        for dataset_name in ['flickrstyle10k', 'senticap']:
+            data_dir_dataset = os.path.join(data_dir,dataset_name,'annotations')
+            with open(os.path.join(data_dir_dataset,'train.pkl'), 'rb') as pickle_file:
+                df_train = pickle.load(pickle_file)
+            with open(os.path.join(data_dir_dataset,'val.pkl'), 'rb') as pickle_file:
+                df_val = pickle.load(pickle_file)
+            with open(os.path.join(data_dir_dataset,'test.pkl'), 'rb') as pickle_file:
+                df_test = pickle.load(pickle_file)
+            pass
+        '''
+
 
 if __name__=='__main__':
     main()

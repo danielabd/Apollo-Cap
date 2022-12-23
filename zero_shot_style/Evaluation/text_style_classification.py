@@ -1,7 +1,8 @@
 import os.path
 import pickle
-from sklearn.metrics import f1_score
 
+import wandb
+from sklearn.metrics import f1_score
 import pandas as pd
 from transformers import BertTokenizer
 from torch import nn
@@ -12,6 +13,9 @@ from tqdm import tqdm
 import torch
 import numpy as np
 from transformers import BertTokenizer
+import torch
+from torchmetrics import Precision, Recall
+
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 '''
@@ -72,9 +76,9 @@ class BertClassifier(nn.Module):
         return final_layer
 
 
-def train(model, train_data, val_data, learning_rate, epochs, labels, batch_size, desired_cuda_num):
+def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model):
     print("Trainin the model...")
-    train, val = Dataset(train_data, labels), Dataset(val_data, labels)
+    train, val = Dataset(train_data, labels_dict), Dataset(val_data, labels_dict)
 
     train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
     val_dataloader = torch.utils.data.DataLoader(val, batch_size=batch_size)
@@ -88,7 +92,7 @@ def train(model, train_data, val_data, learning_rate, epochs, labels, batch_size
     if use_cuda:
         model = model.cuda()
         criterion = criterion.cuda()
-
+    best_f1_score_val = 0
     for epoch_num in range(epochs):
 
         total_acc_train = 0
@@ -111,40 +115,93 @@ def train(model, train_data, val_data, learning_rate, epochs, labels, batch_size
             batch_loss.backward()
             optimizer.step()
 
+        log_dict = {'train/epoch': epoch_num,
+                    'train/loss_train': total_loss_train / len(train_data),
+                    'train/acc_train': total_acc_train / len(train_data)}
+        wandb.log({"log_dict": log_dict})
         total_acc_val = 0
         total_loss_val = 0
-
+        print("Calculate  validation...")
         with torch.no_grad():
 
+            preds = []
+            targets = []
             for val_input, val_label in val_dataloader:
+                targets.extend(val_label)
                 val_label = val_label.to(device)
                 mask = val_input['attention_mask'].to(device)
                 input_id = val_input['input_ids'].squeeze(1).to(device)
 
                 output = model(input_id, mask)
-
+                preds.extend(output.argmax(dim=1).cpu().data.numpy())
                 batch_loss = criterion(output, val_label.long())
                 total_loss_val += batch_loss.item()
 
                 acc = (output.argmax(dim=1) == val_label).sum().item()
                 total_acc_val += acc
 
-            label_cpu = train_label.cpu().data.numpy()
-            output_cpu = output.argmax(dim=1).cpu().data.numpy()
-            f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
+            print(f"target_set: {set(np.array(targets))}")
+            print(f"pred_set: {set(np.array(preds))}")
+            try:
+                precision = Precision(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
+                print(f"precision= {precision}")
+                recall = Recall(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
+                print(f"recall= {recall}")
+                # precision = Precision(preds, targets)
+                # recall = Recall(preds, targets)
+
+                f1_score_val = 2 * (precision * recall) / (precision + recall)
+                print(f"f1_score_val= {f1_score_val}")
+                # f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
+            except:
+                print("Failed to calc,precision,recall....")
+
+            if len(set(np.array(targets))) == len(set(np.array(preds))):
+                precision = Precision(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
+                recall = Recall(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
+
+                #precision = Precision(preds, targets)
+                #recall = Recall(preds, targets)
+
+                f1_score_val = 2*(precision*recall)/(precision+recall)
+                #f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
+            else:
+                print(f"Size of preds  set and targets set is incompatible, len(set(np.array(targets)))= {len(set(np.array(targets)))}, len(set(np.array(preds))) = {len(set(np.array(preds)))}. set f1_score to 0.")
+                f1_score_val = 0
+
+            try:
+                precision = Precision(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
+                print(f"precision= {precision}")    
+                recall = Recall(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
+                print(f"recall= {recall}")
+                # precision = Precision(preds, targets)
+                # recall = Recall(preds, targets)
+
+                f1_score_val = 2 * (precision * recall) / (precision + recall)
+                print(f"f1_score_val= {f1_score_val}")
+                # f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
+            except:
+                print("Failed to calc,precision,recall....")
+
+
             print(f"f1_score_val:{f1_score_val}")
 
         print(
             f'Epochs: {epoch_num + 1} | Train Loss: {total_loss_train / len(train_data): .3f} \
                 | Train Accuracy: {total_acc_train / len(train_data): .3f} \
                 | Val Loss: {total_loss_val / len(val_data): .3f} \
-                | Val Accuracy: {total_acc_val / len(val_data): .3f}')
+                | Val Accuracy: {total_acc_val/len(val_data): .3f} \
+                | f1_score: {f1_score_val: .3f}')
 
-    path_for_saving_last_model = os.path.join(os.path.expanduser('~'),'checkpoints','best_model','best_text_style_classification_model.pth')
-    print(f'Saving model to: {path_for_saving_last_model}...')
-    torch.save({"model_state_dict": model.state_dict(),
-                "optimizer_state_dict": optimizer.state_dict(),
-                }, path_for_saving_last_model)
+        log_dict = {'val/loss_val': total_loss_val / len(val_data),
+                    'val/acc_val': total_acc_val/len(val_data),
+                    'val/f1_score': f1_score}
+        wandb.log({"log_dict": log_dict})
+        if f1_score_val>best_f1_score_val:
+            print(f'Saving model to: {path_for_saving_last_model}...')
+            torch.save({"model_state_dict": model.state_dict(),
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        }, path_for_saving_last_model)
     print("finish train")
 
 def evaluate(model, test_data, labels, desired_cuda_num):
@@ -239,7 +296,8 @@ def convert_ds_to_df(ds,data_dir):
 
 def main():
     desired_cuda_num = 0
-
+    path_for_saving_last_model = os.path.join(os.path.expanduser('~'), 'checkpoints', 'best_model',
+                                              'best_text_style_classification_model.pth')
     batch_size = 16  # 2
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     dataset_names = ['senticap', 'flickrstyle10k']
@@ -249,15 +307,23 @@ def main():
         for set_type in ['train', 'val', 'test']:
             data_set_path[set_type][dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', set_type+'.pkl')
 
+    wandb.init(project='zero-shot-learning',
+               config=None,
+               resume=False,
+               id=None,
+               mode='online',#'disabled, offline, online'
+               tags='+')  # '+',None,
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
+    #df_train = df_train[:10]#todo: debug
+    #df_val = df_val[:5]#todo: debug
 
 
     datapath = os.path.join(os.path.expanduser('~'),'data','bbc-text.csv')
     #datapath = path_to_csv_file
-    df = pd.read_csv(datapath)
-    df.head()
-    df.groupby(['category']).size().plot.bar()
+    #df = pd.read_csv(datapath)
+    #df.head()
+    #df.groupby(['category']).size().plot.bar()
     '''
     tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
    
@@ -280,17 +346,17 @@ def main():
     '''
     print(len(df_train), len(df_val), len(df_test))
 
-    labels = {}
+    labels_dict = {}
     for i,label in enumerate(list(set(list(df_train['category'])+list(df_val['category'])+list(df_test['category'])))):
-        labels[label] = i
-    print(f"labels: {labels}")
+        labels_dict[label] = i
+    print(f"labels: {labels_dict}")
     EPOCHS = 20
     model = BertClassifier()
     LR = 1e-6
 
-    train(model, df_train, df_val, LR, EPOCHS, labels, batch_size, desired_cuda_num)
+    train(model, df_train, df_val, LR, EPOCHS, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model)
 
-    total_acc_test_for_all_data = evaluate(model, df_test, labels, desired_cuda_num)
+    total_acc_test_for_all_data = evaluate(model, df_test, labels_dict, desired_cuda_num)
 
 
     print("finish main")
