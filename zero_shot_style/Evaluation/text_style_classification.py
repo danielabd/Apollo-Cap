@@ -64,7 +64,7 @@ class BertClassifier(nn.Module):
 
         self.bert = BertModel.from_pretrained('bert-base-cased')
         self.dropout = nn.Dropout(dropout)
-        self.linear = nn.Linear(768, 5)
+        self.linear = nn.Linear(768, 4)
         self.relu = nn.ReLU()
 
     def forward(self, input_id, mask):
@@ -98,13 +98,16 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
         total_acc_train = 0
         total_loss_train = 0
 
+        train_preds = []
+        train_targets = []
         for train_input, train_label in tqdm(train_dataloader):
+            train_targets.extend(train_label.cpu().data.numpy())
             train_label = train_label.to(device)
             mask = train_input['attention_mask'].to(device)
             input_id = train_input['input_ids'].squeeze(1).to(device)
 
             output = model(input_id, mask)
-
+            train_preds.extend(output.cpu().data.numpy())
             batch_loss = criterion(output, train_label.long())
             total_loss_train += batch_loss.item()
 
@@ -115,10 +118,18 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
             batch_loss.backward()
             optimizer.step()
 
-        log_dict = {'train/epoch': epoch_num,
-                    'train/loss_train': total_loss_train / len(train_data),
-                    'train/acc_train': total_acc_train / len(train_data)}
-        wandb.log({"log_dict": log_dict})
+        train_preds_t = torch.tensor(train_preds)
+        train_targets_t = torch.tensor(train_targets)
+        precision_i = Precision(average='weighted', num_classes=len(set(np.array(train_targets_t))))
+        precision = precision_i(train_preds_t, train_targets_t)
+        recall_i = Recall(average='weighted', num_classes=len(set(np.array(train_targets_t))))
+        recall = recall_i(train_preds_t, train_targets_t)
+
+        # precision = Precision(preds, targets)
+        # recall = Recall(preds, targets)
+
+        f1_score_train = 2 * (precision * recall) / (precision + recall)
+
         total_acc_val = 0
         total_loss_val = 0
         print("Calculate  validation...")
@@ -127,7 +138,7 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
             preds = []
             targets = []
             for val_input, val_label in val_dataloader:
-                targets.extend(val_label)
+                targets.extend(val_label.cpu().data.numpy())
                 val_label = val_label.to(device)
                 mask = val_input['attention_mask'].to(device)
                 input_id = val_input['input_ids'].squeeze(1).to(device)
@@ -140,48 +151,17 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
                 acc = (output.argmax(dim=1) == val_label).sum().item()
                 total_acc_val += acc
 
-            print(f"target_set: {set(np.array(targets))}")
-            print(f"pred_set: {set(np.array(preds))}")
-            try:
-                precision = Precision(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
-                print(f"precision= {precision}")
-                recall = Recall(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
-                print(f"recall= {recall}")
-                # precision = Precision(preds, targets)
-                # recall = Recall(preds, targets)
 
-                f1_score_val = 2 * (precision * recall) / (precision + recall)
-                print(f"f1_score_val= {f1_score_val}")
-                # f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
-            except:
-                print("Failed to calc,precision,recall....")
+            preds_t = torch.tensor(preds)
+            targets_t = torch.tensor(targets)
 
-            if len(set(np.array(targets))) == len(set(np.array(preds))):
-                precision = Precision(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
-                recall = Recall(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
+            precision_i = Precision(average='weighted', num_classes=len(set(np.array(targets_t))))
+            precision = precision_i(preds_t, targets_t)
+            recall_i = Recall(average='weighted', num_classes=len(set(np.array(targets_t))))
+            recall = recall_i(preds_t, targets_t)
 
-                #precision = Precision(preds, targets)
-                #recall = Recall(preds, targets)
-
-                f1_score_val = 2*(precision*recall)/(precision+recall)
-                #f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
-            else:
-                print(f"Size of preds  set and targets set is incompatible, len(set(np.array(targets)))= {len(set(np.array(targets)))}, len(set(np.array(preds))) = {len(set(np.array(preds)))}. set f1_score to 0.")
-                f1_score_val = 0
-
-            try:
-                precision = Precision(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
-                print(f"precision= {precision}")    
-                recall = Recall(preds, targets, average='weighted', num_classes=len(set(np.array(targets))))
-                print(f"recall= {recall}")
-                # precision = Precision(preds, targets)
-                # recall = Recall(preds, targets)
-
-                f1_score_val = 2 * (precision * recall) / (precision + recall)
-                print(f"f1_score_val= {f1_score_val}")
-                # f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
-            except:
-                print("Failed to calc,precision,recall....")
+            f1_score_val = 2*(precision*recall)/(precision+recall)
+            #f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
 
 
             print(f"f1_score_val:{f1_score_val}")
@@ -189,14 +169,20 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
         print(
             f'Epochs: {epoch_num + 1} | Train Loss: {total_loss_train / len(train_data): .3f} \
                 | Train Accuracy: {total_acc_train / len(train_data): .3f} \
+                | f1_score_train: {f1_score_train: .3f} \
                 | Val Loss: {total_loss_val / len(val_data): .3f} \
                 | Val Accuracy: {total_acc_val/len(val_data): .3f} \
-                | f1_score: {f1_score_val: .3f}')
-
-        log_dict = {'val/loss_val': total_loss_val / len(val_data),
+                | f1_score_val: {f1_score_val: .3f}')
+        log_dict = {'train/epoch': epoch_num,
+                    'train/loss_train': total_loss_train / len(train_data),
+                    'train/acc_train': total_acc_train / len(train_data),
+                    'train/f1_score_train': f1_score_train,
+                    'val/loss_val': total_loss_val / len(val_data),
                     'val/acc_val': total_acc_val/len(val_data),
-                    'val/f1_score': f1_score}
-        wandb.log({"log_dict": log_dict})
+                    'val/f1_score_val': f1_score_val}
+
+        wandb.log(log_dict)
+
         if f1_score_val>best_f1_score_val:
             print(f'Saving model to: {path_for_saving_last_model}...')
             torch.save({"model_state_dict": model.state_dict(),
@@ -307,19 +293,16 @@ def main():
         for set_type in ['train', 'val', 'test']:
             data_set_path[set_type][dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', set_type+'.pkl')
 
-    wandb.init(project='zero-shot-learning',
+    wandb.init(project='text-style-classification',
                config=None,
-               resume=False,
+               #resume=False,
                id=None,
                mode='online',#'disabled, offline, online'
                tags='+')  # '+',None,
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
-    #df_train = df_train[:10]#todo: debug
-    #df_val = df_val[:5]#todo: debug
 
-
-    datapath = os.path.join(os.path.expanduser('~'),'data','bbc-text.csv')
+    #datapath = os.path.join(os.path.expanduser('~'),'data','bbc-text.csv')
     #datapath = path_to_csv_file
     #df = pd.read_csv(datapath)
     #df.head()
