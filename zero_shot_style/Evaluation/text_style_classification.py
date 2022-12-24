@@ -188,6 +188,7 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_last_model)
+            best_f1_score_val = f1_score_val
     print("finish train")
 
 def evaluate(model, test_data, labels, desired_cuda_num):
