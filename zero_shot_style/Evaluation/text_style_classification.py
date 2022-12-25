@@ -1,5 +1,6 @@
 import os.path
 import pickle
+from datetime import datetime
 
 import wandb
 from sklearn.metrics import f1_score
@@ -76,7 +77,7 @@ class BertClassifier(nn.Module):
         return final_layer
 
 
-def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model):
+def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model, path_for_saving_best_model):
     print("Trainin the model...")
     train, val = Dataset(train_data, labels_dict), Dataset(val_data, labels_dict)
 
@@ -130,6 +131,11 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
 
         f1_score_train = 2 * (precision * recall) / (precision + recall)
 
+        if np.mod(epoch_num,10) == 0:
+            print(f'Saving model to: {path_for_saving_last_model}...')
+            torch.save({"model_state_dict": model.state_dict(),
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        }, path_for_saving_last_model)
         total_acc_val = 0
         total_loss_val = 0
         print("Calculate  validation...")
@@ -184,10 +190,10 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
         wandb.log(log_dict)
 
         if f1_score_val>best_f1_score_val:
-            print(f'Saving model to: {path_for_saving_last_model}...')
+            print(f'Saving ***best**** model to: {path_for_saving_last_model}...')
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
-                        }, path_for_saving_last_model)
+                        }, path_for_saving_best_model)
             best_f1_score_val = f1_score_val
     print("finish train")
 
@@ -283,8 +289,14 @@ def convert_ds_to_df(ds,data_dir):
 
 def main():
     desired_cuda_num = 0
-    path_for_saving_last_model = os.path.join(os.path.expanduser('~'), 'checkpoints', 'best_model',
-                                              'best_text_style_classification_model.pth')
+
+    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    print(f"cur time is: {cur_time}")
+    exp_dir = os.path.join(os.path.expanduser('~'), 'checkpoints',cur_time)
+    os.makedirs(exp_dir)
+    path_for_saving_last_model = os.path.join(exp_dir, 'last_text_style_classification_model.pth')
+    path_for_saving_best_model = os.path.join(exp_dir, 'best_text_style_classification_model.pth')
+
     batch_size = 16  # 2
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     dataset_names = ['senticap', 'flickrstyle10k']
@@ -334,11 +346,11 @@ def main():
     for i,label in enumerate(list(set(list(df_train['category'])+list(df_val['category'])+list(df_test['category'])))):
         labels_dict[label] = i
     print(f"labels: {labels_dict}")
-    EPOCHS = 20
+    EPOCHS = 100
     model = BertClassifier()
     LR = 1e-6
 
-    train(model, df_train, df_val, LR, EPOCHS, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model)
+    train(model, df_train, df_val, LR, EPOCHS, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model,path_for_saving_best_model)
 
     total_acc_test_for_all_data = evaluate(model, df_test, labels_dict, desired_cuda_num)
 
