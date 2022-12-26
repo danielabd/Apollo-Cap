@@ -62,10 +62,14 @@ class BertClassifier(nn.Module):
 
     def __init__(self, dropout=0.5):
         super(BertClassifier, self).__init__()
-
         self.bert = BertModel.from_pretrained('bert-base-cased')
+        #for param in self.bert.parameters():
+        #   param.requires_grad = False
+
         self.dropout = nn.Dropout(dropout)
         self.linear = nn.Linear(768, 4)
+        #self.linear1 = nn.Linear(768, 128)
+        #self.linear2 = nn.Linear(128, 4)
         self.relu = nn.ReLU()
 
     def forward(self, input_id, mask):
@@ -73,8 +77,18 @@ class BertClassifier(nn.Module):
         dropout_output = self.dropout(pooled_output)
         linear_output = self.linear(dropout_output)
         final_layer = self.relu(linear_output)
-
         return final_layer
+        '''
+        _, x = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+        x = self.dropout(x)
+        x = self.linear1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.linear2(x)
+        x = self.relu(x)
+        return x
+        '''
+
 
 
 def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model, path_for_saving_best_model):
