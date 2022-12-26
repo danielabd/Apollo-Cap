@@ -8,6 +8,7 @@
 #import pickle
 import shutil
 from datetime import datetime
+from evaluate import load
 
 import pandas as pd
 import torch
@@ -18,15 +19,15 @@ from nltk.lm.preprocessing import padded_everygram_pipeline
 from nltk.lm import MLE
 import os
 import pickle
+import style_cls
 from pycocoevalcap.bleu.bleu import Bleu
 from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.meteor.meteor import Meteor
 from pycocoevalcap.rouge.rouge import Rouge
 from pycocoevalcap.spice import Spice
-from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
+#from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
 from text_style_classification import evaluate as evaluate_text_style_classification
 from text_style_classification import BertClassifier, tokenizer
-
 MAX_PP_SCORE = 100
 NORMALIZE_GRADE_SCALE = 100
 
@@ -116,6 +117,18 @@ class STYLE_CLS:
         return total_acc_test_for_all_data, None
 
 class Fluency:
+    def __init__(self):
+        self.model_id = 'gpt2'
+        self.perplexity = load("perplexity", module_type="measurement")
+
+    def compute_score(self, gts,  res):
+        sentence = list(res.values())[0]
+        results = self.perplexity.compute(data=sentence, model_id=self.model_id, add_start_token=False)
+        return results['mean_perplexity'], results['perplexities']
+
+
+'''
+class Fluency:
     def __init__(self,n=3):
         self.n = n
         self.pp_model = None
@@ -156,7 +169,7 @@ class Fluency:
         print(
             f'Average perplexity score for test set is: {avg_pp_score}. There are {valid_sentences_percent}% valid sentences (pp!=inf)')
         return avg_pp_score, valid_sentences_percent
-
+'''
 
 
 def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, dataset_names, ngram_for_fluency, txt_cls_model_path, labels_dict_idxs, gt_imgs_for_test):
@@ -192,7 +205,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, datas
                 elif metric == 'CLIPScore':
                     scorer = CLIPScore(text_generator)
                 elif metric == 'fluency':
-                    scorer = get_fluency_obj(data_dir, dataset_names, ngram_for_fluency)
+                    scorer = Fluency()
                 elif metric == 'style_classification':
                     scorer = STYLE_CLS(txt_cls_model_path, data_dir, cuda_idx, labels_dict_idxs)
 
@@ -336,7 +349,6 @@ def CLIPScore(text_generator, img_path, res):
     print('CLIPScore = %s' % avg_score)
     return avg_score
 
-'''
 def get_fluency_obj(data_dir,dataset_names, ngram_for_fluency):
     print("Train fluency model...")
     train_sentences = []
@@ -347,7 +359,7 @@ def get_fluency_obj(data_dir,dataset_names, ngram_for_fluency):
     fluency_obj.train_pp_model(train_sentences)
     print("Finished to train fluency model.")
     return fluency_obj
-
+'''
 
 def style_accuracy():
     pass
@@ -355,15 +367,17 @@ def style_accuracy():
 
 def diversitiy(res,gts):
     print("Calculate vocabulary size...")
-    vocab_list = []
-    for test_type in res:
-        for k in res[test_type]:
-            if k in gts:
-                for style in res[test_type][k]:
-                    tokenized_text = list(map(str.lower, nltk.tokenize.word_tokenize(res[test_type][k][style])))
-                    vocab_list.extend(tokenized_text)
-                    vocab_list = list(set(vocab_list))
-    vocab_size = len(vocab_list)
+    vocab_size = {}
+    for dataset in gts:
+        vocab_list = []
+        for test_type in res:
+            for k in res[test_type]:
+                if k in gts[dataset]:
+                    for style in res[test_type][k]:
+                        tokenized_text = list(map(str.lower, nltk.tokenize.word_tokenize(res[test_type][k][style])))
+                        vocab_list.extend(tokenized_text)
+                        vocab_list = list(set(vocab_list))
+        vocab_size[dataset] = len(vocab_list)
     #print(f'Vocabulary size is: {vocab_size}')
     return vocab_size
 
@@ -443,7 +457,7 @@ def get_res_data(res_paths):
         res_data_per_test[test_type] = res_data
     return res_data_per_test
 
-def write_results(mean_score, eval_results_path,dataset_names, metrics, styles):
+def write_results(mean_score, eval_results_path,dataset_names, metrics, styles, vocab_size):
     print(f"Write results to {eval_results_path}...")
     with open(eval_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
@@ -476,12 +490,20 @@ def write_results(mean_score, eval_results_path,dataset_names, metrics, styles):
                                 avg_metric[metric] = [mean_score[test_type][dataset_name][metric][style]]
                             else:
                                 avg_metric[metric].append(mean_score[test_type][dataset_name][metric][style])
+                #diversity
+                dataset_row.append(dataset_name)
+                style_row.append("diversity")
+                metrics_row.append("diversity")
+                row.append(vocab_size[test_type][dataset_name])
             for m in avg_metric:
                 if title:
                     dataset_row.append('total avg.')
+                    dataset_row.append('diversity')
                     style_row.append('total avg.')
+                    style_row.append('diversity')
                     metrics_row.append(m)
                 row.append(np.mean(avg_metric[m]))
+                row.append(np.mean(vocab_size[dataset_name]))
             total_rows.append(row)
             title = False
         writer.writerow(dataset_row)
@@ -502,7 +524,7 @@ def main():
     path_test_image_manipulation = os.path.join(os.path.expanduser('~'),'results','image_manipulation_01_23_57__19_12_2022','image_manipulation_results_all_models_source_classes_01_23_57__19_12_2022.csv')
     txt_cls_model_path = os.path.join(os.path.expanduser('~'),'checkpoints','best_model','best_text_style_classification_model.pth')
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
-    label = '22_12_2022_v2' # cur_time
+    label = cur_time#'25_12_2022_v1' # cur_time
     eval_results_path = os.path.join(data_dir,label+'_eval_results.csv')
 
 
@@ -512,6 +534,7 @@ def main():
 
     dataset_names =['senticap', 'flickrstyle10k']
     metrics = ['bleu','rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+    #metrics = ['bleu']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     ngram_for_fluency = 3  # MSCap used n=3
 
     df_train = pd.read_csv(os.path.join(data_dir, 'train.csv'))
@@ -528,13 +551,6 @@ def main():
     #copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
     mean_score = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, dataset_names, ngram_for_fluency, txt_cls_model_path, labels_dict_idxs, gt_imgs_for_test)
 
-    for test_type in mean_score:
-        for dataset in dataset_names:
-            for metric in metrics:
-                for style in styles:
-                    print(f'{test_type}: {dataset} {metric} score for {style} = {mean_score[test_type][dataset][metric][style]}')
-    write_results(mean_score, eval_results_path,dataset_names, metrics, styles)
-
     '''
     cider_score = cider(gts, res,styles)
     print(f"cider score  = {cider_score}")
@@ -543,14 +559,18 @@ def main():
     #spice_score = spice(gts, res)
     '''
 
+    vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
 
-    sentence_fluency(data_dir,dataset_names, ngram_for_fluency)
+    for test_type in mean_score:
+        for dataset in dataset_names:
+            for metric in metrics:
+                for style in styles:
+                    print(f'{test_type}: {dataset} {metric} score for {style} = {mean_score[test_type][dataset][metric][style]}')
+    for dataset in gts_per_data_set:
+        print(f'Vocabulary size for {dataset} dataset is {vocab_size[dataset]}')
+    write_results(mean_score, eval_results_path,dataset_names, metrics, styles, vocab_size)
 
-    #style_accuracy()
-    # diversity or maybe creativity
 
-    #vocab_size = diversitiy(res_data_per_test, gts)
-    #print(f'Vocabulary size is: {vocab_size}')
 
     print('Finished to evaluate')
 

@@ -220,8 +220,8 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
     total_texts_list = []
     with torch.no_grad():
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
-                tqdm(eval_dataloader, desc="Evaluation", leave=False)):#for model based on bert
-        # for step, (labels, texts_list) in enumerate(pbar := tqdm(eval_dataloader, desc="Evaluation", leave=False)): #for model based on clip
+                tqdm(eval_dataloader, desc="evaluation", leave=False)):#for model based on bert
+        # for step, (labels, texts_list) in enumerate(pbar := tqdm(eval_dataloader, desc="evaluation", leave=False)): #for model based on clip
             # labels = torch.from_numpy(np.asarray(labels)).to(device)
             total_labels.extend(labels)
             # outputs = model(texts_list)#for model based on clip

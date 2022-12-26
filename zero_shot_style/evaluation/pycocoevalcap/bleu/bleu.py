@@ -12,8 +12,7 @@
 # By Sabarish Sivanath
 # To support Python 3
 
-from pycocoevalcap.bleu.bleu_scorer import BleuScorer
-
+from zero_shot_style.evaluation.pycocoevalcap.bleu.bleu_scorer import BleuScorer
 
 class Bleu:
     def __init__(self, n=4):

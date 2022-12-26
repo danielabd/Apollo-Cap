@@ -77,11 +77,22 @@ def calc_perplexity(test_sentences,n, pp_model):
 
 
 def main():
+    from evaluate import load
+    perplexity = load("perplexity", module_type="measurement")
+    results = perplexity.compute(data=input_texts, model_id='gpt2')
+
     dataset_name = 'flickrstyle10k' #'flickrstyle10k'/'senticap'
     n = 3 # MSCap used n=3
     train_sentences = get_data(dataset_name,'train')
     train_sentences.extend(get_data(dataset_name,'val'))
+
+
     test_sentences = get_data(dataset_name,'test')
+
+    train_sentences = train_sentences[:10]
+    train_sentences.extend(['I am a girls'])
+    test_sentences = ['I am a girls', "Hi, how are you?"]
+
     pp_model = train_perplexity_model(train_sentences, n)
     avg_pp_score, valid_sentences_percent = avg_pp_score = calc_perplexity(test_sentences, n, pp_model)
     print('finish')
