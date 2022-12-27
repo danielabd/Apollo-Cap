@@ -1,4 +1,6 @@
 import argparse
+
+import pandas as pd
 import torch
 import clip
 from model.ZeroCLIP import CLIPTextGenerator
@@ -123,9 +125,9 @@ def run_arithmetic(args, img_dict_img_arithmetic,base_img,style_type, imgs_path,
 def write_results(img_dict):
     with open('results.csv', 'w') as results_file:
         writer = csv.writer(results_file)
-        for img in img_dict.keys():    
+        for img in img_dict.keys():
             writer.writerow([img])
-            writer.writerow(['scale/sentiment', 'negative', 'positive', 'neutral','none'])        
+            writer.writerow(['scale/sentiment', 'negative', 'positive', 'neutral','none'])
             for scale in img_dict[img].keys():
                 cur_row = [scale]
                 for sentiment in img_dict[img][scale].keys():
@@ -275,6 +277,22 @@ def get_img_full_path(base_path, i):
         return None
 
 
+
+def write_data_to_global_file_for_debug(data, img_idx_to_name, tgt_results_path, t):
+    with open(tgt_results_path, 'w') as results_file:
+        writer = csv.writer(results_file)
+        title = ['idx']
+        title.extend(list(data.columns))
+        writer.writerow(title)
+        for i in img_idx_to_name.keys():
+            cur_row = [i, img_idx_to_name[i]]
+            if img_idx_to_name[i] in list(data[t]):
+                idx = list(data[t]).index(img_idx_to_name[i])
+                cur_row.extend(list(data.iloc[idx].values[1:]))
+            writer.writerow(cur_row)
+    print(f'Finished to write data to global file for debug in: {tgt_results_path}')
+
+
 def main():
     #cuda_idx = "1"
     #os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
@@ -324,117 +342,47 @@ def main():
             imgs_to_test.append(os.path.join(setdir,'images','test',im))
     #imgs_to_test = [args.caption_img_path] #for test one image
 
-    '''
     tgt_results_path = os.path.join(os.path.expanduser('~'), 'results', "img_idx_to_name.csv")
     img_idx_to_name = {}
     for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
-        img_name = img_path.split('/')[-1]
+        img_name = img_path.split('/')[-1].split('.jpg')[0]
+        try:
+            img_name = str(int(img_name))
+        except:
+            pass
         img_idx_to_name[img_path_idx] = img_name
-    write_img_idx_to_name(img_idx_to_name, tgt_results_path)
-    exit(0)
-    '''
 
-    for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
-        if img_path_idx < args.img_idx_to_start_from:
-            continue
-        #args.caption_img_path = get_img_full_path(base_path,img_idx)
-        #args.caption_img_path = os.path.join(os.path.expanduser('~'),'data','flickrstyle10k','flickr_images_dataset',img_name)
-        #if not args.caption_img_path:
-        #    continue
-        img_name = img_path.split('/')[-1]
-        args.caption_img_path = img_path
-        for prompt in args.cond_text_list:
-            args.cond_text = prompt
-            #reults_dir = os.path.join(base_path, 'results', cur_time)
-            reults_dir = os.path.join(os.path.expanduser('~'), 'results', cur_time)
-            tgt_results_path = os.path.join(reults_dir, f'results_all_models_{classes_type}_classes_{cur_time}.csv')
-
-            if not os.path.isfile(args.caption_img_path):
-                continue
-            model_path = os.path.join(checkpoints_dir, 'best_model',
-                                      config['best_model_name'])
-            mean_embedding_vec_path = os.path.join(checkpoints_dir, 'best_model',
-                                                   config['mean_vec_emb_file'])
-            median_embedding_vec_path = os.path.join(checkpoints_dir, 'best_model',
-                                                     config['median_vec_emb_file'])
-            desired_labels_list = config['desired_labels']
-            for style_type in style_type_list:
-                embedding_path_list = [mean_embedding_vec_path]
-                for embedding_path_idx, embedding_path in enumerate(embedding_path_list):
-                    if args.use_style_model:
-                        with open(embedding_path, 'rb') as fp:
-                            embedding_vectors_to_load = pickle.load(fp)
-                        desired_labels_list = list(embedding_vectors_to_load.keys())
-                    else:
-                        desired_labels_list = [prompt]
-                    if imitate_text_style:
-                        desired_labels_list = text_to_imitate_list
-                    for label in desired_labels_list:
-                        desired_style_embedding_vector = ''
-                        if not imitate_text_style:
-                            if args.use_style_model:
-                                desired_style_embedding_vector = embedding_vectors_to_load[label]
-                        for s, sentiment_scale in enumerate(sentiment_scale_list):
-                            for text_style_scale_idx, text_style_scale in enumerate(text_style_scale_list):
-                                for sentiment_type in sentiment_list:
-                                    if sentiment_type == 'none' and s > 0:
-                                        continue
+    global_results_dir_path = os.path.join(os.path.expanduser('~'),'results')
+    prompt_manipulation_dir_path = ['01_06_14__27_12_2022','00_59_38__27_12_2022','00_56_45__27_12_2022','14_14_09__23_12_2022','14_15_04__23_12_2022','12_47_53__22_12_2022']
+    image_manipulation_dir_path = ['01_07_14__27_12_2022','00_58_25__27_12_2022','00_54_50__27_12_2022','14_14_43__23_12_2022','14_15_55__23_12_2022','12_48_26__22_12_2022']
+    tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'),'results','total_results_image_manipulation.csv')
+    tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'),'results','total_results_prompt_manipulation.csv')
+    debug_tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'), 'results', 'debug_total_results_image_manipulation.csv')
+    debug_tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'results',
+                                                'debug_total_results_prompt_manipulation.csv')
+    res_paths = {"prompt_manipulation": prompt_manipulation_dir_path, "im_manipulation": image_manipulation_dir_path}
+    tgt_paths = {"prompt_manipulation": tgt_path_prompt_manipulation,"im_manipulation": tgt_path_im_manipulation}
+    tgt_paths_debug = {"prompt_manipulation": debug_tgt_path_prompt_manipulation,"im_manipulation": debug_tgt_path_im_manipulation}
+    t = {"prompt_manipulation": "img_num\prompt","im_manipulation": "img_num\style"}
+    for test_type in res_paths:
+        total_data_test_type = pd.DataFrame()
+        for d in res_paths[test_type]:
+            path_file = os.path.join(global_results_dir_path,d,f'results_all_models_source_classes_{d}.csv')
+            data = pd.read_csv(path_file)
+            data = data.head(data.shape[0] - 1)
+            for i,k1 in enumerate(data[t[test_type]]):
+                k = k1.split('.jpg')[0]
+                try:
+                    k = str(int(k))
+                except:
+                    pass
+                data[t[test_type]][i] = k
+            total_data_test_type = pd.concat([total_data_test_type, data])
+        total_data_test_type.to_csv(tgt_paths[test_type], index=False, header=True)
+        write_data_to_global_file_for_debug(total_data_test_type, img_idx_to_name, tgt_paths_debug[test_type], t[test_type])
 
 
-                                    if args.run_type == 'caption':
-                                        pass
-                                        title2print = get_title2print(args.caption_img_path, style_type, label,
-                                                                      text_style_scale,
-                                                                      embedding_path_idx2str[embedding_path_idx])
-                                        print(title2print)
-                                        run(args, args.caption_img_path, sentiment_type, sentiment_scale,
-                                            text_style_scale, imitate_text_style, desired_style_embedding_vector,
-                                            cuda_idx, title2print, model_path, style_type,tmp_text_loss,label,img_dict)
-                                        if not args.use_style_model:
-                                            write_results_prompt_manipulation(img_dict, desired_labels_list,
-                                                                               reults_dir,
-                                                                               len(text_style_scale_list),
-                                                                               tgt_results_path)
-                                        # # write_results_of_text_style(img_dict,embedding_path_idx2str[embedding_path_idx],desired_labels_list,reults_dir,style_type)
-                                        if args.use_style_model:
-                                            write_results_of_text_style_all_models(img_dict, desired_labels_list,
-                                                                               reults_dir,
-                                                                               len(text_style_scale_list),
-                                                                               tgt_results_path)
-                                    elif args.run_type == 'arithmetics':
-                                        #none arithmetic
-                                        title2print = get_title2print(args.caption_img_path, style_type, 'neutral',
-                                                                      text_style_scale,
-                                                                      embedding_path_idx2str[embedding_path_idx])
-                                        print(title2print)
-                                        args.arithmetics_imgs = [args.caption_img_path, args.caption_img_path, args.caption_img_path]
-                                        run_arithmetic(args, img_dict_img_arithmetic, img_name,
-                                                       'none', imgs_path=args.arithmetics_imgs,
-                                                       img_weights=[1, 0, 0], cuda_idx=cuda_idx,title2print = title2print)
-                                        write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
-                                                                         reults_dir,
-                                                                         len(text_style_scale_list),
-                                                                         tgt_results_path, imgs_style_type_dict)
 
-                                        args.arithmetics_weights = [float(x) for x in args.arithmetics_weights]
-                                        neutral_img_style = get_full_path_of_stylized_images(data_dir, args.arithmetics_style_imgs[0])
-                                        for idx, v in enumerate(args.arithmetics_style_imgs[1:]):
-                                            img_style = get_full_path_of_stylized_images(data_dir, v)
-                                            args.arithmetics_imgs = [args.caption_img_path, neutral_img_style, img_style]
-
-                                            title2print = get_title2print(args.caption_img_path, style_type, imgs_style_type_dict[int(v)],
-                                                                          text_style_scale,
-                                                                          embedding_path_idx2str[embedding_path_idx])
-
-                                            run_arithmetic(args,img_dict_img_arithmetic,img_name,imgs_style_type_dict[int(v)], imgs_path=args.arithmetics_imgs,
-                                                           img_weights=args.arithmetics_weights, cuda_idx=cuda_idx,title2print = title2print)
-                                            write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
-                                                                              reults_dir,
-                                                                              len(text_style_scale_list),
-                                                                              tgt_results_path,imgs_style_type_dict)
-
-                                    else:
-                                        raise Exception('run_type must be caption or arithmetics!')
 
     print('Finish of program!')
 
