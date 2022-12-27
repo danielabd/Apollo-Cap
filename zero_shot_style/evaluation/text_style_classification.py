@@ -16,7 +16,7 @@ import numpy as np
 from transformers import BertTokenizer
 import torch
 from torchmetrics import Precision, Recall
-
+NUM_OF_CLASSES = 2  # 4
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 '''
@@ -65,15 +65,13 @@ class BertClassifier(nn.Module):
         self.bert = BertModel.from_pretrained('bert-base-cased')
         #for param in self.bert.parameters():
         #   param.requires_grad = False
-
         self.dropout = nn.Dropout(dropout)
-        #self.linear = nn.Linear(768, 4)
-        self.linear1 = nn.Linear(768, 128)
-        self.linear2 = nn.Linear(128, 4)
+        self.linear = nn.Linear(768, NUM_OF_CLASSES)
+        #self.linear1 = nn.Linear(768, 128)
+        #self.linear2 = nn.Linear(128, NUM_OF_CLASSES)
         self.relu = nn.ReLU()
 
     def forward(self, input_id, mask):
-        '''
         _, pooled_output = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
         dropout_output = self.dropout(pooled_output)
         linear_output = self.linear(dropout_output)
@@ -88,6 +86,7 @@ class BertClassifier(nn.Module):
         x = self.linear2(x)
         x = self.relu(x)
         return x
+        '''
 
 
 
@@ -315,6 +314,7 @@ def main():
     batch_size = 16  # 2
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     dataset_names = ['senticap', 'flickrstyle10k']
+    dataset_names = ['senticap']
     path_to_csv_file = os.path.join(data_dir,'_'.join(dataset_names)+'.csv')
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
     for dataset_name in dataset_names:
