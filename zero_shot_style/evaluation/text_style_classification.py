@@ -66,13 +66,13 @@ class BertClassifier(nn.Module):
         #for param in self.bert.parameters():
         #   param.requires_grad = False
         self.dropout = nn.Dropout(dropout)
-        #self.linear = nn.Linear(768, NUM_OF_CLASSES)
-        self.linear1 = nn.Linear(768, 128)
-        self.linear2 = nn.Linear(128, NUM_OF_CLASSES)
+        self.linear = nn.Linear(768, NUM_OF_CLASSES)
+        #self.linear1 = nn.Linear(768, 128)
+        #self.linear2 = nn.Linear(128, NUM_OF_CLASSES)
         self.relu = nn.ReLU()
 
     def forward(self, input_id, mask):
-        '''
+        #'''
         _, pooled_output = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
         dropout_output = self.dropout(pooled_output)
         linear_output = self.linear(dropout_output)
@@ -87,7 +87,7 @@ class BertClassifier(nn.Module):
         x = self.linear2(x)
         x = self.relu(x)
         return x
-        #'''
+        ##'''
 
 
 
@@ -312,7 +312,7 @@ def main():
     path_for_saving_last_model = os.path.join(exp_dir, 'last_text_style_classification_model.pth')
     path_for_saving_best_model = os.path.join(exp_dir, 'best_text_style_classification_model.pth')
 
-    batch_size = 16  # 2
+    batch_size = 16
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     dataset_names = ['senticap', 'flickrstyle10k']
     dataset_names = ['flickrstyle10k']
