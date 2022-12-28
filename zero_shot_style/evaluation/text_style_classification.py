@@ -315,7 +315,7 @@ def main():
     batch_size = 16  # 2
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     dataset_names = ['senticap', 'flickrstyle10k']
-    dataset_names = ['senticap']
+    dataset_names = ['flickrstyle10k']
     path_to_csv_file = os.path.join(data_dir,'_'.join(dataset_names)+'.csv')
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
     for dataset_name in dataset_names:
