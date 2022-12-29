@@ -216,9 +216,6 @@ class CLIPTextGenerator:
         clip_imgs = [self.clip_preprocess(x).unsqueeze(0).to(self.device) for x in imgs]
 
         with torch.no_grad():
-
-            image_fts_with_attentions = [self.clip.get_image_features(x,output_attentions=True) for x in clip_imgs] # Tuple of jnp.ndarray (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length)
-            #todo: cntinue too investigate it
             image_fts = [self.clip.encode_image(x) for x in clip_imgs]
 
             if weights is not None:

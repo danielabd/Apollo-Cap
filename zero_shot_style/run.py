@@ -20,9 +20,9 @@ def get_args():
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo or gpt-j")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
-    parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
+    #parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
     #parser.add_argument("--cond_text", type=str, default="Image of a")
-    #parser.add_argument("--cond_text_list", nargs="+", type=str, default=[""])
+    parser.add_argument("--cond_text_list", nargs="+", type=str, default=["I am an intelligent image captioning bot. This image is a {img_type}. There {num_people}. I think this photo was taken at a {place1}, {place2}, or {place3}. I think there might be a {object1}, {object2}, {object3},... in this {img_type}. A creative short caption I can generate to describe this image is:"])
     parser.add_argument("--cond_text", type=str, default="")
     parser.add_argument("--cond_text2", type=str, default="")
     parser.add_argument("--reset_context_delta", action="store_true",
