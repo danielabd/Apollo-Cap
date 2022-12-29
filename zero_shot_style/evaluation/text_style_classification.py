@@ -311,11 +311,18 @@ def main():
     os.makedirs(exp_dir)
     path_for_saving_last_model = os.path.join(exp_dir, 'last_text_style_classification_model.pth')
     path_for_saving_best_model = os.path.join(exp_dir, 'best_text_style_classification_model.pth')
-
+    EPOCHS = 50
+    LR = 1e-6
     batch_size = 16
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     dataset_names = ['senticap', 'flickrstyle10k']
     dataset_names = ['senticap']
+    labels_dict = {'positive': 0, 'negative': 1}
+
+    # dataset_names = ['flickrstyle10k']
+    # labels_dict = {'humor': 0, 'romantic': 1}
+
+    #dataset_names = ['senticap']
     path_to_csv_file = os.path.join(data_dir,'_'.join(dataset_names)+'.csv')
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
     for dataset_name in dataset_names:
@@ -326,7 +333,7 @@ def main():
                config=None,
                #resume=False,
                id=None,
-               mode='disabled',#'disabled, offline, online'
+               mode='online',#'disabled, offline, online'
                tags='+')  # '+',None,
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
@@ -358,13 +365,13 @@ def main():
     '''
     print(len(df_train), len(df_val), len(df_test))
 
-    labels_dict = {}
-    for i,label in enumerate(list(set(list(df_train['category'])+list(df_val['category'])+list(df_test['category'])))):
-        labels_dict[label] = i
+    # labels_dict = {}
+    # for i,label in enumerate(list(set(list(df_train['category'])+list(df_val['category'])+list(df_test['category'])))):
+    #     labels_dict[label] = i
+
     print(f"labels: {labels_dict}")
-    EPOCHS = 100
     model = BertClassifier()
-    LR = 1e-6
+
 
     train(model, df_train, df_val, LR, EPOCHS, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model,path_for_saving_best_model)
 
