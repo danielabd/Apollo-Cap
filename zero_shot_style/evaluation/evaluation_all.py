@@ -78,14 +78,17 @@ class CLIPScore:
         return score[0][0], [score]
 
 class STYLE_CLS:
-    def __init__(self, txt_cls_model_path, data_dir, desired_cuda_num, labels_dict_idxs):
+    def __init__(self, txt_cls_model_paths, data_dir, desired_cuda_num, labels_dict_idxs):
         self.data_dir = data_dir
         self.desired_cuda_num = desired_cuda_num
         self.labels_dict_idxs = labels_dict_idxs
         self.df_test = pd.read_csv(os.path.join(data_dir, 'test.csv'))
         use_cuda = torch.cuda.is_available()
         self.device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
-        self.model = self.load_model(txt_cls_model_path)
+        self.model = {}
+        for dataset_name in txt_cls_model_paths:
+            self.model[dataset_name] = self.load_model(txt_cls_model_paths[dataset_name])
+
 
     def load_model(self, txt_cls_model_path):
         model = BertClassifier()
@@ -95,7 +98,7 @@ class STYLE_CLS:
         return model
 
 
-    def compute_score(self, res, gt_label):
+    def compute_score(self, res, gt_label, dataset_name):
         '''
 
         :param gts: list of text
@@ -108,13 +111,13 @@ class STYLE_CLS:
         gt_label_idx = torch.tensor(self.labels_dict_idxs[gt_label]).to(self.device)
         mask = res_tokens['attention_mask'].to(self.device)
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
-        output = self.model(input_id, mask)
+        output = self.model[dataset_name](input_id, mask)
         cls_score = output.argmax(dim=1) == gt_label_idx
         cls_score_np = int(cls_score.cpu().data.numpy())
         return cls_score_np, None
 
-    def compute_score_for_total_data(self, gts, res):
-        total_acc_test_for_all_data = evaluate_text_style_classification(self.model, self.df_test, self.labels_dict_idxs, self.desired_cuda_num)
+    def compute_score_for_total_data(self, gts, res, dataset_name):
+        total_acc_test_for_all_data = evaluate_text_style_classification(self.model[dataset_name], self.df_test, self.labels_dict_idxs, self.desired_cuda_num)
         return total_acc_test_for_all_data, None
 
 class Fluency:
@@ -219,14 +222,14 @@ def save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metr
 
 
 
-def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_cls_model_path, labels_dict_idxs, gt_imgs_for_test):
+def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test, styles_per_dataset):
     print("Calculate scores...")
 
     mean_score = {}
     if ('CLIPScoreRef' in metrics) or ('CLIPScore'in metrics):
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx)
     if 'style_classification' in metrics:
-        style_cls_obj = STYLE_CLS(txt_cls_model_path, data_dir, cuda_idx, labels_dict_idxs)
+        style_cls_obj = STYLE_CLS(txt_cls_model_paths_to_load, data_dir, cuda_idx, labels_dict_idxs)
     if 'fluency' in metrics:
         fluency_obj = Fluency()
     all_scores = {}
@@ -273,6 +276,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                         score_dict_per_metric[metric][k] = {}
                         scores_dict_per_metric[metric][k] = {}
                         for i2,style in enumerate(styles):
+                            if style not in styles_per_dataset[dataset_name]:
+                                continue
                             if style == 'factual' and metric == 'style_classification':
                                 continue
                             if style in gts_per_data_set[dataset_name][k] and style in res[test_type][k]:
@@ -286,7 +291,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                         score_dict_per_metric[metric][k][style])
                                     all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=tmp_res[k][0], img_path = gts_per_data_set[dataset_name][k]['img_path'])
                                 elif metric == 'style_classification':
-                                    score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(tmp_res,style)
+                                    score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(tmp_res,style,dataset_name)
                                     score_per_metric_and_style[metric][style].append(
                                         score_dict_per_metric[metric][k][style])
                                     all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=tmp_res[k][0])
@@ -608,23 +613,29 @@ def write_results(mean_score, tgt_eval_results_path,dataset_names, metrics, styl
     print(f"finished to write results to {tgt_eval_results_path}")
 
 def main():
-    cuda_idx = "1"
+    cuda_idx = "3"
     styles = ['factual','positive', 'negative', 'humor', 'romantic']
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
-    results_dir = os.path.join(os.path.expanduser('~'), 'results', 'evaluation')
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
+    results_dir = os.path.join(os.path.expanduser('~'), 'results')
+    results_evaluation_dir = os.path.join(results_dir, 'evaluation')
+    if not os.path.exists(results_evaluation_dir):
+        os.makedirs(results_evaluation_dir)
     gt_imgs_for_test = os.path.join(data_dir, 'gt_imgs_for_test')
-    #path_test_prompt_manipulation = os.path.join(os.path.expanduser('~'),'results','04_15_54__14_12_2022','results_all_models_source_classes_04_15_54__14_12_2022.csv')
-    #path_test_image_manipulation = os.path.join(os.path.expanduser('~'),'results','11_45_38__14_12_2022','results_all_models_source_classes_11_45_38__14_12_2022.csv')
-    path_test_prompt_manipulation = os.path.join(os.path.expanduser('~'),'results','prompt_manipulation_01_31_38__19_12_2022','prompt_manipulation_01_31_38__19_12_2022.csv')
-    path_test_image_manipulation = os.path.join(os.path.expanduser('~'),'results','image_manipulation_01_23_57__19_12_2022','image_manipulation_results_all_models_source_classes_01_23_57__19_12_2022.csv')
-    txt_cls_model_path = os.path.join(os.path.expanduser('~'),'checkpoints','best_model','best_text_style_classification_model.pth')
+    #path_test_prompt_manipulation = os.path.join(results_dir,'04_15_54__14_12_2022','results_all_models_source_classes_04_15_54__14_12_2022.csv')
+    #path_test_image_manipulation = os.path.join(results_dir,'11_45_38__14_12_2022','results_all_models_source_classes_11_45_38__14_12_2022.csv')
+    path_test_prompt_manipulation = os.path.join(results_dir,'evaluation','total_results_prompt_manipulation.csv')
+    path_test_image_manipulation = os.path.join(results_dir,'evaluation','total_results_image_manipulation.csv')
+
+
+    txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_model','pos_neg_best_text_style_classification_model.pth'),
+                           'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_model','humor_romantic_best_text_style_classification_model.pth')}
+
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     label = cur_time#'25_12_2022_v1' # cur_time
-    tgt_eval_results_path = os.path.join(results_dir, label+'_eval_results.csv')
-    tgt_eval_results_path_for_all_frames = os.path.join(results_dir, label+'_eval_results_for_all_frames.csv')
-
+    tgt_eval_results_path = os.path.join(results_evaluation_dir, label+'_eval_results.csv')
+    tgt_eval_results_path_for_all_frames = os.path.join(results_evaluation_dir, label+'_eval_results_for_all_frames.csv')
+    styles_per_dataset = {'senticap': ['positive', 'negative'],
+                           'flickrstyle10k': ['humor', 'romantic']}
 
     res_paths = {}
     res_paths['prompt_manipulation'] = path_test_prompt_manipulation
@@ -632,6 +643,7 @@ def main():
 
     dataset_names =['senticap', 'flickrstyle10k']
     metrics = ['bleu', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+    metrics = ['style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     #metrics = ['bleu']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     #metrics = ['bleu','rouge', 'CLIPScoreRef','CLIPScore', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     #metrics = ['fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
@@ -642,13 +654,15 @@ def main():
         labels_dict_idxs[label] = i
 
     test_set_path = {}
+    txt_cls_model_paths_to_load = {}
     for dataset_name in dataset_names:
+        txt_cls_model_paths_to_load[dataset_name] = txt_cls_model_paths[dataset_name]
         test_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', 'test.pkl')
     gts_per_data_set = get_gts_data(test_set_path)
 
     res_data_per_test = get_res_data(res_paths)
     #copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
-    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_path, labels_dict_idxs, gt_imgs_for_test)
+    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
 
     '''
     cider_score = cider(gts, res,styles)

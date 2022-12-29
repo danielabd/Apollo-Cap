@@ -130,7 +130,7 @@ def main():
         img_idx_to_name[img_path_idx] = img_name
 
     global_results_dir_path = os.path.join(os.path.expanduser('~'),'results')
-    prompt_manipulation_dir_path = ['01_06_14__27_12_2022','00_59_38__27_12_2022','00_56_45__27_12_2022','14_14_09__23_12_2022','14_15_04__23_12_2022','12_47_53__22_12_2022','01_11_22__29_12_2022', '01_14_18__29_12_2022', '01_17_10__29_12_2022']
+    prompt_manipulation_dir_path = ['01_06_14__27_12_2022','00_59_38__27_12_2022','00_56_45__27_12_2022','14_14_09__23_12_2022','14_15_04__23_12_2022','12_47_53__22_12_2022','01_11_22__29_12_2022', '01_14_18__29_12_2022', '01_17_10__29_12_2022', '01_51_19__29_12_2022']
     image_manipulation_dir_path = ['01_07_14__27_12_2022','00_58_25__27_12_2022','00_54_50__27_12_2022','14_14_43__23_12_2022','14_15_55__23_12_2022','12_48_26__22_12_2022']
     tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'),'results','total_results_image_manipulation.csv')
     tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'),'results','total_results_prompt_manipulation.csv')
