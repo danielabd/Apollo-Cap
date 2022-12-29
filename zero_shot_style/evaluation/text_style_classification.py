@@ -316,11 +316,11 @@ def main():
     batch_size = 16
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     dataset_names = ['senticap', 'flickrstyle10k']
-    dataset_names = ['senticap']
-    labels_dict = {'positive': 0, 'negative': 1}
+    # dataset_names = ['senticap']
+    # labels_dict = {'positive': 0, 'negative': 1}
 
-    # dataset_names = ['flickrstyle10k']
-    # labels_dict = {'humor': 0, 'romantic': 1}
+    dataset_names = ['flickrstyle10k']
+    labels_dict = {'humor': 0, 'romantic': 1}
 
     #dataset_names = ['senticap']
     path_to_csv_file = os.path.join(data_dir,'_'.join(dataset_names)+'.csv')
