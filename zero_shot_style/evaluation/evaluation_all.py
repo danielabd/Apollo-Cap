@@ -70,11 +70,12 @@ class CLIPScore:
         '''
         #print("calculate CLIPScore...")
         image_features = self.text_generator.get_img_feature([img_path], None)
-        text_features = self.text_generator.get_txt_features(res)
+        text_features = self.text_generator.get_txt_features(list(res.values())[0])
         with torch.no_grad():
             clip_score = (image_features @ text_features.T)
         score = clip_score.cpu().numpy()
-        #print('CLIPScore = %s' % score)
+        #print(f'text: {res}')
+        #print('CLIPScore = %s' % score[0][0])
         return score[0][0], [score]
 
 class STYLE_CLS:
@@ -276,7 +277,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                         score_dict_per_metric[metric][k] = {}
                         scores_dict_per_metric[metric][k] = {}
                         for i2,style in enumerate(styles):
-                            if style not in styles_per_dataset[dataset_name]:
+                            if style not in styles_per_dataset[dataset_name] and style!='factual':
                                 continue
                             if style == 'factual' and metric == 'style_classification':
                                 continue
@@ -522,8 +523,8 @@ def get_res_data(res_paths):
                         res_data[k]['factual'] = row[1]
                         res_data[k]['positive'] = row[2]
                         res_data[k]['negative'] = row[3]
-                        res_data[k]['romantic'] = row[4]
-                        res_data[k]['humor'] = row[5]
+                        res_data[k]['humor'] = row[4]
+                        res_data[k]['romantic'] = row[5]
                     except:
                         pass
         res_data_per_test[test_type] = res_data
@@ -621,8 +622,6 @@ def main():
     if not os.path.exists(results_evaluation_dir):
         os.makedirs(results_evaluation_dir)
     gt_imgs_for_test = os.path.join(data_dir, 'gt_imgs_for_test')
-    #path_test_prompt_manipulation = os.path.join(results_dir,'04_15_54__14_12_2022','results_all_models_source_classes_04_15_54__14_12_2022.csv')
-    #path_test_image_manipulation = os.path.join(results_dir,'11_45_38__14_12_2022','results_all_models_source_classes_11_45_38__14_12_2022.csv')
     path_test_prompt_manipulation = os.path.join(results_dir,'evaluation','total_results_prompt_manipulation.csv')
     path_test_image_manipulation = os.path.join(results_dir,'evaluation','total_results_image_manipulation.csv')
 
@@ -643,15 +642,7 @@ def main():
 
     dataset_names =['senticap', 'flickrstyle10k']
     metrics = ['bleu', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-    metrics = ['style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-    #metrics = ['bleu']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-    #metrics = ['bleu','rouge', 'CLIPScoreRef','CLIPScore', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-    #metrics = ['fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-
-    df_train = pd.read_csv(os.path.join(data_dir, 'train.csv'))
-    labels_dict_idxs = {}
-    for i, label in enumerate(list(set(list(df_train['category'])))):
-        labels_dict_idxs[label] = i
+    #metrics = ['CLIPScore']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
     test_set_path = {}
     txt_cls_model_paths_to_load = {}
@@ -660,17 +651,13 @@ def main():
         test_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', 'test.pkl')
     gts_per_data_set = get_gts_data(test_set_path)
 
-    res_data_per_test = get_res_data(res_paths)
-    #copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
-    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
+    #labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 2,'romantic':3}
+    labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 0, 'romantic':1}
 
-    '''
-    cider_score = cider(gts, res,styles)
-    print(f"cider score  = {cider_score}")
-    #meteor_score = meteor(gts, res)
-    #print(f"meteor score  = {meteor_score}")
-    #spice_score = spice(gts, res)
-    '''
+    res_data_per_test = get_res_data(res_paths)
+    # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
+    # exit(0)
+    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
 
     vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
 
