@@ -43,9 +43,9 @@ parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled
 # parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','default_config.yaml'), help='full path to config file')
 
 #parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','emotions_config_all_classes.yaml'), help='full path to config file')
-#parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','twitter_config.yaml'), help='full path to config file')
-#parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','flickrstyle10k_config.yaml'), help='full path to config file')
-parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','text_style_classification.yaml'), help='full path to config file')
+#parser.add_argument('--config_file', type=str, default=os.spath.join('.', 'configs','twitter_config.yaml'), help='full path to config file')
+parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','flickrstyle10k_config.yaml'), help='full path to config file')
+#parser.add_argument('--config_file', type=str, default=os.path.join('..',  'configs','text_style_classification.yaml'), help='full path to config file')
 
 parser.add_argument('--plot_only_clustering', type=str2bool, default=False, help='plot only clustering of the best model')
 # parser.add_argument('--rundry', type=str2bool, default=False)
@@ -76,6 +76,7 @@ def get_hparams(args):
     #     data_config = yaml.load(f, Loader=yaml.FullLoader)
 
     # read default experiment config from yaml
+    print(f'config_file: {args.config_file}')
     if args.config_file.endswith('.yaml'):
         with open(args.config_file) as f:
             experiment_config = yaml.load(f, Loader=yaml.FullLoader)
