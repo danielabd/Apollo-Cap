@@ -93,7 +93,7 @@ class STYLE_CLS:
 
     def load_model(self, txt_cls_model_path):
         model = BertClassifier()
-        checkpoint = torch.load(txt_cls_model_path)
+        checkpoint = torch.load(txt_cls_model_path, map_location=self.device)
         model.load_state_dict(checkpoint['model_state_dict'])
         model.to(self.device)
         return model
@@ -106,7 +106,6 @@ class STYLE_CLS:
         :param res: dict. key=str. value=list of single str
         :return:
         '''
-
         res_tokens = tokenizer(list(res.values())[0][0], padding='max_length', max_length = 512, truncation=True,
                                 return_tensors="pt")
         gt_label_idx = torch.tensor(self.labels_dict_idxs[gt_label]).to(self.device)
@@ -514,6 +513,12 @@ def get_res_data(res_paths):
                     k = row[0].split('.jpg')[0]
                 else:
                     k = row[0]
+                if 'COCO' in k:
+                    k = k.split('_')[-1]
+                try:
+                    k = int(k)
+                except:
+                    pass
                 if title:
                     title = False
                     continue
@@ -641,7 +646,9 @@ def main():
     res_paths['image_manipulation'] = path_test_image_manipulation
 
     dataset_names =['senticap', 'flickrstyle10k']
+    dataset_names =['senticap']
     metrics = ['bleu', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+    metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     #metrics = ['CLIPScore']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
     test_set_path = {}

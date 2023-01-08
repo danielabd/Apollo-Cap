@@ -1,4 +1,6 @@
 import argparse
+import json
+
 import torch
 import clip
 from model.ZeroCLIP import CLIPTextGenerator
@@ -20,8 +22,8 @@ def get_args():
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo or gpt-j")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
-    #parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
-    #parser.add_argument("--cond_text", type=str, default="Image of a")
+    # parser.add_argument("--cond_text", type=str, default="Image of a")
+    # parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
     parser.add_argument("--cond_text_list", nargs="+", type=str, default=["A creative short caption I can generate to describe this image is:",
                                                                           "A creative positive short caption I can generate to describe this image is:",
                                                                           "A creative negative short caption I can generate to describe this image is:",
@@ -44,7 +46,7 @@ def get_args():
     parser.add_argument("--forbidden_factor", type=float, default=20, help="Factor to decrease forbidden tokens")
     parser.add_argument("--beam_size", type=int, default=5)
 
-    parser.add_argument("--cuda_idx_num", type=str, default="1")
+    parser.add_argument("--cuda_idx_num", type=str, default="3")
     parser.add_argument("--img_idx_to_start_from", type=int, default=0)
 
     parser.add_argument('--run_type',
@@ -52,10 +54,15 @@ def get_args():
                         nargs='?',
                         choices=['caption', 'arithmetics'])
 
+    parser.add_argument("--style_types", type=str, default='single'),
     parser.add_argument("--caption_img_dict", type=str, default=[os.path.join(os.path.expanduser('~'),'data','senticap'),
                                                                               os.path.join(os.path.expanduser('~'),
                                                                                            'data', 'flickrstyle10k')],
                         help="Path to images dict for captioning")
+    # parser.add_argument("--caption_img_dict", type=str, default=[os.path.join(os.path.expanduser('~'),'data','senticap')],
+    #                     help="Path to images dict for captioning")
+    #parser.add_argument("--caption_img_dict", type=str, default=[os.path.join(os.path.expanduser('~'), 'data', 'flickrstyle10k')],
+    #                    help="Path to images dict for captioning")
     '''
     parser.add_argument("--caption_img_dict", type=str, default=[os.path.join(os.path.expanduser('~'),'data','imgs')],
                         help="Path to images dict for captioning")
@@ -71,7 +78,7 @@ def get_args():
     parser.add_argument("--arithmetics_style_imgs", nargs="+",
                         default=['49','50','51','52','53'])
     parser.add_argument("--arithmetics_weights", nargs="+", default=[1, 1, -1])
-    parser.add_argument("--use_style_model", type=bool, default=False)
+    parser.add_argument("--use_style_model", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -280,7 +287,7 @@ def get_img_full_path(base_path, i):
 
 
 def main():
-    #cuda_idx = "1"
+    cuda_idx = "3"
     #os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
     config = get_hparams(args)
@@ -295,18 +302,24 @@ def main():
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
 
     sentiment_list = ['none']  # ['negative','positive','neutral', 'none']
-    sentiment_scale_list = [2.0]  # [2.0, 1.5, 1.0, 0.5, 0.1]
+    sentiment_scale_list = [0]  # [2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = os.path.join(os.path.expanduser('~'), 'projects','zero-shot-style')
     checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
-    text_style_scale_list = [4]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
+    text_style_scale_list = [0,0.5,1,2,4,8]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
+    if not args.use_style_model:
+        text_style_scale_list = [1]
     text_to_imitate_list = ["bla"]#["Happy", "Love", "angry", "hungry", "I love you!!!", " I hate you and I want to kill you",
                             #"Let's set a meeting at work", "I angry and I love", "The government is good"]
     imitate_text_style = False
     embedding_path_idx2str = {0: 'mean'}
 
-    style_type_list = ['twitter']  # ['clip','twitter','emotions']#['emotions_love_disgust']
-
+    style_type_list = ['flickrstyle10k']  # ['clip','twitter','emotions']#['emotions_love_disgust']
+    # style_type_list = ['senticap']  # ['clip','twitter','emotions']#['emotions_love_disgust']
+    style_type_list = config["data_name"]
+    if args.style_types =='all':
+        style_type_list = ['senticap', 'flickrstyle10k']
+    cuda_idx = args.cuda_idx_num
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Cur time is: {cur_time}')
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
@@ -319,13 +332,12 @@ def main():
         classes_type = "source"
 
     imgs_to_test = []
-
-    for setdir in args.caption_img_dict:
-        print(f'setdir={setdir}')
-        for im in os.listdir(os.path.join(setdir,'images','test')):
+    for style_type in style_type_list:
+        args.caption_img_dict = os.path.join(os.path.expanduser('~'), 'data', style_type)
+        for im in os.listdir(os.path.join(args.caption_img_dict,'images','test')):
             if ('.jpg' or '.jpeg' or '.png') not in im:
                 continue
-            imgs_to_test.append(os.path.join(setdir,'images','test',im))
+            imgs_to_test.append(os.path.join(args.caption_img_dict,'images','test',im))
     #imgs_to_test = [args.caption_img_path] #for test one image
 
     '''

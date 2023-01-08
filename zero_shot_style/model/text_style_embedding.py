@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 import numpy as np
 from numpy import linalg
-from transformers import BertTokenizer
+from transformers import BertTokenizer, BertConfig
 from torch import nn
 from transformers import BertModel
 from torch.optim import SGD
@@ -27,7 +27,7 @@ from torch.optim import Adam
 
 # from pytorch_metric_learning import losses
 # losses.NPairsLoss(**kwargs)
-
+BERT_NUM_OF_LAYERS = 12
 #tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
@@ -79,9 +79,11 @@ class Dataset(torch.utils.data.Dataset):
 
 #based on bert
 class TextStyleEmbed(nn.Module):
-    def __init__(self, dropout=0.05,device=torch.device('cpu')):
+    def __init__(self, dropout=0.05,device=torch.device('cpu'), hidden_state_to_take=-1, last_layer_idx_to_freeze = -1):
         super(TextStyleEmbed, self).__init__()
-        self.bert = BertModel.from_pretrained('bert-base-cased')
+        bert_config = BertConfig.from_pretrained("bert-base-cased", output_hidden_states=True)
+        self.bert = BertModel.from_pretrained('bert-base-cased', config=bert_config)
+        self.freeze_layers(last_layer_idx_to_freeze)
         #for param in self.bert.parameters():
         #   param.requires_grad = False
         self.dropout = nn.Dropout(dropout)
@@ -89,15 +91,45 @@ class TextStyleEmbed(nn.Module):
         self.linear1 = nn.Linear(768, 128)
         #self.linear2 = nn.Linear(128, NUM_OF_CLASSES)
         self.relu = nn.ReLU()
+        self.hidden_state_to_take = hidden_state_to_take
 
     def forward(self, input_id, mask):
-        _, x = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+        # _, x = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+        outputs = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+        hidden_states = outputs[2]
+        # embedding_output = hidden_states[0]
+        attention_hidden_states = hidden_states[1:]
+        x = attention_hidden_states[self.hidden_state_to_take][:,0,:] #CLS output of self.hidden_state_to_take layer.
         x = self.dropout(x)
         x = self.linear1(x)
         # x = self.relu(x)
         # x = self.dropout(x)
         x = torch.nn.functional.normalize(x)
         return x
+
+    def freeze_layers(self, last_layer_idx_to_freeze):
+        '''
+
+        #:param freeze_layers: list of layers num to freeze
+        :param last_layer_idx_to_freeze: int
+        :return:
+        '''
+        # if freeze_embeddings:
+        #     for param in list(self.bert.bert.embeddings.parameters()):
+        #         param.requires_grad = False
+        #     print("Froze Embedding Layer")
+        # freeze_layers is a string "1,2,3" representing layer number
+        # if freeze_layers is not "":
+        #     layer_indexes = [int(x) for x in freeze_layers.split(",")]
+        #     for layer_idx in layer_indexes:
+        for layer_idx in range(BERT_NUM_OF_LAYERS):
+            for param in list(self.bert.encoder.layer[layer_idx].parameters()):
+                if layer_idx <= last_layer_idx_to_freeze:
+                    param.requires_grad = False
+                else:
+                    param.requires_grad = True
+                #print(f"BERT layers up to {layer_idx} are frozen.")
+
 
 
 
@@ -223,12 +255,8 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
     with torch.no_grad():
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
                 tqdm(eval_dataloader, desc="evaluation", leave=False)):#for model based on bert
-        # for step, (labels, texts_list) in enumerate(pbar := tqdm(eval_dataloader, desc="evaluation", leave=False)): #for model based on clip
-            # labels = torch.from_numpy(np.asarray(labels)).to(device)
             total_labels.extend(labels)
-            # outputs = model(texts_list)#for model based on clip
             outputs = model(tokenized_texts_list['input_ids'].to(device),tokenized_texts_list['attention_mask'].to(device))  # model based on bert
-            # outputs = torch.nn.functional.normalize(outputs)  # normalize# todo: check if need to do that
             outputs = outputs.to(torch.device('cpu'))
             total_outputs.extend(outputs)
             total_texts_list.extend(texts_list)
@@ -279,10 +307,7 @@ def plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, 
         cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
         print(f"cur time is: {cur_time}")
         print("send data to wb")
-        t1 = timeit.default_timer()
         wandb.log({title: all_data})  # todo log without commit
-        t2 = timeit.default_timer()
-        print(f'Time to send to wb is: ={(t2-t1)/60} min. = {t2-t1} sec.')
     if pos_combinations_labels:
         roc_auc = get_auc(total_outputs, pos_combinations_labels, neg_combinations_labels)
         return log_dict, roc_auc
@@ -296,31 +321,21 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn, batch_size=config['batch_size'], shuffle=True, num_workers=config['num_workers'])
     val_dataloader = torch.utils.data.DataLoader(val_data_set, collate_fn=collate_fn, batch_size=config['batch_size'], shuffle=True, num_workers=config['num_workers'])
 
-    print("Sanity check on train df...")
-    #log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(50,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
-    #                                        config['inner_batch_size'],
-    #                                        train_batch_size_for_plot, "sanity_check_initial_train",
-    #                                        tgt_file_vec_emb, True, False,config['num_workers'])
-
     print('Starting to train...')
     model = model.to(device)
-    #criterion = nn.CrossEntropyLoss()
-    #criterion.to(device)
 
     best_loss = 1e16
     last_best_epoch = -1e16
     for epoch in range(config['epochs']):
-        t000 = timeit.default_timer()
+        if epoch == config['freeze_after_n_epochs']:
+            model.freeze_layers(-1)
         model.train()
         list_all_triplet_loss_batch = []
         list_positive_loss_batch = []
         list_fraction_positive_triplets_batch = []
         list_num_positive_triplets_batch = []
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(pbar:= tqdm(train_dataloader, desc="Training", leave=False,)): #model based on bert
-        # for step, (labels, texts_list) in enumerate(pbar := tqdm(train_dataloader, desc="Training", leave=False)): #model based on clip
             labels = torch.from_numpy(np.asarray(labels)).to(device)
-            # outputs = model(texts_list) #model based on clip
-            # outputs = torch.nn.functional.normalize(outputs)  # normalize #model based on clip
             outputs = model(tokenized_texts_list['input_ids'].to(device), tokenized_texts_list['attention_mask'].to(device)) #model based on bert
 
             # triplet loss
@@ -330,13 +345,10 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             loss.backward()
             optimizer.step()
 
-            # running_loss.append(loss.cpu().detach().numpy())
             list_all_triplet_loss_batch.append(all_triplet_loss_avg)
             list_positive_loss_batch.append(loss)
             list_fraction_positive_triplets_batch.append(fraction_positive_triplets)
             list_num_positive_triplets_batch.append(num_positive_triplets)
-        t001 = timeit.default_timer()
-        print(f"time for single epoch is {(t001 - t000) / 60} min = {t001 - t000} sec.")
         epoch_avg_all_triplet_loss = np.mean([loss_elem.item() for loss_elem in list_all_triplet_loss_batch])
         epoch_avg_positive_loss = np.mean([elem.item() for elem in list_positive_loss_batch])
         epoch_avg_fraction_positive_triplets = np.mean([elem.item() for elem in list_fraction_positive_triplets_batch])
@@ -344,49 +356,21 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         # pbar.set_description("Epoch: {}/{} - Loss: {:.4f}".format(epoch + 1, config['epochs'], avg_loss))
         print("\nEpoch: {}/{} - Loss: {:.4f}".format(epoch, config['epochs'], epoch_avg_all_triplet_loss),'\n')
         log_dict = {'train/epoch': epoch,
-                    # 'train/train_loss': loss.cpu().detach().numpy(),
                     'train/train_loss': epoch_avg_positive_loss,
                     'train/fraction_positive_triplets': epoch_avg_fraction_positive_triplets,
                     'train/num_positive_triplets': epoch_avg_list_num_positive_triplets,
                     'train/all_triplet_loss_avg': epoch_avg_all_triplet_loss}
-        wandb.log({"log_dict": log_dict})
-        if np.mod(epoch, 10) == 0:  # plot on every 10 epochs
-            # save model
-            print(f'Epoch = {epoch},Saving model to: {path_for_saving_last_model}...')
-            torch.save({"model_state_dict": model.state_dict(),
-                        "optimizer_state_dict": optimizer.state_dict(),
-                        }, path_for_saving_last_model)  # finally check on all data training
-            # #todo: remove comment in order to print
-            log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
-                                                     config['inner_batch_size'],config["batch_size"], "train_text", tgt_file_vec_emb, True, False, config['num_workers'])
-            # log_dict_train = plot_graph_on_all_data(df_train.iloc[np.arange(0, min(5000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
-            #                                          config['inner_batch_size'],config["batch_size"], "train_text", tgt_file_vec_emb, True, False, config['num_workers'])
-            # # # log_dict_val, roc_auc = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_test)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
-            ## ignore roc_auc because it is not reliable
-            # log_dict_val, roc_auc = plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model,
-            #                                       config['inner_batch_size'],val_batch_size_for_plot, "val_text", tgt_file_vec_emb,
-            #                                       True, False, config['num_workers'],pos_combinations_labels=pos_combinations_labels,
-            #                                            neg_combinations_labels = neg_combinations_labels)
-            # log_dict = {'train/epoch': epoch,
-            #             'train/train_loss': loss.cpu().detach().numpy(),
-            #             'train/fraction_positive_triplets': fraction_positive_triplets,
-            #             'train/num_positive_triplets': num_positive_triplets,
-            #             'train/all_triplet_loss_avg': all_triplet_loss_avg,
-            #             'train/roc_auc': roc_auc}
-
-            # #I removed it because it take a lot of time
-            # #plot val
-            # log_dict_val = plot_graph_on_all_data(df_test, labels_set_dict, labels_idx_to_str, device, model,
-            #                                       config['inner_batch_size'],val_batch_size_for_plot, "val_text", tgt_file_vec_emb,
-            #                                       True, False, config['num_workers'])
-
-            # log_dict = {**log_dict, **log_dict_train, **log_dict_val}
-            # wandb.log({"log_dict": log_dict})
-            # todo - with every log save the latest model (so we can resume training from the same point.)
-            # roc_auc = evaluate(model, df_test, labels_set_dict, device, config, pos_combinations_labels,
-            #          neg_combinations_labels)
+        # save last model
+        print(f'Epoch = {epoch},Saving model to: {path_for_saving_last_model}...')
+        torch.save({"model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    }, path_for_saving_last_model)  # finally check on all data training
+        # #todo: remove comment in order to print
+        log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
+                                                 config['inner_batch_size'],config["batch_size"], "train_text", tgt_file_vec_emb, True, False, config['num_workers'])
 
         if epoch_avg_all_triplet_loss<best_loss:
+            #save best model
             print(f'Loss is improved. Epoch = {epoch}, cur best loss = {epoch_avg_all_triplet_loss} < {best_loss}. Saving the better model to: {path_for_saving_best_model}...')
             best_loss = epoch_avg_all_triplet_loss
             # save model
@@ -394,20 +378,16 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_best_model)  # finally check on all data training
             if epoch>last_best_epoch+100: #todo: change 500
-            # if True:#todo: remove comment
                 last_best_epoch = epoch
-                # log_dict_train = plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model,
-                #                                         config['inner_batch_size'], train_batch_size_for_plot, "train_text_for_best_model",
-                #                                         tgt_file_vec_emb, True, True, config['num_workers'])
-                # log_dict_val = plot_graph_on_all_data(df_test.iloc[np.arange(0, min(15000,len(df_train)), 50),:], labels_set_dict, labels_idx_to_str, device, model,
                 log_dict_val = plot_graph_on_all_data(df_val, labels_set_dict, labels_idx_to_str, device, model,
                                                       config['inner_batch_size'], config['batch_size'], "val_text",
                                                       tgt_file_vec_emb,
                                                       True, True, config['num_workers'])
-                # log_dict = {**log_dict, **log_dict_train, **log_dict_val}
+                log_dict.update(log_dict_val)
+        wandb.log(log_dict)
 
     # plot_graph_on_all_data(df_train, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, train_batch_size_for_plot,"final_train_text",wb, tgt_file_vec_emb)
-    model = TextStyleEmbed(device=device)
+    model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'], last_layer_idx_to_freeze = config['last_layer_idx_to_freeze'])
     checkpoint = torch.load(path_for_saving_best_model)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
@@ -639,17 +619,17 @@ def getting_labels_map(df_train):
 def get_model_and_optimizer(config, path_for_loading_best_model, device):
     if config['load_model']: #load_model
         print(f"Loading model from: {path_for_loading_best_model}")
-        model = TextStyleEmbed(device=device)
+        model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'], last_layer_idx_to_freeze = config['last_layer_idx_to_freeze'])
         # optimizer = SGD(model.parameters(), lr=config['lr'])
         # take only non-frozen params:
-        optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'])
+        optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'], weight_decay=config['weight_decay'])
         checkpoint = torch.load(path_for_loading_best_model)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     else:
         #  train from scratch
         print("Train model from scratch")
-        model = TextStyleEmbed(device=device)
+        model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'], last_layer_idx_to_freeze = config['last_layer_idx_to_freeze'])
         # optimizer = SGD(model.parameters(), lr=config['lr'])
 
         # take only non-frozen params:
@@ -793,7 +773,7 @@ def convert_ds_to_df(ds,data_dir):
 
 
 def main():
-    desired_cuda_num = "3"
+    desired_cuda_num = "2"
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
 
@@ -819,7 +799,6 @@ def main():
         labels_set_dict = {'humor': 0, 'romantic': 1}
         labels_idx_to_str = {0: 'humor', 1: 'romantic'}
 
-    path_to_csv_file = os.path.join(data_dir,'_'.join(dataset_names)+'.csv')
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
     for dataset_name in dataset_names:
         for set_type in ['train', 'val', 'test']:
@@ -844,7 +823,6 @@ def main():
 
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
-
     print(len(df_train), len(df_val), len(df_test))
     print(f"labels: {labels_set_dict}")
 

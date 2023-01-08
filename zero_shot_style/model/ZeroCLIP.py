@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM #gpt-J
 #import cv2
 from transformers import BertModel
 from torch.optim import Adam, SGD
-from zero_shot_style.model.TextStyleEmbedding import TextStyleEmbed
+from zero_shot_style.model.TextStyleEmbedding_2_1_2023 import TextStyleEmbed
 import pickle
 
 def write_tmp_text_loss(tmp_text_loss):
@@ -171,7 +171,8 @@ class CLIPTextGenerator:
 
         # TEXT STYLE: adding the text style model
         self.use_text_style = True
-        self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        #self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
         self.text_style_scale = 1
         # MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/2_classes_trained_model_emotions.pth'
 
@@ -183,7 +184,7 @@ class CLIPTextGenerator:
             self.text_style_model = TextStyleEmbed(device=self.device)
             LR = 1e-4
             # optimizer = SGD(self.text_style_model.parameters(), lr=LR) #check if to remove mark
-            checkpoint = torch.load(self.text_style_model_name)
+            checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
             self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
             # optimizer.load_state_dict(checkpoint['optimizer_state_dict']) #check if to remove mark
 

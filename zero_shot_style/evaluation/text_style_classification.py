@@ -106,8 +106,8 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
     optimizer = Adam(model.parameters(), lr=learning_rate)
 
     if use_cuda:
-        model = model.cuda()
-        criterion = criterion.cuda()
+        model = model.to(device)
+        criterion = criterion.to(device)
     best_f1_score_val = 0
     for epoch_num in range(epochs):
 
@@ -205,7 +205,7 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
         wandb.log(log_dict)
 
         if f1_score_val>best_f1_score_val:
-            print(f'Saving ***best**** model to: {path_for_saving_last_model}...')
+            print(f'Saving ***best**** model to: {path_for_saving_best_model}...')
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_best_model)
@@ -248,7 +248,7 @@ def get_train_val_data(data_set_path):
     f'''
     
     :param data_set_path: dict. keys =   ['train', 'val', 'test'], values = path to pickl file
-    :return: ds: dict:keys=['train', 'val', 'test'],values = dict:keys = list({dataset_name}), values=dict:keys=key_frame,values:dict:keys=style,values=data from pkl
+    :return: ds: dict:keys=['train', 'val', 'test'],values = dict:keys = list(dataset_name), values=dict:keys=key_frame,values:dict:keys=style,values=data from pkl
     '''
     ds = {}
     for set_type in data_set_path:  # ['train', 'val', 'test']
@@ -279,7 +279,7 @@ def convert_ds_to_df(ds,data_dir):
                     continue
                 all_data['category'].extend([style]*len(ds[set_type][k][style]))
                 all_data['text'].extend(ds[set_type][k][style])
-         if set_type == 'train':
+        if set_type == 'train':
             df_train = pd.DataFrame(all_data)
             df_train.to_csv(os.path.join(data_dir,'train.csv'))
         elif set_type == 'val':
@@ -291,7 +291,7 @@ def convert_ds_to_df(ds,data_dir):
     return df_train, df_val, df_test
 
 def main():
-    desired_cuda_num = 0
+    desired_cuda_num = 3
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
     exp_dir = os.path.join(os.path.expanduser('~'), 'checkpoints',cur_time)
@@ -302,9 +302,10 @@ def main():
     LR = 1e-6
     batch_size = 16
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
-    dataset_names = ['senticap', 'flickrstyle10k']
-    # labels_dict = {'positive': 0, 'negative': 1}
-   labels_dict = {'humor': 0, 'romantic': 1}
+    # dataset_names = ['senticap', 'flickrstyle10k']
+    dataset_names = ['senticap']
+    labels_dict = {'positive': 0, 'negative': 1}
+   # labels_dict = {'humor': 0, 'romantic': 1}
 
     path_to_csv_file = os.path.join(data_dir,'_'.join(dataset_names)+'.csv')
     data_set_path = {'train': {}, 'val': {}, 'test': {}}

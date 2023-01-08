@@ -9,6 +9,10 @@ from senticap_reader import *
 
 class ImageSentiCap:
 
+    TEST_SPLIT = 0
+    TRAIN_SPLIT = 1
+    VAL_SPLIT = 2
+
     def __init__(self):
         self.filename = ''
         self.imgpath = ''
@@ -28,6 +32,9 @@ class ImageSentiCap:
     def set_imgid(self,id):
         self.imgid = id
 
+    def set_imgsplit(self,split):
+        assert split in [self.TEST_SPLIT, self.TRAIN_SPLIT, self.VAL_SPLIT]
+        self.split = split
 
     def add_sentence(self,sentence,style):
         if style == 'positive':
@@ -66,6 +73,10 @@ class ImageSentiCap:
     def get_imgid(self):
         return self.imgid
 
+    def get_imgpslit(self):
+        return self.split
+
+
 def add_factual_sentences_to_senticap_data(sr,factual_file_path_list):
     '''
 
@@ -92,6 +103,7 @@ def add_factual_sentences_to_senticap_data(sr,factual_file_path_list):
         senticap_image.set_imgid(img_id)
         senticap_image.set_filename(s.getFilename)
         senticap_image.set_imgpath(s.get_imgpath())
+        senticap_image.set_imgsplit(s.getSplit())
         sentiments = []
         for sen in s.getSentences():
             if sen.getSentimentPolarity():
@@ -118,21 +130,33 @@ def add_factual_sentences_to_senticap_data(sr,factual_file_path_list):
 
 def save_senticap_data(dir_path, train_data, val_data, test_data):
     data_dict = {}
+    sentiment_polarity = {1: "positive", 0: "negative"}
     for da in train_data:
-        filename = da.imgpath.split('/')[-1].split('.')[0]
-        data_dict[filename] = {"factual": da.factual, 'positive': da.positive, 'negative': da.negative, 'image_path': da.imgpath}
+        filename = int(da.imgpath.split('/')[-1].split('.')[0])
+        # data_dict[filename] = {"factual": da.factual_sentences, 'positive': da.positive, 'negative': da.negative, 'image_path': da.imgpath}
+        data_dict[filename] = {"factual": da.factual_sentences, 'positive': [], 'negative': [], 'image_path': da.imgpath}
+        for s in da.sentences:
+            data_dict[filename][sentiment_polarity[s.getSentimentPolarity()]].append(s.getRawsentence())
     with open(os.path.join(dir_path, 'train.pkl'), 'wb') as file:
         pickle.dump(data_dict, file)
     data_dict = {}
     for da in val_data:
-        filename = da.imgpath.split('/')[-1].split('.')[0]
-        data_dict[filename] = {"factual": da.factual, 'positive': da.positive, 'negative': da.negative, 'image_path': da.imgpath}
+        filename = int(da.imgpath.split('/')[-1].split('.')[0])
+        # data_dict[filename] = {"factual": da.factual_sentences, 'positive': da.positive, 'negative': da.negative, 'image_path': da.imgpath}
+        data_dict[filename] = {"factual": da.factual_sentences, 'positive': [], 'negative': [],
+                               'image_path': da.imgpath}
+        for s in da.sentences:
+            data_dict[filename][sentiment_polarity[s.getSentimentPolarity()]].append(s.getRawsentence())
     with open(os.path.join(dir_path, 'val.pkl'), 'wb') as file:
         pickle.dump(data_dict, file)
     data_dict = {}
     for da in test_data:
-        filename = da.imgpath.split('/')[-1].split('.')[0]
-        data_dict[filename] = {"factual": da.factual, 'positive': da.positive, 'negative': da.negative, 'image_path': da.imgpath}
+        filename = int(da.imgpath.split('/')[-1].split('.')[0])
+        # data_dict[filename] = {"factual": da.factual_sentences, 'positive': da.positive, 'negative': da.negative, 'image_path': da.imgpath}
+        data_dict[filename] = {"factual": da.factual_sentences, 'positive': [], 'negative': [],
+                               'image_path': da.imgpath}
+        for s in da.sentences:
+            data_dict[filename][sentiment_polarity[s.getSentimentPolarity()]].append(s.getRawsentence())
     with open(os.path.join(dir_path, 'test.pkl'), 'wb') as file:
         pickle.dump(data_dict, file)
 
@@ -154,10 +178,26 @@ def save_flickrstyle10k_data(dir_path, train_data, val_data, test_data):
         pickle.dump(data_dict, file)
 
 
-def arrange_data(train_data,val_data, test_data,target_dir, save_images, save_annotations, dataset_name):
+
+def arrange_data_for_senticap(sr,target_dir, save_images, save_annotations):
     print("Arranging the data...")
+    train_data = [s for s in sr.get_images() if
+                  s.getSplit() == s.TRAIN_SPLIT]
+    val_data = [s for s in sr.get_images() if
+                s.getSplit() == s.VAL_SPLIT]
+    test_data = [s for s in sr.get_images() if
+                 s.getSplit() == s.TEST_SPLIT]
     #copy images
     if save_images:
+        print(f"Save images in {os.path.join(target_dir,'images')}")
+        if not os.path.exists(os.path.join(target_dir,'images')):
+            os.makedirs(os.path.join(target_dir,'images'))
+        if not os.path.exists(os.path.join(target_dir,'images','train')):
+            os.makedirs(os.path.join(target_dir,'images','train'))
+        if not os.path.exists(os.path.join(target_dir,'images','val')):
+            os.makedirs(os.path.join(target_dir,'images','val'))
+        if not os.path.exists(os.path.join(target_dir,'images','test')):
+            os.makedirs(os.path.join(target_dir,'images','test'))
         for d in train_data:
             shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','train',d.imgpath.split('/')[-1]))
         for d in val_data:
@@ -166,13 +206,46 @@ def arrange_data(train_data,val_data, test_data,target_dir, save_images, save_an
             shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','test',d.imgpath.split('/')[-1]))
     #save annotations
     if save_annotations:
-        annotation_dir = os.path.join(target_dir,'annotations')
+        print(f"Save annotations in {os.path.join(target_dir, 'annotations')}")
+        annotation_dir = os.path.join(target_dir, 'annotations')
+        if not os.path.exists(annotation_dir):
+            os.makedirs(annotation_dir)
+        save_senticap_data(annotation_dir, train_data, val_data, test_data)
+
+def arrange_data(train_data,val_data, test_data,target_dir, save_images, save_annotations, dataset_name):
+    print("Arranging the data...")
+    #copy images
+    if save_images:
+        if not os.path.exists(os.path.join(target_dir,'images')):
+            os.makedirs(os.path.join(target_dir,'images'))
+        if not os.path.exists(os.path.join(target_dir,'images','train')):
+            os.makedirs(os.path.join(target_dir,'images','train'))
+        if not os.path.exists(os.path.join(target_dir,'images','val')):
+            os.makedirs(os.path.join(target_dir,'images','val'))
+        if not os.path.exists(os.path.join(target_dir,'images','test')):
+            os.makedirs(os.path.join(target_dir,'images','test'))
+        for d in train_data:
+            shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','train',d.imgpath.split('/')[-1]))
+        for d in val_data:
+            shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','val',d.imgpath.split('/')[-1]))
+        for d in test_data:
+            shutil.copyfile(d.imgpath,os.path.join(target_dir,'images','test',d.imgpath.split('/')[-1]))
+    #save annotations
+    if save_annotations:
+        annotation_dir = os.path.join(target_dir, 'annotations')
+        if not os.path.exists(annotation_dir):
+            os.makedirs(annotation_dir)
         if dataset_name == 'flickrstyle10k':
             save_flickrstyle10k_data(annotation_dir, train_data, val_data, test_data)
         if dataset_name == 'senticap':
             save_senticap_data(annotation_dir, train_data, val_data, test_data)
 
+def get_wrong_data_names(senticap_captions_test):
+    test_data_wrong_names = []
+    for s in senticap_captions_test:
+        test_data_wrong_names.append(s.get_imgpath().split('/')[-1].split('.')[0])
 
+    test_data_names = get_data_names(sr,'test')
 
 def main():
     data_dir = os.path.join(os.path.expanduser('~'),'data')
@@ -190,9 +263,10 @@ def main():
     target_data_dir_senticap = os.path.join(data_dir,'senticap')
 
     factual_file_path_list_senticap = [
-         os.path.join(data_dir,'source','coco','2014','annotations','captions_train2014.json'),
-         os.path.join(data_dir,'source','coco','2014','annotations','captions_val2014.json')]
-
+         os.path.join(data_dir, 'source', 'coco', '2014', 'annotations', 'captions_train2014.json'),
+         os.path.join(data_dir, 'source', 'coco', '2014', 'annotations', 'captions_val2014.json'),
+        os.path.join(data_dir, 'source', 'coco', '2017', 'annotations', 'captions_train2017.json'),
+        os.path.join(data_dir, 'source', 'coco', '2017', 'annotations', 'captions_val2017.json')]
 
     flickrstyle10k_data = get_all_flickrstyle10k_data(base_path_flickrstyle10k,imgs_folder_flickrstyle10k,captions_file_path_flickrstyle10k)
     flickrstyle10k_data_list = list(flickrstyle10k_data.values())
@@ -201,6 +275,21 @@ def main():
     sr = SenticapReader(filename_senticap,imgs_folder_senticap,imgs_folder2017)
     senticap_captions_test, senticap_captions_train = add_factual_sentences_to_senticap_data(sr,factual_file_path_list_senticap)
 
+    test_data_wrong_names = [s.get_imgpath().split('/')[-1].split('.')[0] for s in senticap_captions_test]
+
+    test_data_names = [s.get_imgpath().split('/')[-1].split('.')[0] for s in sr.get_images() if s.getSplit() == s.TEST_SPLIT]
+    test_data_to_add_for_running = [i for i in test_data_names if i not in test_data_wrong_names]
+    overlap = sum([1 for i in test_data_names if i in test_data_wrong_names])
+
+    # Writing to sample.json
+    with open(os.path.join(target_data_dir_senticap,"bu_up_to_4_1_2023","test_data_wrong_names.json"), "w") as outfile:
+        outfile.write(json.dumps(test_data_wrong_names))
+
+    with open(os.path.join(target_data_dir_senticap,"test_data_to_add_for_running.json"), "w") as outfile:
+        outfile.write(json.dumps(test_data_to_add_for_running))
+
+    with open(os.path.join(target_data_dir_senticap,"test_data_names.json"), "w") as outfile:
+        outfile.write(json.dumps(test_data_names))
 
     ## split datat to train,val,test
     # flickrstyle10k
@@ -208,15 +297,15 @@ def main():
     train_data_flickrstyle10k, val_data_flickrstyle10k = train_test_split(train_val_data_flickrstyle10k, test_size=0.1, random_state=42)
     #arrange_data(train_data_flickrstyle10k,val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k)
     # senticap
-    train_data_senticap, val_data_senticap = train_test_split(senticap_captions_train, test_size=0.1, random_state=42)
-    test_data_senticap = senticap_captions_test
+    #train_data_senticap, val_data_senticap = train_test_split(senticap_captions_train, test_size=0.1, random_state=42)
+    #test_data_senticap = senticap_captions_test
+
     # arrange_data(train_data_senticap, val_data_senticap, test_data_senticap, target_data_dir_senticap)
     save_images = False
     save_annotations = False
     #use all annotated data with factual to test
     arrange_data(train_data_flickrstyle10k, val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k,save_images,save_annotations, 'flickrstyle10k')
-    arrange_data(train_data_senticap, val_data_senticap, test_data_senticap, target_data_dir_senticap,save_images,save_annotations, 'senticap')
-
+    arrange_data_for_senticap(sr, target_data_dir_senticap, True, True)
     print('finish')
 
     '''

@@ -93,16 +93,7 @@ def write_data_to_global_file_for_debug(data, img_idx_to_name, tgt_results_path,
 
 
 def main():
-    #cuda_idx = "1"
-    #os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
-    config = get_hparams(args)
-    imgs_style_type_dict = {49: 'neutral', 50:'positive', 51:'negative', 52:'humor', 53:'romantic'}
-
-    if not args.img_name:
-        img_path_list = list(np.arange(0,20000))#[35]#[101, 105, 104, 103, 102, 100]  # list(np.arange(100,105))
-    else:
-        img_path_list = [args.img_name]
 
     cuda_idx = args.cuda_idx_num
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
@@ -130,18 +121,23 @@ def main():
         img_idx_to_name[img_path_idx] = img_name
 
     global_results_dir_path = os.path.join(os.path.expanduser('~'),'results')
-    prompt_manipulation_dir_path = ['01_06_14__27_12_2022','00_59_38__27_12_2022','00_56_45__27_12_2022','14_14_09__23_12_2022','14_15_04__23_12_2022','12_47_53__22_12_2022','01_11_22__29_12_2022', '01_14_18__29_12_2022', '01_17_10__29_12_2022', '01_51_19__29_12_2022']
-    image_manipulation_dir_path = ['01_07_14__27_12_2022','00_58_25__27_12_2022','00_54_50__27_12_2022','14_14_43__23_12_2022','14_15_55__23_12_2022','12_48_26__22_12_2022']
-    tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'),'results','total_results_image_manipulation.csv')
-    tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'),'results','total_results_prompt_manipulation.csv')
-    debug_tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'), 'results', 'debug_total_results_image_manipulation.csv')
+    # prompt_manipulation_dir_path = ['01_06_14__27_12_2022','00_59_38__27_12_2022','00_56_45__27_12_2022','14_14_09__23_12_2022','14_15_04__23_12_2022','12_47_53__22_12_2022','01_11_22__29_12_2022', '01_14_18__29_12_2022', '01_17_10__29_12_2022', '01_51_19__29_12_2022']
+    # image_manipulation_dir_path = ['01_07_14__27_12_2022','00_58_25__27_12_2022','00_54_50__27_12_2022','14_14_43__23_12_2022','14_15_55__23_12_2022','12_48_26__22_12_2022']
+    prompt_manipulation_dir_path = ['21_57_03__02_01_2023','21_57_57__02_01_2023','21_58_25__02_01_2023']
+    image_manipulation_dir_path = []
+    tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'),'results',cur_time+'_total_results_image_manipulation.csv')
+    tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'),'results',cur_time+'_total_results_prompt_manipulation.csv')
+    debug_tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'), 'results', cur_time+'_debug_total_results_image_manipulation.csv')
     debug_tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'results',
-                                                'debug_total_results_prompt_manipulation.csv')
+                                                cur_time+'_debug_total_results_prompt_manipulation.csv')
     res_paths = {"prompt_manipulation": prompt_manipulation_dir_path, "im_manipulation": image_manipulation_dir_path}
     tgt_paths = {"prompt_manipulation": tgt_path_prompt_manipulation,"im_manipulation": tgt_path_im_manipulation}
     tgt_paths_debug = {"prompt_manipulation": debug_tgt_path_prompt_manipulation,"im_manipulation": debug_tgt_path_im_manipulation}
     t = {"prompt_manipulation": "img_num\prompt","im_manipulation": "img_num\style"}
-    for test_type in res_paths:
+    #exp_to_merge = ["prompt_manipulation", "im_manipulation"]
+    exp_to_merge = ["prompt_manipulation"]
+
+    for test_type in exp_to_merge:
         total_data_test_type = pd.DataFrame()
         for d in res_paths[test_type]:
             path_file = os.path.join(global_results_dir_path,d,f'results_all_models_source_classes_{d}.csv')
@@ -157,9 +153,6 @@ def main():
             total_data_test_type = pd.concat([total_data_test_type, data])
         total_data_test_type.to_csv(tgt_paths[test_type], index=False, header=True)
         write_data_to_global_file_for_debug(total_data_test_type, img_idx_to_name, tgt_paths_debug[test_type], t[test_type])
-
-
-
 
     print('Finish of program!')
 
