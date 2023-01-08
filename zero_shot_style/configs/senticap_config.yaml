@@ -8,7 +8,7 @@ param_dict:
   nested_k:
     k00: v00
     and_so_on: more_values
-epochs: 25
+epochs: 2 #25
 lr: 1e-6
 batch_size: 16
 margin: 1.2
