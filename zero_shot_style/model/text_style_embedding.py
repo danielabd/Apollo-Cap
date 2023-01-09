@@ -27,6 +27,7 @@ from torch.optim import Adam
 # from pytorch_metric_learning import losses
 # losses.NPairsLoss(**kwargs)
 BERT_NUM_OF_LAYERS = 12
+MAX_VAL_TRIPLET_LOSS = 100
 # tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
@@ -253,6 +254,13 @@ def plot_graph_on_all_data(df_data, total_outputs, total_labels_str, total_texts
 
         print('print for wandb')
         # variables with mean
+    if os.path.exists(tgt_file_vec_emb['mean']):
+        print("take mean and median vectors for plotting.")
+        with open(tgt_file_vec_emb['mean'], "rb") as input_file:
+            mean_embedding_vectors_to_save = pickle.load(input_file)
+        with open(tgt_file_vec_emb['median'], "rb") as input_file:
+            median_embedding_vectors_to_save = pickle.load(input_file)
+
         total_outputs_with_representation = total_outputs
         for label in set(df_data["category"]):
             # #insert mean and median to the beginning
@@ -282,6 +290,14 @@ def plot_graph_on_all_data(df_data, total_outputs, total_labels_str, total_texts
     textdf = pd.DataFrame({'text': total_texts_list})
     all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
     all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
+    # #debug
+    # labeldf = pd.DataFrame({'Label': total_labels_str[:6]})
+    # # embdf = pd.DataFrame(total_outputs, columns=[f'emb{i}' for i in range(total_outputs.shape[1])])
+    # embdf = pd.DataFrame(total_outputs[:6,:], columns=[f'emb{i}' for i in range(total_outputs.shape[1])])
+    # textdf = pd.DataFrame({'text': total_texts_list[:6]})
+    # all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
+    # all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
+
     # if pos_combinations_labels:
     #     roc_auc = get_auc(total_outputs, pos_combinations_labels, neg_combinations_labels)
     #     return log_dict, roc_auc
@@ -320,6 +336,7 @@ def bu_plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, devic
             total_texts_list.extend(texts_list)
         total_outputs = torch.stack(total_outputs)
         total_labels_str = [labels_idx_to_str[user_idx] for user_idx in total_labels]
+    print(f"**************\nBefor mean, media, len(total_outputs)={len(total_outputs)},len(total_labels)={len(total_labels)},len(total_texts_list)={len(total_texts_list)}")
     if save_vec_emb:
         print("Calculate mean and median embedding vectors...")
         mean_embedding_vectors_to_save = {}
@@ -357,6 +374,7 @@ def bu_plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, devic
                 (np.expand_dims(np.array(mean_embedding_vectors_to_save[label]), axis=0),
                  total_outputs_with_representation), axis=0)
         total_outputs = total_outputs_with_representation
+    print(f"**************\nafter mean, median, len(total_outputs)={len(total_outputs)},len(total_labels)={len(total_labels)},len(total_texts_list)={len(total_texts_list)}")
     labeldf = pd.DataFrame({'Label': total_labels_str})
     embdf = pd.DataFrame(total_outputs, columns=[f'emb{i}' for i in range(total_outputs.shape[1])])
     textdf = pd.DataFrame({'text': total_texts_list})
@@ -372,9 +390,43 @@ def bu_plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, devic
         return log_dict, roc_auc
     return log_dict
 
+def plot_final_graph_after_training(device, config, path_for_saving_best_model, labels_idx_to_str, tgt_file_vec_emb,df,dataloader, title, save_vec_emb=False):
+    print(title+" dataset...")
+    model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'],
+                           last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'])
+    if 'cuda' in device.type:
+        checkpoint = torch.load(path_for_saving_best_model, map_location='cuda:0')
+    else:
+        checkpoint = torch.load(path_for_saving_best_model)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.to(device)
+    model.eval()
+    # for plot
+    final_total_outputs = []
+    final_total_labels = []
+    final_total_texts_list = []
+    for step, (tokenized_texts_list, labels, texts_list) in enumerate(
+            pbar := tqdm(dataloader, desc=title, leave=False, )):  # model based on bert
+        labels = torch.from_numpy(np.asarray(labels)).to(device)
+        tokenized_texts_list = tokenized_texts_list.to(device)
+        # outputs = model(tokenized_texts_list['input_ids'].to(device),
+        #                 tokenized_texts_list['attention_mask'].to(device))  # model based on bert
+        outputs = model(tokenized_texts_list['input_ids'],
+                        tokenized_texts_list['attention_mask'])  # model based on bert
+        # for plot
+        final_total_labels.extend(labels.cpu().detach().numpy())
+        final_total_outputs.extend(outputs.cpu().detach().numpy())
+        final_total_texts_list.extend(texts_list)
+
+    final_total_outputs = np.stack(final_total_outputs)
+    final_train_total_labels_str = [labels_idx_to_str[i] for i in final_total_labels]
+    return plot_graph_on_all_data(df, final_total_outputs, final_train_total_labels_str, final_total_texts_list,
+                                                  "best model for " + title,
+                                                  tgt_file_vec_emb, save_vec_emb)
 
 def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
           path_for_saving_best_model, device, tgt_file_vec_emb, config):
+    best_val_all_triplet_loss_avg = MAX_VAL_TRIPLET_LOSS
     train_data_set, val_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
                                                    batch_size=config['batch_size'], shuffle=True,
@@ -440,7 +492,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             "\nEpoch, Training: {}/{} - Loss: {:.4f}".format(epoch, config['epochs'], train_epoch_avg_all_triplet_loss),
             '\n')
         log_dict = {'train/epoch': epoch,
-                    'train/train_loss': train_epoch_avg_positive_loss,
+                    'train/loss': train_epoch_avg_positive_loss,
                     'train/fraction_positive_triplets': train_epoch_avg_fraction_positive_triplets,
                     'train/num_positive_triplets': train_epoch_avg_list_num_positive_triplets,
                     'train/all_triplet_loss_avg': train_epoch_avg_all_triplet_loss}
@@ -499,11 +551,14 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             print(
                 "\nEpoch, Validation: {}/{} - Loss: {:.4f}".format(epoch, config['epochs'], val_epoch_avg_all_triplet_loss),
                 '\n')
+            if val_epoch_avg_all_triplet_loss<best_val_all_triplet_loss_avg:
+                best_val_all_triplet_loss_avg = val_epoch_avg_all_triplet_loss
             log_dict.update({'val/epoch': epoch,
-                             'val/train_loss': val_epoch_avg_positive_loss,
+                             'val/loss': val_epoch_avg_positive_loss,
                              'val/fraction_positive_triplets': val_epoch_avg_fraction_positive_triplets,
                              'val/num_positive_triplets': val_epoch_avg_list_num_positive_triplets,
-                             'val/all_triplet_loss_avg': val_epoch_avg_all_triplet_loss})
+                             'val/all_triplet_loss_avg': val_epoch_avg_all_triplet_loss,
+                             'val/best_val_all_triplet_loss_avg': best_val_all_triplet_loss_avg})
             log_dict.update({"val_plot": plot_graph_on_all_data(df_val, val_total_outputs, val_total_labels_str, val_total_texts_list, "val",
                                                           tgt_file_vec_emb, save_vec_emb=False)})
 
@@ -521,35 +576,11 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         wandb.log(log_dict)
 
     # plot_train_data_with_best_model
-    model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'],
-                           last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'])
-    checkpoint = torch.load(path_for_saving_best_model, map_location='cuda:0')
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.to(device)
-    model.eval()
-    print("Finished to train, plotting final embedding of entire training set")
-    # for plot
-    final_train_total_outputs = []
-    final_train_total_labels = []
-    final_train_total_texts_list = []
-    for step, (tokenized_texts_list, labels, texts_list) in enumerate(
-            pbar := tqdm(train_dataloader, desc="Training", leave=False, )):  # model based on bert
-        labels = torch.from_numpy(np.asarray(labels)).to(device)
-        tokenized_texts_list = tokenized_texts_list.to(device)
-        # outputs = model(tokenized_texts_list['input_ids'].to(device),
-        #                 tokenized_texts_list['attention_mask'].to(device))  # model based on bert
-        outputs = model(tokenized_texts_list['input_ids'],
-                        tokenized_texts_list['attention_mask'])  # model based on bert
-        # for plot
-        final_train_total_labels.extend(labels.cpu().detach().numpy())
-        final_train_total_outputs.extend(outputs.cpu().detach().numpy())
-        final_train_total_texts_list.extend(texts_list)
+    # plot_final_graph-after_training()
+    print("Finished to train, plotting final embedding graphs of entire data set with vector embeddings")
 
-    final_train_total_outputs = np.stack(final_train_total_outputs)
-    final_train_total_labels_str = [labels_idx_to_str[i] for i in final_train_total_labels]
-    log_dict["final_train_plot"] = plot_graph_on_all_data(df_train, final_train_total_outputs, final_train_total_labels_str, final_train_total_texts_list,
-                                                  "best model for train",
-                                                  tgt_file_vec_emb, save_vec_emb=True)
+    log_dict["final_train_plot"] = plot_final_graph_after_training(device, config, path_for_saving_best_model, labels_idx_to_str, tgt_file_vec_emb,df_train,train_dataloader, title="Train", save_vec_emb=True)
+    log_dict["final_val_plot"] = plot_final_graph_after_training(device, config, path_for_saving_best_model, labels_idx_to_str, tgt_file_vec_emb,df_val,val_dataloader, title="Val", save_vec_emb=False)
     wandb.log(log_dict)
     print('Finished to train.')
 
@@ -786,7 +817,10 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         # take only non-frozen params:
         optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
                         weight_decay=config['weight_decay'])
-        checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
+        if 'cuda' in device.type:
+            checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
+        else:
+            checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     else:
@@ -942,6 +976,7 @@ def convert_ds_to_df(ds, data_dir):
 
 def main():
     desired_cuda_num = "1"
+
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
 

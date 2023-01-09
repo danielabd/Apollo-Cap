@@ -3,7 +3,7 @@ project: text_style_embedding
 method: bayes
 metric:
   goal: minimize
-  name: train/all_triplet_loss_avg
+  name: val/all_triplet_loss_avg
 parameters:
   margin:
     max: 2
@@ -13,16 +13,20 @@ parameters:
     value: 25
   lr:
     values:
-      - 0.001
-      - 0.0001
-      - 0.00001
+    - 0.01
+    - 0.001
+    - 0.0001
+    - 0.00001
     distribution: categorical
   hidden_state_to_take:
     max: -1
     min: -5
+    distribution: int_uniform
   last_layer_idx_to_freeze:
     max: 11
     min: 0
+    distribution: int_uniform
   freeze_after_n_epochs:
     max: 10
     min: 0
+    distribution: int_uniform

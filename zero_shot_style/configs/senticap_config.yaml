@@ -1,20 +1,11 @@
-param_int: 1
-param_float: 1.
-param_str: hi
-param_list_of_everything: [a, 1, '1']
-param_dict:
-  k0: v0
-  k1: v1
-  nested_k:
-    k00: v00
-    and_so_on: more_values
-epochs: 2 #25
-lr: 1e-6
+
+epochs: 12
+lr: 0.01
 batch_size: 16
-margin: 1.2
-hidden_state_to_take: -2
-last_layer_idx_to_freeze: 11
-freeze_after_n_epochs: 3
+margin: 0.8168
+hidden_state_to_take: -4
+last_layer_idx_to_freeze: 9
+freeze_after_n_epochs: 6
 inner_batch_size: 1
 best_model_name: best_text_style_embedding_model_senticap.pth
 model_name: latest_text_style_embedding_model_senticap.pth
@@ -37,3 +28,14 @@ resume: False # resume running in wb
 load_model: False
 run_id: 0
 wandb_mode: online #'disabled, offline, online'
+
+param_int: 1
+param_float: 1.
+param_str: hi
+param_list_of_everything: [a, 1, '1']
+param_dict:
+  k0: v0
+  k1: v1
+  nested_k:
+    k00: v00
+    and_so_on: more_values

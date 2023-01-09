@@ -20,7 +20,7 @@ def str2bool(v):
 parser = ArgumentParser()
 # parser.add_argument('--epochs', type=int, default=15000, help='description')
 parser.add_argument('--epochs', type=int, default=600, help='description')#todo
-parser.add_argument('--lr', type=float, default=1e-3, help='description')
+parser.add_argument('--lr', type=float, default=0.000001, help='description')
 parser.add_argument('--weight_decay', type=float, default=1e-5, help='description')
 parser.add_argument('--margin', type=float, default=0.4, help='description')
 parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
