@@ -7,10 +7,10 @@ hidden_state_to_take: -4
 last_layer_idx_to_freeze: 9
 freeze_after_n_epochs: 6
 inner_batch_size: 1
-best_model_name: best_text_style_embedding_model_senticap.pth
+best_model_name: senticap/best_text_style_embedding_model_senticap.pth
 model_name: latest_text_style_embedding_model_senticap.pth
-mean_vec_emb_file: senticap_mean_class_embedding.p
-median_vec_emb_file: senticap_median_class_embedding.p
+mean_vec_emb_file: senticap/senticap_mean_class_embedding.p
+median_vec_emb_file: senticap/senticap_median_class_embedding.p
 data_name: senticap
 data_file: #['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 data_name: [senticap]
@@ -21,7 +21,7 @@ visual_csv_file_name_train: 'visual_senticap_train.csv'
 visual_csv_file_name_test: 'visual_senticap_test.csv'
 tgt_file_pairs_list: senticap_pairs_list.p
 num_workers: 10
-plot_only_clustering: False
+plot_only_clustering: True
 desired_labels: 'all' #[embarrassment, joy, anger, love, annoyance, nervousness]
 undesired_label: 'neutral'
 resume: False # resume running in wb

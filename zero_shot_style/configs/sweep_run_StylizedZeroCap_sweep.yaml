@@ -1,0 +1,19 @@
+program: run.py
+project: ZeroCapStyle
+method: bayes
+metric:
+  goal: minimize
+  name:  mean_perplexity
+parameters:
+  LM_loss_scale:
+    max: 2
+    min: 0.1
+    distribution: uniform
+  CLIP_loss_scale:
+    max: 2
+    min: 0.1
+    distribution: uniform
+  STYLE_loss_scale:
+    max: 2
+    min: 0.1
+    distribution: uniform
