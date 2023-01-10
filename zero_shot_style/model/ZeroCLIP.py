@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM #gpt-J
 #import cv2
 from transformers import BertModel
 from torch.optim import Adam, SGD
-from zero_shot_style.model.TextStyleEmbedding_2_1_2023 import TextStyleEmbed
+from zero_shot_style.model.text_style_embedding import TextStyleEmbed
 import pickle
 
 def write_tmp_text_loss(tmp_text_loss):
@@ -85,12 +85,17 @@ class CLIPTextGenerator:
                  model_path = None,
                  tmp_text_loss = None,
                  use_style_model = False,
+                 LM_loss_scale = 0.2,
+                 CLIP_loss_scale = 1,
+                 STYLE_loss_scale = 1,
                  **kwargs):
 
         self.tmp_text_loss = tmp_text_loss
         self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
+        self.LM_loss_scale = LM_loss_scale
+        self.CLIP_loss_scale = CLIP_loss_scale
+        self.STYLE_loss_scale = STYLE_loss_scale
 
-        
         # set Random seed
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -370,7 +375,6 @@ class CLIPTextGenerator:
         
         if context:
             context = self.shift_context(i, context, last_token, context_tokens, probs_before_shift)
-
         lm_output = self.lm_model(last_token, past_key_values=context)
         logits, past = (
             lm_output["logits"],
@@ -601,10 +605,10 @@ class CLIPTextGenerator:
 
             # CLIP LOSS
             clip_loss, clip_losses, best_sentences_clip, best_sentences_LM = self.clip_loss(probs, context_tokens)
-            loss += self.clip_scale * clip_loss
+            loss += self.CLIP_loss_scale * clip_loss
 
-            # CE/Fluency loss
-            ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
+        # CE/Fluency loss
+            ce_loss = self.LM_loss_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
             loss += ce_loss.sum()
             ce_losses = (probs * probs_before_shift.log()).sum(-1)
 
@@ -622,7 +626,8 @@ class CLIPTextGenerator:
                     else:
                         text_style_loss, text_style_losses, best_sentences_style = self.get_text_style_loss(probs, context_tokens)
                     #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
-                    loss += self.text_style_scale * text_style_loss
+                    # loss += self.text_style_scale * text_style_loss
+                    loss += self.STYLE_loss_scale * text_style_loss
 
                 # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
                 #for beam_num in range(len(best_sentences_LM)):
