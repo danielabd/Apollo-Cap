@@ -89,23 +89,42 @@ class SenticapImage(object):
         self.imgpath = path
 
     def set_imgpath_by_dir_path(self, imgs_folder,split,imgs_folder2017):
+        '''
         if split not in self.filename:
             type_dir = self.filename.split('_')[1].split('2014')[0]
-            target_img_path = os.path.join(imgs_folder2017, type_dir+'2017', self.filename.split('_')[-1])
-            if os.path.isfile(target_img_path): #not sure about this line works well
-                self.imgpath = target_img_path
-                return 2 #full path from 2017 dir
+            target_img_path = os.path.join(imgs_folder2017, type_dir + '2017', self.filename.split('_')[-1])
         else:
-            target_img_path = os.path.join(imgs_folder,split+'2014',self.filename)
+            target_img_path = os.path.join(imgs_folder, split + '2014', self.filename)
             if os.path.isfile(target_img_path):
                 self.imgpath = target_img_path
-                return 1 #success to find correct path
-        return 3 #failed to find fullpath to the image
-
+                return 1  # success to find correct path
+        return 3  # failed to find fullpath to the image
+        '''
+        target_img_path = []
+        target_img_path.append(os.path.join(imgs_folder2017, 'train2014', self.filename.split('_')[-1]))
+        target_img_path.append(os.path.join(imgs_folder2017, 'val2014', self.filename.split('_')[-1]))
+        target_img_path.append(os.path.join(imgs_folder2017, 'test2014', self.filename.split('_')[-1]))
+        target_img_path.append(os.path.join(imgs_folder2017, 'train2017', self.filename.split('_')[-1]))
+        target_img_path.append(os.path.join(imgs_folder2017, 'val2017', self.filename.split('_')[-1]))
+        target_img_path.append(os.path.join(imgs_folder2017, 'test2017', self.filename.split('_')[-1]))
+        for candidate_path in target_img_path:
+            if os.path.isfile(candidate_path): #not sure about this line works well
+                self.imgpath = candidate_path
+                # print(f"self.filename: {self.filename}")
+                # print(f"self.filename.split('_')[-1]): {self.filename.split('_')[-1]}")
+                # print(f"split: {split}")
+                # print(f"self.imgpath: {self.imgpath}")
+                # type_dir = self.filename.split('_')[1].split('2014')[0]
+                # if split not in self.filename:
+                #     if split not in self.imgpath:
+                #         if type_dir not in self.imgpath:
+                #             print("check")
+                return 2 #full path from 2017 dir
         #for folder in os.listdir(imgs_folder):
         #    for cur_file in os.listdir(os.path.join(imgs_folder,folder)):
         #        if cur_file==self.filename:
         #            self.imgpath = os.path.join(os.listdir(os.path.join(imgs_folder,folder)),self.filename)
+        return 3 # didn't find path
 
     def setFilename(self, filename):
         assert isinstance(filename, str) or isinstance(filename, unicode)
@@ -178,13 +197,19 @@ class SenticapReader(object):
         data = json.load(open(filename, "r"))
         imgs_from_2017 = []
         wrong_path = []
+        number_of_captions = 0
+        number_of_neg_captions = 0
+        number_of_pos_captions = 0
+        splits = {"train": 0, "val": 0, "test": 0}
+        captions_splits = {"train": {"pos": 0, "neg": 0}, "val": {"pos": 0, "neg": 0}, "test": {"pos": 0, "neg": 0}}
         for image in data["images"]:
-
+            splits[image["split"]] += 1
             self.imgids.append(image["imgid"])
-
             #create the SenticapImage entry
             im = SenticapImage()
             im.setFilename(image["filename"])
+            if image["split"] not in ["train","val","test"]:
+                print("check split!")
             if image["split"] == "train":
                 im.setSplit(im.TRAIN_SPLIT)
             elif image["split"] == "test":
@@ -193,23 +218,21 @@ class SenticapReader(object):
                 im.setSplit(im.VAL_SPLIT)
             im.setImgID(image["imgid"])
 
-            res = im.set_imgpath_by_dir_path(imgs_folder,image["split"],imgs_folder2017)
-
-            if res==2:
-                imgs_from_2017.append(image["filename"])
-            elif res==3:
-                wrong_path.append(image["filename"])
-                continue
-
+            cur_captions_splits = im.set_imgpath_by_dir_path(imgs_folder,image["split"],imgs_folder2017)
             #for this image create all the SenticapSentence entries
             for sent in image["sentences"]:
+                number_of_captions += 1
                 se = SenticapSentence()
                 se.setTokens(sent["tokens"])
                 se.setWordSentiment(sent["word_sentiment"])
                 if sent["sentiment"] == 0:
                     se.setSentimentPolarity(se.NEGATIVE_SENTIMENT)
+                    number_of_neg_captions += 1
+                    captions_splits[image["split"]]["neg"] += 1
                 else:
                     se.setSentimentPolarity(se.POSITIVE_SENTIMENT)
+                    number_of_pos_captions += 1
+                    captions_splits[image["split"]]["pos"] += 1
                 se.setRawSentence(sent["raw"])
                 im.addSentence(se)
 
@@ -218,6 +241,12 @@ class SenticapReader(object):
         print(f"{len(imgs_from_2017)} images from 2017.")
         print(f"{len(wrong_path)} were not taken in account because wrong image path.")
         print(f"There are {len(self.images)} good images for data.")
+        print(f"Total number of captions:{number_of_captions}")
+        print(f"Total number of neg captions:{number_of_neg_captions}")
+        print(f"Total number of pos captions:{number_of_pos_captions}")
+        print(f"Total number of train images:{splits['train']}, with {captions_splits['train']['pos']} positive captions and {captions_splits['train']['neg']} negative captions")
+        print(f"Total number of val images:{splits['val']}, with {captions_splits['val']['pos']} positive captions and {captions_splits['val']['neg']} negative captions")
+        print(f"Total number of test images:{splits['test']}, with {captions_splits['test']['pos']} positive captions and {captions_splits['test']['neg']} negative captions")
 
     def writeCSV(self, output_filename, train=True, test=True, val=True, pos=True, neg=True):
         """
@@ -299,9 +328,9 @@ class SenticapReader(object):
 def main():
     #handle arguments
     ap = argparse.ArgumentParser()    
-    ap.add_argument("--filename", "-f", default='../../../../data/source/senticap/senticap_dataset/data/senticap_dataset.json',
+    ap.add_argument("--filename", "-f", default='data/senticap_dataset.json',
             help = "Path to the senticap json")
-    ap.add_argument("--imgs_folder",  default='../../../../data/source/coco/images',
+    ap.add_argument("--imgs_folder",  default='../../source/coco/images',
             help = "Path to the senticap json")
     ap.add_argument("--csv_output", "-o", help = "Where to write the csv file.")
     ap.add_argument("--train", action="store_true", help = "Include the training examples")

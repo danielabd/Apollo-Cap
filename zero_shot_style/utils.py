@@ -20,9 +20,12 @@ def str2bool(v):
 parser = ArgumentParser()
 # parser.add_argument('--epochs', type=int, default=15000, help='description')
 parser.add_argument('--epochs', type=int, default=600, help='description')#todo
-parser.add_argument('--lr', type=float, default=1e-3, help='description')
+parser.add_argument('--lr', type=float, default=0.000001, help='description')
 parser.add_argument('--weight_decay', type=float, default=1e-5, help='description')
 parser.add_argument('--margin', type=float, default=0.4, help='description')
+parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
+parser.add_argument('--last_layer_idx_to_freeze', type=int, default=-1, help='last_layer idx of BERT to freeze')
+parser.add_argument('--freeze_after_n_epochs', type=int, default=3, help='freeze BERT after_n_epochs')
 parser.add_argument('--batch_size', type=int, default=28, help='description')
 parser.add_argument('--inner_batch_size', type=int, default=20, help='description')
 parser.add_argument('--resume', type=str, default='allow', help='continue logging to run_id')
@@ -43,9 +46,10 @@ parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled
 # parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','default_config.yaml'), help='full path to config file')
 
 #parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','emotions_config_all_classes.yaml'), help='full path to config file')
-#parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','twitter_config.yaml'), help='full path to config file')
-#parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','flickrstyle10k_config.yaml'), help='full path to config file')
-parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','text_style_classification.yaml'), help='full path to config file')
+#parser.add_argument('--config_file', type=str, default=os.spath.join('.', 'configs','twitter_config.yaml'), help='full path to config file')
+# parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','flickrstyle10k_config.yaml'), help='full path to config file')
+parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','senticap_config.yaml'), help='full path to config file')
+# parser.add_argument('--config_file', type=str, default=os.path.join('..',  'configs','text_style_classification.yaml'), help='full path to config file')
 
 parser.add_argument('--plot_only_clustering', type=str2bool, default=False, help='plot only clustering of the best model')
 # parser.add_argument('--rundry', type=str2bool, default=False)
@@ -76,6 +80,7 @@ def get_hparams(args):
     #     data_config = yaml.load(f, Loader=yaml.FullLoader)
 
     # read default experiment config from yaml
+    print(f'config_file: {args.config_file}')
     if args.config_file.endswith('.yaml'):
         with open(args.config_file) as f:
             experiment_config = yaml.load(f, Loader=yaml.FullLoader)

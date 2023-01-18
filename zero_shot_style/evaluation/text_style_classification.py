@@ -93,7 +93,7 @@ class BertClassifier(nn.Module):
 
 
 def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model, path_for_saving_best_model):
-    print("Trainin the model...")
+    print("Training the model...")
     train, val = Dataset(train_data, labels_dict), Dataset(val_data, labels_dict)
 
     train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
@@ -106,8 +106,8 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
     optimizer = Adam(model.parameters(), lr=learning_rate)
 
     if use_cuda:
-        model = model.cuda()
-        criterion = criterion.cuda()
+        model = model.to(device)
+        criterion = criterion.to(device)
     best_f1_score_val = 0
     for epoch_num in range(epochs):
 
@@ -205,7 +205,7 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
         wandb.log(log_dict)
 
         if f1_score_val>best_f1_score_val:
-            print(f'Saving ***best**** model to: {path_for_saving_last_model}...')
+            print(f'Saving ***best**** model to: {path_for_saving_best_model}...')
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_best_model)
@@ -245,6 +245,11 @@ def evaluate(model, test_data, labels, desired_cuda_num):
 
 
 def get_train_val_data(data_set_path):
+    f'''
+    
+    :param data_set_path: dict. keys =   ['train', 'val', 'test'], values = path to pickl file
+    :return: ds: dict:keys=['train', 'val', 'test'],values = dict:keys = list(dataset_name), values=dict:keys=key_frame,values:dict:keys=style,values=data from pkl
+    '''
     ds = {}
     for set_type in data_set_path:  # ['train', 'val', 'test']
         ds[set_type] = {}
@@ -274,11 +279,6 @@ def convert_ds_to_df(ds,data_dir):
                     continue
                 all_data['category'].extend([style]*len(ds[set_type][k][style]))
                 all_data['text'].extend(ds[set_type][k][style])
-        # padd all lists to be in the same len
-        # max_len = np.max([len(all_data['category']),len(all_data['text'])])
-        # for l in all_data:
-        #    all_data[l] += ['']*(max_len - len(all_data[l]))
-
         if set_type == 'train':
             df_train = pd.DataFrame(all_data)
             df_train.to_csv(os.path.join(data_dir,'train.csv'))
@@ -288,34 +288,25 @@ def convert_ds_to_df(ds,data_dir):
         elif set_type == 'test':
             df_test = pd.DataFrame(all_data)
             df_test.to_csv(os.path.join(data_dir, 'test.csv'))
-        '''
-        pos_idxs = [i for i, x in enumerate(all_data['category']) if x == 'positive']
-        neg_idxs = [i for i, x in enumerate(all_data['category']) if x == 'negative']
-        humor_idxs = [i for i, x in enumerate(all_data['category']) if x == 'humor']
-        romantic_idxs = [i for i, x in enumerate(all_data['category']) if x == 'romantic']
-        factual_idxs = [i for i, x in enumerate(all_data['category']) if x == 'factual']
-        print(f"{set_type}: len(pos_idxs)= {len(pos_idxs)}")
-        print(f"{set_type}: len(neg_idxs)= {len(neg_idxs)}")
-        print(f"{set_type}: len(humor_idxs)= {len(humor_idxs)}")
-        print(f"{set_type}: len(romantic_idxs)= {len(romantic_idxs)}")
-        print(f"{set_type}: len(factual_idxs)= {len(factual_idxs)}")
-        '''
     return df_train, df_val, df_test
 
 def main():
-    desired_cuda_num = 0
-
+    desired_cuda_num = 3
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
     exp_dir = os.path.join(os.path.expanduser('~'), 'checkpoints',cur_time)
     os.makedirs(exp_dir)
     path_for_saving_last_model = os.path.join(exp_dir, 'last_text_style_classification_model.pth')
     path_for_saving_best_model = os.path.join(exp_dir, 'best_text_style_classification_model.pth')
-
+    EPOCHS = 50
+    LR = 1e-6
     batch_size = 16
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
-    dataset_names = ['senticap', 'flickrstyle10k']
+    # dataset_names = ['senticap', 'flickrstyle10k']
     dataset_names = ['senticap']
+    labels_dict = {'positive': 0, 'negative': 1}
+   # labels_dict = {'humor': 0, 'romantic': 1}
+
     path_to_csv_file = os.path.join(data_dir,'_'.join(dataset_names)+'.csv')
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
     for dataset_name in dataset_names:
@@ -326,50 +317,18 @@ def main():
                config=None,
                #resume=False,
                id=None,
-               mode='disabled',#'disabled, offline, online'
+               mode='online',#'disabled, offline, online'
                tags='+')  # '+',None,
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
 
-    #datapath = os.path.join(os.path.expanduser('~'),'data','bbc-text.csv')
-    #datapath = path_to_csv_file
-    #df = pd.read_csv(datapath)
-    #df.head()
-    #df.groupby(['category']).size().plot.bar()
-    '''
-    tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-   
-    example_text = 'I will watch Memento tonight'
-    bert_input = tokenizer(example_text, padding='max_length', max_length=10,
-                           truncation=True, return_tensors="pt")
-
-    print(bert_input['input_ids'])
-    print(bert_input['token_type_ids'])
-    print(bert_input['attention_mask'])
-
-    example_text = tokenizer.decode(bert_input.input_ids[0])
-
-    print(example_text)
-    
-    np.random.seed(112)
-    df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),
-                                         [int(.8 * len(df)), int(.9 * len(df))])
-
-    '''
     print(len(df_train), len(df_val), len(df_test))
-
-    labels_dict = {}
-    for i,label in enumerate(list(set(list(df_train['category'])+list(df_val['category'])+list(df_test['category'])))):
-        labels_dict[label] = i
     print(f"labels: {labels_dict}")
-    EPOCHS = 100
     model = BertClassifier()
-    LR = 1e-6
+
 
     train(model, df_train, df_val, LR, EPOCHS, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model,path_for_saving_best_model)
-
     total_acc_test_for_all_data = evaluate(model, df_test, labels_dict, desired_cuda_num)
-
 
     print("finish main")
 

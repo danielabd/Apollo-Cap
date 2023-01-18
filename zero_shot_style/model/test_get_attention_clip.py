@@ -1,5 +1,9 @@
 import os.path
 
+#source code of CLIP by openAI to use and change the attentions:
+#   https://github.com/openai/CLIP/blob/d50d76daa670286dd6cacf3bcd80b5e4823fc8e1/clip/model.py#L195
+
+
 from PIL import Image
 import requests
 from transformers import CLIPProcessor, CLIPModel
@@ -16,12 +20,33 @@ inputs = processor(
 )
 '''
 imgs_dir = os.path.join(os.path.join(os.path.expanduser('~'),'data','love_images'))
+pos_imgs_dir = os.path.join(os.path.join(os.path.expanduser('~'),'data','pos_images'))
+neg_imgs_dir = os.path.join(os.path.join(os.path.expanduser('~'),'data','neg_images'))
 #image_paths = [os.path.join(imgs_dir,'3.jpeg'),os.path.join(imgs_dir,'5.jpeg')]
-image_paths = [os.path.join(imgs_dir,x) for x in os.listdir(imgs_dir) if x[0]!='.' and "attention" not in x]
-imgs_name = [x for x in os.listdir(imgs_dir) if x[0]!='.' and "attention" not in x]
+results_dir = os.path.join(os.path.join(os.path.expanduser('~'),'results'))
 
+imgs_dir = pos_imgs_dir
+image_paths = [os.path.join(imgs_dir,x) for x in os.listdir(imgs_dir) if x[0]!='.' and "attention" not in x and os.path.isfile(os.path.join(imgs_dir,x))]
+imgs_names = [x.split('/')[-1].split('.')[0] for x in image_paths]
 images = [Image.open(x) for x in image_paths]
 
+pos_imgs_names = imgs_names
+pos_images = images
+
+imgs_dir = neg_imgs_dir
+image_paths = [os.path.join(imgs_dir,x) for x in os.listdir(imgs_dir) if x[0]!='.' and "attention" not in x and os.path.isfile(os.path.join(imgs_dir,x))]
+imgs_names = [str(int(x.split('/')[-1].split('.')[0])+10) for x in image_paths]
+images = [Image.open(x) for x in image_paths]
+
+neg_imgs_names = imgs_names
+neg_images = images
+
+images = []
+images.extend(pos_images)
+images.extend(neg_images)
+imgs_names = []
+imgs_names.extend(pos_imgs_names)
+imgs_names.extend(neg_imgs_names)
 inputs = processor(
     text=["Love"], images=images, return_tensors="pt", padding=True
 )
@@ -29,18 +54,28 @@ inputs = processor(
 outputs = model(**inputs, output_attentions = True)
 vision_model_output = outputs.vision_model_output
 attentions = vision_model_output["attentions"]
-fig = plt.figure()
-fig.suptitle("Main Title", fontsize=15)
 
+
+if not os.path.exists(os.path.join(results_dir, 'attentions')):
+    os.mkdir(os.path.join(results_dir, 'attentions'))
 for layer_i,attention in enumerate(attentions):
-    for sample_i in range(attention.shape[0]):
-        for head_i in range(attention.shape[1]):
+    if not os.path.exists(os.path.join(results_dir,'attentions','layer_'+str(layer_i))):
+        os.mkdir(os.path.join(results_dir, 'attentions','layer_'+str(layer_i)))
+    for head_i in range(attention.shape[1]):
+        fig = plt.figure()
+        fig.suptitle("Attention for pos imgs (top) and neg imgs (bottom)", fontsize=15)
+        for sample_i in range(attention.shape[0]):
+            #if not os.path.exists(os.path.join(results_dir, 'attentions', 'layer_'+str(layer_i),'head_'+str(head_i))):
+            #    os.mkdir(os.path.join(results_dir, 'attentions', 'layer_'+str(layer_i),'head_'+str(head_i)))
             attention_head = attention[sample_i,head_i,:,:]
             attention_head_np = attention_head.cpu().data.numpy()
-            fig.add_subplot(attentions[0].shape[0], attentions[0].shape[1],
-                              sample_i * attentions[0].shape[1] + head_i + 1)
+            fig.add_subplot(2, len(pos_imgs_names),
+                              sample_i+1)
             plt.gca().axes.get_yaxis().set_visible(False)
             plt.imshow(attention_head_np)
+            #tgt_fig_path = os.path.join(imgs_dir, 'attentions', "attentions.png")
+            #plt.savefig(os.path.join(results_dir, 'attentions', 'layer_'+str(layer_i),'head_'+str(head_i),imgs_names[sample_i]+"_attentions.png"))
+        plt.savefig(os.path.join(results_dir, 'attentions', 'layer_' + str(layer_i), 'head_' + str(head_i)))
 
 plt.suptitle("Attentnos. X=heads, Y=samples", fontsize=15)
 plt.xlabel("Heads")

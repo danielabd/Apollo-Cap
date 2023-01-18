@@ -8,13 +8,16 @@ param_dict:
   nested_k:
     k00: v00
     and_so_on: more_values
-batch_size: 400
+epochs: 200
+lr: 1e-6
+batch_size: 16
+margin: 1.4
 inner_batch_size: 1
-best_model_name: best_trained_model_flickrstyle10k.pth
-model_name: trained_model_flickrstyle10k.pth
+best_model_name: best_text_style_embedding_model_flickrstyle10k.pth
+model_name: latest_text_style_embedding_model_flickrstyle10k.pth
 mean_vec_emb_file: flickrstyle10k_mean_class_embedding.p
 median_vec_emb_file: flickrstyle10k_median_class_embedding.p
-data_name: flickrstyle10k
+data_name: [flickrstyle10k]
 data_file: ['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 experiment_name: cur_time
 csv_file_name_train: 'flickrstyle10k_train.csv'
@@ -29,3 +32,4 @@ undesired_label: 'neutral'
 resume: False # resume running in wb
 load_model: False
 run_id:
+wandb_mode: online #'disabled, offline, online'
