@@ -1,8 +1,6 @@
-from matplotlib import pyplot as plt
 import pandas as pd
 import torch
 import numpy as np
-from numpy import linalg
 from transformers import BertTokenizer, BertConfig
 from torch import nn
 from transformers import BertModel
@@ -16,19 +14,19 @@ from datetime import datetime
 from zero_shot_style.utils import parser, get_hparams
 from zero_shot_style.create_dataset_from_twitter import clean_text
 from itertools import combinations, product
-import clip
 from sklearn.metrics import roc_curve, auc
 import os
 import random
 from sklearn.model_selection import train_test_split
 import timeit
 from torch.optim import Adam
+# from numpy import linalg
+# import clip
+# from sklearn.decomposition import PCA
+# import matplotlib.pyplot as plt
 
-# from pytorch_metric_learning import losses
-# losses.NPairsLoss(**kwargs)
 BERT_NUM_OF_LAYERS = 12
 MAX_VAL_TRIPLET_LOSS = 100
-# tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
 
@@ -113,14 +111,6 @@ class TextStyleEmbed(nn.Module):
         :param last_layer_idx_to_freeze: int
         :return:
         '''
-        # if freeze_embeddings:
-        #     for param in list(self.bert.bert.embeddings.parameters()):
-        #         param.requires_grad = False
-        #     print("Froze Embedding Layer")
-        # freeze_layers is a string "1,2,3" representing layer number
-        # if freeze_layers is not "":
-        #     layer_indexes = [int(x) for x in freeze_layers.split(",")]
-        #     for layer_idx in layer_indexes:
         for layer_idx in range(BERT_NUM_OF_LAYERS):
             for param in list(self.bert.encoder.layer[layer_idx].parameters()):
                 if layer_idx <= last_layer_idx_to_freeze:
@@ -191,38 +181,18 @@ def collate_fn(data):  # for model based on bert
 #     return labels_list, texts_list
 
 def get_auc(all_embeddings, pos_combinations_labels, neg_combinations_labels):
-    t01 = timeit.default_timer()
-    # all_embeddings = torch.stack(all_embeddings)  # [N, 512]
-    t02 = timeit.default_timer()
-    print(f"time to do torch.stack on all embeddings{(t02 - t01) / 60} min = {t02 - t01} sec.")
     print("creating dataset of pos neg pairs...")
     pairs_data_set = PosNegPairsDataset(pos_combinations_labels, neg_combinations_labels)
-    t03 = timeit.default_timer()
-    print(f"time to create dataset of pos neg pairs is {(t03 - t02) / 60} min = {t03 - t02} sec.")
     pairs_dataloader = torch.utils.data.DataLoader(pairs_data_set, batch_size=1000000, shuffle=False,
                                                    num_workers=0)  # config['num_workers'])
     total_distances = []
     total_labels = []
     print("calc distances for positive and negative pairs...")
-    t1 = timeit.default_timer()
-    loading_time = []
-    calc_dist_time = []
-    t20 = timeit.default_timer()
     for step, (pairs, labels) in enumerate(
             tqdm(pairs_dataloader, desc="calc distances for positive and negative pairs", leave=False)):
-        t12 = timeit.default_timer()
-        loading_time.append(t12 - t1)
-        # print(f"time to load batch {(t12 - t1) / 60} min = {t12 - t1} sec.")
         distances = calc_dist(all_embeddings, pairs)
         total_distances.extend(distances)
         total_labels.extend(labels)
-        t1 = timeit.default_timer()
-        calc_dist_time.append(t1 - t12)
-    print(f"time to load batch {np.mean(loading_time)} sec.")
-    print(f"time to calc_dist {np.mean(calc_dist_time)} sec.")
-    t21 = timeit.default_timer()
-    print(f"time to calc distances of all is {(t21 - t20) / 60} min = {t21 - t20} sec.")
-    print("finished to clac distances.")
     predictions = 1 - torch.tensor(total_distances) / 2
     # Compute ROC curve and ROC area for each class
     fpr, tpr, _ = roc_curve(total_labels, predictions)
@@ -251,9 +221,6 @@ def plot_graph_on_all_data(df_data, total_outputs, total_labels_str, total_texts
            pickle.dump(median_embedding_vectors, fp)
         print(f'Finished to save.')
 
-        print('print for wandb')
-        # variables with mean
-
     if os.path.exists(tgt_file_vec_emb['mean']):
         print("take mean and median vectors for plotting.")
         with open(tgt_file_vec_emb['mean'], "rb") as input_file:
@@ -263,44 +230,21 @@ def plot_graph_on_all_data(df_data, total_outputs, total_labels_str, total_texts
 
         total_outputs_with_representation = total_outputs
         for label in set(df_data["category"]):
-            # #insert mean and median to the beginning
-            # total_labels_str = [f'mean_{label}',f'median_{label}']+total_labels_str
-            # total_texts_list = [f'mean_{label}', f'median_{label}'] + total_texts_list
-            # total_outputs_with_representation = np.concatenate(
-            #     (np.array([mean_embedding_vectors[label]]),
-            #      np.array([median_embedding_vectors[label]]), total_outputs_with_representation), axis=0)
             # insert mean and median to the beginning
+            total_labels_str = [f'mean_{label}'] + total_labels_str
+            total_texts_list = [f'mean_{label}'] + total_texts_list
 
-            # total_labels_str = [f'mean_{label}'] + total_labels_str
-            # total_texts_list = [f'mean_{label}'] + total_texts_list
-
-            total_labels_str = [f'mean_{label}'] + [f'median_{label}'] + total_labels_str
-            total_texts_list = [f'mean_{label}'] + [f'median_{label}'] + total_texts_list
-
-            total_outputs_with_representation = np.concatenate(
-                (np.expand_dims(np.array(median_embedding_vectors[label]), axis=0),
-                 total_outputs_with_representation), axis=0)
             total_outputs_with_representation = np.concatenate(
                 (np.expand_dims(np.array(mean_embedding_vectors[label]), axis=0),
                  total_outputs_with_representation), axis=0)
 
         total_outputs = total_outputs_with_representation
+
     labeldf = pd.DataFrame({'Label': total_labels_str})
     embdf = pd.DataFrame(total_outputs, columns=[f'emb{i}' for i in range(total_outputs.shape[1])])
     textdf = pd.DataFrame({'text': total_texts_list})
     all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
     all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
-    # #debug
-    # labeldf = pd.DataFrame({'Label': total_labels_str[:6]})
-    # # embdf = pd.DataFrame(total_outputs, columns=[f'emb{i}' for i in range(total_outputs.shape[1])])
-    # embdf = pd.DataFrame(total_outputs[:6,:], columns=[f'emb{i}' for i in range(total_outputs.shape[1])])
-    # textdf = pd.DataFrame({'text': total_texts_list[:6]})
-    # all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
-    # all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
-
-    # if pos_combinations_labels:
-    #     roc_auc = get_auc(total_outputs, pos_combinations_labels, neg_combinations_labels)
-    #     return log_dict, roc_auc
     return all_data
 
 
@@ -390,10 +334,9 @@ def bu_plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, devic
         return log_dict, roc_auc
     return log_dict
 
-def plot_final_graph_after_training(device, config, path_for_best_model, labels_idx_to_str, tgt_file_vec_emb,df,dataloader, title, save_vec_emb=False):
+def plot_final_graph_after_training(device, config, path_for_best_model, labels_idx_to_str, tgt_file_vec_emb,df,dataloader, title):
     print(title+" dataset...")
-    model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'],
-                           last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'])
+    model = TextStyleEmbed(device=device)
     if 'cuda' in device.type:
         checkpoint = torch.load(path_for_best_model, map_location='cuda:0')
     else:
@@ -417,12 +360,11 @@ def plot_final_graph_after_training(device, config, path_for_best_model, labels_
         final_total_labels.extend(labels.cpu().detach().numpy())
         final_total_outputs.extend(outputs.cpu().detach().numpy())
         final_total_texts_list.extend(texts_list)
-
     final_total_outputs = np.stack(final_total_outputs)
     final_total_labels_str = [labels_idx_to_str[i] for i in final_total_labels]
     return plot_graph_on_all_data(df, final_total_outputs, final_total_labels_str, final_total_texts_list,
                                                   "best model for " + title,
-                                                  tgt_file_vec_emb, save_vec_emb)
+                                                  tgt_file_vec_emb)
 
 def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
           path_for_saving_best_model, device, tgt_file_vec_emb, config):
@@ -975,7 +917,7 @@ def convert_ds_to_df(ds, data_dir):
 
 
 def main():
-    desired_cuda_num = "1"
+    desired_cuda_num = "0"
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
@@ -1010,10 +952,14 @@ def main():
 
     path_for_saving_last_model = os.path.join(experiment_dir, config['model_name'])
     path_for_saving_best_model = os.path.join(experiment_dir, config['best_model_name'])
-    path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
+    # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
+    path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
     if config['plot_only_clustering']:
-        tgt_file_vec_emb = {'mean': os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['mean_vec_emb_file']),
-                            'median': os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['median_vec_emb_file'])}
+        # tgt_file_vec_emb = {'mean': os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['mean_vec_emb_file']),
+        #                     'median': os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['median_vec_emb_file'])}
+        tgt_file_vec_emb = {
+            'mean': os.path.join(checkpoints_dir, 'best_models', config['mean_vec_emb_file']),
+            'median': os.path.join(checkpoints_dir, 'best_models', config['median_vec_emb_file'])}
     else:
         tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['mean_vec_emb_file']),
                             'median': os.path.join(experiment_dir, config['median_vec_emb_file'])}
@@ -1039,19 +985,27 @@ def main():
     if config['plot_only_clustering']:
         print("********plot_only_clustering********")
         log_dict = {}
-        train_data_set, val_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict)
+        train_data_set, val_data_set, test_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict), Dataset(df_test, labels_set_dict)
         train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
                                                        batch_size=config['batch_size'], shuffle=True,
                                                        num_workers=config['num_workers'])
         val_dataloader = torch.utils.data.DataLoader(val_data_set, collate_fn=collate_fn,
                                                      batch_size=config['batch_size'],
                                                      shuffle=True, num_workers=config['num_workers'])
-        log_dict["final_train_plot"] = plot_final_graph_after_training(device, config, path_for_loading_best_model,
+        test_dataloader = torch.utils.data.DataLoader(test_data_set, collate_fn=collate_fn,
+                                                     batch_size=config['batch_size'],
+                                                     shuffle=True, num_workers=config['num_workers'])
+        log_dict["final/final_train_plot"] = plot_final_graph_after_training(device, config, path_for_loading_best_model,
                                                                        labels_idx_to_str, tgt_file_vec_emb, df_train,
                                                                        train_dataloader, title="Train")
-        log_dict["final_val_plot"] = plot_final_graph_after_training(device, config, path_for_loading_best_model,
+
+        log_dict["final/final_val_plot"] = plot_final_graph_after_training(device, config, path_for_loading_best_model,
                                                                      labels_idx_to_str, tgt_file_vec_emb, df_val,
                                                                      val_dataloader, title="Val")
+        log_dict["final/final_test_plot"] = plot_final_graph_after_training(device, config, path_for_loading_best_model,
+                                                                     labels_idx_to_str, tgt_file_vec_emb, df_test,
+                                                                     test_dataloader, title="Test")
+        print("send data to wandb...")
         wandb.log(log_dict)
 
         # log_dict_train = plot_graph_on_all_data(df_train,
