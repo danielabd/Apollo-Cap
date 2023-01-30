@@ -48,13 +48,24 @@ parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled
 #parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','emotions_config_all_classes.yaml'), help='full path to config file')
 #parser.add_argument('--config_file', type=str, default=os.spath.join('.', 'configs','twitter_config.yaml'), help='full path to config file')
 # parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','flickrstyle10k_config.yaml'), help='full path to config file')
+
 parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','senticap_config.yaml'), help='full path to config file')
+# parser.add_argument('--config_file', type=str, default=os.path.join('..',  'configs','senticap_config.yaml'), help='full path to config file')
+
+
 # parser.add_argument('--config_file', type=str, default=os.path.join('..',  'configs','text_style_classification.yaml'), help='full path to config file')
 
 parser.add_argument('--plot_only_clustering', type=str2bool, default=False, help='plot only clustering of the best model')
 # parser.add_argument('--rundry', type=str2bool, default=False)
 parser.add_argument('--mean_vec_emb_file', type=str, default=None, help='path to pickle file store the vec embedding')
 parser.add_argument('--median_vec_emb_file', type=str, default=None, help='path to pickle file store the vec embedding')
+
+# parser.add_argument("--beam_size", type=int, default=5)
+# parser.add_argument("--num_iterations", type=int, default=5)
+# parser.add_argument("--clip_scale", type=float, default=1)
+# parser.add_argument("--ce_scale", type=float, default=0.2)
+# parser.add_argument("--text_style_scale", type=float, default=1)
+
 
 def update_hparams(hparams, args):
     # override default hparams with specified system args

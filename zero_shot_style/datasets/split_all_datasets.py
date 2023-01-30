@@ -282,14 +282,14 @@ def main():
     overlap = sum([1 for i in test_data_names if i in test_data_wrong_names])
 
     # Writing to sample.json
-    with open(os.path.join(target_data_dir_senticap,"bu_up_to_4_1_2023","test_data_wrong_names.json"), "w") as outfile:
-        outfile.write(json.dumps(test_data_wrong_names))
-
-    with open(os.path.join(target_data_dir_senticap,"test_data_to_add_for_running.json"), "w") as outfile:
-        outfile.write(json.dumps(test_data_to_add_for_running))
-
-    with open(os.path.join(target_data_dir_senticap,"test_data_names.json"), "w") as outfile:
-        outfile.write(json.dumps(test_data_names))
+    # with open(os.path.join(target_data_dir_senticap,"bu_up_to_4_1_2023","test_data_wrong_names.json"), "w") as outfile:
+    #     outfile.write(json.dumps(test_data_wrong_names))
+    #
+    # with open(os.path.join(target_data_dir_senticap,"test_data_to_add_for_running.json"), "w") as outfile:
+    #     outfile.write(json.dumps(test_data_to_add_for_running))
+    #
+    # with open(os.path.join(target_data_dir_senticap,"test_data_names.json"), "w") as outfile:
+    #     outfile.write(json.dumps(test_data_names))
 
     ## split datat to train,val,test
     # flickrstyle10k
@@ -305,7 +305,7 @@ def main():
     save_annotations = False
     #use all annotated data with factual to test
     arrange_data(train_data_flickrstyle10k, val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k,save_images,save_annotations, 'flickrstyle10k')
-    arrange_data_for_senticap(sr, target_data_dir_senticap, True, True)
+    arrange_data_for_senticap(sr, target_data_dir_senticap, save_images, save_annotations)
     print('finish')
 
     '''
