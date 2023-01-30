@@ -20,15 +20,14 @@ from nltk.lm.preprocessing import padded_everygram_pipeline
 from nltk.lm import MLE
 import os
 import pickle
-import style_cls
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.cider.cider import Cider
-from pycocoevalcap.meteor.meteor import Meteor
-from pycocoevalcap.rouge.rouge import Rouge
-from pycocoevalcap.spice import Spice
+from evaluation.pycocoevalcap.bleu.bleu import Bleu
+from evaluation.pycocoevalcap.cider.cider import Cider
+from evaluation.pycocoevalcap.meteor.meteor import Meteor
+from evaluation.pycocoevalcap.rouge.rouge import Rouge
+from evaluation.pycocoevalcap.spice import Spice
 from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
-from text_style_classification import evaluate as evaluate_text_style_classification
-from text_style_classification import BertClassifier, tokenizer
+from evaluation.text_style_classification import evaluate as evaluate_text_style_classification
+from evaluation.text_style_classification import BertClassifier, tokenizer
 MAX_PP_SCORE = 100
 NORMALIZE_GRADE_SCALE = 100
 
@@ -44,6 +43,9 @@ class CLIPScoreRef:
         :return:
         '''
         #print("calculate CLIPScoreRef...")
+        res_val = res
+        if type(res) == dict:
+            res_val = list(res.values())[0]
         scores_for_all = []
         for k in gts:
             for gt in gts[k]:
@@ -69,8 +71,11 @@ class CLIPScore:
         :return:
         '''
         #print("calculate CLIPScore...")
+        res_val = res
+        if type(res) == dict:
+            res_val = list(res.values())[0]
         image_features = self.text_generator.get_img_feature([img_path], None)
-        text_features = self.text_generator.get_txt_features(list(res.values())[0])
+        text_features = self.text_generator.get_txt_features(res_val)
         with torch.no_grad():
             clip_score = (image_features @ text_features.T)
         score = clip_score.cpu().numpy()
@@ -83,7 +88,8 @@ class STYLE_CLS:
         self.data_dir = data_dir
         self.desired_cuda_num = desired_cuda_num
         self.labels_dict_idxs = labels_dict_idxs
-        self.df_test = pd.read_csv(os.path.join(data_dir, 'test.csv'))
+        #self.df_test = pd.read_csv(os.path.join(data_dir, 'test.csv'))
+        self.data_dir = data_dir
         use_cuda = torch.cuda.is_available()
         self.device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
         self.model = {}
@@ -106,17 +112,25 @@ class STYLE_CLS:
         :param res: dict. key=str. value=list of single str
         :return:
         '''
-        res_tokens = tokenizer(list(res.values())[0][0], padding='max_length', max_length = 512, truncation=True,
+        res_val = res
+        if type(res)==dict:
+            res_val = list(res.values())[0][0]
+        res_tokens = tokenizer(res_val, padding='max_length', max_length = 512, truncation=True,
                                 return_tensors="pt")
         gt_label_idx = torch.tensor(self.labels_dict_idxs[gt_label]).to(self.device)
         mask = res_tokens['attention_mask'].to(self.device)
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
         output = self.model[dataset_name](input_id, mask)
-        cls_score = output.argmax(dim=1) == gt_label_idx
-        cls_score_np = int(cls_score.cpu().data.numpy())
+        # cls_score = output.argmax(dim=1) == gt_label_idx
+        # cls_score_np = int(cls_score.cpu().data.numpy())
+        # return cls_score_np, None
+        cls_score = output[0][gt_label_idx]*1+ output[0][1-gt_label_idx]*-1
+        #cut_values
+        cls_score_np = np.max([0,np.min([cls_score.cpu().data.numpy(),1])])
         return cls_score_np, None
 
     def compute_score_for_total_data(self, gts, res, dataset_name):
+        self.df_test = pd.read_csv(os.path.join(self.data_dir, 'test.csv'))
         total_acc_test_for_all_data = evaluate_text_style_classification(self.model[dataset_name], self.df_test, self.labels_dict_idxs, self.desired_cuda_num)
         return total_acc_test_for_all_data, None
 
@@ -221,6 +235,23 @@ def save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metr
     return all_scores
 
 
+def evaluate_single_res(res, gt, img_path, label, dataset_name, metrics, evaluation_obj):
+    evaluation = {}
+    print('evaluate single res.')
+    for metric in metrics:
+        if metric == 'style_cls':
+            if label == 'factual':
+                evaluation['style_classification'] = None
+                continue
+            else:
+                evaluation['style_cls'], _ = evaluation_obj[metric].compute_score(res, label, dataset_name)
+        elif metric == 'clip_score':
+            evaluation['clip_score'], _ = evaluation_obj[metric].compute_score(img_path, res)
+        elif metric == 'fluency':  # calc fluency only on all data
+            continue
+        else:
+            evaluation[metric], _ = evaluation_obj[metric].compute_score(gt, res)
+    return evaluation
 
 def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test, styles_per_dataset):
     print("Calculate scores...")
@@ -477,6 +508,11 @@ def get_all_sentences(data_dir, dataset_name,type_set):
 
 
 def get_gts_data(test_set_path):
+    '''
+
+    :param test_set_path: dictionary:keys=dataset names, values=path to pickle file
+    :return: gts_per_data_set: key=img_name,values=dict:keys=['img_path','factual','humor','romantic','positive','negative'], values=gt text
+    '''
     gts_per_data_set = {}
     for dataset_name in test_set_path:
         gts = {}
@@ -631,8 +667,8 @@ def main():
     path_test_image_manipulation = os.path.join(results_dir,'evaluation','total_results_image_manipulation.csv')
 
 
-    txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_model','pos_neg_best_text_style_classification_model.pth'),
-                           'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_model','humor_romantic_best_text_style_classification_model.pth')}
+    txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','pos_neg_best_text_style_classification_model.pth'),
+                           'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','humor_romantic_best_text_style_classification_model.pth')}
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     label = cur_time#'25_12_2022_v1' # cur_time
