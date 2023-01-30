@@ -2,18 +2,27 @@ program: run.py
 project: StylizedZeroCap
 method: bayes
 metric:
-  goal: minimize
-  name:  mean_perplexity
+  goal: maximize #minimize
+  name:  evaluation/final_avg_total_score
 parameters:
-  LM_loss_scale:
+  ce_scale:
     max: 2
     min: 0.1
     distribution: uniform
-  CLIP_loss_scale:
-    max: 2
+  clip_scale:
+    max: 8
     min: 0.1
     distribution: uniform
-  STYLE_loss_scale:
-    max: 2
+  text_style_scale:
+    max: 8
     min: 0.1
     distribution: uniform
+  num_iterations:
+    max: 10
+    min: 5
+    distribution: int_uniform
+  beam_size:
+    max: 10
+    min: 1
+    distribution: int_uniform
+
