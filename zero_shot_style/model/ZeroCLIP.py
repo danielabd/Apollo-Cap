@@ -74,6 +74,7 @@ class CLIPTextGenerator:
                  text_style_loss_temperature = 0.0002,
                  clip_scale=1.,
                  ce_scale=0.2,
+                 text_style_scale = 1,
                  stepsize=0.3,#todo
                  grad_norm_factor=0.9,
                  fusion_factor=0.99,
@@ -85,16 +86,16 @@ class CLIPTextGenerator:
                  model_path = None,
                  tmp_text_loss = None,
                  use_style_model = False,
-                 LM_loss_scale = 0.2,
-                 CLIP_loss_scale = 1,
-                 STYLE_loss_scale = 1,
+                 # LM_loss_scale = 0.2,
+                 # CLIP_loss_scale = 1,
+                 # STYLE_loss_scale = 1,
                  **kwargs):
 
         self.tmp_text_loss = tmp_text_loss
         self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
-        self.LM_loss_scale = LM_loss_scale
-        self.CLIP_loss_scale = CLIP_loss_scale
-        self.STYLE_loss_scale = STYLE_loss_scale
+        # self.LM_loss_scale = LM_loss_scale
+        # self.CLIP_loss_scale = CLIP_loss_scale
+        # self.STYLE_loss_scale = STYLE_loss_scale
 
         # set Random seed
         torch.manual_seed(seed)
@@ -140,6 +141,7 @@ class CLIPTextGenerator:
         self.text_style_loss_temperature = text_style_loss_temperature
         self.clip_scale = clip_scale
         self.ce_scale = ce_scale
+        self.text_style_scale = text_style_scale
         self.stepsize = stepsize
         self.grad_norm_factor = grad_norm_factor
         self.fusion_factor = fusion_factor
@@ -178,7 +180,7 @@ class CLIPTextGenerator:
         self.use_text_style = True
         #self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-        self.text_style_scale = 1
+        # self.text_style_scale = text_style_scale
         # MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/2_classes_trained_model_emotions.pth'
 
         self.text_style_model_name = model_path
@@ -505,9 +507,13 @@ class CLIPTextGenerator:
             for x in top_indices[idx_p]:  # go over all optional topk next word
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
 
-            # get score for text
             with torch.no_grad():
                 ## based on bert
+                #debug
+                # inputs = self.text_style_tokenizer(top_texts, padding='max_length', max_length=40, truncation=True, return_tensors="pt")
+
+                #debug
+
                 inputs = self.text_style_tokenizer(top_texts, padding=True, return_tensors="pt")
                 inputs['input_ids'] = inputs['input_ids'].to(self.device)
                 inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
@@ -519,10 +525,15 @@ class CLIPTextGenerator:
                 #todo:check how to do broadcast with embedding_of_text_to_imitate
                 logits.to(self.device)
                 self.desired_style_embedding_vector = torch.tensor(self.desired_style_embedding_vector).to(self.device) #todo: check about median instead of mean
-                distances = -abs(logits - self.desired_style_embedding_vector)
+                # distances = -abs(logits - self.desired_style_embedding_vector)
 
-                text_style_grades = nn.functional.softmax(distances, dim=-1)[:, 0]
-                text_style_grades = text_style_grades.unsqueeze(0)
+
+                #calc euclidean distance
+                distances = torch.cdist(self.desired_style_embedding_vector.unsqueeze(0),logits)
+                # euclidean_distance = torch.sqrt(torch.sum((logits - self.desired_style_embedding_vector) ** 2, dim=-1))
+
+                text_style_grades = nn.functional.softmax(-distances, dim=-1)
+
 
                 predicted_probs = nn.functional.softmax(text_style_grades / self.text_style_loss_temperature, dim=-1).detach()
                 predicted_probs = predicted_probs.type(torch.float32).to(self.device)
@@ -552,6 +563,10 @@ class CLIPTextGenerator:
                 # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
                 # pass
                 # #####
+            #todo: debug
+            # val_top_predicted, top_predicted_indices = predicted_probs[0].topk(10, -1)
+            # for i in top_predicted_indices:
+            #     print(top_texts[int(i.cpu().data.numpy())])
 
             target = torch.zeros_like(probs[idx_p], device=self.device)
             target[top_indices[idx_p]] = predicted_probs[0]
@@ -575,6 +590,7 @@ class CLIPTextGenerator:
 
     
     def shift_context(self, word_loc, context, last_token, context_tokens, probs_before_shift):
+        print(f"self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations = {self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations}")
         context_delta = [tuple([np.zeros(x.shape).astype("float32") for x in p]) for p in context]
 
         window_mask = torch.ones_like(context[0][0]).to(self.device)
@@ -604,13 +620,15 @@ class CLIPTextGenerator:
             loss = 0.0
 
             # CLIP LOSS
-            clip_loss, clip_losses, best_sentences_clip, best_sentences_LM = self.clip_loss(probs, context_tokens)
-            loss += self.CLIP_loss_scale * clip_loss
+            if self.clip_scale!=0:
+                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM = self.clip_loss(probs, context_tokens)
+                loss += self.clip_scale * clip_loss
 
-        # CE/Fluency loss
-            ce_loss = self.LM_loss_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
-            loss += ce_loss.sum()
-            ce_losses = (probs * probs_before_shift.log()).sum(-1)
+            # CE/Fluency loss
+            if self.ce_scale!=0:
+                ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
+                loss += ce_loss.sum()
+                ce_losses = (probs * probs_before_shift.log()).sum(-1)
 
             if self.use_style_model:
                 # SENTIMENT: adding the sentiment component
@@ -620,14 +638,16 @@ class CLIPTextGenerator:
                     loss += self.sentiment_scale * sentiment_loss
 
                 # TEXT_STYLE: adding the text_style component
+                text_style_loss=-100
                 if self.use_text_style:
-                    if self.style_type == 'clip': #using clip model for text style
-                        text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
-                    else:
-                        text_style_loss, text_style_losses, best_sentences_style = self.get_text_style_loss(probs, context_tokens)
-                    #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
-                    # loss += self.text_style_scale * text_style_loss
-                    loss += self.STYLE_loss_scale * text_style_loss
+                    if self.text_style_scale!=0:
+                        if self.style_type == 'clip': #using clip model for text style
+                            text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
+                        else:
+                            text_style_loss, text_style_losses, best_sentences_style = self.get_text_style_loss(probs, context_tokens)
+                        #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+                        # loss += self.text_style_scale * text_style_loss
+                        loss += self.text_style_scale * text_style_loss
 
                 # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
                 #for beam_num in range(len(best_sentences_LM)):
