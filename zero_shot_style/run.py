@@ -64,7 +64,7 @@ def get_args():
                         # default=['bleu', 'rouge', 'clip_score_ref', 'clip_score', 'fluency', 'style_cls'])
 
 
-    parser.add_argument("--cuda_idx_num", type=str, default="3")
+    parser.add_argument("--cuda_idx_num", type=str, default="0")
     parser.add_argument("--img_idx_to_start_from", type=int, default=0)
 
     parser.add_argument('--run_type',
@@ -417,7 +417,7 @@ def get_table_for_wandb(data_list):
 
 
 def main():
-    cuda_idx = "0"
+    # cuda_idx = "0"
     debug_mac = False
     #os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
@@ -441,7 +441,7 @@ def main():
     else:
         img_path_list = [config['img_name']]
 
-    # cuda_idx = config['cuda_idx_num']
+    cuda_idx = config['cuda_idx_num']
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
 
     sentiment_list = ['none']  # ['negative','positive','neutral', 'none']
