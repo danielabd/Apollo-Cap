@@ -13,6 +13,7 @@ median_vec_emb_file: senticap/senticap_median_class_embedding.p
 data_name: senticap
 data_file: #['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 data_name: [senticap]
+cond_text_list: ['']
 experiment_name: cur_time
 csv_file_name_train: 'senticap_train.csv'
 csv_file_name_test: 'senticap_test.csv'
