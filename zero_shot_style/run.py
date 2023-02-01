@@ -22,6 +22,7 @@ import pickle
 from datetime import datetime
 from utils import parser, get_hparams
 from evaluate import load
+MIN_PERPLEXITY = 150
 
 def get_args():
     #parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
@@ -46,7 +47,7 @@ def get_args():
     parser.add_argument("--clip_loss_temperature", type=float, default=0.01)
     parser.add_argument("--ce_scale", type=float, default=0.2)
     parser.add_argument("--clip_scale", type=float, default=1)
-    parser.add_argument("--text_style_scale", type=float, default=0)
+    parser.add_argument("--text_style_scale", type=float, default=1)
     parser.add_argument("--num_iterations", type=int, default=5)
     parser.add_argument("--stepsize", type=float, default=0.3)
     parser.add_argument("--grad_norm_factor", type=float, default=0.9)
@@ -274,10 +275,10 @@ def write_evaluation_results(total_captions,avg_total_score, results_dir, config
     print(f'Writing evaluation results into: {tgt_results_path}')
     with open(tgt_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
-        title = ['img_name', 'style', 'caption', 'avg_style_cls_score', 'avg_clip_score', 'avg_fluency_score', 'avg_total_score', 'img_path']
+        title = ['img_name', 'style', 'caption', 'avg_style_cls_score', 'avg_clip_score', 'avg_fluency_score', 'avg_total_score', 'ce_scale','clip_scale','text_style_scale','beam_size','num_iterations','img_path']
         writer.writerow(title)
         for i in total_captions:
-            cur_row = [i.get_img_name(), i.get_style(), i.get_caption_text(), i.get_style_cls_score(),i.get_clip_score(), i.get_fluency_score(), i.get_total_score(), i.get_img_path()]
+            cur_row = [i.get_img_name(), i.get_style(), i.get_caption_text(), i.get_style_cls_score(),i.get_clip_score(), i.get_fluency_score(), i.get_total_score(),config['ce_scale'],config['clip_scale'],config['text_style_scale'],config['beam_size'],config['num_iterations'], i.get_img_path()]
             writer.writerow(cur_row)
 
 
@@ -404,8 +405,8 @@ class Fluency:
         for i,p in enumerate(results['perplexities']):
             if self.img_names[i] not in perplexities:
                 perplexities[self.img_names[i]] = {}
-            perplexities[self.img_names[i]][self.styles[i]] = 1-np.min([p,100])/100
-        total_avg_perplexity = 1-np.min([results['mean_perplexity'],100])/100
+            perplexities[self.img_names[i]][self.styles[i]] = 1-np.min([p,MIN_PERPLEXITY])/MIN_PERPLEXITY
+        total_avg_perplexity = 1-np.min([results['mean_perplexity'],MIN_PERPLEXITY])/MIN_PERPLEXITY
         return perplexities, total_avg_perplexity
 
 
@@ -421,14 +422,14 @@ def main():
     #os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
     args = get_args()
     config = get_hparams(args)
-    # # ###### todo:remove
+    # ###### todo:remove
     # config['beam_size'] = 5
     # config['num_iterations'] =5
-    # config['ce_scale'] = 0.2
-    # config['clip_scale'] = 1
-    # config['text_style_scale'] = 1#0.14
-    # config['wandb_mode'] = 'disabled'
-    #######
+    # config['ce_scale'] = 1.407#0.2
+    # config['clip_scale'] = 1.562#1
+    # config['text_style_scale'] = 0.5866#1
+    # config['wandb_mode'] = 'online'
+    ######
 
     imgs_style_type_dict = {49: 'neutral', 50:'positive', 51:'negative', 52:'humor', 53:'romantic'}
     print(f"reset_context_delta={config['reset_context_delta']}")
@@ -522,12 +523,12 @@ def main():
     if config['calc_fluency']:
         fluency_obj = Fluency()
 
-    test_set_path = {}
+    val_set_path = {}
     txt_cls_model_paths_to_load = {}
     for dataset_name in config['dataset_names']:
         txt_cls_model_paths_to_load[dataset_name] = txt_cls_model_paths[dataset_name]
-        test_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', 'test.pkl')
-    gts_per_data_set = get_gts_data(test_set_path)
+        val_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', 'val.pkl')
+    gts_per_data_set = get_gts_data(val_set_path)
 
     # text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, tmp_text_loss=tmp_text_loss,
     #                                    **vars(args))
@@ -557,12 +558,12 @@ def main():
     print(f"config['max_num_of_imgs']: {config['max_num_of_imgs']}")
     for style_type in style_type_list:
         config['caption_img_dict'] = os.path.join(os.path.expanduser('~'), 'data', style_type)
-        for i,im in enumerate(os.listdir(os.path.join(config['caption_img_dict'],'images','test'))):
-            if i >= config['max_num_of_imgs']:
+        for i,im in enumerate(os.listdir(os.path.join(config['caption_img_dict'],'images','val'))):
+            if i >= config['max_num_of_imgs'] and i>0:
                 break
             if ('.jpg' or '.jpeg' or '.png') not in im:
                 continue
-            imgs_to_test.append(os.path.join(config['caption_img_dict'],'images','test',im))
+            imgs_to_test.append(os.path.join(config['caption_img_dict'],'images','val',im))
     print(f"***There is {len(imgs_to_test)} images to test.***")
     #imgs_to_test = [args.caption_img_path] #for test one image
 
@@ -625,8 +626,6 @@ def main():
                     if imitate_text_style:
                         desired_labels_list = text_to_imitate_list
                     for label in desired_labels_list:
-                        # if label=='positive': #todo:remove
-                        #     continue
                         evaluation_results[img_name][label] = {}
                         desired_style_embedding_vector = ''
                         if not imitate_text_style:

@@ -36,7 +36,7 @@ calc_fluency: True
 #text_style_scale: 1
 #beam_size: 5
 
-max_num_of_imgs: 2 #10
+max_num_of_imgs: 4 #2 #10
 target_seq_length: 15
 
 #num_iterations: 5

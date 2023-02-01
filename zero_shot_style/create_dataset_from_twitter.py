@@ -3,7 +3,7 @@ import pandas as pd
 import csv
 import tweepy
 from bs4 import BeautifulSoup
-import emoji
+# import emoji
 import re
 
 #import wandb

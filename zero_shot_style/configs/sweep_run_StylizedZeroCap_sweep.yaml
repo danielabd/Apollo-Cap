@@ -7,15 +7,15 @@ metric:
 parameters:
   ce_scale:
     max: 2
-    min: 0.1
+    min: 0.2
     distribution: uniform
   clip_scale:
     max: 8
-    min: 0.1
+    min: 0.2
     distribution: uniform
   text_style_scale:
     max: 8
-    min: 0.1
+    min: 0.2
     distribution: uniform
   num_iterations:
     max: 10

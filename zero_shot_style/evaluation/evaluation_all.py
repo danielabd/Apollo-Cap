@@ -121,10 +121,14 @@ class STYLE_CLS:
         mask = res_tokens['attention_mask'].to(self.device)
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
         output = self.model[dataset_name](input_id, mask)
+        normalized_output = output[0]/torch.norm(output[0])
         # cls_score = output.argmax(dim=1) == gt_label_idx
         # cls_score_np = int(cls_score.cpu().data.numpy())
         # return cls_score_np, None
-        cls_score = output[0][gt_label_idx]*1+ output[0][1-gt_label_idx]*-1
+
+        # cls_score = output[0][gt_label_idx]*1+ output[0][1-gt_label_idx]*-1
+        cls_score = normalized_output[gt_label_idx]*1+ normalized_output[1-gt_label_idx]*-1
+
         #cut_values
         cls_score_np = np.max([0,np.min([cls_score.cpu().data.numpy(),1])])
         return cls_score_np, None
