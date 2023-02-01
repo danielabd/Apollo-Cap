@@ -192,8 +192,7 @@ class CLIPTextGenerator:
             LR = 1e-4
             # optimizer = SGD(self.text_style_model.parameters(), lr=LR) #check if to remove mark
 
-            # checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
-            checkpoint = torch.load(self.text_style_model_name)
+            checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
 
             self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
             # optimizer.load_state_dict(checkpoint['optimizer_state_dict']) #check if to remove mark
