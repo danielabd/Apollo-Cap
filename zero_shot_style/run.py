@@ -588,7 +588,7 @@ def main():
     for dataset_type in dataset_type_list:
         config['caption_img_dict'] = os.path.join(os.path.expanduser('~'), 'data', dataset_type)
         for i,im in enumerate(os.listdir(os.path.join(config['caption_img_dict'],'images',config['data_type']))):
-            if i >= config['max_num_of_imgs'] and i>0:
+            if i >= config['max_num_of_imgs'] and config['max_num_of_imgs']>0:
                 break
             if ('.jpg' or '.jpeg' or '.png') not in im:
                 continue
@@ -686,11 +686,11 @@ def main():
                                                                      tgt_results_path, imgs_dataset_type_dict)
 
                                     config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
-                                    neutral_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs[0]'])
-                                    for idx, v in enumerate(config['arithmetics_style_imgs[1:]']):
+                                    neutral_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
+                                    for idx, v in enumerate(config['arithmetics_style_imgs'][1:]):
                                         img_style = get_full_path_of_stylized_images(data_dir, v)
                                         if config['run_type'] == 'img_prompt_manipulation':
-                                            config['cond_text'] = prompt_idx_dict[v]
+                                            config['cond_text'] = prompt_idx_dict[int(v)]
                                         config['arithmetics_imgs'] = [config['caption_img_path'], neutral_img_style, img_style]
 
                                         title2print = get_title2print(config['caption_img_path'], dataset_type, imgs_dataset_type_dict[int(v)],
