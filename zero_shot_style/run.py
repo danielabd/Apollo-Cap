@@ -286,7 +286,8 @@ def write_results_image_manipulation(img_dict_img_arithmetic, labels,results_dir
     with open(tgt_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
         for i, img in enumerate(img_dict_img_arithmetic.keys()):
-            img_num_str = img.split('/')[-1].split('.j')[0]
+            # img_num_str = img.split('/')[-1].split('.j')[0]
+            img_num_str = str(img)
             cur_row = [img_num_str]
             styles = img_dict_img_arithmetic[img].keys()
             if writeTitle:
