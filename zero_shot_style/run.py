@@ -33,6 +33,7 @@ def get_args():
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo or gpt-j")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
+    parser.add_argument("--data_type", type=str, default='val', choices = ['train', 'val', 'test'])
     parser.add_argument("--cond_text", type=str, default="Image of a")
     parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
     # parser.add_argument("--cond_text_list", nargs="+", type=str, default=["A creative short caption I can generate to describe this image is:",
@@ -550,12 +551,12 @@ def main():
     if config['calc_fluency']:
         fluency_obj = Fluency()
 
-    val_set_path = {}
+    data_set_path = {}
     txt_cls_model_paths_to_load = {}
     for dataset_name in config['dataset_names']:
         txt_cls_model_paths_to_load[dataset_name] = txt_cls_model_paths[dataset_name]
-        val_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', 'val.pkl')
-    gts_per_data_set = get_gts_data(val_set_path)
+        data_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', config['data_type']+'.pkl')
+    gts_per_data_set = get_gts_data(data_set_path)
 
     # text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, tmp_text_loss=tmp_text_loss,
     #                                    **vars(args))
@@ -585,12 +586,12 @@ def main():
     print(f"config['max_num_of_imgs']: {config['max_num_of_imgs']}")
     for dataset_type in dataset_type_list:
         config['caption_img_dict'] = os.path.join(os.path.expanduser('~'), 'data', dataset_type)
-        for i,im in enumerate(os.listdir(os.path.join(config['caption_img_dict'],'images','val'))):
+        for i,im in enumerate(os.listdir(os.path.join(config['caption_img_dict'],'images',config['data_type']))):
             if i >= config['max_num_of_imgs'] and i>0:
                 break
             if ('.jpg' or '.jpeg' or '.png') not in im:
                 continue
-            imgs_to_test.append(os.path.join(config['caption_img_dict'],'images','val',im))
+            imgs_to_test.append(os.path.join(config['caption_img_dict'],'images',config['data_type'],im))
     print(f"***There is {len(imgs_to_test)} images to test.***")
     #imgs_to_test = [args.caption_img_path] #for test one image
 
