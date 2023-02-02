@@ -462,7 +462,9 @@ def main():
     # config['wandb_mode'] = 'online'
     ######
     imgs_dataset_type_dict = {49: 'neutral', 50:'positive', 51:'negative', 52:'humor', 53:'romantic'}
-    prompt_idx_dict = {49: config['cond_text_list'][0], 50:config['cond_text_list'][1], 51:config['cond_text_list'][2]}
+    prompt2idx_img_style = {config['cond_text_list'][0]: 49, config['cond_text_list'][1]: 50,
+                            config['cond_text_list'][2]: 51}
+
     print(f"reset_context_delta={config['reset_context_delta']}")
     print(f"use_style_model={config['use_style_model']}")
     print(f"max_num_of_imgs={config['max_num_of_imgs']}")
@@ -671,7 +673,7 @@ def main():
 
                                         fluency_obj.add_test(best_caption, img_name, label)
 
-                                elif config['run_type'] == 'arithmetics' or config['run_type'] == 'img_prompt_manipulation':
+                                elif config['run_type'] == 'arithmetics':
                                     #none arithmetic
                                     title2print = get_title2print(config['caption_img_path'], dataset_type, 'neutral',
                                                                   text_style_scale)
@@ -689,8 +691,6 @@ def main():
                                     neutral_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
                                     for idx, v in enumerate(config['arithmetics_style_imgs'][1:]):
                                         img_style = get_full_path_of_stylized_images(data_dir, v)
-                                        if config['run_type'] == 'img_prompt_manipulation':
-                                            config['cond_text'] = prompt_idx_dict[int(v)]
                                         config['arithmetics_imgs'] = [config['caption_img_path'], neutral_img_style, img_style]
 
                                         title2print = get_title2print(config['caption_img_path'], dataset_type, imgs_dataset_type_dict[int(v)],
@@ -702,6 +702,23 @@ def main():
                                                                           results_dir,
                                                                           len(text_style_scale_list),
                                                                           tgt_results_path,imgs_dataset_type_dict)
+                                elif config['run_type'] == 'img_prompt_manipulation':
+                                    config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
+                                    neutral_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
+                                    config['cond_text'] = prompt
+                                    v = prompt2idx_img_style[prompt]
+                                    img_style = get_full_path_of_stylized_images(data_dir, v)
+                                    config['arithmetics_imgs'] = [config['caption_img_path'], neutral_img_style, img_style]
+
+                                    title2print = get_title2print(config['caption_img_path'], dataset_type, imgs_dataset_type_dict[int(v)],
+                                                                  text_style_scale)
+
+                                    best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,imgs_dataset_type_dict[int(v)], imgs_path=config['arithmetics_imgs'],
+                                                   img_weights=config['arithmetics_weights'], cuda_idx=cuda_idx,title2print = title2print)
+                                    write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
+                                                                      results_dir,
+                                                                      len(text_style_scale_list),
+                                                                      tgt_results_path,imgs_dataset_type_dict)
 
                                 else:
                                     raise Exception('run_type must be caption or arithmetics!')
