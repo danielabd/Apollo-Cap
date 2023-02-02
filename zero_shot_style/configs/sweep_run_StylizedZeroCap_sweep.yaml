@@ -6,23 +6,23 @@ metric:
   name:  evaluation/final_avg_total_score
 parameters:
   ce_scale:
-    max: 2
-    min: 0.2
+    max: 2.5
+    min: 1.5
     distribution: uniform
   clip_scale:
-    max: 8
-    min: 0.2
+    max: 1.7
+    min: 7
     distribution: uniform
   text_style_scale:
-    max: 8
-    min: 0.2
+    max: 9
+    min: 5
     distribution: uniform
   num_iterations:
-    max: 10
-    min: 5
+    max: 13
+    min: 7
     distribution: int_uniform
   beam_size:
-    max: 10
+    max: 5
     min: 1
     distribution: int_uniform
 

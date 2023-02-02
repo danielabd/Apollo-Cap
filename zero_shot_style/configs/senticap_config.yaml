@@ -13,7 +13,8 @@ median_vec_emb_file: senticap/senticap_median_class_embedding.p
 data_name: senticap
 data_file: #['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 data_name: [senticap]
-cond_text_list: ["Image of a", "The beautiful image of a", "The disturbing image of a"]
+#cond_text_list: ["Image of a", "The beautiful image of a", "The disturbing image of a"]
+cond_text_list: [""]
 experiment_name: cur_time
 csv_file_name_train: 'senticap_train.csv'
 csv_file_name_test: 'senticap_test.csv'
@@ -38,8 +39,8 @@ calc_fluency: True
 #text_style_scale: 1
 #beam_size: 5
 
-max_num_of_imgs: -1  #4 #2 #10
-target_seq_length: 15
+max_num_of_imgs: 10 #-1
+target_seq_length: 2 #15
 
 #num_iterations: 5
 

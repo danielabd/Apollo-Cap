@@ -86,13 +86,17 @@ def add_factual_sentences_to_senticap_data(sr,factual_file_path_list):
     '''
     print("Adding factual sentences to senticap data...")
     factual_captions = {}
+    finish_im_ids = []
     for factual_file_path in factual_file_path_list:
         data = json.load(open(factual_file_path, "r"))
         for d in data['annotations']:
+            if d['image_id'] in finish_im_ids:
+                continue
             if d['image_id'] not in factual_captions:
                 factual_captions[d['image_id']] = [d['caption']]
             else:
                 factual_captions[d['image_id']].append(d['caption'])
+        finish_im_ids = list(factual_captions.keys())
 
     senticap_captions_test = []
     num_skip_imgs_because_styles = 0

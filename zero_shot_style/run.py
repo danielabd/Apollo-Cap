@@ -307,12 +307,11 @@ def write_evaluation_results(total_captions,avg_total_score, results_dir, config
     print(f'Writing evaluation results into: {tgt_results_path}')
     with open(tgt_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
-        title = ['img_name', 'style', 'caption', 'avg_style_cls_score', 'avg_clip_score', 'avg_fluency_score', 'avg_total_score', 'ce_scale','clip_scale','text_style_scale','beam_size','num_iterations','img_path']
+        title = ['img_name', 'style', 'caption', 'gt_captions', 'factual_captions', 'avg_style_cls_score', 'avg_clip_score', 'avg_fluency_score', 'avg_total_score', 'ce_scale','clip_scale','text_style_scale','beam_size','num_iterations','img_path']
         writer.writerow(title)
         for i in total_captions:
-            cur_row = [i.get_img_name(), i.get_style(), i.get_caption_text(), i.get_style_cls_score(),i.get_clip_score(), i.get_fluency_score(), i.get_total_score(),config['ce_scale'],config['clip_scale'],config['text_style_scale'],config['beam_size'],config['num_iterations'], i.get_img_path()]
+            cur_row = [i.get_img_name(), i.get_style(), i.get_caption_text(),i.get_gt_caption_text(), i.get_factual_captions(), i.get_style_cls_score(),i.get_clip_score(), i.get_fluency_score(), i.get_total_score(),config['ce_scale'],config['clip_scale'],config['text_style_scale'],config['beam_size'],config['num_iterations'], i.get_img_path()]
             writer.writerow(cur_row)
-
 
 def get_title2print(caption_img_path, dataset_type, label, text_style_scale):
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -363,10 +362,11 @@ def get_img_full_path(base_path, i):
 
 
 class Caption:
-    def __init__(self, img_name, style, caption_text, img_path,classification, style_cls_score,clip_score,fluency,avg_total_score):
+    def __init__(self, img_name, style, res_caption_text,  gt_caption_text, img_path,classification, style_cls_score,clip_score,fluency,avg_total_score, factual_captions):
         self.img_name = img_name
         self.style = style
-        self.caption_text = caption_text
+        self.res_caption_text = res_caption_text
+        self.gt_caption_text = gt_caption_text
         self.img_path = img_path
         self.perplexity = fluency
         self.avg_style_cls_score = style_cls_score
@@ -374,6 +374,7 @@ class Caption:
         self.avg_fluency_score = fluency
         self.classification = classification
         self.avg_total_score = avg_total_score
+        self.factual_captions = factual_captions
 
     def get_img_name(self):
         return self.img_name
@@ -382,7 +383,13 @@ class Caption:
         return self.style
 
     def get_caption_text(self):
-        return self.caption_text
+        return self.res_caption_text
+
+    def get_gt_caption_text(self):
+        return self.gt_caption_text
+
+    def get_factual_captions(self):
+        return self.factual_captions
 
     def get_img_path(self):
         return self.img_path
@@ -447,6 +454,29 @@ def get_table_for_wandb(data_list):
     return table
 
 
+
+def get_factual_captions(factual_file_path_list):
+    '''
+    get dict of all factual captions
+    :param factual_file_path_list: list of file path to factual data
+    :return: factual_captions:dict:key=img_name,value=list of factual captions
+    '''
+    print("create dict of factual captions...")
+    factual_captions = {}
+    finish_im_ids = []
+    for factual_file_path in factual_file_path_list:
+        data = json.load(open(factual_file_path, "r"))
+        for d in data['annotations']:
+            if d['image_id'] in finish_im_ids:
+                continue
+            if d['image_id'] not in factual_captions:
+                factual_captions[d['image_id']] = [d['caption']]
+            else:
+                factual_captions[d['image_id']].append(d['caption'])
+        finish_im_ids = list(factual_captions.keys())
+    return factual_captions
+
+
 def main():
     # cuda_idx = "0"
     debug_mac = False
@@ -461,9 +491,6 @@ def main():
     # config['text_style_scale'] = 0.5866#1
     # config['wandb_mode'] = 'online'
     ######
-    imgs_dataset_type_dict = {49: 'neutral', 50:'positive', 51:'negative', 52:'humor', 53:'romantic'}
-    prompt2idx_img_style = {config['cond_text_list'][0]: 49, config['cond_text_list'][1]: 50,
-                            config['cond_text_list'][2]: 51}
 
     print(f"reset_context_delta={config['reset_context_delta']}")
     print(f"use_style_model={config['use_style_model']}")
@@ -483,6 +510,8 @@ def main():
     checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     experiements_dir = os.path.join(os.path.expanduser('~'), 'experiements')
+    factual_captions_path = os.path.join(data_dir,'source','coco','factual_captions.pkl')
+
     # text_style_scale_list = [20]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
     text_style_scale_list = [config['text_style_scale']]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
     if not config['use_style_model']:
@@ -497,6 +526,16 @@ def main():
     if config['dataset_types'] =='all':
         dataset_type_list = ['senticap', 'flickrstyle10k']
     # cuda_idx = config['cuda_idx_num']
+
+    imgs_dataset_type_dict = {49: 'neutral', 50: 'positive', 51: 'negative', 52: 'humor', 53: 'romantic'}
+    if not config['use_style_model']:
+        prompt2idx_img_style = {config['cond_text_list'][0]: 49, config['cond_text_list'][1]: 50,
+                                config['cond_text_list'][2]: 51}
+    factual_file_path_list = [
+        os.path.join(data_dir, 'source', 'coco', '2014', 'annotations', 'captions_train2014.json'),
+        os.path.join(data_dir, 'source', 'coco', '2014', 'annotations', 'captions_val2014.json'),
+        os.path.join(data_dir, 'source', 'coco', '2017', 'annotations', 'captions_train2017.json'),
+        os.path.join(data_dir, 'source', 'coco', '2017', 'annotations', 'captions_val2017.json')]
 
     wandb.init(project='StylizedZeroCap',
                config=config,
@@ -666,10 +705,10 @@ def main():
                                                                            len(text_style_scale_list),
                                                                            tgt_results_path)
                                     if config['use_style_model']:
-                                        write_results_of_text_style_all_models(img_dict, desired_labels_list,
-                                                                           results_dir,
-                                                                           len(text_style_scale_list),
-                                                                           tgt_results_path)
+                                        # write_results_of_text_style_all_models(img_dict, desired_labels_list,
+                                        #                                    results_dir,
+                                        #                                    len(text_style_scale_list),
+                                        #                                    tgt_results_path)
 
                                         fluency_obj.add_test(best_caption, img_name, label)
 
@@ -733,6 +772,11 @@ def main():
     #calc perplexity
     perplexities,mean_perplexity = fluency_obj.compute_score()
 
+    # factual_captions = get_factual_captions(factual_file_path_list)
+
+    with open(factual_captions_path,'rb') as f:
+        factual_captions = pickle.load(f)
+
     style_cls_scores = []
     clip_scores = []
     fluency_scores = []
@@ -766,7 +810,7 @@ def main():
 
             total_res_text.append(res_text)
             total_gt_text.append(gt_text)
-            total_captions.append(Caption(img_name, label, evaluation_results[img_name][label]['res'], evaluation_results[img_name]['img_path'],label,style_cls_score,clip_score,fluency_score,avg_total_score))
+            total_captions.append(Caption(img_name, label, evaluation_results[img_name][label]['res'],evaluation_results[img_name][label]['gt'], evaluation_results[img_name]['img_path'],label,style_cls_score,clip_score,fluency_score,avg_total_score,factual_captions[img_name]))
             #todo: check if to unindent
 
 
