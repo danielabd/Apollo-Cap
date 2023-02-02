@@ -91,7 +91,8 @@ class STYLE_CLS:
         #self.df_test = pd.read_csv(os.path.join(data_dir, 'test.csv'))
         self.data_dir = data_dir
         use_cuda = torch.cuda.is_available()
-        self.device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
+        # self.device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
+        self.device = torch.device(f"cuda" if use_cuda else "cpu")  # todo: remove
         self.model = {}
         for dataset_name in txt_cls_model_paths:
             self.model[dataset_name] = self.load_model(txt_cls_model_paths[dataset_name])

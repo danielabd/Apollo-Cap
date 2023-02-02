@@ -92,7 +92,8 @@ class CLIPTextGenerator:
                  **kwargs):
 
         self.tmp_text_loss = tmp_text_loss
-        self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
+        #self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
+        self.device = f"cuda" if torch.cuda.is_available() else "cpu"#todo: change
         # self.LM_loss_scale = LM_loss_scale
         # self.CLIP_loss_scale = CLIP_loss_scale
         # self.STYLE_loss_scale = STYLE_loss_scale
@@ -192,7 +193,8 @@ class CLIPTextGenerator:
             LR = 1e-4
             # optimizer = SGD(self.text_style_model.parameters(), lr=LR) #check if to remove mark
 
-            checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
+            # checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
+            checkpoint = torch.load(self.text_style_model_name)
 
             self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
             # optimizer.load_state_dict(checkpoint['optimizer_state_dict']) #check if to remove mark
