@@ -772,7 +772,7 @@ def main():
                                         write_results_prompt_manipulation(img_dict, desired_labels_list,
                                                                            results_dir,
                                                                            len(text_style_scale_list),
-                                                                           tgt_results_path,debug_tracking)
+                                                                           tgt_results_path)
                                     if config['use_style_model']:
                                         write_results_of_text_style_all_models(img_dict, desired_labels_list,
                                                                            results_dir,
