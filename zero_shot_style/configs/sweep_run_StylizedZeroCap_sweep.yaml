@@ -10,8 +10,8 @@ parameters:
     min: 1.5
     distribution: uniform
   clip_scale:
-    max: 1.7
-    min: 7
+    max: 7
+    min: 1.7
     distribution: uniform
   text_style_scale:
     max: 9

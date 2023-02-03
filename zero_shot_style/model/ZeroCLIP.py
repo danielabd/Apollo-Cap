@@ -1,4 +1,5 @@
 import os.path
+import heapq
 import numpy as np
 from torch import nn
 from transformers.models.gpt2 import GPT2LMHeadModel, GPT2Tokenizer
@@ -16,6 +17,7 @@ from transformers import BertModel
 from torch.optim import Adam, SGD
 from zero_shot_style.model.text_style_embedding import TextStyleEmbed
 import pickle
+DEBUG_NUM_WORDS = 10
 
 def write_tmp_text_loss(tmp_text_loss):
     def write_results_of_text_style_all_models(img_dict, labels, reults_dir, scales_len, tgt_results_path):
@@ -86,12 +88,11 @@ class CLIPTextGenerator:
                  model_path = None,
                  tmp_text_loss = None,
                  use_style_model = False,
-                 # LM_loss_scale = 0.2,
-                 # CLIP_loss_scale = 1,
-                 # STYLE_loss_scale = 1,
                  **kwargs):
 
+        self.debug_tracking = {} # debug_tracking: debug_tracking[word_num][iteration][module]:<list>
         self.tmp_text_loss = tmp_text_loss
+        self.cuda_idx = cuda_idx
         #self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
         self.device = f"cuda" if torch.cuda.is_available() else "cpu"#todo: change
         # self.LM_loss_scale = LM_loss_scale
@@ -218,6 +219,8 @@ class CLIPTextGenerator:
 
 
 
+    def get_debug_tracking(self):
+        return self.debug_tracking
 
 
     def get_img_feature(self, img_path, weights):
@@ -307,6 +310,7 @@ class CLIPTextGenerator:
         is_stopped = torch.zeros(beam_size, device=self.device, dtype=torch.bool)
 
         for i in range(self.target_seq_length):
+            self.debug_tracking[i] = {}
             probs = self.get_next_probs(i, context_tokens)
             logits = probs.log()
 
@@ -498,13 +502,15 @@ class CLIPTextGenerator:
 
     def get_text_style_loss(self, probs, context_tokens):
         top_size = 512
-        _, top_indices = probs.topk(top_size, -1)
+        top_probs_LM, top_indices = probs.topk(top_size, -1)
 
         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
 
         text_style_loss = 0
         losses = []
         best_sentences = []
+        debug_best_top_texts_style = []
+        debug_best_probs_vals_style = []
         for idx_p in range(probs.shape[0]):  # go over all beams
             top_texts = []
             prefix_text = prefix_texts[idx_p]
@@ -582,6 +588,16 @@ class CLIPTextGenerator:
             losses.append(cur_text_style_loss)
             best_sentences.append(top_texts[torch.argmax(predicted_probs[0])])
 
+            # debug
+            probs_val, indices = predicted_probs[0].topk(DEBUG_NUM_WORDS)
+            debug_best_probs_vals_style.extend(list(probs_val.cpu().data.numpy()))
+            style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
+            debug_best_top_texts_style.extend(style_top_text)
+
+        total_best_sentences_style = {}
+        for i in np.argsort(debug_best_probs_vals_style)[-DEBUG_NUM_WORDS:]:
+            total_best_sentences_style[debug_best_top_texts_style[i]] = debug_best_probs_vals_style[i]
+
         loss_string = ''
         for idx_p in range(probs.shape[0]):  # go over all beams
             if idx_p == 0:
@@ -589,7 +605,7 @@ class CLIPTextGenerator:
             else:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
 
-        return text_style_loss, losses, best_sentences
+        return text_style_loss, losses, best_sentences, total_best_sentences_style
 
 
     
@@ -607,7 +623,7 @@ class CLIPTextGenerator:
         #    if cur_iter>5: #todo: change
         #        break
             #print(f' iteration num = {cur_iter}')
-
+            self.debug_tracking[word_loc][i] = {}
             curr_shift = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_]) for p_ in
                           context_delta]
 
@@ -625,8 +641,17 @@ class CLIPTextGenerator:
 
             # CLIP LOSS
             if self.clip_scale!=0:
-                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM = self.clip_loss(probs, context_tokens)
+                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM = self.clip_loss(probs, context_tokens)
                 loss += self.clip_scale * clip_loss
+                if i == 0: #first iteraation
+                    LM_0_probs = list(total_best_sentences_LM.values())
+                    LM_0_vals = list(total_best_sentences_LM.keys())
+                self.debug_tracking[word_loc][i]['LM_0 - prob'] = LM_0_probs
+                self.debug_tracking[word_loc][i]['LM_0 - val'] = LM_0_vals
+                self.debug_tracking[word_loc][i]['LM - prob'] = list(total_best_sentences_LM.values())
+                self.debug_tracking[word_loc][i]['LM - val'] = list(total_best_sentences_LM.keys())
+                self.debug_tracking[word_loc][i]['CLIP - prob'] = list(total_best_sentences_clip.values())
+                self.debug_tracking[word_loc][i]['CLIP - val'] = list(total_best_sentences_clip.keys())
 
             # CE/Fluency loss
             if self.ce_scale!=0:
@@ -640,6 +665,8 @@ class CLIPTextGenerator:
                     sentiment_loss, sentiment_losses = self.get_sentiment_loss(probs, context_tokens,self.sentiment_type)
                     #print(f'sentiment_loss = {sentiment_loss}, sentiment_loss_with_scale = {self.sentiment_scale * sentiment_loss}')
                     loss += self.sentiment_scale * sentiment_loss
+                    self.debug_tracking[word_loc][i]['STYLE - prob'] = list(total_best_sentences_style.values())
+                    self.debug_tracking[word_loc][i]['STYLE - val'] = list(total_best_sentences_style.keys())
 
                 # TEXT_STYLE: adding the text_style component
                 text_style_loss=-100
@@ -648,7 +675,7 @@ class CLIPTextGenerator:
                         if self.style_type == 'clip': #using clip model for text style
                             text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
                         else:
-                            text_style_loss, text_style_losses, best_sentences_style = self.get_text_style_loss(probs, context_tokens)
+                            text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
                         #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                         # loss += self.text_style_scale * text_style_loss
                         loss += self.text_style_scale * text_style_loss
@@ -767,7 +794,7 @@ class CLIPTextGenerator:
                 p_.grad.data.zero_()
 
         top_size = 512
-        _, top_indices = probs.topk(top_size, -1)
+        top_probs_LM, top_indices = probs.topk(top_size, -1)
         
         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
 
@@ -775,12 +802,22 @@ class CLIPTextGenerator:
         losses = []
         best_sentences_clip = []
         best_sentences_LM = []
+        debug_best_top_texts_clip = []
+        debug_best_probs_vals_clip=[]
+        debug_best_top_texts_LM = []
+        debug_best_probs_vals_LM=[]
         for idx_p in range(probs.shape[0]): # for beam search
             top_texts = []
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]:
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
             best_sentences_LM.append(prefix_text + self.lm_tokenizer.decode(probs[idx_p].topk(1).indices[0]))
+
+            probs_val,indices = top_probs_LM[idx_p].topk(DEBUG_NUM_WORDS)
+            debug_best_probs_vals_LM.extend(probs_val)
+            LM_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
+            debug_best_top_texts_LM.extend(LM_top_text)
+
             text_features = self.get_txt_features(top_texts)
 
             with torch.no_grad():
@@ -795,4 +832,18 @@ class CLIPTextGenerator:
             clip_loss += cur_clip_loss
             losses.append(cur_clip_loss)
             best_sentences_clip.append(top_texts[torch.argmax(target_probs[0])])
-        return clip_loss, losses, best_sentences_clip, best_sentences_LM
+            #debug
+            probs_val, indices = target_probs[0].topk(DEBUG_NUM_WORDS)
+            debug_best_probs_vals_clip.extend(list(probs_val.cpu().data.numpy()))
+            clip_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
+            debug_best_top_texts_clip.extend(clip_top_text)
+
+        debug_best_probs_vals_LM = [float(i.cpu().data.numpy()) for i in debug_best_probs_vals_LM]
+
+        total_best_sentences_clip = {}
+        total_best_sentences_LM = {}
+        for i in np.argsort(debug_best_probs_vals_clip)[-DEBUG_NUM_WORDS:]:
+            total_best_sentences_clip[debug_best_top_texts_clip[i]] = debug_best_probs_vals_clip[i]
+        for i in np.argsort(debug_best_probs_vals_LM)[-DEBUG_NUM_WORDS:]:
+            total_best_sentences_LM[debug_best_top_texts_LM[i]] = debug_best_probs_vals_LM[i]
+        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM

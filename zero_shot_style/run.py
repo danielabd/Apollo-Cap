@@ -1,7 +1,8 @@
 import argparse
 import json
 import timeit
-
+from openpyxl import Workbook
+from openpyxl.formatting.rule import ColorScaleRule
 import pandas as pd
 import torch
 import clip
@@ -22,7 +23,7 @@ import pickle
 from datetime import datetime
 from utils import parser, get_hparams
 from evaluate import load
-MIN_PERPLEXITY = 150
+MAX_PERPLEXITY = 500
 
 def get_args():
     #parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
@@ -59,7 +60,7 @@ def get_args():
     parser.add_argument("--forbidden_factor", type=float, default=20, help="Factor to decrease forbidden tokens")
     parser.add_argument("--beam_size", type=int, default=5)
 
-    parser.add_argument("--max_num_of_imgs", type=int, default=1e6)
+    parser.add_argument("--max_num_of_imgs", type=int, default=2)#1e6)
     parser.add_argument("--evaluationo_metrics", nargs="+",
                         default=['clip_score', 'fluency', 'style_cls'])
                         # default=['bleu', 'rouge', 'clip_score_ref', 'clip_score', 'fluency', 'style_cls'])
@@ -104,7 +105,8 @@ def get_args():
 
     return args
 
-def run(config, img_path,sentiment_type, sentiment_scale,text_style_scale,imitate_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,text_generator=None,image_features=None):
+def run(config, img_path,sentiment_type, sentiment_scale,text_style_scale,imitate_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator=None,image_features=None):
+    #debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, text_style_scale=text_style_scale, **vars(config))
     if image_features == None:
@@ -117,6 +119,7 @@ def run(config, img_path,sentiment_type, sentiment_scale,text_style_scale,imitat
         text_style = ''
     t1 = timeit.default_timer();
     captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],sentiment_type,sentiment_scale,text_style_scale,text_style,desired_style_embedding_vector,dataset_type)
+    debug_tracking[img_path][label] = text_generator.get_debug_tracking()
     t2 = timeit.default_timer();
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
@@ -192,7 +195,7 @@ def write_results(img_dict):
         writer = csv.writer(results_file)
         for img in img_dict.keys():    
             writer.writerow([img])
-            writer.writerow(['scale/sentiment', 'negative', 'positive', 'neutral','none'])        
+            writer.writerow(['scale/sentiment', 'negative', 'positive', 'neutral','factual'])
             for scale in img_dict[img].keys():
                 cur_row = [scale]
                 for sentiment in img_dict[img][scale].keys():
@@ -217,6 +220,57 @@ def write_results_of_text_style(img_dict, embedding_type,labels,results_dir,data
                 for label in img_dict[img][scale].keys():
                     cur_row.append(img_dict[img][scale][label])
                 writer.writerow(cur_row)
+
+
+def write_debug_tracking(results_dir,debug_tracking):
+    '''
+    create file 'debug_tracking.xlsx' in results_dir
+    :param img_dict: 
+    :param labels: 
+    :param results_dir: 
+    :param scales_len: 
+    :param debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
+    :return: 
+    '''
+    # img_dict[img_path][dataset_type][text_style_scale][label]
+    if not os.path.isdir(results_dir):
+        os.makedirs(results_dir)
+    tgt_debugging_results_path = os.path.join(results_dir, 'debug_tracking.xlsx')
+    print(f'Writing results into: {tgt_debugging_results_path}')
+    rule = ColorScaleRule(start_type='num', start_value=0, start_color='AA0000',
+                          mid_type='num', mid_value=0.5, mid_color='FFFF00',
+                          end_type='num', end_value=1, end_color='00AA00')
+    # Load the workbook
+    wb = Workbook()
+    ws = wb.active
+
+    title = ['img_name','label','word_num','iteration_num','module/prob','1','2','3','4','5','6','7','8','9','10','img_path']
+    r = 0
+    for i in range(len(title)):
+        ws.cell(row=r+1, column=i+1).value=title[i]
+    r += 1
+    for img_path in debug_tracking.keys():
+        img_name_str = img_path.split('/')[-1].split('.j')[0]
+        for label in debug_tracking[img_path]:
+            for word_num in debug_tracking[img_path][label]:
+                for iteration_num in debug_tracking[img_path][label][word_num]:
+                    for module in debug_tracking[img_path][label][word_num][iteration_num]:
+                        row = [img_name_str,label,word_num,iteration_num,module]
+                        row.extend(debug_tracking[img_path][label][word_num][iteration_num][module])
+                        row.append(img_path)
+                        for i in range(len(row)):
+                            ws.cell(row=r+1, column=i+1).value = row[i]
+                        r += 1
+
+    # Get the range of cells in the worksheet
+    min_cell, max_cell = ws.dimensions.split(':')
+    all_range = 'F2' + ':' + 'O'+max_cell[1:]
+    # Apply the color scale rule to all cells in the worksheet
+    ws.conditional_formatting.add(all_range, rule)
+    # Save the workbook
+    wb.save(tgt_debugging_results_path)
+    print(f'Finished to write debug tracking into: {tgt_debugging_results_path}')
+
 
 def write_results_of_text_style_all_models(img_dict,labels,results_dir,scales_len,tgt_results_path):
     # img_dict[img_path][dataset_type][text_style_scale][label]
@@ -339,8 +393,11 @@ def get_full_path_of_stylized_images(data_dir, i):
         return None
 
 
-def calculate_avg_score(style_cls_score, clip_score, fluency_score):
-    avg_total_score = 3*(style_cls_score*clip_score*fluency_score)/(style_cls_score+clip_score+fluency_score)
+def calculate_avg_score(clip_score, fluency_score,style_cls_score=None):
+    if style_cls_score:
+        avg_total_score = 3*(style_cls_score*clip_score*fluency_score)/(style_cls_score+clip_score+fluency_score)
+    else:
+        avg_total_score = 3*(clip_score*fluency_score)/(clip_score+fluency_score)
     return avg_total_score
 
 
@@ -362,7 +419,7 @@ def get_img_full_path(base_path, i):
 
 
 class Caption:
-    def __init__(self, img_name, style, res_caption_text,  gt_caption_text, img_path,classification, style_cls_score,clip_score,fluency,avg_total_score, factual_captions):
+    def __init__(self, img_name, style, res_caption_text,  gt_caption_text, img_path,classification,clip_score,fluency,avg_total_score, factual_captions,style_cls_score=None):
         self.img_name = img_name
         self.style = style
         self.res_caption_text = res_caption_text
@@ -443,8 +500,8 @@ class Fluency:
         for i,p in enumerate(results['perplexities']):
             if self.img_names[i] not in perplexities:
                 perplexities[self.img_names[i]] = {}
-            perplexities[self.img_names[i]][self.styles[i]] = 1-np.min([p,MIN_PERPLEXITY])/MIN_PERPLEXITY
-        total_avg_perplexity = 1-np.min([results['mean_perplexity'],MIN_PERPLEXITY])/MIN_PERPLEXITY
+            perplexities[self.img_names[i]][self.styles[i]] = 1-np.min([p,MAX_PERPLEXITY])/MAX_PERPLEXITY
+        total_avg_perplexity = 1-np.min([results['mean_perplexity'],MAX_PERPLEXITY])/MAX_PERPLEXITY
         return perplexities, total_avg_perplexity
 
 
@@ -504,7 +561,7 @@ def main():
     cuda_idx = config['cuda_idx_num']
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
 
-    sentiment_list = ['none']  # ['negative','positive','neutral', 'none']
+    sentiment_list = ['none']  # ['negative','positive','neutral', 'factual']
     sentiment_scale_list = [0]  # [2.0, 1.5, 1.0, 0.5, 0.1]
     base_path = os.path.join(os.path.expanduser('~'), 'projects','zero-shot-style')
     checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
@@ -512,8 +569,7 @@ def main():
     experiements_dir = os.path.join(os.path.expanduser('~'), 'experiements')
     factual_captions_path = os.path.join(data_dir,'source','coco','factual_captions.pkl')
 
-    # text_style_scale_list = [20]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
-    text_style_scale_list = [config['text_style_scale']]  # [0,0.5,1,2,4,8]#[0,1,2,4,8]#[0.5,1,2,4,8]#[3.0]#
+    text_style_scale_list = [config['text_style_scale']]
     if not config['use_style_model']:
         text_style_scale_list = [0]
     text_to_imitate_list = ["bla"]#["Happy", "Love", "angry", "hungry", "I love you!!!", " I hate you and I want to kill you",
@@ -527,7 +583,7 @@ def main():
         dataset_type_list = ['senticap', 'flickrstyle10k']
     # cuda_idx = config['cuda_idx_num']
 
-    imgs_dataset_type_dict = {49: 'neutral', 50: 'positive', 51: 'negative', 52: 'humor', 53: 'romantic'}
+    imgs_dataset_type_dict = {49: 'factual', 50: 'positive', 51: 'negative', 52: 'humor', 53: 'romantic'}
     if not config['use_style_model']:
         prompt2idx_img_style = {config['cond_text_list'][0]: 49, config['cond_text_list'][1]: 50,
                                 config['cond_text_list'][2]: 51}
@@ -536,6 +592,9 @@ def main():
         os.path.join(data_dir, 'source', 'coco', '2014', 'annotations', 'captions_val2014.json'),
         os.path.join(data_dir, 'source', 'coco', '2017', 'annotations', 'captions_train2017.json'),
         os.path.join(data_dir, 'source', 'coco', '2017', 'annotations', 'captions_val2017.json')]
+
+    with open(factual_captions_path,'rb') as f:
+        factual_captions = pickle.load(f)
 
     wandb.init(project='StylizedZeroCap',
                config=config,
@@ -579,7 +638,7 @@ def main():
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
     img_dict_img_arithmetic = defaultdict(lambda: defaultdict(lambda: "")) #img_path,dataset_type
     tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
-
+    debug_tracking = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: []))) #word_num:iteration:module:list
     model_path = os.path.join(checkpoints_dir, 'best_models',
                               config['best_model_name'])
 
@@ -598,7 +657,7 @@ def main():
     for dataset_name in config['dataset_names']:
         txt_cls_model_paths_to_load[dataset_name] = txt_cls_model_paths[dataset_name]
         data_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', config['data_type']+'.pkl')
-    gts_per_data_set = get_gts_data(data_set_path)
+    gts_per_data_set = get_gts_data(data_set_path,factual_captions)
 
     # text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, tmp_text_loss=tmp_text_loss,
     #                                    **vars(args))
@@ -678,7 +737,16 @@ def main():
                     desired_labels_list = [prompt]
                 if imitate_text_style:
                     desired_labels_list = text_to_imitate_list
+                use_style_model = config['use_style_model']
+                source_text_style_scale_list = text_style_scale_list
+                desired_labels_list.insert(0, 'factual')
                 for label in desired_labels_list:
+                    if label=='factual':
+                        config['use_style_model'] = False
+                        text_style_scale_list = [0]
+                    else:
+                        config['use_style_model'] = use_style_model
+                        text_style_scale_list = source_text_style_scale_list
                     evaluation_results[img_name][label] = {}
                     desired_style_embedding_vector = ''
                     if not imitate_text_style:
@@ -687,7 +755,7 @@ def main():
                     for s, sentiment_scale in enumerate(sentiment_scale_list):
                         for text_style_scale_idx, text_style_scale in enumerate(text_style_scale_list):
                             for sentiment_type in sentiment_list:
-                                if sentiment_type == 'none' and s > 0:
+                                if sentiment_type == 'factual' and s > 0:
                                     continue
                                 if debug_mac:
                                     evaluation_results[img_name][label] = {'res': 'bla'}
@@ -698,28 +766,29 @@ def main():
                                     print(title2print)
                                     best_caption = run(config, config['caption_img_path'], sentiment_type, sentiment_scale,
                                         text_style_scale, imitate_text_style, desired_style_embedding_vector,
-                                        cuda_idx, title2print, model_path, dataset_type,tmp_text_loss,label,img_dict,text_generator,image_features)
+                                        cuda_idx, title2print, model_path, dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator,image_features)
+                                    config['use_style_model'] = use_style_model
                                     if not config['use_style_model']:
                                         write_results_prompt_manipulation(img_dict, desired_labels_list,
                                                                            results_dir,
                                                                            len(text_style_scale_list),
-                                                                           tgt_results_path)
+                                                                           tgt_results_path,debug_tracking)
                                     if config['use_style_model']:
-                                        # write_results_of_text_style_all_models(img_dict, desired_labels_list,
-                                        #                                    results_dir,
-                                        #                                    len(text_style_scale_list),
-                                        #                                    tgt_results_path)
-
+                                        write_results_of_text_style_all_models(img_dict, desired_labels_list,
+                                                                           results_dir,
+                                                                           len(text_style_scale_list),
+                                                                           tgt_results_path)
+                                        write_debug_tracking(results_dir, debug_tracking)
                                         fluency_obj.add_test(best_caption, img_name, label)
 
                                 elif config['run_type'] == 'arithmetics':
                                     #none arithmetic
-                                    title2print = get_title2print(config['caption_img_path'], dataset_type, 'neutral',
+                                    title2print = get_title2print(config['caption_img_path'], dataset_type, 'factual',
                                                                   text_style_scale)
                                     print(title2print)
                                     config['arithmetics_imgs'] = [config['caption_img_path'], config['caption_img_path'], config['caption_img_path']]
                                     best_caption = run_arithmetic(text_generator,config,model_path, img_dict_img_arithmetic, img_name,
-                                                   'none', imgs_path=config['arithmetics_imgs'],
+                                                   'factual', imgs_path=config['arithmetics_imgs'],
                                                    img_weights=[1, 0, 0], cuda_idx=cuda_idx,title2print = title2print)
                                     write_results_image_manipulation(img_dict_img_arithmetic, desired_labels_list,
                                                                      results_dir,
@@ -727,10 +796,10 @@ def main():
                                                                      tgt_results_path, imgs_dataset_type_dict)
 
                                     config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
-                                    neutral_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
+                                    factual_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
                                     for idx, v in enumerate(config['arithmetics_style_imgs'][1:]):
                                         img_style = get_full_path_of_stylized_images(data_dir, v)
-                                        config['arithmetics_imgs'] = [config['caption_img_path'], neutral_img_style, img_style]
+                                        config['arithmetics_imgs'] = [config['caption_img_path'], factual_img_style, img_style]
 
                                         title2print = get_title2print(config['caption_img_path'], dataset_type, imgs_dataset_type_dict[int(v)],
                                                                       text_style_scale)
@@ -743,11 +812,11 @@ def main():
                                                                           tgt_results_path,imgs_dataset_type_dict)
                                 elif config['run_type'] == 'img_prompt_manipulation':
                                     config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
-                                    neutral_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
+                                    factual_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
                                     config['cond_text'] = prompt
                                     v = prompt2idx_img_style[prompt]
                                     img_style = get_full_path_of_stylized_images(data_dir, v)
-                                    config['arithmetics_imgs'] = [config['caption_img_path'], neutral_img_style, img_style]
+                                    config['arithmetics_imgs'] = [config['caption_img_path'], factual_img_style, img_style]
 
                                     title2print = get_title2print(config['caption_img_path'], dataset_type, imgs_dataset_type_dict[int(v)],
                                                                   text_style_scale)
@@ -768,14 +837,13 @@ def main():
     txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','pos_neg_best_text_style_classification_model.pth'),
                            'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','humor_romantic_best_text_style_classification_model.pth')}
     #calc evaluation
-
+    print("Calc evaluation of the results...")
     #calc perplexity
     perplexities,mean_perplexity = fluency_obj.compute_score()
+    # for debug
+    # results = fluency_obj.perplexity.compute(data=fluency_obj.tests, model_id=fluency_obj.model_id, add_start_token=False)
 
     # factual_captions = get_factual_captions(factual_file_path_list)
-
-    with open(factual_captions_path,'rb') as f:
-        factual_captions = pickle.load(f)
 
     style_cls_scores = []
     clip_scores = []
@@ -787,8 +855,8 @@ def main():
     avg_total_scores = []
     for img_name in evaluation_results:
         # for label in evaluation_results[img_name]:
-        for label in ['positive','negative']: #todo:debug
-            if label not in evaluation_results[img_name]:
+        for label in list(evaluation_results[img_name].keys()): #todo:debug
+            if label == 'img_path':
                 continue
             evaluation_results[img_name][label]['gt'] = gts_per_data_set[dataset_type][img_name][label] #todo: handle style type
             evaluation_results[img_name][label]['scores'] = evaluate_single_res(
@@ -796,12 +864,17 @@ def main():
                 evaluation_results[img_name]['img_path'], label, dataset_name, config['evaluationo_metrics'],
                 evaluation_obj)
 
-            style_cls_score = evaluation_results[img_name][label]['scores']['style_cls']
+
             clip_score = evaluation_results[img_name][label]['scores']['clip_score']
             fluency_score = perplexities[img_name][label]
-            avg_total_score = calculate_avg_score(style_cls_score, clip_score, fluency_score)
+            if 'style_cls' in evaluation_results[img_name][label]['scores']:
+                style_cls_score = evaluation_results[img_name][label]['scores']['style_cls']
+                avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
+                style_cls_scores.append(style_cls_score)
+            else:
+                style_cls_score='None'
+                avg_total_score = calculate_avg_score(clip_score, fluency_score)
 
-            style_cls_scores.append(style_cls_score)
             clip_scores.append(clip_score)
             fluency_scores.append(fluency_score)
             avg_total_scores.append(avg_total_score)
@@ -810,19 +883,19 @@ def main():
 
             total_res_text.append(res_text)
             total_gt_text.append(gt_text)
-            total_captions.append(Caption(img_name, label, evaluation_results[img_name][label]['res'],evaluation_results[img_name][label]['gt'], evaluation_results[img_name]['img_path'],label,style_cls_score,clip_score,fluency_score,avg_total_score,factual_captions[img_name]))
+            total_captions.append(Caption(img_name, label, evaluation_results[img_name][label]['res'],evaluation_results[img_name][label]['gt'], evaluation_results[img_name]['img_path'],label,clip_score,fluency_score,avg_total_score,factual_captions[img_name],style_cls_score))
             #todo: check if to unindent
 
 
-    # style_cls_score
-    style_cls_scores_table = get_table_for_wandb(style_cls_scores)
     clip_scores_table = get_table_for_wandb(clip_scores)
     fluency_scores_table = get_table_for_wandb(fluency_scores)
     avg_total_scores_table = get_table_for_wandb(avg_total_scores)
 
-    style_cls_scores_data = [[x, y] for (x, y) in zip(style_cls_scores, list(range(len(style_cls_scores))))]
-    style_cls_scores_table = wandb.Table(data=style_cls_scores_data, columns=["x", "y"])
-    wandb.log({'details_evaluation/style_cls_score': style_cls_scores_table})
+    if 'style_cls' in evaluation_results[img_name][label]['scores']:
+        style_cls_scores_table = get_table_for_wandb(style_cls_scores)
+        style_cls_scores_data = [[x, y] for (x, y) in zip(style_cls_scores, list(range(len(style_cls_scores))))]
+        style_cls_scores_table = wandb.Table(data=style_cls_scores_data, columns=["x", "y"])
+        wandb.log({'details_evaluation/style_cls_score': style_cls_scores_table})
 
     clip_scores_data = [[x, y] for (x, y) in zip(clip_scores, list(range(len(clip_scores))))]
     clip_scores_table = wandb.Table(data=clip_scores_data, columns=["x", "y"])
@@ -850,17 +923,22 @@ def main():
     wandb.log({'details_evaluation/total_score_text': total_score_and_text})
 
     # fluency_scores.append(evaluation_results[img_name][label]['scores']['fluency'])
-    avg_style_cls_score = np.mean(style_cls_scores)
     avg_clip_score = np.mean(clip_scores)
-
-
     avg_fluency_score = mean_perplexity
-    final_avg_total_score = calculate_avg_score(avg_style_cls_score,avg_clip_score,avg_fluency_score)
+
+    if style_cls_score!='None':
+        avg_style_cls_score = np.mean(style_cls_scores)
+        final_avg_total_score = calculate_avg_score(avg_clip_score, avg_fluency_score, avg_style_cls_score)
+    else:
+        avg_style_cls_score = 0
+        final_avg_total_score = calculate_avg_score(avg_clip_score,avg_fluency_score)
 
     print("*****************************")
     print("*****************************")
     print("*****************************")
-    print(f'style_cls_scores={style_cls_scores},\nclip_scores={clip_scores},\nfluency_scores={fluency_scores}')
+    if style_cls_score!='None':
+        print(f'style_cls_scores={style_cls_scores}')
+    print(f'clip_scores={clip_scores},\nfluency_scores={fluency_scores}')
     print(f'final_avg_total_score={final_avg_total_score}')
     print("*****************************")
     print("*****************************")

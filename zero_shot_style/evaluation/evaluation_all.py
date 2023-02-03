@@ -512,7 +512,7 @@ def get_all_sentences(data_dir, dataset_name,type_set):
     return sentences
 
 
-def get_gts_data(test_set_path):
+def get_gts_data(test_set_path,factual_captions):
     '''
 
     :param test_set_path: dictionary:keys=dataset names, values=path to pickle file
@@ -525,7 +525,8 @@ def get_gts_data(test_set_path):
             data = pickle.load(r)
         for k in data:
             gts[k] = {}
-            gts[k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
+            # gts[k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
+            gts[k]['factual'] = factual_captions[k]
             gts[k]['img_path'] = data[k]['image_path']
             if dataset_name == 'flickrstyle10k':
                 gts[k]['humor'] = data[k]['humor']
