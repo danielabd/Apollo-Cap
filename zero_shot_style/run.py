@@ -584,7 +584,7 @@ def main():
     # cuda_idx = config['cuda_idx_num']
 
     imgs_dataset_type_dict = {49: 'factual', 50: 'positive', 51: 'negative', 52: 'humor', 53: 'romantic'}
-    if config['run_type'] == 'img_prompt_manipulation'
+    if config['run_type'] == 'img_prompt_manipulation':
         prompt2idx_img_style = {config['cond_text_list'][0]: 49, config['cond_text_list'][1]: 50,
                                 config['cond_text_list'][2]: 51}
     factual_file_path_list = [
