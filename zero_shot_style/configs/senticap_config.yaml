@@ -31,18 +31,19 @@ run_id: 0
 wandb_mode: online #'disabled, offline, online'
 # stylized ZeroCap
 reset_context_delta: True
-use_style_model: False
+use_style_model: True
+data_type: test
 calc_fluency: True
 
-#clip_scale:  1
-#ce_scale: 0.2
-#text_style_scale: 1
-#beam_size: 5
 
-max_num_of_imgs: -1
+max_num_of_imgs: -1  #-1
 target_seq_length: 15
 
-#num_iterations: 5
+clip_scale:  2.508
+ce_scale: 2.242
+text_style_scale: 5.069
+beam_size: 2
+num_iterations: 8
 
 ## for debug
 #max_num_of_imgs: 1
