@@ -49,6 +49,19 @@ class CLIPScoreRef:
         scores_for_all = []
         for k in gts:
             for gt in gts[k]:
+                if '\n' in gt:
+                    global_gt = gt
+                    global_gt_splitted = global_gt.split('\n')
+                    for gt in global_gt_splitted:
+                        if len(gt)>1:
+                            if gt[1] =='.':
+                                gt = gt[2:]
+                        text_features_gt = self.text_generator.get_txt_features(gt)
+                        text_features_ref = self.text_generator.get_txt_features(list(res.values())[0])
+                        with torch.no_grad():
+                            clip_score_ref = (text_features_ref @ text_features_gt.T)
+                            score = clip_score_ref.cpu().numpy()
+                        scores_for_all.append(score)
                 text_features_gt = self.text_generator.get_txt_features(gt)
                 text_features_ref = self.text_generator.get_txt_features(list(res.values())[0])
                 with torch.no_grad():
@@ -321,7 +334,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     continue
                                 tmp_res = {k: [res[test_type][k][style]]}
                                 if metric == 'CLIPScore':
-                                    gts_per_data_set[dataset_name][k]['img_path'] = os.path.join(gt_imgs_for_test,gts_per_data_set[dataset_name][k]['img_path'].split('/')[-1])
+                                    # gts_per_data_set[dataset_name][k]['img_path'] = os.path.join(gt_imgs_for_test,gts_per_data_set[dataset_name][k]['img_path'].split('/')[-1])
                                     score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(gts_per_data_set[dataset_name][k]['img_path'], tmp_res)
                                     score_per_metric_and_style[metric][style].append(
                                         score_dict_per_metric[metric][k][style])
@@ -527,7 +540,7 @@ def get_gts_data(test_set_path,factual_captions):
             gts[k] = {}
             # gts[k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
             gts[k]['factual'] = factual_captions[k]
-            gts[k]['img_path'] = data[k]['image_path']
+            gts[k]['img_path'] = os.path.join(os.path.expanduser('~'),'data','senticap','images','test',data[k]['image_path'].split('/')[-1])
             if dataset_name == 'flickrstyle10k':
                 gts[k]['humor'] = data[k]['humor']
                 gts[k]['romantic'] = data[k]['romantic']
@@ -661,7 +674,7 @@ def write_results(mean_score, tgt_eval_results_path,dataset_names, metrics, styl
     print(f"finished to write results to {tgt_eval_results_path}")
 
 def main():
-    cuda_idx = "3"
+    cuda_idx = "0"
     styles = ['factual','positive', 'negative', 'humor', 'romantic']
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     results_dir = os.path.join(os.path.expanduser('~'), 'results')
@@ -671,9 +684,10 @@ def main():
     gt_imgs_for_test = os.path.join(data_dir, 'gt_imgs_for_test')
     path_test_prompt_manipulation = os.path.join(results_dir,'evaluation','total_results_prompt_manipulation.csv')
     path_test_image_manipulation = os.path.join(results_dir,'evaluation','total_results_image_manipulation.csv')
+    path_test_image_and_prompt_manipulation = os.path.join(results_dir,'5_3_23','results_all_models_source_classes_09_14_30__02_02_2023.csv')
 
 
-    txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','pos_neg_best_text_style_classification_model.pth'),
+    txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','pos_neg_best_text_style_classification_model.pth'),
                            'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','humor_romantic_best_text_style_classification_model.pth')}
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
@@ -684,13 +698,18 @@ def main():
                            'flickrstyle10k': ['humor', 'romantic']}
 
     res_paths = {}
-    res_paths['prompt_manipulation'] = path_test_prompt_manipulation
-    res_paths['image_manipulation'] = path_test_image_manipulation
+    # res_paths['prompt_manipulation'] = path_test_prompt_manipulation
+    # res_paths['image_manipulation'] = path_test_image_manipulation
+    res_paths['image_and prompt_manipulation'] = path_test_image_and_prompt_manipulation
+    factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl') #todo: fix it for flickrstyle10k
+    with open(factual_captions_path,'rb') as f:
+        factual_captions = pickle.load(f)
+
 
     dataset_names =['senticap', 'flickrstyle10k']
     dataset_names =['senticap']
     metrics = ['bleu', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-    metrics = ['fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+    # metrics = ['fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     #metrics = ['CLIPScore']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
     test_set_path = {}
@@ -698,7 +717,7 @@ def main():
     for dataset_name in dataset_names:
         txt_cls_model_paths_to_load[dataset_name] = txt_cls_model_paths[dataset_name]
         test_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', 'test.pkl')
-    gts_per_data_set = get_gts_data(test_set_path)
+    gts_per_data_set = get_gts_data(test_set_path,factual_captions)
 
     #labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 2,'romantic':3}
     labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 0, 'romantic':1}
