@@ -369,10 +369,11 @@ def write_evaluation_results(total_captions,avg_total_score, results_dir, config
             cur_row = [i.get_img_name(), i.get_style(), i.get_caption_text(),i.get_gt_caption_text(), i.get_factual_captions(), i.get_style_cls_score(),i.get_clip_score(), i.get_fluency_score(), i.get_total_score(),config['ce_scale'],config['clip_scale'],config['text_style_scale'],config['beam_size'],config['num_iterations'], i.get_img_path()]
             writer.writerow(cur_row)
 
-def get_title2print(caption_img_path, dataset_type, label, text_style_scale):
+def get_title2print(caption_img_path, dataset_type, label, text_style_scale,config):
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     title2print = f'~~~~~~~~\n{dt_string} | Work on img path: {caption_img_path} with:' \
-                  f'\ndataset_type= *** {dataset_type} ***' \
+                  f"\nresults dir= *** {config['experiment_dir']} ***" \
+                  f"\ndataset_type= *** {dataset_type} ***' \
                   f'\nstyle of: *** {label} ***\ntext_style_scale= *** {text_style_scale} ***' \
                   f'\n~~~~~~~~'
     return title2print
@@ -781,7 +782,7 @@ def main():
                                     continue
                                 if config['run_type'] == 'caption':
                                     title2print = get_title2print(config['caption_img_path'], dataset_type, label,
-                                                                  text_style_scale)
+                                                                  text_style_scale, config)
                                     print(title2print)
                                     best_caption = run(config, config['caption_img_path'], sentiment_type, sentiment_scale,
                                         text_style_scale, imitate_text_style, desired_style_embedding_vector,
@@ -803,7 +804,7 @@ def main():
                                 elif config['run_type'] == 'arithmetics':
                                     #none arithmetic
                                     title2print = get_title2print(config['caption_img_path'], dataset_type, 'factual',
-                                                                  text_style_scale)
+                                                                  text_style_scale,config)
                                     print(title2print)
                                     config['arithmetics_imgs'] = [config['caption_img_path'], config['caption_img_path'], config['caption_img_path']]
                                     best_caption = run_arithmetic(text_generator,config,model_path, img_dict_img_arithmetic, img_name,
@@ -821,7 +822,7 @@ def main():
                                         config['arithmetics_imgs'] = [config['caption_img_path'], factual_img_style, img_style]
 
                                         title2print = get_title2print(config['caption_img_path'], dataset_type, imgs_dataset_type_dict[int(v)],
-                                                                      text_style_scale)
+                                                                      text_style_scale, config)
 
                                         best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,imgs_dataset_type_dict[int(v)], imgs_path=config['arithmetics_imgs'],
                                                        img_weights=config['arithmetics_weights'], cuda_idx=cuda_idx,title2print = title2print)
@@ -838,7 +839,7 @@ def main():
                                     config['arithmetics_imgs'] = [config['caption_img_path'], factual_img_style, img_style]
 
                                     title2print = get_title2print(config['caption_img_path'], dataset_type, imgs_dataset_type_dict[int(v)],
-                                                                  text_style_scale)
+                                                                  text_style_scale, config)
 
                                     best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,imgs_dataset_type_dict[int(v)], imgs_path=config['arithmetics_imgs'],
                                                    img_weights=config['arithmetics_weights'], cuda_idx=cuda_idx,title2print = title2print)
