@@ -371,11 +371,11 @@ def write_evaluation_results(total_captions,avg_total_score, results_dir, config
 
 def get_title2print(caption_img_path, dataset_type, label, text_style_scale,config):
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    title2print = f'~~~~~~~~\n{dt_string} | Work on img path: {caption_img_path} with:' \
+    title2print = f"~~~~~~~~\n{dt_string} | Work on img path: {caption_img_path} with:" \
                   f"\nresults dir= *** {config['experiment_dir']} ***" \
-                  f"\ndataset_type= *** {dataset_type} ***' \
-                  f'\nstyle of: *** {label} ***\ntext_style_scale= *** {text_style_scale} ***' \
-                  f'\n~~~~~~~~'
+                  f"\ndataset_type= *** {dataset_type} ***" \
+                  f"\nstyle of: *** {label} ***\ntext_style_scale= *** {text_style_scale} ***" \
+                  f"\n~~~~~~~~"
     return title2print
 
 
