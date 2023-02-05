@@ -27,7 +27,7 @@ MAX_PERPLEXITY = 500
 
 def get_args():
     #parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
-    parser.add_argument('--wandb_mode', type=str, default='offline', help='disabled, offline, online')
+    parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
     parser.add_argument("--img_name", type=int, default=0)
     parser.add_argument("--use_all_imgs", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
