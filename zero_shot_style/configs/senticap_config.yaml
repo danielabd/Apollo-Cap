@@ -1,13 +1,14 @@
-wandb_mode: online #'disabled, offline, online'
+wandb_mode: disabled #'disabled, offline, online'
 use_style_model: True
-data_type: val
-max_num_of_imgs: 5  #-1
+data_type: test
+max_num_of_imgs: -1
 add_factual_label: False
-#clip_scale:  2.508
-#ce_scale: 2.242
-#text_style_scale: 5.069
-#beam_size: 2
-#num_iterations: 8
+
+clip_scale:  2.965
+ce_scale: 2.318
+text_style_scale: 3.444
+beam_size: 3
+num_iterations: 8
 
 target_seq_length: 15
 epochs: 12
