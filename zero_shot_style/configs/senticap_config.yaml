@@ -1,7 +1,7 @@
 wandb_mode: online #'disabled, offline, online'
 use_style_model: True
 data_type: val
-max_num_of_imgs: 10  #-1
+max_num_of_imgs: 5  #-1
 add_factual_label: False
 #clip_scale:  2.508
 #ce_scale: 2.242
