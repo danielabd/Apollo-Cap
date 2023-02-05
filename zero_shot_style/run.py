@@ -711,6 +711,12 @@ def main():
     '''
     # go over all images
     evaluation_results = {}
+    if not config['use_style_model']:
+        text_style_scale_list = [0]
+        config['clip_scale'] = 1
+        config['ce_scale'] = 0.2
+        config['beam_size'] = 5
+        config['num_iterations'] = 5
     for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
         # if int(img_path.split('.')[0].split('/')[-1]) == 429063:
         #     print(f'img_path_idx={img_path_idx}')
