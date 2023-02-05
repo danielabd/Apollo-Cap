@@ -101,6 +101,7 @@ def get_args():
                         default=['49','50','51','52','53'])
     parser.add_argument("--arithmetics_weights", nargs="+", default=[1, 1, -1])
     parser.add_argument("--use_style_model", action="store_true", default=False)
+    parser.add_argument("--add_factual_label", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -747,7 +748,8 @@ def main():
                 source_ce_scale = config['ce_scale']
                 source_beam_size = config['beam_size']
                 source_num_iterations = config['num_iterations']
-                desired_labels_list.insert(0, 'factual')
+                if config['add_factual_label']:
+                    desired_labels_list.insert(0, 'factual')
                 for label in desired_labels_list:
                     if label=='factual':
                         config['use_style_model'] = False
