@@ -27,7 +27,7 @@ MAX_PERPLEXITY = 500
 
 def get_args():
     #parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
-    parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
+    #parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
     parser.add_argument("--img_name", type=int, default=0)
     parser.add_argument("--use_all_imgs", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
@@ -697,6 +697,7 @@ def main():
     print(f"***There is {len(imgs_to_test)} images to test.***")
     #imgs_to_test = [args.caption_img_path] #for test one image
 
+
     '''
     tgt_results_path = os.path.join(os.path.expanduser('~'), 'results', "img_idx_to_name.csv")
     img_idx_to_name = {}
@@ -709,6 +710,8 @@ def main():
     # go over all images
     evaluation_results = {}
     for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
+        # if int(img_path.split('.')[0].split('/')[-1]) == 429063:
+        #     print(f'img_path_idx={img_path_idx}')
         wandb.log({'test/img_idx': img_path_idx})
         print(f"Img num = {img_path_idx}")
         if not debug_mac:
@@ -740,14 +743,26 @@ def main():
                     desired_labels_list = text_to_imitate_list
                 use_style_model = config['use_style_model']
                 source_text_style_scale_list = text_style_scale_list
+                source_clip_scale = config['clip_scale']
+                source_ce_scale = config['ce_scale']
+                source_beam_size = config['beam_size']
+                source_num_iterations = config['num_iterations']
                 desired_labels_list.insert(0, 'factual')
                 for label in desired_labels_list:
                     if label=='factual':
                         config['use_style_model'] = False
                         text_style_scale_list = [0]
+                        config['clip_scale'] = 1
+                        config['ce_scale'] = 0.2
+                        config['beam_size'] = 5
+                        config['num_iterations'] = 5
                     else:
                         config['use_style_model'] = use_style_model
                         text_style_scale_list = source_text_style_scale_list
+                        config['clip_scale'] = source_clip_scale
+                        config['ce_scale'] = source_ce_scale
+                        config['beam_size'] = source_beam_size
+                        config['num_iterations'] = source_num_iterations
                     evaluation_results[img_name][label] = {}
                     desired_style_embedding_vector = ''
                     if not imitate_text_style:
@@ -756,6 +771,7 @@ def main():
                     for s, sentiment_scale in enumerate(sentiment_scale_list):
                         for text_style_scale_idx, text_style_scale in enumerate(text_style_scale_list):
                             for sentiment_type in sentiment_list:
+                                print(f"Img num = {img_path_idx}")
                                 if sentiment_type == 'factual' and s > 0:
                                     continue
                                 if debug_mac:
