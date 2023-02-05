@@ -7,22 +7,22 @@ metric:
 parameters:
   ce_scale:
     max: 2.5
-    min: 1.5
+    min: 1.9
     distribution: uniform
   clip_scale:
-    max: 7
-    min: 1.7
+    max: 4
+    min: 1.5
     distribution: uniform
   text_style_scale:
-    max: 9
-    min: 5
+    max: 6
+    min: 2
     distribution: uniform
   num_iterations:
-    max: 13
-    min: 7
+    max: 9
+    min: 5
     distribution: int_uniform
   beam_size:
-    max: 5
-    min: 1
+    max: 4
+    min: 2
     distribution: int_uniform
 
