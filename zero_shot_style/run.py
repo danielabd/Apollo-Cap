@@ -609,7 +609,7 @@ def main():
     # handle sweep training names
     config['training_name'] = f'{wandb.run.id}-{wandb.run.name}'
 
-    config['experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{config["training_name"]}'
+    config['experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/5_3_23/{config["training_name"]}'
     wandb.config.update(config, allow_val_change=True)
 
     labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 0, 'romantic':1}
