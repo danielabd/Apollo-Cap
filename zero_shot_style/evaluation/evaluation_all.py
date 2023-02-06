@@ -179,7 +179,8 @@ class Fluency:
         results = self.perplexity.compute(data=sentence, model_id=self.model_id, add_start_token=False)
         return results['mean_perplexity'], results['perplexities']
         '''
-        results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=False)
+        results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=False)#check is the source
+        # results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=True)
         for i,pp in enumerate(results['perplexities']):
             k = self.k[i]
             style = self.style[i]
@@ -345,6 +346,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                         score_dict_per_metric[metric][k][style])
                                     all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=tmp_res[k][0])
                                 elif metric == 'fluency':
+                                    if len(list(tmp_res.values())[0][0].split())<2:
+                                        continue
                                     scorer.add_test(tmp_res, metric,k,style)
                                 else:
                                     tmp_gts = {k: gts_per_data_set[dataset_name][k][style]}
@@ -684,7 +687,31 @@ def main():
     gt_imgs_for_test = os.path.join(data_dir, 'gt_imgs_for_test')
     path_test_prompt_manipulation = os.path.join(results_dir,'evaluation','total_results_prompt_manipulation.csv')
     path_test_image_manipulation = os.path.join(results_dir,'evaluation','total_results_image_manipulation.csv')
+
     path_test_image_and_prompt_manipulation = os.path.join(results_dir,'5_3_23','results_all_models_source_classes_09_14_30__02_02_2023.csv')
+
+    path_test_prompt_manipulation = os.path.join(results_dir,'5_3_23','text_style_results.csv')
+    tmp_d = '44'
+    path_test_image_and_prompt_manipulation = os.path.join(results_dir,'6_2_23','44','image_and_prompt_manipulation_results.csv')
+    tgt_eval_results_path = os.path.join(results_dir, '6_2_23','44', 'image_and_prompt_manipulation_evaluation.csv')
+    tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '6_2_23','44',
+                                                        'image_and_prompt_manipulation_evaluation_all_frames.csv')
+
+    path_test_image_and_prompt_manipulation = os.path.join(results_dir, '6_2_23','44', 'text_style_results.csv')
+    tgt_eval_results_path = os.path.join(results_dir, '6_2_23','44', 'text_style_evaluation.csv')
+    tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '6_2_23','44',
+                                                        'text_style_evaluation_all_frames.csv')
+    #
+    # path_test_image_and_prompt_manipulation = os.path.join(results_dir, '6_2_23','11',
+    #                                                        'prompt_manipulation_results.csv')
+    # tgt_eval_results_path = os.path.join(results_dir, '6_2_23','11', 'prompt_manipulation_evaluation.csv')
+    # tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '6_2_23','11',
+    #                                                     'prompt_manipulation_evaluation_all_frames.csv')
+
+    # path_test_image_and_prompt_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/5_2_23/final_test/text_style/4t8F8naAqLgd8af5nL2KHy-dummy-4t8F8naAqLgd8af5nL2KHy/fixed_results_all_models_source_classes_23_26_35__05_02_2023.csv'
+    # tgt_eval_results_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/5_2_23/final_test/text_style/4t8F8naAqLgd8af5nL2KHy-dummy-4t8F8naAqLgd8af5nL2KHy/evaluation.csv'
+    # tgt_eval_results_path_for_all_frames = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/5_2_23/final_test/text_style/4t8F8naAqLgd8af5nL2KHy-dummy-4t8F8naAqLgd8af5nL2KHy/evaluation_for_all_frames.csv'
+
 
 
     txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','pos_neg_best_text_style_classification_model.pth'),
@@ -692,8 +719,8 @@ def main():
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     label = cur_time#'25_12_2022_v1' # cur_time
-    tgt_eval_results_path = os.path.join(results_evaluation_dir, label+'_eval_results.csv')
-    tgt_eval_results_path_for_all_frames = os.path.join(results_evaluation_dir, label+'_eval_results_for_all_frames.csv')
+    # tgt_eval_results_path = os.path.join(results_evaluation_dir, label+'_eval_results.csv')
+    # tgt_eval_results_path_for_all_frames = os.path.join(results_evaluation_dir, label+'_eval_results_for_all_frames.csv')
     styles_per_dataset = {'senticap': ['positive', 'negative'],
                            'flickrstyle10k': ['humor', 'romantic']}
 
