@@ -3,15 +3,16 @@ use_style_model: False
 data_type: test
 max_num_of_imgs: -1
 add_factual_label: True
+run_type: img_prompt_manipulation #caption, arithmetic, img_prompt_manipulation
+
+cond_text_list: ["Image of a", "The beautiful image of a", "The disturbing image of a"]
+#cond_text_list: [""]
 
 clip_scale:  2.965
 ce_scale: 2.318
 text_style_scale: 3.444
 beam_size: 3
 num_iterations: 8
-
-#cond_text_list: ["Image of a", "The beautiful image of a", "The disturbing image of a"]
-cond_text_list: [""]
 
 target_seq_length: 15
 
