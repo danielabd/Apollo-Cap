@@ -217,7 +217,12 @@ class CLIPTextGenerator:
             #self.text_style_tokenizer_name = self.text_style_model_name
             #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
 
-
+    def set_params(self, ce_scale, clip_scale, text_style_scale, beam_size,  num_iterations):
+        self.ce_scale = ce_scale
+        self.clip_scale = clip_scale
+        self.text_style_scale = text_style_scale
+        self.beam_size = beam_size
+        self.num_iterations = num_iterations
 
     def get_debug_tracking(self):
         return self.debug_tracking
