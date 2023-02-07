@@ -213,6 +213,7 @@ class CLIPTextGenerator:
                 param.requires_grad = False
 
             self.desired_style_embedding_vector = ''
+            self.desired_style_embedding_std_vector = ''
             # TEXT_STYLE: tokenizer for text style analysis module
             #self.text_style_tokenizer_name = self.text_style_model_name
             #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
@@ -271,7 +272,7 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, style_type = None):
+    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
@@ -280,6 +281,8 @@ class CLIPTextGenerator:
             self.style_type = style_type #'clip','twitter','emotions'
             if not text_to_imitate:
                 self.desired_style_embedding_vector = desired_style_embedding_vector
+                self.desired_style_embedding_std_vector = desired_style_embedding_std_vector
+
             else: #there is text_to_imitate:
                 #use clip features
                 if style_type=='clip':#'clip','twitter','emotions'
@@ -542,8 +545,12 @@ class CLIPTextGenerator:
 
 
                 #calc euclidean distance
-                distances = torch.cdist(self.desired_style_embedding_vector.unsqueeze(0),logits)
+                distances_from_mean_vec = torch.cdist(self.desired_style_embedding_vector.unsqueeze(0),logits)
                 # euclidean_distance = torch.sqrt(torch.sum((logits - self.desired_style_embedding_vector) ** 2, dim=-1))
+
+                #try to calc the distance from  avg+std
+                distances = torch.maximum(distances_from_mean_vec -torch.tensor(self.desired_style_embedding_std_vector).to(self.device),torch.tensor(0))
+
 
                 text_style_grades = nn.functional.softmax(-distances, dim=-1)
 
@@ -662,26 +669,19 @@ class CLIPTextGenerator:
                 loss += ce_loss.sum()
                 ce_losses = (probs * probs_before_shift.log()).sum(-1)
 
+            # TEXT_STYLE:
             if self.use_style_model:
-                # SENTIMENT: adding the sentiment component
-                if self.sentiment_type!='none':
-                    sentiment_loss, sentiment_losses = self.get_sentiment_loss(probs, context_tokens,self.sentiment_type)
-                    #print(f'sentiment_loss = {sentiment_loss}, sentiment_loss_with_scale = {self.sentiment_scale * sentiment_loss}')
-                    loss += self.sentiment_scale * sentiment_loss
+                text_style_loss=-100
+                if self.text_style_scale!=0:
+                    if self.style_type == 'clip': #using clip model for text style
+                        text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
+                    else:
+                        text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
+                    #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+                    # loss += self.text_style_scale * text_style_loss
+                    loss += self.text_style_scale * text_style_loss
                     self.debug_tracking[word_loc][i]['STYLE - prob'] = list(total_best_sentences_style.values())
                     self.debug_tracking[word_loc][i]['STYLE - val'] = list(total_best_sentences_style.keys())
-
-                # TEXT_STYLE: adding the text_style component
-                text_style_loss=-100
-                if self.use_text_style:
-                    if self.text_style_scale!=0:
-                        if self.style_type == 'clip': #using clip model for text style
-                            text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
-                        else:
-                            text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
-                        #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
-                        # loss += self.text_style_scale * text_style_loss
-                        loss += self.text_style_scale * text_style_loss
 
                 # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
                 #for beam_num in range(len(best_sentences_LM)):

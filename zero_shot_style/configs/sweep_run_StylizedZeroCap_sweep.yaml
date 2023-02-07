@@ -17,6 +17,14 @@ parameters:
     max: 6
     min: 2
     distribution: uniform
+  std_embedding_vectors_positive: #0.028914157
+    max: 0.06
+    min: 0.0
+    distribution: uniform
+  std_embedding_vectors_negative: #0.020412436
+    max: 0.04
+    min: 0
+    distribution: uniform
   num_iterations:
     max: 9
     min: 5

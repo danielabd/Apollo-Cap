@@ -48,6 +48,8 @@ def get_args():
     parser.add_argument("--reset_context_delta", action="store_true",
                         help="Should we reset the context at each token gen")
     parser.add_argument("--clip_loss_temperature", type=float, default=0.01)
+    parser.add_argument("--std_embedding_vectors_positive", type=float, default=0.028914157)
+    parser.add_argument("--std_embedding_vectors_negative", type=float, default=0.020412436)
     parser.add_argument("--ce_scale", type=float, default=0.2)
     parser.add_argument("--clip_scale", type=float, default=1)
     parser.add_argument("--text_style_scale", type=float, default=1)
@@ -106,7 +108,7 @@ def get_args():
 
     return args
 
-def run(config, img_path, text_style_scale,imitate_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator=None,image_features=None):
+def run(config, img_path, text_style_scale,imitate_text_style,desired_style_embedding_vector,desired_style_embedding_std_vector,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator=None,image_features=None):
     #debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, text_style_scale=text_style_scale, **vars(config))
@@ -119,7 +121,7 @@ def run(config, img_path, text_style_scale,imitate_text_style,desired_style_embe
     else:
         text_style = ''
     t1 = timeit.default_timer();
-    captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],text_style_scale,text_style,desired_style_embedding_vector,dataset_type)
+    captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],text_style_scale,text_style,desired_style_embedding_vector,desired_style_embedding_std_vector,dataset_type)
     debug_tracking[img_path][label] = text_generator.get_debug_tracking()
     t2 = timeit.default_timer();
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
@@ -169,7 +171,6 @@ def run_img_and_prompt_manipulation(config, img_dict_img_arithmetic,base_img,dat
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
     t1 = timeit.default_timer();
-    # captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],sentiment_type,sentiment_scale,text_style_scale,text_style,desired_style_embedding_vector,dataset_type)
     captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'])
     t2 = timeit.default_timer();
 
@@ -561,10 +562,10 @@ def main():
     #                 "ngeative": "The disturbing image of a"}
     if len(config["cond_text_list"])==1:
         label2prompt = {"factual": config["cond_text_list"][0], "positive": config["cond_text_list"][0],
-                        "ngeative": config["cond_text_list"][0]}
+                        "negative": config["cond_text_list"][0]}
     else:
         label2prompt = {"factual": config["cond_text_list"][0], "positive": config["cond_text_list"][1],
-                        "ngeative": config["cond_text_list"][2]}
+                        "negative": config["cond_text_list"][2]}
 
 
     if config['run_type'] == 'img_prompt_manipulation':
@@ -691,11 +692,17 @@ def main():
             continue
         mean_embedding_vec_path = os.path.join(checkpoints_dir, 'best_models',
                                                config['mean_vec_emb_file'])
+        std_embedding_vec_path = os.path.join(checkpoints_dir, 'best_models',
+                                               config['std_vec_emb_file'])
         # desired_labels_list = config['desired_labels']
         for dataset_type in dataset_type_list:
             if config['use_style_model']:
                 with open(mean_embedding_vec_path, 'rb') as fp:
                     embedding_vectors_to_load = pickle.load(fp)
+                with open(std_embedding_vec_path, 'rb') as fp:
+                    std_embedding_vectors_to_load = pickle.load(fp)
+                std_embedding_vectors_to_load={'positive': config['std_embedding_vectors_positive'], 'negative': config['std_embedding_vectors_negative']}
+
                 desired_labels_list = list(embedding_vectors_to_load.keys())
             else:
                 desired_labels_list = config['desired_labels']
@@ -744,9 +751,11 @@ def main():
 
                 evaluation_results[img_name][label] = {}
                 desired_style_embedding_vector = ''
+                desired_style_embedding_std_vector = ''
                 if not imitate_text_style:
                     if config['use_style_model']:
                         desired_style_embedding_vector = embedding_vectors_to_load[label]
+                        desired_style_embedding_std_vector = std_embedding_vectors_to_load[label]
                 print(f"Img num = {img_path_idx}")
                 if config['debug_mac']:
                     evaluation_results[img_name][label] = {'res': 'bla'}
@@ -756,7 +765,7 @@ def main():
                                                   config['text_style_scale'], config)
                     print(title2print)
                     best_caption = run(config, config['caption_img_path'],
-                        config['text_style_scale'], imitate_text_style, desired_style_embedding_vector,
+                        config['text_style_scale'], imitate_text_style, desired_style_embedding_vector, desired_style_embedding_std_vector,
                         config['cuda_idx_num'], title2print, model_path, dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator,image_features)
                     config['use_style_model'] = use_style_model
                     if not config['use_style_model']:

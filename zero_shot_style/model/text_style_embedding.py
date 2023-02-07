@@ -207,15 +207,21 @@ def plot_graph_on_all_data(df_data, total_outputs, total_labels_str, total_texts
         print("Calculate mean and median embedding vectors...")
         mean_embedding_vectors = {}
         median_embedding_vectors = {}
+        std_avg_embedding_vectors =  {}
         for label in set(df_data["category"]):
             vectors_embedding = total_outputs[np.where(np.array(total_labels_str) == label), :]
             median_vector_embedding = np.median(vectors_embedding[0], 0)
             median_embedding_vectors[label] = median_vector_embedding
             mean_vector_embedding = np.mean(vectors_embedding[0], 0)
             mean_embedding_vectors[label] = mean_vector_embedding
+            std_avg_embedding_vectors[label] = np.mean(np.std(vectors_embedding[0], 0))
+
         print('Saving mean of embedding vectors to: ' + tgt_file_vec_emb['mean'] + '...')
         with open(tgt_file_vec_emb['mean'], 'wb') as fp:
             pickle.dump(mean_embedding_vectors, fp)
+        print(f'Saving avg of std of embedding vectors to: ' + tgt_file_vec_emb['std'] + '...')
+        with open(tgt_file_vec_emb['std'], 'wb') as fp:
+            pickle.dump(std_avg_embedding_vectors, fp)
         print(f'Saving median of embedding vectors to: '+tgt_file_vec_emb['median']+'...')
         with open(tgt_file_vec_emb['median'], 'wb') as fp:
            pickle.dump(median_embedding_vectors, fp)
@@ -959,7 +965,8 @@ def main():
         #                     'median': os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['median_vec_emb_file'])}
         tgt_file_vec_emb = {
             'mean': os.path.join(checkpoints_dir, 'best_models', config['mean_vec_emb_file']),
-            'median': os.path.join(checkpoints_dir, 'best_models', config['median_vec_emb_file'])}
+            'median': os.path.join(checkpoints_dir, 'best_models', config['median_vec_emb_file']),
+            'std':  os.path.join(checkpoints_dir, 'best_models', config['std_vec_emb_file'])}
     else:
         tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['mean_vec_emb_file']),
                             'median': os.path.join(experiment_dir, config['median_vec_emb_file'])}
