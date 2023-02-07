@@ -557,8 +557,10 @@ def main():
         dataset_type_list = ['senticap', 'flickrstyle10k']
 
     imgs_dataset_type_dict = {49: 'factual', 50: 'positive', 51: 'negative', 52: 'humor', 53: 'romantic'}
-    label2prompt = {"factual": "Image of a", "positive": "The beautiful image of a",
-                    "ngeative": "The disturbing image of a"}
+    # label2prompt = {"factual": "Image of a", "positive": "The beautiful image of a",
+    #                 "ngeative": "The disturbing image of a"}
+    label2prompt = {"factual": config["cond_text_list"][0], "positive": config["cond_text_list"][1],
+                    "ngeative": config["cond_text_list"][2]}
     if config['run_type'] == 'img_prompt_manipulation':
         prompt2idx_img_style = {config['cond_text_list'][0]: 49, config['cond_text_list'][1]: 50,
                                 config['cond_text_list'][2]: 51}
