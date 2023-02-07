@@ -699,8 +699,8 @@ def main():
             if config['use_style_model']:
                 with open(mean_embedding_vec_path, 'rb') as fp:
                     embedding_vectors_to_load = pickle.load(fp)
-                with open(std_embedding_vec_path, 'rb') as fp:
-                    std_embedding_vectors_to_load = pickle.load(fp)
+                # with open(std_embedding_vec_path, 'rb') as fp:
+                #     std_embedding_vectors_to_load = pickle.load(fp)
                 std_embedding_vectors_to_load={'positive': config['std_embedding_vectors_positive'], 'negative': config['std_embedding_vectors_negative']}
 
                 desired_labels_list = list(embedding_vectors_to_load.keys())

@@ -1,4 +1,4 @@
-use_style_model: False
+use_style_model: True
 run_type: caption #caption, arithmetic, img_prompt_manipulation
 #cond_text_list: ["Image of a", "The beautiful image of a", "The disturbing image of a"]
 cond_text_list: [""]
