@@ -106,7 +106,7 @@ def get_args():
 
     return args
 
-def run(config, img_path, sentiment_scale,text_style_scale,imitate_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator=None,image_features=None):
+def run(config, img_path, text_style_scale,imitate_text_style,desired_style_embedding_vector,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator=None,image_features=None):
     #debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, text_style_scale=text_style_scale, **vars(config))
@@ -119,7 +119,7 @@ def run(config, img_path, sentiment_scale,text_style_scale,imitate_text_style,de
     else:
         text_style = ''
     t1 = timeit.default_timer();
-    captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],sentiment_type,sentiment_scale,text_style_scale,text_style,desired_style_embedding_vector,dataset_type)
+    captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],text_style_scale,text_style,desired_style_embedding_vector,dataset_type)
     debug_tracking[img_path][label] = text_generator.get_debug_tracking()
     t2 = timeit.default_timer();
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]

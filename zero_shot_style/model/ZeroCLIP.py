@@ -271,7 +271,7 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, sentiment_scale = None, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, style_type = None):
+    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, style_type = None):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
