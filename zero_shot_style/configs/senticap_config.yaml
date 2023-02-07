@@ -6,14 +6,14 @@ max_num_of_imgs: 5 #-1
 wandb_mode: online #'disabled, offline, online'
 data_type: test
 
-clip_scale:  2.965
-ce_scale: 2.318
-text_style_scale: 3.444
-beam_size: 3
-num_iterations: 8
-
-std_embedding_vectors_positive: 0.028914157
-std_embedding_vectors_negative: 0.020412436
+#clip_scale:  2.965
+#ce_scale: 2.318
+#text_style_scale: 3.444
+#beam_size: 3
+#num_iterations: 8
+#
+#std_embedding_vectors_positive: 0.028914157
+#std_embedding_vectors_negative: 0.020412436
 
 target_seq_length: 15
 
