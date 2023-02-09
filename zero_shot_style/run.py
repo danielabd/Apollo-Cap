@@ -760,6 +760,7 @@ def main():
                 if config['debug_mac']:
                     evaluation_results[img_name][label] = {'res': 'bla'}
                     continue
+                print(f"Img num = {img_path_idx}")
                 if config['run_type'] == 'caption':
                     title2print = get_title2print(config['caption_img_path'], dataset_type, label,
                                                   config['text_style_scale'], config)

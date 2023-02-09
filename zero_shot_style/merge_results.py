@@ -123,50 +123,140 @@ def main():
     global_results_dir_path = os.path.join(os.path.expanduser('~'),'results')
     # prompt_manipulation_dir_path = ['01_06_14__27_12_2022','00_59_38__27_12_2022','00_56_45__27_12_2022','14_14_09__23_12_2022','14_15_04__23_12_2022','12_47_53__22_12_2022','01_11_22__29_12_2022', '01_14_18__29_12_2022', '01_17_10__29_12_2022', '01_51_19__29_12_2022']
     # image_manipulation_dir_path = ['01_07_14__27_12_2022','00_58_25__27_12_2022','00_54_50__27_12_2022','14_14_43__23_12_2022','14_15_55__23_12_2022','12_48_26__22_12_2022']
-    prompt_manipulation_dir_path = ['21_57_03__02_01_2023','21_57_57__02_01_2023','21_58_25__02_01_2023','02_03_43__05_01_2023','21_57_57__02_01_2023','02_06_18__05_01_2023','13_39_30__05_01_2023','21_58_25__02_01_2023',]
-    ###todo:
-    src_dir = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/5_2_23/final_test/text_style'
-    prompt_manipulation_dir_path = os.listdir(src_dir)
-    ###
+    # prompt_manipulation_dir_path = ['21_57_03__02_01_2023','21_57_57__02_01_2023','21_58_25__02_01_2023','02_03_43__05_01_2023','21_57_57__02_01_2023','02_06_18__05_01_2023','13_39_30__05_01_2023','21_58_25__02_01_2023',]
+    # ###todo:
+    # src_dir = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/5_2_23/final_test/text_style'
+    # prompt_manipulation_dir_path = os.listdir(src_dir)
+    # ###
+    # image_manipulation_dir_path = []
+    # tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'),'results',cur_time+'_total_results_image_manipulation.csv')
+    # # tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'),'results',cur_time+'_total_results_prompt_manipulation.csv')
+    ###todo: 8.2.23
     image_manipulation_dir_path = []
-    tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'),'results',cur_time+'_total_results_image_manipulation.csv')
-    tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'),'results',cur_time+'_total_results_prompt_manipulation.csv')
-    ###todo:
-    tgt_path_prompt_manipulation = os.path.join(src_dir,'text_style_total_results.csv')
-    global_results_dir_path = src_dir
-    ###
+    tgt_path_im_manipulation = ''
+
+
+    #prompt_manipulation
+    src_dir_prompt_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/prompt_manipulation'
+    prompt_manipulation_dir_path = os.listdir(src_dir_prompt_manipulation)
+    tgt_path_prompt_manipulation = os.path.join(src_dir_prompt_manipulation,'total_results_prompt_manipulation.csv')
+
+    #image and prompt_manipulation
+    src_dir_image_and_prompt_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/image_and_prompt_manipulation'
+    image_and_prompt_manipulation_dir_path = os.listdir(src_dir_image_and_prompt_manipulation)
+    tgt_path_image_and_prompt_manipulation = os.path.join(src_dir_image_and_prompt_manipulation,'total_results_image_and_prompt_manipulation.csv')
+
+    #text style
+    src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/text_style'
+    text_style_dir_path = os.listdir(src_dir_text_style)
+    tgt_path_text_style = os.path.join(src_dir_text_style,'total_results_text_style.csv')
+
+    # image manipulation
+    src_dir_image_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/image_manipulation'
+    image_manipulation_dir_path = os.listdir(src_dir_image_manipulation)
+    tgt_path_image_manipulation = os.path.join(src_dir_image_manipulation,'total_results_image_manipulation.csv')
+
     debug_tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'), 'results', cur_time+'_debug_total_results_image_manipulation.csv')
     debug_tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'results',
                                                 cur_time+'_debug_total_results_prompt_manipulation.csv')
-    res_paths = {"prompt_manipulation": prompt_manipulation_dir_path, "im_manipulation": image_manipulation_dir_path}
-    tgt_paths = {"prompt_manipulation": tgt_path_prompt_manipulation,"im_manipulation": tgt_path_im_manipulation}
-    tgt_paths_debug = {"prompt_manipulation": debug_tgt_path_prompt_manipulation,"im_manipulation": debug_tgt_path_im_manipulation}
-    t = {"prompt_manipulation": "img_num\prompt","im_manipulation": "img_num\style"}
-    #exp_to_merge = ["prompt_manipulation", "im_manipulation"]
-    exp_to_merge = ["prompt_manipulation"]
 
 
+    src_dirs = {"prompt_manipulation":  src_dir_prompt_manipulation, "image_manipulation": src_dir_image_manipulation, "image_and_prompt_manipulation": src_dir_image_and_prompt_manipulation, "text_style": src_dir_text_style}
+    res_paths = {"prompt_manipulation": prompt_manipulation_dir_path, "image_manipulation": image_manipulation_dir_path, "image_and_prompt_manipulation": image_and_prompt_manipulation_dir_path, "text_style":text_style_dir_path}
+    tgt_paths = {"prompt_manipulation": tgt_path_prompt_manipulation,"image_manipulation": tgt_path_image_manipulation, "image_and_prompt_manipulation": tgt_path_image_and_prompt_manipulation, "text_style": tgt_path_text_style}
+    tgt_paths_debug = {"prompt_manipulation": debug_tgt_path_prompt_manipulation,"image_manipulation": debug_tgt_path_im_manipulation, "image_and_prompt_manipulation": "debug_tgt_path_image_and_prompt_manipulation"}
+    t = {"prompt_manipulation": "img_num\prompt","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
+    exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
+
+
+    #go over test type
+    keys_test_type = {}
     for test_type in exp_to_merge:
-        total_data_test_type = pd.DataFrame()
+        k_list = []
+        positive = []
+        negative = []
+        factual = []
+        neutral = []
+        total_data = {}
+        # go over all dirs of this test type
         for d in res_paths[test_type]:
-            path_file = os.path.join(global_results_dir_path,d,f'results_all_models_source_classes_{d}.csv')
-            ###todo:
-            path_file = os.path.join(global_results_dir_path, d, f'results_text_style.csv')
-            ###
+            if d.startswith(".") or os.path.isfile(os.path.join(src_dirs[test_type],d)):
+                continue
+            files = os.listdir(os.path.join(src_dirs[test_type],d))
+            # take the relevant file
+            for f in files:
+                if test_type == 'text_style':
+                    if f != "results_23_26_35__05_02_2023.csv":
+                        continue
+                if f.endswith('.csv'):
+                    path_file = os.path.join(src_dirs[test_type],d,f)
+                    break
+
             data = pd.read_csv(path_file)
-            data = data.head(data.shape[0] - 1)
-            for i,k1 in enumerate(data[t[test_type]]):
-                k = k1.split('.jpg')[0]
+            data = data.head(data.shape[0] - 1) #remove last line for the case that it is not completed
+
+            for i,k in enumerate(data[t[test_type]]):
+                # try:
+                #     k = str(int(k))
+                # except:
+                #     pass
+                pos = data['positive'][i]
                 try:
-                    k = str(int(k))
+                    neg = data['negative'][i]
                 except:
-                    pass
-                data[t[test_type]][i] = k
-            total_data_test_type = pd.concat([total_data_test_type, data])
+                    neg = data['ngeative'][i]
+                try:
+                    fact = data['factual'][i]
+                except:
+                    fact = ''
+                try:
+                    neut = data['neutral'][i]
+                except:
+                    neut = ''
+                single_data = {'img_num': k, 'positive': pos, 'negative': neg, 'factual': fact, 'neutral': neut}
+                total_data[k] = single_data
+        #         single_data = {}
+        #         if k not in k_list:
+        #             k_list.append(k)
+        #             positive.append(data['positive'][i])
+        #             try:
+        #                 negative.append(data['negative'][i])
+        #             except:
+        #                 negative.append(data['ngeative'][i])
+        #             if 'factual' in data:
+        #                 factual.append(data['factual'][i])
+        #             else:
+        #                 factual.append('')
+        #             if 'neutral' in data:
+        #                 neutral.append(data['neutral'][i])
+        #             else:
+        #                 neutral.append('')
+        # new_data = {'img_num': k_list, 'positive': positive, 'negative': negative}
+        # if len(factual)>0:
+        #     new_data['factual'] = factual
+        # if len(neutral)>0:
+        #     new_data['neutral'] = neutral
+        # total_data_test_type = pd.DataFrame(new_data)
+        keys_test_type[test_type] = list(total_data.keys())
+        total_data_test_type = pd.DataFrame(list(total_data.values()))
         total_data_test_type.to_csv(tgt_paths[test_type], index=False, header=True)
-        write_data_to_global_file_for_debug(total_data_test_type, img_idx_to_name, tgt_paths_debug[test_type], t[test_type])
+        print(f"finish to create: {tgt_paths[test_type]}")
+        # write_data_to_global_file_for_debug(total_data_test_type, img_idx_to_name, tgt_paths_debug[test_type], t[test_type])
+        # for
+    print('Finish of program!')
+    imgs_to_add = {}
+    for test_type in  keys_test_type:
+        if test_type=='text_style':
+            continue
+        else:
+            imgs_to_add[test_type] = []
+        for i in keys_test_type['text_style']:
+            if i not in keys_test_type[test_type]:
+                imgs_to_add[test_type].append(i)
 
     print('Finish of program!')
+
+
 
 if __name__ == "__main__":
     main()
