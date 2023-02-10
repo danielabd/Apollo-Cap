@@ -101,6 +101,9 @@ def get_args():
 
     parser.add_argument("--arithmetics_style_imgs", nargs="+",
                         default=['49','50','51','52','53'])
+    parser.add_argument("--specific_imgs_to_test", nargs="+",
+                        default=[])
+
     parser.add_argument("--arithmetics_weights", nargs="+", default=[1, 1, -1])
     parser.add_argument("--use_style_model", action="store_true", default=False)
 
@@ -503,7 +506,7 @@ class Fluency:
         for i,p in enumerate(results['perplexities']):
             if self.img_names[i] not in perplexities:
                 perplexities[self.img_names[i]] = {}
-            perplexities[self.img_names[i]][self.styles[i]] = 1-np.min([p,MAX_PERPLEXITY])/MAX_PERPLEXITY
+            perplexities[self.img_names[i]][self.styles[i]] = 1-np.min([p,MAX_PERPLEXITY])/MAX_PERPLEXITY #less is better
         total_avg_perplexity = 1-np.min([results['mean_perplexity'],MAX_PERPLEXITY])/MAX_PERPLEXITY
         return perplexities, total_avg_perplexity
 
@@ -622,6 +625,23 @@ def main():
                               config['best_model_name'])
 
 
+    # take list of images
+    imgs_to_test = []
+    print(f"config['max_num_of_imgs']: {config['max_num_of_imgs']}")
+    for dataset_type in dataset_type_list:
+        config['caption_img_dict'] = os.path.join(os.path.expanduser('~'), 'data', dataset_type)
+        for i,im in enumerate(os.listdir(os.path.join(config['caption_img_dict'],'images',config['data_type']))):
+            if i >= config['max_num_of_imgs'] and config['max_num_of_imgs']>0:
+                break
+            if ('.jpg' or '.jpeg' or '.png') not in im:
+                continue
+            if len(config['specific_imgs_to_test']) > 0 and int(im.split('.')[0]) not in config['specific_imgs_to_test']:
+                continue
+            imgs_to_test.append(os.path.join(config['caption_img_dict'],'images',config['data_type'],im))
+    print(f"***There is {len(imgs_to_test)} images to test.***")
+
+
+
     #for imitate_text_style in [False]:
     if imitate_text_style:
         classes_type = "sentences"
@@ -658,19 +678,6 @@ def main():
             evaluation_obj['fluency'] = Fluency()
         if metric == 'style_cls':
             evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_paths_to_load, data_dir, config['cuda_idx_num'], labels_dict_idxs) #todo:change handling dataset_type qs list
-
-    # take list of images
-    imgs_to_test = []
-    print(f"config['max_num_of_imgs']: {config['max_num_of_imgs']}")
-    for dataset_type in dataset_type_list:
-        config['caption_img_dict'] = os.path.join(os.path.expanduser('~'), 'data', dataset_type)
-        for i,im in enumerate(os.listdir(os.path.join(config['caption_img_dict'],'images',config['data_type']))):
-            if i >= config['max_num_of_imgs'] and config['max_num_of_imgs']>0:
-                break
-            if ('.jpg' or '.jpeg' or '.png') not in im:
-                continue
-            imgs_to_test.append(os.path.join(config['caption_img_dict'],'images',config['data_type'],im))
-    print(f"***There is {len(imgs_to_test)} images to test.***")
 
     # go over all images
     evaluation_results = {}
@@ -717,7 +724,7 @@ def main():
             source_beam_size = config['beam_size']
             source_num_iterations = config['num_iterations']
             tgt_results_path = os.path.join(results_dir, f'results_all_models_{classes_type}_classes_{cur_time}.csv')
-            for label in desired_labels_list:
+            for label_idx, label in enumerate(desired_labels_list):
                 prompt = label2prompt[label]
                 config['cond_text'] = prompt
                 if label=='factual':
@@ -756,7 +763,6 @@ def main():
                     if config['use_style_model']:
                         desired_style_embedding_vector = embedding_vectors_to_load[label]
                         desired_style_embedding_std_vector = std_embedding_vectors_to_load[label]
-                print(f"Img num = {img_path_idx}")
                 if config['debug_mac']:
                     evaluation_results[img_name][label] = {'res': 'bla'}
                     continue
@@ -778,6 +784,8 @@ def main():
                         fluency_obj.add_test(best_caption, img_name, label)
 
                 elif config['run_type'] == 'arithmetics':
+                    if label_idx>0:
+                        break
                     config['cond_text'] = ""
                     #none arithmetic
                     title2print = get_title2print(config['caption_img_path'], dataset_type, 'factual',
@@ -793,6 +801,7 @@ def main():
                     config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
                     factual_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
                     for idx, v in enumerate(config['arithmetics_style_imgs'][1:]):
+                        print(f"Img num = {img_path_idx}")
                         img_style = get_full_path_of_stylized_images(data_dir, v)
                         config['arithmetics_imgs'] = [config['caption_img_path'], factual_img_style, img_style]
 
