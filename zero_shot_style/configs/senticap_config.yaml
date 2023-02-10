@@ -4,7 +4,7 @@ run_type: caption #caption, arithmetic, img_prompt_manipulation
 cond_text_list: [""]
 max_num_of_imgs: 5 #-1
 wandb_mode: online #'disabled, offline, online'
-data_type: test
+data_type: val
 
 #clip_scale:  2.965
 #ce_scale: 2.318
@@ -20,7 +20,7 @@ target_seq_length: 15
 arithmetics_style_imgs: [49, 50, 51]
 arithmetics_weights: [1, -0.5, 0.5]
 img_idx_to_start_from: 0
-desired_labels: [factual, positive, ngeative]
+desired_labels: [positive, ngeative] #[factual, positive, ngeative]
 
 epochs: 12
 lr: 0.01
