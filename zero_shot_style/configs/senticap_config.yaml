@@ -16,6 +16,7 @@ data_type: val
 #std_embedding_vectors_negative: 0.007185  #0.020412436
 
 target_seq_length: 15
+write_debug_tracking_file: False
 
 arithmetics_style_imgs: [49, 50, 51]
 arithmetics_weights: [1, -0.5, 0.5]

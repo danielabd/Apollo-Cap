@@ -73,7 +73,7 @@ class CLIPTextGenerator:
                  reset_context_delta=True,
                  num_iterations=5,
                  clip_loss_temperature=0.01,
-                 text_style_loss_temperature = 0.01,
+                 text_style_loss_temperature = 0.0002,
                  clip_scale=1.,
                  ce_scale=0.2,
                  text_style_scale = 1,

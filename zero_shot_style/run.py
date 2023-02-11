@@ -780,7 +780,8 @@ def main():
                     if config['use_style_model']:
                         write_results_of_text_style_all_models(img_dict, desired_labels_list,
                                                            results_dir, 1, tgt_results_path)
-                        write_debug_tracking(results_dir, debug_tracking)
+                        if config['write_debug_tracking_file']:
+                            write_debug_tracking(results_dir, debug_tracking)
                         fluency_obj.add_test(best_caption, img_name, label)
 
                 elif config['run_type'] == 'arithmetics':
