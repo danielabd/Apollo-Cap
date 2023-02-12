@@ -10,7 +10,7 @@ import shutil
 import timeit
 from datetime import datetime
 from evaluate import load
-
+import math
 import pandas as pd
 import torch
 import csv
@@ -28,7 +28,6 @@ from evaluation.pycocoevalcap.spice import Spice
 from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
 from evaluation.text_style_classification import evaluate as evaluate_text_style_classification
 from evaluation.text_style_classification import BertClassifier, tokenizer
-MAX_PP_SCORE = 100
 NORMALIZE_GRADE_SCALE = 100
 MAX_PERPLEXITY = 500
 
@@ -117,6 +116,7 @@ class STYLE_CLS:
         checkpoint = torch.load(txt_cls_model_path, map_location=self.device)
         model.load_state_dict(checkpoint['model_state_dict'])
         model.to(self.device)
+        model.eval()
         return model
 
 
@@ -186,55 +186,12 @@ class Fluency:
             k = self.k[i]
             style = self.style[i]
             metric = self.metric[i]
-            score_dict_per_metric[metric][k][style] = 1 - np.min([pp, MAX_PERPLEXITY]) / MAX_PERPLEXITY  # less is better
+            score_dict_per_metric[metric][k][style] = 1 - np.min([pp, MAX_PERPLEXITY]) / MAX_PERPLEXITY
             score_per_metric_and_style[metric][style].append(score_dict_per_metric[metric][k][style])
             all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=self.tests[i])# save all data per key frames
         return score_dict_per_metric,score_per_metric_and_style, all_scores
 
 
-'''
-class Fluency:
-    def __init__(self,n=3):
-        self.n = n
-        self.pp_model = None
-
-    def train_pp_model(self,train_sentences):
-        tokenized_text = [list(map(str.lower, nltk.tokenize.word_tokenize(sent)))
-                          for sent in train_sentences]
-        train_data, padded_vocab = padded_everygram_pipeline(self.n, tokenized_text)
-        self.pp_model = MLE(self.n)
-        self.pp_model.fit(train_data, padded_vocab)
-
-    def compute_score(self, gts, sentence_dict):
-        sentence = list(sentence_dict.values())[0][0]
-        tokenized_text = list(map(str.lower, nltk.tokenize.word_tokenize(sentence)))
-
-        #test_sentences = ['A skier is working his way down the rough hill.','An old abandoned building with a clock has been eclipsed by the stained glass splendor of an evil corporations skyscraper.']
-        #tokenized_text = [list(map(str.lower, nltk.tokenize.word_tokenize(sent)))
-        #                  for sent in test_sentences]
-
-        # test_data, _ = padded_everygram_pipeline(n, tokenized_text)
-        # for test in test_data:
-        #    print ("MLE Estimates:", [((ngram[-1], ngram[:-1]),model.score(ngram[-1], ngram[:-1])) for ngram in test])
-
-
-        test_data, _ = padded_everygram_pipeline(self.n, tokenized_text)
-        pp_scores = []
-        for i, test in enumerate(test_data):
-            pp_scores.append(self.pp_model.perplexity(test))
-        if np.inf in pp_scores:
-            pp_scores_wo_inf = [e for e in pp_scores if e != np.inf]
-        else:
-            pp_scores_wo_inf = pp_scores
-        valid_sentences_percent = len(pp_scores_wo_inf) / len(pp_scores)*100  # pp!=inf
-        if valid_sentences_percent>0:
-            avg_pp_score = np.mean(pp_scores_wo_inf)
-        else:
-            avg_pp_score = MAX_PP_SCORE
-        print(
-            f'Average perplexity score for test set is: {avg_pp_score}. There are {valid_sentences_percent}% valid sentences (pp!=inf)')
-        return avg_pp_score, valid_sentences_percent
-'''
 
 def save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res = None, gts = None, img_path = None):
     # save all data per key frames
@@ -684,7 +641,12 @@ def write_results(mean_score, tgt_eval_results_path,dataset_names, metrics, styl
     print(f"finished to write results to {tgt_eval_results_path}")
 
 
-def get_all_paths_of_tests():
+def get_all_paths_of_tests(factual_wo_prompt):
+    def add_suffix_to_file_name(files_list):
+        fixed_file_names = []
+        for f in files_list:
+            fixed_file_names.append(f.split('.csv')[0] + '_factual_wo_prompt.csv')
+        return fixed_file_names
     #prompt_manipulation
     src_dir_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/prompt_manipulation')
     prompt_manipulation_dir_path = os.listdir(src_dir_prompt_manipulation)
@@ -704,7 +666,9 @@ def get_all_paths_of_tests():
     src_dir_image_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/image_manipulation')
     image_manipulation_dir_path = os.listdir(src_dir_image_manipulation)
     tgt_path_image_manipulation = os.path.join(src_dir_image_manipulation,'total_results_image_manipulation.csv')
-
+    if factual_wo_prompt:
+        files_list = [tgt_path_prompt_manipulation, tgt_path_image_manipulation, tgt_path_image_and_prompt_manipulation, tgt_path_text_style]
+        tgt_path_prompt_manipulation, tgt_path_image_manipulation, tgt_path_image_and_prompt_manipulation, tgt_path_text_style = add_suffix_to_file_name(files_list)
     return tgt_path_prompt_manipulation, tgt_path_image_manipulation, tgt_path_image_and_prompt_manipulation, tgt_path_text_style
 
 
@@ -759,7 +723,8 @@ def main():
     styles_per_dataset = {'senticap': ['positive', 'negative'],
                            'flickrstyle10k': ['humor', 'romantic']}
 
-    path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests()
+    factual_wo_prompt = True
+    path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
     res_paths = {}
     res_paths['prompt_manipulation'] = path_test_prompt_manipulation
     res_paths['image_manipulation'] = path_test_image_manipulation
@@ -773,7 +738,7 @@ def main():
     dataset_names =['senticap', 'flickrstyle10k']
     dataset_names =['senticap']
     metrics = ['bleu', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-    # metrics = ['fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+    # metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     # metrics = ['fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     #metrics = ['CLIPScore']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
@@ -793,41 +758,41 @@ def main():
     mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
 
     vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
-    ##############
-    import matplotlib.pyplot as plt
-
-    import pandas as pd
-    fluency_statistic = {}
-    for k in all_scores:
-        for test_type in all_scores[k]:
-            if test_type not in fluency_statistic:
-                fluency_statistic[test_type] = {}
-            for style in all_scores[k][test_type]:
-                if style not in fluency_statistic[test_type]:
-                    fluency_statistic[test_type][style] = [all_scores[k][test_type][style]['fluency']]
-                else:
-                    fluency_statistic[test_type][style].append(all_scores[k][test_type][style]['fluency'])
-
-    print('finish to calc statistic of fluency')
-    # Generate data on commute times.
-    size, scale = 1000, 10
-    commutes = pd.Series(np.random.gamma(scale, size=size) ** 1.5)
-    commutes = pd.Series([1,1,2,2,3,3,3,3,3])
-    fig1 = plt.gcf()
-    for i, test_type in enumerate(fluency_statistic):
-        for j, style in enumerate(fluency_statistic[test_type]):
-            plt.subplot(len(fluency_statistic),len(fluency_statistic[test_type]),i*len(fluency_statistic[test_type])+j+1)
-
-            commutes = pd.Series(fluency_statistic[test_type][style])
-            commutes.plot.hist(grid=True, bins=20, rwidth=0.9,
-                               color='#607c8e')
-            plt.title(f'Fluency Histogram for: {test_type} - {style}')
-            plt.xlabel('Counts')
-            plt.ylabel('Commute Time')
-            plt.grid(axis='y', alpha=0.75)
-    plt.show(block=False)
-    fig1.savefig(os.path.join(tgt_eval_results_fluency, f'_{test_type}_{style}.png'))
-    ##############
+    # ############## histogram
+    # import matplotlib.pyplot as plt
+    #
+    # import pandas as pd
+    # fluency_statistic = {}
+    # for k in all_scores:
+    #     for test_type in all_scores[k]:
+    #         if test_type not in fluency_statistic:
+    #             fluency_statistic[test_type] = {}
+    #         for style in all_scores[k][test_type]:
+    #             if style not in fluency_statistic[test_type]:
+    #                 fluency_statistic[test_type][style] = [all_scores[k][test_type][style]['fluency']]
+    #             else:
+    #                 fluency_statistic[test_type][style].append(all_scores[k][test_type][style]['fluency'])
+    #
+    # print('finish to calc statistic of fluency')
+    # # Generate data on commute times.
+    # size, scale = 1000, 10
+    # commutes = pd.Series(np.random.gamma(scale, size=size) ** 1.5)
+    # commutes = pd.Series([1,1,2,2,3,3,3,3,3])
+    # fig1 = plt.gcf()
+    # for i, test_type in enumerate(fluency_statistic):
+    #     for j, style in enumerate(fluency_statistic[test_type]):
+    #         plt.subplot(len(fluency_statistic),len(fluency_statistic[test_type]),i*len(fluency_statistic[test_type])+j+1)
+    #
+    #         commutes = pd.Series(fluency_statistic[test_type][style])
+    #         commutes.plot.hist(grid=True, bins=20, rwidth=0.9,
+    #                            color='#607c8e')
+    #         plt.title(f'Fluency Histogram for: {test_type} - {style}')
+    #         plt.xlabel('Counts')
+    #         plt.ylabel('Commute Time')
+    #         plt.grid(axis='y', alpha=0.75)
+    # plt.show(block=False)
+    # fig1.savefig(os.path.join(tgt_eval_results_fluency, f'_{test_type}_{style}.png'))
+    # ##############
 
     for test_type in mean_score:
         for dataset in dataset_names:

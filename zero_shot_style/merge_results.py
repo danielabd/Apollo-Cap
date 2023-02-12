@@ -99,7 +99,12 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
     keys_test_type = {}
     factual_image_of_a_prompt_manipulation = {}
     factual_image_manipulation = {}
-    factual_image_of_a_image_and_prompt_manipulation = {}
+    if factual_wo_prompt:
+        exp_to_merge.remove('image_manipulation')
+        exp_to_merge.insert(0,'image_manipulation')
+    else:
+        exp_to_merge.remove('prompt_manipulation')
+        exp_to_merge.insert(0, 'prompt_manipulation')
     for test_type in exp_to_merge:
         total_data = {}
         # go over all dirs of this test type
@@ -117,7 +122,7 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
                     break
 
             data = pd.read_csv(path_file)
-            if f!='results_all_models_source_classes_03_43_42__10_02_2023.csv':
+            if f!='results_all_models_source_classes_03_43_42__10_02_2023.csv' and f!='results_all_models_source_classes_00_18_04__12_02_2023.csv':
                 data = data.head(data.shape[0] - 1) #remove last line for the case that it is not completed
 
             for i,k in enumerate(data[t[test_type]]):
@@ -135,11 +140,15 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
                         fact = ''
                 if test_type == 'prompt_manipulation':
                     factual_image_of_a_prompt_manipulation[k] = fact
+                if test_type == 'image_manipulation':
+                    factual_image_manipulation[k] = fact
                 # if test_type == 'image_and_prompt_manipulation':
                 #     factual_image_of_a_image_and_prompt_manipulation[k] = fact
                 #     if fact!= factual_image_of_a_prompt_manipulation[k]:
                 #         print('check')
-                if test_type != 'prompt_manipulation':
+                if factual_wo_prompt:
+                    fact = factual_image_manipulation[k]
+                else: #write factual with prompt of image of a...
                     fact = factual_image_of_a_prompt_manipulation[k]
                 single_data = {'img_num': k, 'factual': fact, 'positive': pos, 'negative': neg}
                 total_data[k] = single_data
@@ -242,7 +251,7 @@ def main():
         img_idx_to_name[img_path_idx] = img_name
 
     t = {"prompt_manipulation": "img_num\prompt","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
-    factual_wo_prompt = True
+    factual_wo_prompt = False
     res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt)
 
     exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]

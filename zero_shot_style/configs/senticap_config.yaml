@@ -1,10 +1,10 @@
-use_style_model: True
-run_type: caption #caption, arithmetics, img_prompt_manipulation
+use_style_model: False
+run_type: arithmetics #caption, arithmetics, img_prompt_manipulation
 #cond_text_list: ["Image of a", "The beautiful image of a", "The disturbing image of a"]
 cond_text_list: [""]
-max_num_of_imgs: 10 #-1
-wandb_mode: online #'disabled, offline, online'
-data_type: val
+max_num_of_imgs: -1 #10 #-1
+wandb_mode: disabled #'disabled, offline, online'
+data_type: test
 
 #clip_scale:  3.746143446 #2.965
 #ce_scale: 2.43956729 #2.318
@@ -23,7 +23,7 @@ arithmetics_weights: [1, -0.5, 0.5]
 img_idx_to_start_from: 0
 desired_labels: [positive, negative] #[factual, positive, ngeative]
 
-#specific_imgs_to_test: [478874, 104906]
+specific_imgs_to_test: [560358]
 #specific_imgs_to_test: [108698, 43128, 123810, 127451, 350107, 454661,
 #     217517, 352936, 553867, 439472, 149376, 435260, 527102, 191047, 160531, 206618, 365642, 84410, 568883, 483375,
 #     515303, 163076, 69229, 479597, 184606, 526044, 75990, 259597, 129786, 177407, 547041, 71738, 8204, 216096, 510864,

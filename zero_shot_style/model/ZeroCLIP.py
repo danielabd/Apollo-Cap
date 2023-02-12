@@ -134,6 +134,7 @@ class CLIPTextGenerator:
         self.clip, self.clip_preprocess = clip.load("ViT-B/32", device=self.device,
                                                     download_root=clip_checkpoints, jit=False)
         # convert_models_to_fp32(self.clip)
+        self.clip.eval()
 
         # Init arguments
         self.target_seq_length = target_seq_length
