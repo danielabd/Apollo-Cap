@@ -111,7 +111,7 @@ def get_args():
 
     return args
 
-def run(config, img_path, text_style_scale,imitate_text_style,desired_style_embedding_vector,desired_style_embedding_std_vector,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator=None,image_features=None):
+def run(config, img_path, text_style_scale,imitate_text_style,desired_style_embedding_vector,desired_style_embedding_std_vector,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator=None,image_features=None,text_style_list=None):
     #debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, text_style_scale=text_style_scale, **vars(config))
@@ -124,7 +124,7 @@ def run(config, img_path, text_style_scale,imitate_text_style,desired_style_embe
     else:
         text_style = ''
     t1 = timeit.default_timer();
-    captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],text_style_scale,text_style,desired_style_embedding_vector,desired_style_embedding_std_vector,dataset_type)
+    captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],text_style_scale,text_style,desired_style_embedding_vector,desired_style_embedding_std_vector,dataset_type,text_style_list=text_style_list)
     debug_tracking[img_path][label] = text_generator.get_debug_tracking()
     t2 = timeit.default_timer();
     encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
@@ -592,6 +592,7 @@ def main():
     wandb.config.update(config, allow_val_change=True)
 
     labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 0, 'romantic':1}
+    text_style_list_map = {'positive': ['positive'], 'negative':['negative'], 'humor': ['humor'], 'romantic':['romantic']}
 
     txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','pos_neg_best_text_style_classification_model.pth'),
                            'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','humor_romantic_best_text_style_classification_model.pth')}
@@ -766,6 +767,8 @@ def main():
                 if config['debug_mac']:
                     evaluation_results[img_name][label] = {'res': 'bla'}
                     continue
+                if config['use_text_style_example']:
+                    text_style_list = text_style_list_map[label]
                 print(f"Img num = {img_path_idx}")
                 if config['run_type'] == 'caption':
                     title2print = get_title2print(config['caption_img_path'], dataset_type, label,
@@ -773,7 +776,7 @@ def main():
                     print(title2print)
                     best_caption = run(config, config['caption_img_path'],
                         config['text_style_scale'], imitate_text_style, desired_style_embedding_vector, desired_style_embedding_std_vector,
-                        config['cuda_idx_num'], title2print, model_path, dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator,image_features)
+                        config['cuda_idx_num'], title2print, model_path, dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator,image_features,text_style_list)
                     config['use_style_model'] = use_style_model
                     if not config['use_style_model']:
                         write_results_prompt_manipulation(img_dict, results_dir, tgt_results_path)

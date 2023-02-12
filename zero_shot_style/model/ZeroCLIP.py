@@ -195,7 +195,10 @@ class CLIPTextGenerator:
             LR = 1e-4
             # optimizer = SGD(self.text_style_model.parameters(), lr=LR) #check if to remove mark
 
-            checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
+            if self.device=='cpu':
+                checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
+            else:
+                checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
             # checkpoint = torch.load(self.text_style_model_name)
 
             self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
@@ -273,10 +276,11 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None):
+    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None, text_style_list=None):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
+        self.text_style_list = text_style_list
         if self.use_style_model:
             self.text_style_scale = text_style_scale
             self.style_type = style_type #'clip','twitter','emotions'
@@ -821,11 +825,26 @@ class CLIPTextGenerator:
             debug_best_probs_vals_LM.extend(probs_val)
             LM_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
             debug_best_top_texts_LM.extend(LM_top_text)
-
             text_features = self.get_txt_features(top_texts)
 
             with torch.no_grad():
                 similiraties = (self.image_features @ text_features.T)
+
+                ############
+                # top_texts = ['Ugly and disgusting  image', 'Beautiful and amazing image']
+                # top_texts = ['The wonderful line waiting in the baggage carousel.',
+                #              'A suitcase devastated the platform at Penn Station in New York City.']
+                pos_text = ['positive']
+                if self.text_style_list:
+                    text_style_features = self.get_txt_features(self.text_style_list)
+                    similarity_to_style = text_style_features @ text_features.T
+                    similarity_to_style_normalized = similarity_to_style / similarity_to_style[0].norm(dim=-1)
+                    #add affect with the style:
+                    image_text_similiraties = (self.image_features @ text_features.T)
+                    similiraties =np.multiply(image_text_similiraties, similarity_to_style_normalized)
+                    #todo: continue from here
+                    ######
+
                 target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
                 target_probs = target_probs.type(torch.float32)
             target = torch.zeros_like(probs[idx_p])

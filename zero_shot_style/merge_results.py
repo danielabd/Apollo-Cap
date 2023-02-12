@@ -114,10 +114,18 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
             files = os.listdir(os.path.join(src_dirs[test_type],d))
             # take the relevant file
             for f in files:
+                # if test_type == 'text_style':
+                #     if f != "results_23_26_35__05_02_2023.csv":
+                #         continue
+
+                # if f.endswith('.csv'):
+                #     path_file = os.path.join(src_dirs[test_type],d,f)
+                #     break
                 if test_type == 'text_style':
-                    if f != "results_23_26_35__05_02_2023.csv":
-                        continue
-                if f.endswith('.csv'):
+                    if f == 'results.csv':
+                        path_file = os.path.join(src_dirs[test_type],d,f)
+                        break
+                elif f.endswith('.csv'):
                     path_file = os.path.join(src_dirs[test_type],d,f)
                     break
 
@@ -180,7 +188,9 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
 
 def get_all_paths(cur_time, factual_wo_prompt):
     #prompt_manipulation
-    src_dir_prompt_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/prompt_manipulation'
+    base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/'
+    # src_dir_prompt_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/prompt_manipulation'
+    src_dir_prompt_manipulation = os.path.join(base_path,'prompt_manipulation')
     prompt_manipulation_dir_path = os.listdir(src_dir_prompt_manipulation)
     if factual_wo_prompt:
         tgt_path_prompt_manipulation = os.path.join(src_dir_prompt_manipulation,'total_results_prompt_manipulation_factual_wo_prompt.csv')
@@ -189,6 +199,7 @@ def get_all_paths(cur_time, factual_wo_prompt):
 
     #image and prompt_manipulation
     src_dir_image_and_prompt_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/image_and_prompt_manipulation'
+    src_dir_image_and_prompt_manipulation = os.path.join(base_path,'image_and_prompt_manipulation')
     image_and_prompt_manipulation_dir_path = os.listdir(src_dir_image_and_prompt_manipulation)
     if factual_wo_prompt:
         tgt_path_image_and_prompt_manipulation = os.path.join(src_dir_image_and_prompt_manipulation,'total_results_image_and_prompt_manipulation_factual_wo_prompt.csv')
@@ -196,7 +207,10 @@ def get_all_paths(cur_time, factual_wo_prompt):
         tgt_path_image_and_prompt_manipulation = os.path.join(src_dir_image_and_prompt_manipulation,'total_results_image_and_prompt_manipulation.csv')
 
     #text style
-    src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/text_style'
+    # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/text_style'
+    # 12.2.23
+    src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/text_style'
+    src_dir_text_style = os.path.join(base_path,'text_style')
     text_style_dir_path = os.listdir(src_dir_text_style)
     if factual_wo_prompt:
         tgt_path_text_style = os.path.join(src_dir_text_style,'total_results_text_style_factual_wo_prompt.csv')
@@ -204,7 +218,8 @@ def get_all_paths(cur_time, factual_wo_prompt):
         tgt_path_text_style = os.path.join(src_dir_text_style,'total_results_text_style.csv')
 
     # image manipulation
-    src_dir_image_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/image_manipulation'
+    # src_dir_image_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/image_manipulation'
+    src_dir_image_manipulation = os.path.join(base_path,'image_manipulation')
     image_manipulation_dir_path = os.listdir(src_dir_image_manipulation)
     if factual_wo_prompt:
         tgt_path_image_manipulation = os.path.join(src_dir_image_manipulation,'total_results_image_manipulation_factual_wo_prompt.csv')
@@ -255,7 +270,7 @@ def main():
     res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt)
 
     exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
-    # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "text_style"]
+    # exp_to_merge = ["text_style"]
 
     merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt)
     print("finish program")

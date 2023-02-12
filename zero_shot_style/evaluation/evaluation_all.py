@@ -642,28 +642,35 @@ def write_results(mean_score, tgt_eval_results_path,dataset_names, metrics, styl
 
 
 def get_all_paths_of_tests(factual_wo_prompt):
+
     def add_suffix_to_file_name(files_list):
         fixed_file_names = []
         for f in files_list:
             fixed_file_names.append(f.split('.csv')[0] + '_factual_wo_prompt.csv')
         return fixed_file_names
+
+    base_path = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/12_2_23/')
     #prompt_manipulation
-    src_dir_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/prompt_manipulation')
+    # src_dir_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/prompt_manipulation')
+    src_dir_prompt_manipulation = os.path.join(base_path,'prompt_manipulation')
     prompt_manipulation_dir_path = os.listdir(src_dir_prompt_manipulation)
     tgt_path_prompt_manipulation = os.path.join(src_dir_prompt_manipulation,'total_results_prompt_manipulation.csv')
 
     #image and prompt_manipulation
-    src_dir_image_and_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/image_and_prompt_manipulation')
+    # src_dir_image_and_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/image_and_prompt_manipulation')
+    src_dir_image_and_prompt_manipulation = os.path.join(base_path,'image_and_prompt_manipulation')
     image_and_prompt_manipulation_dir_path = os.listdir(src_dir_image_and_prompt_manipulation)
     tgt_path_image_and_prompt_manipulation = os.path.join(src_dir_image_and_prompt_manipulation,'total_results_image_and_prompt_manipulation.csv')
 
     #text style
-    src_dir_text_style = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/text_style')
+    # src_dir_text_style = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/text_style')
+    src_dir_text_style = os.path.join(base_path,'text_style')
     text_style_dir_path = os.listdir(src_dir_text_style)
     tgt_path_text_style = os.path.join(src_dir_text_style,'total_results_text_style.csv')
 
     # image manipulation
-    src_dir_image_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/image_manipulation')
+    # src_dir_image_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/image_manipulation')
+    src_dir_image_manipulation = os.path.join(base_path,'image_manipulation')
     image_manipulation_dir_path = os.listdir(src_dir_image_manipulation)
     tgt_path_image_manipulation = os.path.join(src_dir_image_manipulation,'total_results_image_manipulation.csv')
     if factual_wo_prompt:
@@ -687,11 +694,11 @@ def main():
     # tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '10_2_23',
     #                                                     'evaluation_all_frames.csv')
 
-    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23', 'evaluation.csv')
-    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23',
+    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/12_2_23', 'evaluation.csv')
+    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/12_2_23',
                                                         'evaluation_all_frames.csv')
 
-    tgt_eval_results_fluency = os.path.join(results_dir, '10_2_23','fluency_statistics')
+    tgt_eval_results_fluency = os.path.join(results_dir, '12_2_23','fluency_statistics')
     if not os.path.exists(tgt_eval_results_fluency):
         os.makedirs(tgt_eval_results_fluency)
     txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','pos_neg_best_text_style_classification_model.pth'),
