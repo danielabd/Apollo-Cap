@@ -681,50 +681,30 @@ def main():
     if not os.path.exists(results_evaluation_dir):
         os.makedirs(results_evaluation_dir)
     gt_imgs_for_test = os.path.join(data_dir, 'gt_imgs_for_test')
-    path_test_prompt_manipulation = os.path.join(results_dir,'evaluation','total_results_prompt_manipulation.csv')
-    path_test_image_manipulation = os.path.join(results_dir,'evaluation','total_results_image_manipulation.csv')
 
-    path_test_image_and_prompt_manipulation = os.path.join(results_dir,'5_3_23','results_all_models_source_classes_09_14_30__02_02_2023.csv')
 
-    path_test_prompt_manipulation = os.path.join(results_dir,'5_3_23','text_style_results.csv')
-    tmp_d = '44'
-    path_test_image_and_prompt_manipulation = os.path.join(results_dir,'6_2_23','44','image_and_prompt_manipulation_results.csv')
-    tgt_eval_results_path = os.path.join(results_dir, '6_2_23','44', 'image_and_prompt_manipulation_evaluation.csv')
-    tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '6_2_23','44',
-                                                        'image_and_prompt_manipulation_evaluation_all_frames.csv')
+    # tgt_eval_results_path = os.path.join(results_dir, '10_2_23', 'evaluation.csv')
+    # tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '10_2_23',
+    #                                                     'evaluation_all_frames.csv')
 
-    path_test_image_and_prompt_manipulation = os.path.join(results_dir, '6_2_23','44', 'text_style_results.csv')
-    tgt_eval_results_path = os.path.join(results_dir, '10_2_23', 'evaluation.csv')
-    tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '10_2_23',
+    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23', 'evaluation.csv')
+    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23',
                                                         'evaluation_all_frames.csv')
+
     tgt_eval_results_fluency = os.path.join(results_dir, '10_2_23','fluency_statistics')
     if not os.path.exists(tgt_eval_results_fluency):
         os.makedirs(tgt_eval_results_fluency)
-    #
-    # path_test_image_and_prompt_manipulation = os.path.join(results_dir, '6_2_23','11',
-    #                                                        'prompt_manipulation_results.csv')
-    # tgt_eval_results_path = os.path.join(results_dir, '6_2_23','11', 'prompt_manipulation_evaluation.csv')
-    # tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '6_2_23','11',
-    #                                                     'prompt_manipulation_evaluation_all_frames.csv')
-
-    # path_test_image_and_prompt_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/5_2_23/final_test/text_style/4t8F8naAqLgd8af5nL2KHy-dummy-4t8F8naAqLgd8af5nL2KHy/fixed_results_all_models_source_classes_23_26_35__05_02_2023.csv'
-    # tgt_eval_results_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/5_2_23/final_test/text_style/4t8F8naAqLgd8af5nL2KHy-dummy-4t8F8naAqLgd8af5nL2KHy/evaluation.csv'
-    # tgt_eval_results_path_for_all_frames = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/5_2_23/final_test/text_style/4t8F8naAqLgd8af5nL2KHy-dummy-4t8F8naAqLgd8af5nL2KHy/evaluation_for_all_frames.csv'
-
-
-
     txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','pos_neg_best_text_style_classification_model.pth'),
                            'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','humor_romantic_best_text_style_classification_model.pth')}
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     label = cur_time#'25_12_2022_v1' # cur_time
-    # tgt_eval_results_path = os.path.join(results_evaluation_dir, label+'_eval_results.csv')
-    # tgt_eval_results_path_for_all_frames = os.path.join(results_evaluation_dir, label+'_eval_results_for_all_frames.csv')
     styles_per_dataset = {'senticap': ['positive', 'negative'],
                            'flickrstyle10k': ['humor', 'romantic']}
 
     factual_wo_prompt = True
     path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
+
     res_paths = {}
     res_paths['prompt_manipulation'] = path_test_prompt_manipulation
     res_paths['image_manipulation'] = path_test_image_manipulation
