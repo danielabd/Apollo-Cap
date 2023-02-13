@@ -1,4 +1,5 @@
 import argparse
+import math
 
 import pandas as pd
 import torch
@@ -130,9 +131,10 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
                     break
 
             data = pd.read_csv(path_file)
-            if f!='results_all_models_source_classes_03_43_42__10_02_2023.csv' and f!='results_all_models_source_classes_00_18_04__12_02_2023.csv':
-                data = data.head(data.shape[0] - 1) #remove last line for the case that it is not completed
-
+            # if f!='results_all_models_source_classes_03_43_42__10_02_2023.csv' and f!='results_all_models_source_classes_00_18_04__12_02_2023.csv':
+            #     data = data.head(data.shape[0] - 1) #remove last line for the case that it is not completed
+            if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1,-1]):
+                 data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
             for i,k in enumerate(data[t[test_type]]):
                 pos = data['positive'][i]
                 try:
@@ -266,7 +268,7 @@ def main():
         img_idx_to_name[img_path_idx] = img_name
 
     t = {"prompt_manipulation": "img_num\prompt","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
-    factual_wo_prompt = False
+    factual_wo_prompt = True
     res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt)
 
     exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]

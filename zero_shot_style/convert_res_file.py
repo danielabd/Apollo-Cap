@@ -75,12 +75,17 @@ def main():
     tgt_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/text_style/4t8F8naAqLgd8af5nL2KHy-dummy-4t8F8naAqLgd8af5nL2KHy/results_23_26_35__05_02_2023.csv'
     convert_file_structure(src_path, tgt_path)
 
+    src_dir = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/text_style'
     for d in os.listdir(src_dir):
         if os.path.isdir(os.path.join(src_dir,d)):
             for f in os.listdir(os.path.join(src_dir,d)):
                 if f.endswith('.csv'):
                     src_path = os.path.join(src_dir,d,f)
                     tgt_path = os.path.join(src_dir,d,'results.csv')
+                    if f=='results.csv' or f.startswith('avg'):
+                        continue
+                    # src_path = os.path.join('/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/text_style','wrcsdtgl-easy-donkey-909','results_all_models_source_classes_11_17_28__12_02_2023.csv')
+                    # tgt_path =  os.path.join('/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/text_style','wrcsdtgl-easy-donkey-909','results.csv')
                     convert_file_structure(src_path, tgt_path)
 
     print('finish')

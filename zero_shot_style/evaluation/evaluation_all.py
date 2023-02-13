@@ -715,7 +715,7 @@ def main():
     res_paths = {}
     res_paths['prompt_manipulation'] = path_test_prompt_manipulation
     res_paths['image_manipulation'] = path_test_image_manipulation
-    res_paths['image_and prompt_manipulation'] = path_test_image_and_prompt_manipulation
+    res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
     res_paths['text_style'] = path_test_text_style
     factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl') #todo: fix it for flickrstyle10k
     with open(factual_captions_path,'rb') as f:
