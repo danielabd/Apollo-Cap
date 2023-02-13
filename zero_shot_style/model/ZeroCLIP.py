@@ -276,11 +276,11 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None, text_style_list=None):
+    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
-        self.text_style_list = text_style_list
+        self.text_style_list = text_to_imitate
         if self.use_style_model:
             self.text_style_scale = text_style_scale
             self.style_type = style_type #'clip','twitter','emotions'
@@ -291,7 +291,7 @@ class CLIPTextGenerator:
             else: #there is text_to_imitate:
                 #use clip features
                 if style_type=='clip':#'clip','twitter','emotions'
-                    self.text_style_features = self.get_txt_features(text_to_imitate)
+                    self.text_style_features = self.get_txt_features(self.text_to_imitate)
                     # use my text style model features
                 else: #style_type=='twitter' or 'emotions'
                     #### based on bert
@@ -836,7 +836,7 @@ class CLIPTextGenerator:
                 #              'A suitcase devastated the platform at Penn Station in New York City.']
                 pos_text = ['positive']
                 if self.text_style_list:
-                    text_style_features = self.get_txt_features(self.text_style_list)
+                    text_style_features = self.get_txt_features([self.text_style_list])
                     similarity_to_style = text_style_features @ text_features.T
                     similarity_to_style_normalized = similarity_to_style / similarity_to_style[0].norm(dim=-1)
                     #add affect with the style:

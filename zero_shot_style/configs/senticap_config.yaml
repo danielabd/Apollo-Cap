@@ -7,14 +7,28 @@ max_num_of_imgs: -1 #10 #-1
 wandb_mode: disabled #'disabled, offline, online'
 data_type: test
 
+#mild -- 531
+#https://wandb:ai/bdaniela/StylizedZeroCap/sweeps/z6ytzium?workspace=user-bdaniela:
+
+
+#atomic sweep  3 - total avg score = 0.3243:   https://wandb.ai/bdaniela/StylizedZeroCap/sweeps/z08bsrnr?workspace=user-bdaniela
 clip_scale:  3.746143446 #2.965
 ce_scale: 2.43956729 #2.318
 text_style_scale: 3.797802783 #3.444
 beam_size: 4 #3
 num_iterations: 5 # 8
 
-std_embedding_vectors_positive: 0.05536 #0.028914157
-std_embedding_vectors_negative: 0.007185  #0.020412436
+embedding_vectors_std:
+  positive: 0.05536 #0.028914157
+  negative: 0.007185  #0.020412436
+
+
+#ZeroCap params
+zerocap_clip_scale: 1
+zerocap_ce_scale: 0.2
+zerocap_beam_size: 5
+zerocap_num_iterations: 5
+zerocap_text_style_scale: 0
 
 target_seq_length: 15
 write_debug_tracking_file: False
@@ -24,7 +38,6 @@ arithmetics_weights: [1, -0.5, 0.5]
 img_idx_to_start_from: 0
 desired_labels: [positive, negative] #[factual, positive, ngeative]
 
-#specific_imgs_to_test: [560358]
 #specific_imgs_to_test: [108698, 43128, 123810, 127451, 350107, 454661,
 #     217517, 352936, 553867, 439472, 149376, 435260, 527102, 191047, 160531, 206618, 365642, 84410, 568883, 483375,
 #     515303, 163076, 69229, 479597, 184606, 526044, 75990, 259597, 129786, 177407, 547041, 71738, 8204, 216096, 510864,
@@ -40,12 +53,13 @@ hidden_state_to_take: -4
 last_layer_idx_to_freeze: 9
 freeze_after_n_epochs: 6
 inner_batch_size: 1
-data_name: [senticap]
-best_model_name: senticap/best_text_style_embedding_model_senticap.pth
+data_name: senticap
+best_model_name: checkpoints/senticap/best_text_style_embedding_model_senticap.pth
 model_name: latest_text_style_embedding_model_senticap.pth
-mean_vec_emb_file: senticap/senticap_mean_class_embedding.p
-median_vec_emb_file: senticap/senticap_median_class_embedding.p
+mean_vec_emb_file:  checkpoints/best_models/senticap/senticap_mean_class_embedding.p
+median_vec_emb_file: checkpoints/best_models/senticap/senticap_median_class_embedding.p
 std_vec_emb_file: senticap/senticap_std_class_embedding.p
+txt_cls_model_path: checkpoints/best_models/senticap/pos_neg_best_text_style_classification_model.pth
 data_file: #['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 experiment_name: cur_time
 csv_file_name_train: 'senticap_train.csv'
@@ -65,7 +79,8 @@ reset_context_delta: True
 calc_fluency: True
 debug_mac: False
 
-
+imitate_text_style: False
+text_to_imitate_list: ["positive"]
 ## for debug
 #max_num_of_imgs: 1
 #target_seq_length: 1
