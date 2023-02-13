@@ -841,8 +841,10 @@ class CLIPTextGenerator:
                     similarity_to_style_normalized = similarity_to_style / similarity_to_style[0].norm(dim=-1)
                     #add affect with the style:
                     image_text_similiraties = (self.image_features @ text_features.T)
-                    similiraties =np.multiply(image_text_similiraties, similarity_to_style_normalized)
-                    #todo: continue from here
+                    if self.device=="cuda":
+                        similiraties = torch.mul(image_text_similiraties, similarity_to_style_normalized)
+                    else:
+                        similiraties = np.multiply(image_text_similiraties, similarity_to_style_normalized)
                     ######
 
                 target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
