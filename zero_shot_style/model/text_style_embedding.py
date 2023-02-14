@@ -11,7 +11,6 @@ from zero_shot_style.model import mining
 import wandb
 import pickle
 from datetime import datetime
-from zero_shot_style.utils import parser, get_hparams
 from zero_shot_style.create_dataset_from_twitter import clean_text
 from itertools import combinations, product
 from sklearn.metrics import roc_curve, auc
@@ -24,6 +23,7 @@ from torch.optim import Adam
 # import clip
 # from sklearn.decomposition import PCA
 # import matplotlib.pyplot as plt
+from zero_shot_style.utils import parser, get_hparams
 
 BERT_NUM_OF_LAYERS = 12
 MAX_VAL_TRIPLET_LOSS = 100
@@ -880,100 +880,86 @@ def get_train_val_data(data_set_path):
     :return: ds: dict:keys=['train', 'val', 'test'],values = dict:keys = list(dataset_name), values=dict:keys=key_frame,values:dict:keys=style,values=dataframe
     '''
     ds = {}
-    for set_type in data_set_path:  # ['train', 'val', 'test']
-        ds[set_type] = {}
-        for dataset_name in data_set_path[set_type]:
-            with open(data_set_path[set_type][dataset_name], 'rb') as r:
-                data = pickle.load(r)
-            for k in data:
-                ds[set_type][k] = {}
-                # ds[set_type][k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
-                # ds[set_type][k]['img_path'] = data[k]['image_path']
-                if dataset_name == 'flickrstyle10k':
-                    ds[set_type][k]['humor'] = data[k]['humor']
-                    ds[set_type][k]['romantic'] = data[k]['romantic']
-                elif dataset_name == 'senticap':
-                    ds[set_type][k]['positive'] = data[k]['positive']
-                    ds[set_type][k]['negative'] = data[k]['negative']
+    for data_type in data_set_path:  # ['train', 'val', 'test']
+        ds[data_type] = {}
+        with open(data_set_path[data_type], 'rb') as r:
+            data = pickle.load(r)
+        for k in data:
+            ds[data_type][k] = {}
+            # ds[data_type][k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
+            # ds[data_type][k]['img_path'] = data[k]['image_path']
+            for style in data[k]:
+                if style == 'img_path':
+                    continue
+                ds[data_type][k][style] = data[k][style]
     return ds
 
 
 def convert_ds_to_df(ds, data_dir):
-    df_train = None;
-    df_val = None;
+    df_train = None
+    df_val = None
     df_test = None
-    for set_type in ds:  # ['train', 'val', 'test']
+    for data_type in ds:  # ['train', 'val', 'test']
         all_data = {'category': [], 'text': []}
-        for k in ds[set_type]:
-            for style in ds[set_type][k]:
-                if style == 'img_path':
+        for k in ds[data_type]:
+            for style in ds[data_type][k]:
+                if style == 'image_path' or style == 'factual':
                     continue
-                all_data['category'].extend([style] * len(ds[set_type][k][style]))
-                all_data['text'].extend(ds[set_type][k][style])
-        if set_type == 'train':
+                all_data['category'].extend([style] * len(ds[data_type][k][style]))
+                all_data['text'].extend(ds[data_type][k][style])
+        if data_type == 'train':
             df_train = pd.DataFrame(all_data)
             df_train.to_csv(os.path.join(data_dir, 'train.csv'))
-        elif set_type == 'val':
+        elif data_type == 'val':
             df_val = pd.DataFrame(all_data)
             df_val.to_csv(os.path.join(data_dir, 'val.csv'))
-        elif set_type == 'test':
+        elif data_type == 'test':
             df_test = pd.DataFrame(all_data)
             df_test.to_csv(os.path.join(data_dir, 'test.csv'))
     return df_train, df_val, df_test
 
 
 def main():
-    desired_cuda_num = "0"
-
-    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
-    print(f"cur time is: {cur_time}")
-
-    os.environ["CUDA_VISIBLE_DEVICES"] = desired_cuda_num
-    np.random.seed(112)  # todo there may be many more seeds to fix
-    torch.cuda.manual_seed(112)
-    overwrite_pairs = True  # todo
 
     print('Start!')
     args = parser.parse_args()
     print(f'main: config_file: {args.config_file}')
     config = get_hparams(args)
+    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    print(f"cur time is: {cur_time}")
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(config['cuda_idx_num'])
+
+    np.random.seed(112)  # todo there may be many more seeds to fix
+    torch.cuda.manual_seed(112)
+    # overwrite_pairs = True  # todo
+
     checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
     experiment_dir = os.path.join(checkpoints_dir, cur_time)
     os.makedirs(experiment_dir)
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
-    dataset_names = ['senticap', 'flickrstyle10k']
-    dataset_names = ['senticap']
-    if dataset_names[0] == 'senticap':
-        labels_set_dict = {'positive': 0, 'negative': 1}
-        labels_idx_to_str = {0: 'positive', 1: 'negative'}
-    elif dataset_names[0] == 'flickrstyle10k':
-        labels_set_dict = {'humor': 0, 'romantic': 1}
-        labels_idx_to_str = {0: 'humor', 1: 'romantic'}
 
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
-    for dataset_name in dataset_names:
-        for set_type in ['train', 'val', 'test']:
-            data_set_path[set_type][dataset_name] = os.path.join(data_dir, dataset_name, 'annotations',
-                                                                 set_type + '.pkl')
+    for data_type in ['train', 'val', 'test']:
+        data_set_path[data_type] = os.path.join(data_dir, config['data_name'], 'annotations',
+                                                             data_type + '.pkl')
 
-    path_for_saving_last_model = os.path.join(experiment_dir, config['model_name'])
-    path_for_saving_best_model = os.path.join(experiment_dir, config['best_model_name'])
+    path_for_saving_last_model = os.path.join(experiment_dir, config['txt_embed_model_name'])
+    path_for_saving_best_model = os.path.join(experiment_dir, config['txt_embed_best_model_name'])
     # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
     path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
     if config['plot_only_clustering']:
-        # tgt_file_vec_emb = {'mean': os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['mean_vec_emb_file']),
-        #                     'median': os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['median_vec_emb_file'])}
         tgt_file_vec_emb = {
-            'mean': os.path.join(checkpoints_dir, 'best_models', config['mean_vec_emb_file']),
-            'median': os.path.join(checkpoints_dir, 'best_models', config['median_vec_emb_file']),
-            'std':  os.path.join(checkpoints_dir, 'best_models', config['std_vec_emb_file'])}
+            'mean': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_mean_vec_emb_file']),
+            'median': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_median_vec_emb_file']),
+            'std':  os.path.join(checkpoints_dir, 'best_models', config['txt_embed_std_vec_emb_file'])}
     else:
-        tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['mean_vec_emb_file']),
-                            'median': os.path.join(experiment_dir, config['median_vec_emb_file'])}
+        tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['txt_embed_mean_vec_emb_file']),
+                            'median': os.path.join(experiment_dir, config['txt_embed_median_vec_emb_file']),
+                            'std':  os.path.join(experiment_dir, config['txt_embed_std_vec_emb_file'])}
     # tgt_file_pairs_list = os.path.join(config['data_dir'],config['tgt_file_pairs_list'])
 
     use_cuda = torch.cuda.is_available()
-    device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
+    device = torch.device(f"cuda:{config['desired_cuda_num']}" if use_cuda else "cpu")  # todo: remove
     wandb.init(project='zero-shot-learning',
                config=config,
                resume=config['resume'],
@@ -984,15 +970,15 @@ def main():
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
     print(len(df_train), len(df_val), len(df_test))
-    print(f"labels: {labels_set_dict}")
+    print(f"labels: {config['labels_set_dict']}")
 
     # df_train,df_test = get_train_test_data(config, config['undesired_label'])
     model, optimizer = get_model_and_optimizer(config, path_for_loading_best_model, device)
-    # labels_set_dict,labels_idx_to_str = getting_labels_map(df_train)
+    # config['labels_set_dict'],config['labels_idx_to_str'] = getting_labels_map(df_train)
     if config['plot_only_clustering']:
         print("********plot_only_clustering********")
         log_dict = {}
-        train_data_set, val_data_set, test_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict), Dataset(df_test, labels_set_dict)
+        train_data_set, val_data_set, test_data_set = Dataset(df_train, config['labels_set_dict']), Dataset(df_val, config['labels_set_dict']), Dataset(df_test, config['labels_set_dict'])
         train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
                                                        batch_size=config['batch_size'], shuffle=True,
                                                        num_workers=config['num_workers'])
@@ -1003,20 +989,20 @@ def main():
                                                      batch_size=config['batch_size'],
                                                      shuffle=True, num_workers=config['num_workers'])
         log_dict["final/final_train_plot"] = plot_final_graph_after_training(device, config, path_for_loading_best_model,
-                                                                       labels_idx_to_str, tgt_file_vec_emb, df_train,
+                                                                       config['labels_idx_to_str'], tgt_file_vec_emb, df_train,
                                                                        train_dataloader, title="Train")
 
         log_dict["final/final_val_plot"] = plot_final_graph_after_training(device, config, path_for_loading_best_model,
-                                                                     labels_idx_to_str, tgt_file_vec_emb, df_val,
+                                                                     config['labels_idx_to_str'], tgt_file_vec_emb, df_val,
                                                                      val_dataloader, title="Val")
         log_dict["final/final_test_plot"] = plot_final_graph_after_training(device, config, path_for_loading_best_model,
-                                                                     labels_idx_to_str, tgt_file_vec_emb, df_test,
+                                                                     config['labels_idx_to_str'], tgt_file_vec_emb, df_test,
                                                                      test_dataloader, title="Test")
         print("send data to wandb...")
         wandb.log(log_dict)
 
         # log_dict_train = plot_graph_on_all_data(df_train,
-        #                                         labels_set_dict, labels_idx_to_str, device, model,
+        #                                         config['labels_set_dict'], config['labels_idx_to_str'], device, model,
         #                                         config['inner_batch_size'], config['batch_size'],
         #                                         "final embedding on trainning set for best model",
         #                                         tgt_file_vec_emb, True, True, config['num_workers'],
@@ -1026,9 +1012,9 @@ def main():
     # senity_check(df_train)
     # pos_combinations_labels, neg_combinations_labels = get_pos_neg_pairs(df_test, tgt_file_pairs_list, overwrite_pairs)
 
-    train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
+    train(model, optimizer, df_train, df_val, config['labels_set_dict'], config['labels_idx_to_str'], path_for_saving_last_model,
           path_for_saving_best_model, device, tgt_file_vec_emb, config)
-    # evaluate(model,  filtered_df_test, labels_set_dict, device, config,pos_combinations_labels,neg_combinations_labels)
+    # evaluate(model,  filtered_df_test, config['labels_set_dict'], device, config,pos_combinations_labels,neg_combinations_labels)
 
     print('  finish!')
 
