@@ -927,7 +927,7 @@ def main():
     config = get_hparams(args)
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(config['cuda_idx_num'])
+    # os.environ["CUDA_VISIBLE_DEVICES"] = str(config['cuda_idx_num'])
 
     np.random.seed(112)  # todo there may be many more seeds to fix
     torch.cuda.manual_seed(112)
