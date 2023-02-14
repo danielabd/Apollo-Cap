@@ -97,7 +97,7 @@ class CLIPScore:
         return score[0][0], [score]
 
 class STYLE_CLS:
-    def __init__(self, txt_cls_model_paths, data_dir, desired_cuda_num, labels_dict_idxs):
+    def __init__(self, txt_cls_model_path, data_dir, desired_cuda_num, labels_dict_idxs):
         self.data_dir = data_dir
         self.desired_cuda_num = desired_cuda_num
         self.labels_dict_idxs = labels_dict_idxs
@@ -106,9 +106,7 @@ class STYLE_CLS:
         use_cuda = torch.cuda.is_available()
         # self.device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
         self.device = torch.device(f"cuda" if use_cuda else "cpu")  # todo: remove
-        self.model = {}
-        for dataset_name in txt_cls_model_paths:
-            self.model[dataset_name] = self.load_model(txt_cls_model_paths[dataset_name])
+        self.model = self.load_model(txt_cls_model_path)
 
 
     def load_model(self, txt_cls_model_path):
@@ -492,30 +490,32 @@ def get_all_sentences(data_dir, dataset_name,type_set):
     return sentences
 
 
-def get_gts_data(test_set_path,factual_captions):
+def get_gts_data(test_set_path,factual_captions, data_name):
     '''
 
     :param test_set_path: dictionary:keys=dataset names, values=path to pickle file
     :return: gts_per_data_set: key=img_name,values=dict:keys=['img_path','factual','humor','romantic','positive','negative'], values=gt text
     '''
     gts_per_data_set = {}
-    for dataset_name in test_set_path:
-        gts = {}
-        with open(test_set_path[dataset_name], 'rb') as r:
-            data = pickle.load(r)
-        for k in data:
-            gts[k] = {}
-            # gts[k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
-            gts[k]['factual'] = factual_captions[k]
-            gts[k]['img_path'] = os.path.join(os.path.expanduser('~'),'data','senticap','images','test',data[k]['image_path'].split('/')[-1])
-            if dataset_name == 'flickrstyle10k':
-                gts[k]['humor'] = data[k]['humor']
-                gts[k]['romantic'] = data[k]['romantic']
-            elif dataset_name == 'senticap':
-                gts[k]['positive'] = data[k]['positive']
-                gts[k]['negative'] = data[k]['negative']
-        gts_per_data_set[dataset_name] = gts
-    return gts_per_data_set
+    gts = {}
+    with open(test_set_path, 'rb') as r:
+        data = pickle.load(r)
+    for k in data:
+        gts[k] = {}
+        # gts[k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
+        gts[k]['factual'] = factual_captions[k]
+        gts[k]['img_path'] = os.path.join(os.path.expanduser('~'),'data',data_name,'images','test',data[k]['image_path'].split('/')[-1])
+        for style in data[k]:
+            if style!='image_path' and style!='factual':
+                gts[k][style] = data[k][style]
+
+        # if dataset_name == 'flickrstyle10k':
+        #     gts[k]['humor'] = data[k]['humor']
+        #     gts[k]['romantic'] = data[k]['romantic']
+        # elif dataset_name == 'senticap':
+        #     gts[k]['positive'] = data[k]['positive']
+        #     gts[k]['negative'] = data[k]['negative']
+    return gts
 
 
 def get_res_data(res_paths):
