@@ -961,7 +961,7 @@ def main():
     use_cuda = torch.cuda.is_available()
     # device = torch.device(f"cuda:{config['desired_cuda_num']}" if use_cuda else "cpu")  # todo: remove
     device = torch.device("cuda" if use_cuda else "cpu")  # todo: remove
-    wandb.init(project='zero-shot-learning',
+    wandb.init(project='text_style_embedding',
                config=config,
                resume=config['resume'],
                id=config['run_id'],

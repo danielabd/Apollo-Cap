@@ -9,8 +9,8 @@ parameters:
     max: 2
     min: 0.2
     distribution: uniform
-  epochs:
-    value: 25
+#  epochs:
+#    value: 25
   lr:
     values:
     - 0.01

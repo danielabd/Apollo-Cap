@@ -42,7 +42,7 @@ text_to_imitate_list: ["humor"]
 #specific_imgs_to_test: [108698]
 ################
 
-epochs: 12 #200
+epochs: 25  # 12 #200
 lr: 0.01 #1e-6
 batch_size: 16
 margin: 0.8168 # 1.4
