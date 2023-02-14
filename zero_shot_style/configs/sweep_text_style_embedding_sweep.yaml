@@ -1,4 +1,4 @@
-program: text_style_embedding.py
+program: model/text_style_embedding.py
 project: text_style_embedding
 method: bayes
 metric:
