@@ -959,7 +959,8 @@ def main():
     # tgt_file_pairs_list = os.path.join(config['data_dir'],config['tgt_file_pairs_list'])
 
     use_cuda = torch.cuda.is_available()
-    device = torch.device(f"cuda:{config['desired_cuda_num']}" if use_cuda else "cpu")  # todo: remove
+    # device = torch.device(f"cuda:{config['desired_cuda_num']}" if use_cuda else "cpu")  # todo: remove
+    device = torch.device("cuda" if use_cuda else "cpu")  # todo: remove
     wandb.init(project='zero-shot-learning',
                config=config,
                resume=config['resume'],
