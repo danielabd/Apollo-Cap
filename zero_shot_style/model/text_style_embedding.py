@@ -33,12 +33,13 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
 
 def get_args():
-    parser.add_argument('--lr', type=float, default=0.000001, help='description')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
     parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
     parser.add_argument('--last_layer_idx_to_freeze', type=int, default=-1, help='last_layer idx of BERT to freeze')
     parser.add_argument('--freeze_after_n_epochs', type=int, default=3, help='freeze BERT after_n_epochs')
     parser.add_argument('--scale_noise', type=float, default=0.04, help='scale of gaussian noise to add to the embedding vector of sentence')
+    args = parser.parse_args()
+    return args
 
 
 class PosNegPairsDataset(torch.utils.data.Dataset):
@@ -936,9 +937,9 @@ def convert_ds_to_df(ds, data_dir):
 def main():
 
     print('Start!')
-    args = parser.parse_args()
-    print(f'main: config_file: {args.config_file}')
+    args = get_args()
     config = get_hparams(args)
+    print(f'main: config_file: {args.config_file}')
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
     # os.environ["CUDA_VISIBLE_DEVICES"] = str(config['cuda_idx_num'])
