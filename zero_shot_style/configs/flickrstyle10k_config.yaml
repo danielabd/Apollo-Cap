@@ -25,8 +25,8 @@ beam_size: 4 #3
 num_iterations: 5 # 8
 
 embedding_vectors_std:
-  positive: 0.05536 #0.028914157
-  negative: 0.007185  #0.020412436
+  humor: 0.05536 #0.028914157
+  romantic: 0.007185  #0.020412436
 
 #ZeroCap params
 zerocap_clip_scale: 1
@@ -51,7 +51,7 @@ labels_dict_idxs:
 
 arithmetics_weights: [1, -0.5, 0.5]
 img_idx_to_start_from: 0
-desired_labels: [humor, romantic] #[factual, positive, ngeative]
+desired_labels: [humor, romantic] #[factual, humor, romantic]
 
 reset_context_delta: True
 calc_fluency: True
