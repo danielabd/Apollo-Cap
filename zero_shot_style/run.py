@@ -519,7 +519,8 @@ def main():
     img_dict_img_arithmetic, debug_tracking, tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load = initial_variables()
 
     imgs_to_test = get_list_of_imgs_for_caption(config)
-    gts_data = get_gts_data(data_path,factual_captions, config['data_name'])
+    if config["data_name"] == "senticap": #todo:debug
+        gts_data = get_gts_data(data_path,factual_captions, config['data_name'])
     if not config['debug_mac']:
         text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path, tmp_text_loss=tmp_text_loss,
                                            **config)
@@ -608,7 +609,8 @@ def main():
         for label in list(evaluation_results[img_name].keys()):
             if label == 'img_path':
                 continue
-            evaluation_results[img_name][label]['gt'] = gts_data[img_name][label] #todo: handle style type
+            if config["data_name"] == "senticap":
+                evaluation_results[img_name][label]['gt'] = gts_data[img_name][label] #todo: handle style type
             evaluation_results[img_name][label]['scores'] = evaluate_single_res(
                 evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
                 evaluation_results[img_name]['img_path'], label, config['data_name'], config['evaluationo_metrics'],

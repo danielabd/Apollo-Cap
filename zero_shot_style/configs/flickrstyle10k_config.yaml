@@ -2,12 +2,11 @@
 data_name: flickrstyle10k
 use_style_model: False
 use_text_style_example: False
-run_type: caption #caption, arithmetics, img_prompt_manipulation
+run_type: arithmetics #caption, arithmetics, img_prompt_manipulation
 cond_text_dict:
   humor: The humorous image of a
   romantic: The romantic image of a
   #  factual: Image of a
-
 #cond_text_list:
 #  humor: ""
 #  romantic: ""
