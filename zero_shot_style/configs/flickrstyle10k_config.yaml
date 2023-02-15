@@ -71,7 +71,7 @@ last_layer_idx_to_freeze: 9
 freeze_after_n_epochs: 6
 
 inner_batch_size: 1
-best_model_name: checkpoints/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth
+best_model_name: checkpoints/best_models/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth
 model_name: latest_text_style_embedding_model_senticap.pth
 
 mean_vec_emb_file:  checkpoints/best_models/flickrstyle10k/flickrstyle10k_mean_class_embedding.p
