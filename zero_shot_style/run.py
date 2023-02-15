@@ -543,6 +543,8 @@ def main():
         if img_path_idx < config['img_idx_to_start_from']:
             continue
         img_name = img_path.split('/')[-1].split('.')[0]
+        if config["data_name"] == "senticap":
+            img_name = int(img_name)
         config['img_path'] = img_path
         evaluation_results[img_name] = {'img_path': img_path}
         if not os.path.isfile(config['img_path']):
@@ -580,13 +582,13 @@ def main():
 
             #image manipulation
             elif config['run_type'] == 'arithmetics':
-                print(title2print)
                 config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
                 factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
                 img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
                 config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
                 title2print = get_title2print(config['img_path'], config['data_name'],
                                               label,  config)
+                print(title2print)
                 best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,label, imgs_path=config['arithmetics_imgs'],
                                img_weights=config['arithmetics_weights'], cuda_idx=config['cuda_idx_num'],title2print = title2print)
                 write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
