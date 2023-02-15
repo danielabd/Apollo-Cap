@@ -413,19 +413,20 @@ def update_running_params(label, config):
 
 def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir, labels_dict_idxs):
     evaluation_obj = {}
-    for metric in config['evaluationo_metrics']:
-        if metric=='bleu':
-            evaluation_obj['bleu'] = Bleu(n=4)
-        if metric=='rouge':
-            evaluation_obj['rouge'] = Rouge()
-        if metric == 'clip_score_ref':
-            evaluation_obj['clip_score_ref'] = CLIPScoreRef(text_generator)
-        if metric == 'clip_score':
-            evaluation_obj['clip_score'] = CLIPScore(text_generator)
-        if metric == 'fluency':
-            evaluation_obj['fluency'] = Fluency()
-        if metric == 'style_cls':
-            evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'], labels_dict_idxs) #todo:change handling dataset_type qs list
+    if config["calc_evaluation"]:
+        for metric in config['evaluationo_metrics']:
+            if metric=='bleu':
+                evaluation_obj['bleu'] = Bleu(n=4)
+            if metric=='rouge':
+                evaluation_obj['rouge'] = Rouge()
+            if metric == 'clip_score_ref':
+                evaluation_obj['clip_score_ref'] = CLIPScoreRef(text_generator)
+            if metric == 'clip_score':
+                evaluation_obj['clip_score'] = CLIPScore(text_generator)
+            if metric == 'fluency':
+                evaluation_obj['fluency'] = Fluency()
+            if metric == 'style_cls':
+                evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'], labels_dict_idxs) #todo:change handling dataset_type qs list
 
     if config['calc_fluency']:
         fluency_obj = Fluency()

@@ -15,6 +15,7 @@ cond_text_dict:
 max_num_of_imgs: -1 #10 #-1
 wandb_mode: online #'disabled, offline, online'
 data_type: test
+calc_evaluation: False
 
 #atomic sweep  3 - total avg score = 0.3243:   https://wandb.ai/bdaniela/StylizedZeroCap/sweeps/z08bsrnr?workspace=user-bdaniela
 clip_scale:  3.746143446 #2.965
