@@ -1,16 +1,16 @@
 ###### stylized ZeroCap: create captions - for run.py
 data_name: flickrstyle10k
-use_style_model: False
+use_style_model: True
 use_text_style_example: False
-run_type: arithmetics #caption, arithmetics, img_prompt_manipulation
-cond_text_dict:
-  humor: The humorous image of a
-  romantic: The romantic image of a
-  #  factual: Image of a
+run_type: caption #caption, arithmetics, img_prompt_manipulation
 #cond_text_dict:
-#  humor: ""
-#  romantic: ""
-#  factual: ""
+#  humor: The humorous image of a
+#  romantic: The romantic image of a
+  #  factual: Image of a
+cond_text_dict:
+  humor: ""
+  romantic: ""
+  factual: ""
 
 max_num_of_imgs: -1 #10 #-1
 wandb_mode: online #'disabled, offline, online'
