@@ -349,7 +349,7 @@ def bu_plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, devic
         return log_dict, roc_auc
     return log_dict
 
-def plot_final_graph_after_training(device, config, path_for_best_model, labels_idx_to_str, tgt_file_vec_emb,df,dataloader, title):
+def plot_final_graph_after_training(device, config, path_for_best_model, labels_idx_to_str, tgt_file_vec_emb,df,dataloader, title, save_vec_emb=False):
     print(title+" dataset...")
     model = TextStyleEmbed(device=device)
     if 'cuda' in device.type:
@@ -379,7 +379,7 @@ def plot_final_graph_after_training(device, config, path_for_best_model, labels_
     final_total_labels_str = [labels_idx_to_str[i] for i in final_total_labels]
     return plot_graph_on_all_data(df, final_total_outputs, final_total_labels_str, final_total_texts_list,
                                                   "best model for " + title,
-                                                  tgt_file_vec_emb)
+                                                  tgt_file_vec_emb, save_vec_emb)
 
 def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
           path_for_saving_best_model, device, tgt_file_vec_emb, config):
