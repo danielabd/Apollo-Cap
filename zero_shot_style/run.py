@@ -40,7 +40,7 @@ def get_args():
     parser.add_argument("--target_seq_length", type=int, default=15)
     parser.add_argument("--data_type", type=str, default='val', choices = ['train', 'val', 'test'])
     parser.add_argument("--cond_text", type=str, default="Image of a")
-    parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
+    # parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
     # parser.add_argument("--cond_text_list", nargs="+", type=str, default=["A creative short caption I can generate to describe this image is:",
     #                                                                       "A creative positive short caption I can generate to describe this image is:",
     #                                                                       "A creative negative short caption I can generate to describe this image is:",
@@ -454,20 +454,7 @@ def initial_variables():
 
     if not config['use_style_model']:
         config['text_style_scale'] = 0
-    imgs_dataset_type_dict = {49: 'factual', 50: 'positive', 51: 'negative', 52: 'humor', 53: 'romantic'}
 
-    if len(config["cond_text_list"]) == 1:
-        label2prompt = {"factual": config["cond_text_list"][0], "positive": config["cond_text_list"][0],
-                        "negative": config["cond_text_list"][0]}
-    else:
-        label2prompt = {"factual": config["cond_text_list"][0], "positive": config["cond_text_list"][1],
-                        "negative": config["cond_text_list"][2]}
-
-    if config['run_type'] == 'img_prompt_manipulation':
-        prompt2idx_img_style = {config['cond_text_list'][0]: 49, config['cond_text_list'][1]: 50,
-                                config['cond_text_list'][2]: 51}
-    else:
-        prompt2idx_img_style = None
 
     with open(factual_captions_path,'rb') as f:
         factual_captions = pickle.load(f)
@@ -520,16 +507,16 @@ def initial_variables():
     model_path = os.path.join(os.path.expanduser('~'), config['best_model_name'])
 
     return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path,\
-           mean_embedding_vec_path, tgt_results_path, labels_dict_idxs, label2prompt, prompt2idx_img_style, cur_time, img_dict,\
-           img_dict_img_arithmetic, imgs_dataset_type_dict, debug_tracking, tmp_text_loss,  factual_captions, desired_labels_list, embedding_vectors_to_load
+           mean_embedding_vec_path, tgt_results_path, labels_dict_idxs, cur_time, img_dict,\
+           img_dict_img_arithmetic, debug_tracking, tmp_text_loss,  factual_captions, desired_labels_list, embedding_vectors_to_load
 
 
 
 
 def main():
     config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
-    mean_embedding_vec_path, tgt_results_path, labels_dict_idxs, label2prompt, prompt2idx_img_style, cur_time, img_dict, \
-    img_dict_img_arithmetic, imgs_dataset_type_dict, debug_tracking, tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load = initial_variables()
+    mean_embedding_vec_path, tgt_results_path, labels_dict_idxs, cur_time, img_dict, \
+    img_dict_img_arithmetic, debug_tracking, tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load = initial_variables()
 
     imgs_to_test = get_list_of_imgs_for_caption(config)
     gts_data = get_gts_data(data_path,factual_captions, config['data_name'])
@@ -560,7 +547,7 @@ def main():
             continue
         #go over all labels
         for label_idx, label in enumerate(desired_labels_list):
-            config['cond_text'] = label2prompt[label]
+            config['cond_text'] = config["cond_text_dict"][label]
             config = update_running_params(label, config)
             text_generator.set_params(config['ce_scale'], config['clip_scale'], config['text_style_scale'],
                                       config['beam_size'], config['num_iterations'])
@@ -591,46 +578,16 @@ def main():
 
             #image manipulation
             elif config['run_type'] == 'arithmetics':
-                if label_idx>0:
-                    break
-                config['cond_text'] = ""
-                #none arithmetic - factual
-                title2print = get_title2print(config['img_path'], config['data_name'], 'factual', config)
                 print(title2print)
-                config['arithmetics_imgs'] = [config['img_path'], config['img_path'], config['img_path']]
-                best_caption = run_arithmetic(text_generator,config,model_path, img_dict_img_arithmetic, img_name,
-                               'factual', imgs_path=config['arithmetics_imgs'],
-                               img_weights=[1, 0, 0], cuda_idx=config['cuda_idx_num'],title2print = title2print)
-
-                write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
-
                 config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
-                factual_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
-                #go over all arithmetic styles
-                for idx, v in enumerate(config['arithmetics_style_imgs'][1:]):
-                    print(f"Img num = {img_path_idx}")
-                    img_style = get_full_path_of_stylized_images(data_dir, v)
-                    config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
-                    title2print = get_title2print(config['img_path'], config['data_name'],
-                                                  imgs_dataset_type_dict[int(v)],  config)
-                    best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,imgs_dataset_type_dict[int(v)], imgs_path=config['arithmetics_imgs'],
-                                   img_weights=config['arithmetics_weights'], cuda_idx=config['cuda_idx_num'],title2print = title2print)
-                    write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
-
-            #image and prompt manipulation
-            elif config['run_type'] == 'img_prompt_manipulation':
-                #only styles-no factual
-                config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
-                factual_img_style = get_full_path_of_stylized_images(data_dir, config['arithmetics_style_imgs'][0])
-                v = prompt2idx_img_style[config['cond_text']]
-                img_style = get_full_path_of_stylized_images(data_dir, v)
+                factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
+                img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
                 config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
-                title2print = get_title2print(config['img_path'], config['data_name'], imgs_dataset_type_dict[int(v)],
-                                              config)
-                best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,imgs_dataset_type_dict[int(v)], imgs_path=config['arithmetics_imgs'],
+                title2print = get_title2print(config['img_path'], config['data_name'],
+                                              label,  config)
+                best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,label, imgs_path=config['arithmetics_imgs'],
                                img_weights=config['arithmetics_weights'], cuda_idx=config['cuda_idx_num'],title2print = title2print)
                 write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
-
             else:
                 raise Exception('run_type must be caption or arithmetics!')
             evaluation_results[img_name][label]['res'] = best_caption
