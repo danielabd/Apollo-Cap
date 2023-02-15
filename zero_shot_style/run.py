@@ -447,7 +447,7 @@ def initial_variables():
         return desired_labels_list, embedding_vectors_to_load
     args = get_args()
     config = get_hparams(args)
-    os.environ["CUDA_VISIBLE_DEVICES"] = config['cuda_idx_num']
+    # os.environ["CUDA_VISIBLE_DEVICES"] = config['cuda_idx_num']
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl')
     mean_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['mean_vec_emb_file'])
