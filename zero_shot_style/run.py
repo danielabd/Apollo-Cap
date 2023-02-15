@@ -376,15 +376,15 @@ def get_list_of_imgs_for_caption(config):
 
 def update_running_params(label, config):
     '''Assume that in the configuration of the running there is single value of use_style_model, otherwise will be mistake in running params'''
+    def save_running_params(config):
+        if 'running_param_clip_scale' not in config:
+            config['running_param_use_style_model'] = config['use_style_model']
+            config['running_param_clip_scale'] = config['clip_scale']
+            config['running_param_ce_scale'] = config['ce_scale']
+            config['running_param_text_style_scale'] = config['text_style_scale']
+            config['running_param_beam_size'] = config['beam_size']
+            config['running_param_num_iterations'] = config['num_iterations']
     def update_zerocap_params(config):
-        def save_running_params(config):
-            if 'running_param_clip_scale' not in config:
-                config['running_param_use_style_model'] = config['use_style_model']
-                config['running_param_clip_scale'] = config['clip_scale']
-                config['running_param_ce_scale'] = config['ce_scale']
-                config['running_param_text_style_scale'] = config['text_style_scale']
-                config['running_param_beam_size'] = config['beam_size']
-                config['running_param_num_iterations'] = config['num_iterations']
         save_running_params(config)
         config['clip_scale'] = config['zerocap_clip_scale']
         config['ce_scale'] = config['zerocap_ce_scale']
@@ -393,6 +393,7 @@ def update_running_params(label, config):
         config['text_style_scale'] = config['zerocap_text_style_scale']
         return config
     def update_running_params(config):
+        save_running_params(config)
         config['use_style_model'] = config['running_param_use_style_model']
         config['clip_scale'] = config['running_param_clip_scale']
         config['ce_scale'] = config['running_param_ce_scale']
