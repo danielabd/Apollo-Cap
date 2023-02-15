@@ -38,6 +38,8 @@ def get_args():
     parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
     parser.add_argument('--last_layer_idx_to_freeze', type=int, default=-1, help='last_layer idx of BERT to freeze')
     parser.add_argument('--freeze_after_n_epochs', type=int, default=3, help='freeze BERT after_n_epochs')
+    parser.add_argument('--scale_noise', type=float, default=0.04, help='scale of gaussian noise to add to the embedding vector of sentence')
+
 
 class PosNegPairsDataset(torch.utils.data.Dataset):
     def __init__(self, pos_combinations_labels, neg_combinations_labels):
@@ -98,7 +100,7 @@ class AddGuassianNoise(Layer):
 
 # based on bert
 class TextStyleEmbed(nn.Module):
-    def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1, last_layer_idx_to_freeze=-1):
+    def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1, last_layer_idx_to_freeze=-1, scale_noise=0):
         super(TextStyleEmbed, self).__init__()
         bert_config = BertConfig.from_pretrained("bert-base-cased", output_hidden_states=True)
         self.bert = BertModel.from_pretrained('bert-base-cased', config=bert_config)
@@ -111,6 +113,7 @@ class TextStyleEmbed(nn.Module):
         # self.linear2 = nn.Linear(128, NUM_OF_CLASSES)
         self.relu = nn.ReLU()
         self.hidden_state_to_take = hidden_state_to_take
+        self.scale_noise = scale_noise
 
     def forward(self, input_id, mask):
         # _, x = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
@@ -784,7 +787,7 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
     if config['load_model']:  # load_model
         print(f"Loading model from: {path_for_loading_best_model}")
         model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'],
-                               last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'])
+                               last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
         # optimizer = SGD(model.parameters(), lr=config['lr'])
         # take only non-frozen params:
         optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
@@ -799,7 +802,7 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         #  train from scratch
         print("Train model from scratch")
         model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'],
-                               last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'])
+                               last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
         # optimizer = SGD(model.parameters(), lr=config['lr'])
 
         # take only non-frozen params:

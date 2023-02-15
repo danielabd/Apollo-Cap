@@ -28,3 +28,10 @@ parameters:
     max: 10
     min: 0
     distribution: int_uniform
+  scale_noise:
+    values:
+      - 0.16
+      - 0.12
+      - 0.08
+      - 0.04
+    distribution: categorical

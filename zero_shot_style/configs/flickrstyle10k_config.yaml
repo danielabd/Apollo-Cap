@@ -103,7 +103,6 @@ labels_idx_to_str:
   0: humor
   1: romantic
 
-
 txt_embed_model_name: best_text_style_embedding_model_senticap.pth
 txt_embed_best_model_name: latest_text_style_embedding_model_senticap.pth
 txt_embed_mean_vec_emb_file: senticap_mean_class_embedding.p
