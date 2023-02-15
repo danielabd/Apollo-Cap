@@ -119,6 +119,8 @@ class TextStyleEmbed(nn.Module):
         x = x / x.norm(dim=-1, keepdim=True)
         return x
 
+
+
     def freeze_layers(self, last_layer_idx_to_freeze):
         '''
 
