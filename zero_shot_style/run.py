@@ -384,6 +384,7 @@ def update_running_params(label, config):
             config['running_param_text_style_scale'] = config['text_style_scale']
             config['running_param_beam_size'] = config['beam_size']
             config['running_param_num_iterations'] = config['num_iterations']
+        return config
     def update_zerocap_params(config):
         save_running_params(config)
         config['clip_scale'] = config['zerocap_clip_scale']
@@ -400,6 +401,7 @@ def update_running_params(label, config):
         config['text_style_scale'] = config['running_param_text_style_scale']
         config['beam_size'] = config['running_param_beam_size']
         config['num_iterations'] = config['running_param_num_iterations']
+        return config
     if label == 'factual':
         config = update_zerocap_params(config)  # todo:check if need to return it
         config['use_style_model'] = False
