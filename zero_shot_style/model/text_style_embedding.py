@@ -85,19 +85,6 @@ class Dataset(torch.utils.data.Dataset):
             return batch_tweets, label
 
 
-class AddGuassianNoise(Layer):
-  def __init__(self, scale: float, renormalize=True):
-    super().__init__()
-    self.scale = scale
-    self.renormalize = renormalize
-
-  def forward(self, x):
-    if self.training:
-      x = x + torch.randn_like(x)*self.scale
-      if self.renormalize:
-        x = x / x.norm(dim=-1, keepdim=True)
-    return x
-
 # based on bert
 class TextStyleEmbed(nn.Module):
     def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1, last_layer_idx_to_freeze=-1, scale_noise=0):
