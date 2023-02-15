@@ -411,7 +411,7 @@ def update_running_params(label, config):
 
 
 
-def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir, labels_dict_idxs):
+def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir):
     evaluation_obj = {}
     if config["calc_evaluation"]:
         for metric in config['evaluationo_metrics']:
@@ -426,7 +426,7 @@ def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir, lab
             if metric == 'fluency':
                 evaluation_obj['fluency'] = Fluency()
             if metric == 'style_cls':
-                evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'], labels_dict_idxs) #todo:change handling dataset_type qs list
+                evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'], config['labels_dict_idxs']) #todo:change handling dataset_type qs list
 
     if config['calc_fluency']:
         fluency_obj = Fluency()
@@ -470,12 +470,18 @@ def initial_variables():
                tags=config['tags'])
 
     # handle sweep training names
+    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    print(f'Current time is: {cur_time}')
+    cur_date = datetime.now().strftime("%d_%m_%Y")
     config['training_name'] = f'{wandb.run.id}-{wandb.run.name}'
-    config[
-        'experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/5_3_23/{config["training_name"]}'
-    wandb.config.update(config, allow_val_change=True)
+    tmp_dir = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}'
+    if not os.path.isdir(tmp_dir):
+        os.makedirs(tmp_dir)
+    config['experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}/{config["training_name"]}'
+    results_dir = config['experiment_dir']
+    tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
 
-    labels_dict_idxs = {'positive': 0, 'negative': 1, 'humor': 0, 'romantic': 1}
+    wandb.config.update(config, allow_val_change=True)
 
     txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
 
@@ -496,10 +502,7 @@ def initial_variables():
     with open(os.path.join(config['experiment_dir'], 'config.yaml'), 'w') as f:
         yaml.dump(config, f, default_flow_style=False)
     print('saved experiment config in ', os.path.join(config['experiment_dir'], 'config.pkl'))
-    results_dir = config['experiment_dir']
-    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
-    tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
-    print(f'Current time is: {cur_time}')
+
 
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
     img_dict_img_arithmetic = defaultdict(lambda: defaultdict(lambda: ""))  # img_path,dataset_type
@@ -508,16 +511,16 @@ def initial_variables():
     model_path = os.path.join(os.path.expanduser('~'), config['best_model_name'])
 
     return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path,\
-           mean_embedding_vec_path, tgt_results_path, labels_dict_idxs, cur_time, img_dict,\
-           img_dict_img_arithmetic, debug_tracking, tmp_text_loss,  factual_captions, desired_labels_list, embedding_vectors_to_load
+           mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
+           tmp_text_loss,  factual_captions, desired_labels_list, embedding_vectors_to_load
 
 
 
 
 def main():
     config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
-    mean_embedding_vec_path, tgt_results_path, labels_dict_idxs, cur_time, img_dict, \
-    img_dict_img_arithmetic, debug_tracking, tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load = initial_variables()
+    mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
+    tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load = initial_variables()
 
     imgs_to_test = get_list_of_imgs_for_caption(config)
     if config["data_name"] == "senticap": #todo:debug
@@ -527,7 +530,7 @@ def main():
                                            **config)
     else:
         text_generator = None
-    evaluation_obj, fluency_obj = get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir, labels_dict_idxs)
+    evaluation_obj, fluency_obj = get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir)
 
     # go over all images
     evaluation_results = {} #total_results_structure

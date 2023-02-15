@@ -7,7 +7,7 @@ cond_text_dict:
   humor: The humorous image of a
   romantic: The romantic image of a
   #  factual: Image of a
-#cond_text_list:
+#cond_text_dict:
 #  humor: ""
 #  romantic: ""
 #  factual: ""
@@ -43,6 +43,11 @@ style_img:
   factual: 49
   humor: 52
   romantic: 53
+
+labels_dict_idxs:
+  humor: 0
+  romantic: 1
+
 
 arithmetics_weights: [1, -0.5, 0.5]
 img_idx_to_start_from: 0
@@ -97,6 +102,7 @@ labels_set_dict:
 labels_idx_to_str:
   0: humor
   1: romantic
+
 
 txt_embed_model_name: best_text_style_embedding_model_senticap.pth
 txt_embed_best_model_name: latest_text_style_embedding_model_senticap.pth

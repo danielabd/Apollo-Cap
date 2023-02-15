@@ -7,7 +7,7 @@ cond_text_dict:
   negative: The disturbing image of a
   #  factual: Image of a
 
-#cond_text_list:
+#cond_text_dict:
 #  positive: ""
 #  negative: ""
 #  factual: ""
@@ -49,6 +49,10 @@ style_img:
   factual: 49
   positive: 50
   negative: 51
+
+labels_dict_idxs:
+  positive: 0
+  negative: 1
 
 arithmetics_weights: [1, -0.5, 0.5]
 img_idx_to_start_from: 0
