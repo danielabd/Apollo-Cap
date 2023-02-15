@@ -542,7 +542,7 @@ def main():
             image_features = None
         if img_path_idx < config['img_idx_to_start_from']:
             continue
-        img_name = int(img_path.split('/')[-1].split('.')[0])
+        img_name = img_path.split('/')[-1].split('.')[0]
         config['img_path'] = img_path
         evaluation_results[img_name] = {'img_path': img_path}
         if not os.path.isfile(config['img_path']):
