@@ -80,15 +80,14 @@ hidden_state_to_take: -4
 last_layer_idx_to_freeze: 10
 freeze_after_n_epochs: 4
 inner_batch_size: 1
-data_name: senticap
 
 inner_batch_size: 1
 best_model_name: checkpoints/best_models/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth
-model_name: latest_text_style_embedding_model_senticap.pth
+model_name: latest_text_style_embedding_model_flickrstyle10k.pth
 
 mean_vec_emb_file:  checkpoints/best_models/flickrstyle10k/flickrstyle10k_mean_class_embedding.p
 median_vec_emb_file: checkpoints/best_models/flickrstyle10k/flickrstyle10k_median_class_embedding.p
-std_vec_emb_file: senticap/senticap_std_class_embedding.p
+std_vec_emb_file: flickrstyle10k/flickrstyle10k_std_class_embedding.p
 txt_cls_model_path: checkpoints/best_models/flickrstyle10k/humor_romantic_best_text_style_classification_model.pth
 data_file: ['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 experiment_name: cur_time
@@ -115,8 +114,8 @@ labels_idx_to_str:
   0: humor
   1: romantic
 
-txt_embed_model_name: best_text_style_embedding_model_senticap.pth
-txt_embed_best_model_name: latest_text_style_embedding_model_senticap.pth
-txt_embed_mean_vec_emb_file: senticap_mean_class_embedding.p
-txt_embed_median_vec_emb_file: senticaptxt_embed__median_class_embedding.p
-txt_embed_std_vec_emb_file: senticap_std_class_embedding.p
+txt_embed_model_name: best_text_style_embedding_model_flickrstyle10k.pth
+txt_embed_best_model_name: latest_text_style_embedding_model_flickrstyle10k.pth
+txt_embed_mean_vec_emb_file: flickrstyle10k_mean_class_embedding.p
+txt_embed_median_vec_emb_file: flickrstyle10ktxt_embed__median_class_embedding.p
+txt_embed_std_vec_emb_file: flickrstyle10k_std_class_embedding.p
