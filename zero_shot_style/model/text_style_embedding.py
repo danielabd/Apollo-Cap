@@ -1,4 +1,3 @@
-from matplotlib import pyplot as plt
 import pandas as pd
 import torch
 import numpy as np
@@ -975,7 +974,7 @@ def convert_ds_to_df(ds, data_dir):
 
 
 def main():
-    desired_cuda_num = "1"
+    desired_cuda_num = "0"
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
