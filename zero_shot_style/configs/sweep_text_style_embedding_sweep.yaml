@@ -34,4 +34,7 @@ parameters:
       - 0.12
       - 0.08
       - 0.04
+      - 0.02
+      - 0.01
+      - 0
     distribution: categorical
