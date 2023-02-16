@@ -327,7 +327,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             outputs = model(tokenized_texts_list['input_ids'].to(device),
                             tokenized_texts_list['attention_mask'].to(device))  # model based on bert
 
-            outputs2 = torch.FloatTensor([i[0] for i in outputs])
+            outputs2 = torch.FloatTensor([i[0] for i in outputs]).to(device)
             train_preds.extend(outputs.cpu().data.numpy())
             batch_loss = criterion(outputs2, train_label.float()) #todo:check it
             total_loss_train += batch_loss.item()
@@ -497,7 +497,9 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         #todo: check if to take only non-frozen params:
         # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
         #                 weight_decay=config['weight_decay'])
-        optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        # optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
+                         weight_decay=config['weight_decay'])
         if 'cuda' in device.type:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         else:
@@ -509,7 +511,9 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         print("Train model from scratch")
         model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
-        optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
+                         weight_decay=config['weight_decay'])
+        # optimizer = Adam(model.parameters(), lr=float(config['lr']))
     return model, optimizer
 
 
