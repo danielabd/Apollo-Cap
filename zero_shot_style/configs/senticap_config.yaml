@@ -16,7 +16,7 @@ cond_text_dict:
 #cond_text_list: [""]
 
 max_num_of_imgs: -1 #10 #-1
-wandb_mode: disabled #'disabled, offline, online'
+wandb_mode: online #'disabled, offline, online'
 data_type: test
 calc_evaluation: False
 
