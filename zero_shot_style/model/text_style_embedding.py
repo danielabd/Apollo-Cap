@@ -359,7 +359,7 @@ def bu_plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, devic
 
 def plot_final_graph_after_training(device, config, path_for_best_model, labels_idx_to_str, tgt_file_vec_emb,df,dataloader, title, save_vec_emb=False):
     print(title+" dataset...")
-    model = TextStyleEmbed(device=device)
+    model = TextStyleEmbed(device=device, hidden_state_to_take = config['hidden_state_to_take'])
     if 'cuda' in device.type:
         checkpoint = torch.load(path_for_best_model, map_location='cuda:0')
     else:
@@ -779,10 +779,10 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
         # optimizer = SGD(model.parameters(), lr=config['lr'])
-        # take only non-frozen params:
-        #todo: change optimizer like from scratch
-        optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-                        weight_decay=config['weight_decay'])
+        #todo: check if to take only non-frozen params:
+        # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
+        #                 weight_decay=config['weight_decay'])
+        optimizer = Adam(model.parameters(), lr=float(config['lr']))
         if 'cuda' in device.type:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         else:
