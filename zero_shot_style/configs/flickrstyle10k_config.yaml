@@ -61,14 +61,26 @@ text_to_imitate_list: ["humor"]
 #specific_imgs_to_test: [108698]
 ################
 
-epochs: 25  # 12 #200
-batch_size: 16
+#epochs: 25  # 12 #200
+#batch_size: 16
+#
+#lr: 0.01 #1e-6
+#margin: 0.8168 # 1.4
+#hidden_state_to_take: -4
+#last_layer_idx_to_freeze: 9
+#freeze_after_n_epochs: 6
 
-lr: 0.01 #1e-6
-margin: 0.8168 # 1.4
+
+
+epochs: 7
+lr: 0.00001
+batch_size: 16
+margin: 0.26
 hidden_state_to_take: -4
-last_layer_idx_to_freeze: 9
-freeze_after_n_epochs: 6
+last_layer_idx_to_freeze: 10
+freeze_after_n_epochs: 4
+inner_batch_size: 1
+data_name: senticap
 
 inner_batch_size: 1
 best_model_name: checkpoints/best_models/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth

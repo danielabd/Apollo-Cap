@@ -73,13 +73,13 @@ text_to_imitate_list: ["positive"]
 #     557127, 480643, 226220, 20038, 242611, 32400, 45105, 406591, 10104, 522427, 465591, 241668, 247543, 464894, 560358]
 
 
-epochs: 12
-lr: 0.01
+epochs: 7
+lr: 0.00001
 batch_size: 16
-margin: 0.8168
+margin: 0.26
 hidden_state_to_take: -4
-last_layer_idx_to_freeze: 9
-freeze_after_n_epochs: 6
+last_layer_idx_to_freeze: 10
+freeze_after_n_epochs: 4
 inner_batch_size: 1
 data_name: senticap
 best_model_name: checkpoints/senticap/best_text_style_embedding_model_senticap.pth
