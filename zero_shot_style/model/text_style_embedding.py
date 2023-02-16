@@ -112,11 +112,11 @@ class TextStyleEmbed(nn.Module):
         x = attention_hidden_states[self.hidden_state_to_take][:, 0, :]  # CLS output of self.hidden_state_to_take layer.
         x = self.dropout(x)
         x = self.linear1(x)
-        x = torch.nn.functional.normalize(x)
+        # x = torch.nn.functional.normalize(x)
         # todo: remove comment
         # #add gaussian noise
-        # x = x + torch.randn_like(x) * self.scale_noise
-        # x = x / x.norm(dim=-1, keepdim=True)
+        x = x + torch.randn_like(x) * self.scale_noise
+        x = x / x.norm(dim=-1, keepdim=True)
         return x
 
 
