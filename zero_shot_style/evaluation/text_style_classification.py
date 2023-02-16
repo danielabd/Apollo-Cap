@@ -95,7 +95,11 @@ class BertClassifier(nn.Module):
         final_layer = self.relu(linear_output)
         return final_layer
         '''
-        _, x = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+        outputs = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+        hidden_states = outputs[2]
+        # embedding_output = hidden_states[0]
+        attention_hidden_states = hidden_states[1:]
+        x = attention_hidden_states[self.hidden_state_to_take][:, 0, :]  # CLS output of self.hidden_state_to_take layer.
         x = self.relu(x)
         x = self.dropout(x)
         x = self.linear1(x)
@@ -318,7 +322,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         train_targets = []
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
                 pbar := tqdm(train_dataloader, desc="Training", leave=False, )):  # model based on bert
-            train_targets.extend(labels.cpu().data.numpy())
+            train_targets.extend(labels)
             train_label = torch.from_numpy(np.asarray(labels)).to(device)
             outputs = model(tokenized_texts_list['input_ids'].to(device),
                             tokenized_texts_list['attention_mask'].to(device))  # model based on bert
@@ -360,7 +364,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         with torch.no_grad():
             for step, (tokenized_texts_list, val_labels, texts_list) in enumerate(
                     pbar := tqdm(val_dataloader, desc="Validation", leave=False, )):
-                val_targets.extend(val_labels.cpu().data.numpy())
+                val_targets.extend(val_labels)
                 val_labels = torch.from_numpy(np.asarray(val_labels)).to(device)
                 outputs = model(tokenized_texts_list['input_ids'].to(device),
                                 tokenized_texts_list['attention_mask'].to(device))  # model based on bert
