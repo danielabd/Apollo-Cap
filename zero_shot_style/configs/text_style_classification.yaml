@@ -1,3 +1,4 @@
+data_name: flickrstyle10k
 batch_size: 50
 inner_batch_size: 50
 best_model_name: best_text_style_classification_model.pth #best_twitter_trained_model.pth

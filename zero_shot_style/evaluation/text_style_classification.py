@@ -1,5 +1,7 @@
+import operator
 import os.path
 import pickle
+import random
 from datetime import datetime
 
 import wandb
@@ -13,63 +15,77 @@ from torch.optim import Adam
 from tqdm import tqdm
 import torch
 import numpy as np
-from transformers import BertTokenizer
+from transformers import BertTokenizer, BertConfig
 import torch
 from torchmetrics import Precision, Recall
+from zero_shot_style.utils import parser, get_hparams
+
 NUM_OF_CLASSES = 2  # 4
+BERT_NUM_OF_LAYERS = 12
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-'''
-labels = {'business':0,
-          'entertainment':1,
-          'sport':2,
-          'tech':3,
-          'politics':4
-          }
-'''
+
+
+def get_args():
+    parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
+    parser.add_argument('--last_layer_idx_to_freeze', type=int, default=-1, help='last_layer idx of BERT to freeze')
+    parser.add_argument('--freeze_after_n_epochs', type=int, default=0, help='freeze BERT after_n_epochs')
+    parser.add_argument('--scale_noise', type=float, default=0.0, help='scale of gaussian noise to add to the embedding vector of sentence')
+    args = parser.parse_args()
+    return args
+
 
 class Dataset(torch.utils.data.Dataset):
-
-    def __init__(self, df, labels):
-
-        self.labels = [labels[label] for label in df['category']]
-        self.texts = [tokenizer(text,
-                               padding='max_length', max_length = 512, truncation=True,
-                                return_tensors="pt") for text in df['text']]
+    def __init__(self, df, labels_set_dict, inner_batch_size=1, all_data=True):
+        self.labels = [labels_set_dict[label] for label in df['category']]  # create list of idxs for labels
+        self.labels_set = list(set(self.labels))
+        self.texts = list(df['text'])  # df['Tweet'] #[text for text in df['Tweet']]
+        self.batch_size_per_label = inner_batch_size
+        self.all_data = all_data  # boolean
+        pass
 
     def classes(self):
         return self.labels
 
     def __len__(self):
-        return len(self.labels)
+        if self.all_data:
+            return len(self.labels)
+        else:  # get samples from set of labels
+            return len(self.labels_set)
 
-    def get_batch_labels(self, idx):
-        # Fetch a batch of labels
-        return np.array(self.labels[idx])
+    def __getitem__(self, item):
+        if self.all_data:
+            label = self.labels[item]
+            text = self.texts[item]
+            return text, label
 
-    def get_batch_texts(self, idx):
-        # Fetch a batch of inputs
-        return self.texts[idx]
+        else:  # get samples from data
+            label = self.labels_set[item]
+            list_idxs_for_label = np.array(self.labels) == label
+            full_tweets_list = list(operator.itemgetter(list_idxs_for_label)(np.array(self.texts)))
+            batch_tweets = random.sample(full_tweets_list, min(len(full_tweets_list), self.batch_size_per_label))
+            return batch_tweets, label
 
-    def __getitem__(self, idx):
-
-        batch_texts = self.get_batch_texts(idx)
-        batch_y = self.get_batch_labels(idx)
-
-        return batch_texts, batch_y
 
 class BertClassifier(nn.Module):
-
-    def __init__(self, dropout=0.5):
+    def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1, last_layer_idx_to_freeze=-1,
+                 scale_noise=0):
         super(BertClassifier, self).__init__()
-        self.bert = BertModel.from_pretrained('bert-base-cased')
+        bert_config = BertConfig.from_pretrained("bert-base-cased", output_hidden_states=True)
+        self.bert = BertModel.from_pretrained('bert-base-cased', config=bert_config)
+        self.freeze_layers(last_layer_idx_to_freeze)
+        self.hidden_state_to_take = hidden_state_to_take
+        self.scale_noise = scale_noise
+
         #for param in self.bert.parameters():
         #   param.requires_grad = False
         self.dropout = nn.Dropout(dropout)
         #self.linear = nn.Linear(768, NUM_OF_CLASSES)
         self.linear1 = nn.Linear(768, 128)
-        self.linear2 = nn.Linear(128, NUM_OF_CLASSES)
+        self.linear2 = nn.Linear(128, 1)
         self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+        self.scale_noise = scale_noise
 
     def forward(self, input_id, mask):
         '''
@@ -80,54 +96,238 @@ class BertClassifier(nn.Module):
         return final_layer
         '''
         _, x = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+        x = self.relu(x)
         x = self.dropout(x)
         x = self.linear1(x)
+
+        # #add gaussian noise
+        x = x + torch.randn_like(x) * self.scale_noise
+        x = x / x.norm(dim=-1, keepdim=True)
+
         x = self.relu(x)
         x = self.dropout(x)
         x = self.linear2(x)
-        x = self.relu(x)
+        x = self.sigmoid(x)
         return x
-        ##'''
+
+    def freeze_layers(self, last_layer_idx_to_freeze):
+        '''
+
+        #:param freeze_layers: list of layers num to freeze
+        :param last_layer_idx_to_freeze: int
+        :return:
+        '''
+        for layer_idx in range(BERT_NUM_OF_LAYERS):
+            for param in list(self.bert.encoder.layer[layer_idx].parameters()):
+                if layer_idx <= last_layer_idx_to_freeze:
+                    param.requires_grad = False
+                else:
+                    param.requires_grad = True
+                # print(f"BERT layers up to {layer_idx} are frozen.")
 
 
 
+def collate_fn(data):  # for model based on bert
+    texts_list = []
+    labels_list = []
+    for list_for_label in data:
+        if type(list_for_label[0]) == list:
+            for text in list_for_label[0]:
+                texts_list.append(text)
+                labels_list.append(list_for_label[1])
+        else:
+            texts_list.append(list_for_label[0])
+            labels_list.append(list_for_label[1])
+    tokenized_texts_list = tokenizer(texts_list, padding='max_length', max_length=40, truncation=True,
+                                     return_tensors="pt")
+    return tokenized_texts_list, labels_list, texts_list
 
-def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model, path_for_saving_best_model):
+# def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model, path_for_saving_best_model):
+# def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
+#           path_for_saving_best_model, device, tgt_file_vec_emb, config):
+#     print("Training the model...")
+#     train_data_set, val_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict)
+#     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
+#                                                    batch_size=config['batch_size'], shuffle=True,
+#                                                    num_workers=config['num_workers'])
+#     val_dataloader = torch.utils.data.DataLoader(val_data_set, collate_fn=collate_fn, batch_size=config['batch_size'],
+#                                                  shuffle=True, num_workers=config['num_workers'])
+#
+#     print('Starting to train...')
+#     model = model.to(device)
+#
+#     best_loss = 1e16
+#     log_dict = {}
+#     criterion = nn.BinaryCrossEntropyLoss()
+#
+#
+#     # train, val = Dataset(train_data, labels_dict), Dataset(val_data, labels_dict)
+#     #
+#     # train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
+#     # val_dataloader = torch.utils.data.DataLoader(val, batch_size=batch_size)
+#     #
+#     # use_cuda = torch.cuda.is_available()
+#     # device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
+#     #
+#     # criterion = nn.CrossEntropyLoss()
+#     # optimizer = Adam(model.parameters(), lr=learning_rate)
+#     #
+#     # if use_cuda:
+#     #     model = model.to(device)
+#     #     criterion = criterion.to(device)
+#     best_f1_score_val = 0
+#     for epoch in range(config['epochs']):
+#         if epoch == config['freeze_after_n_epochs']:
+#             model.freeze_layers(-1)
+#         model.train()
+#
+#         total_acc_train = 0
+#         total_loss_train = 0
+#
+#         train_preds = []
+#         train_targets = []
+#         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
+#                 pbar := tqdm(train_dataloader, desc="Training", leave=False, )):  # model based on bert
+#             labels = torch.from_numpy(np.asarray(labels)).to(device)
+#             outputs = model(tokenized_texts_list['input_ids'].to(device),
+#                             tokenized_texts_list['attention_mask'].to(device))  # model based on bert
+#
+#         for train_input, train_label in tqdm(train_dataloader):
+#             train_targets.extend(train_label.cpu().data.numpy())
+#             train_label = train_label.to(device)
+#             mask = train_input['attention_mask'].to(device)
+#             input_id = train_input['input_ids'].squeeze(1).to(device)
+#
+#             output = model(input_id, mask)
+#             train_preds.extend(output.cpu().data.numpy())
+#             batch_loss = criterion(output, train_label.long())
+#             total_loss_train += batch_loss.item()
+#
+#             acc = (output.argmax(dim=1) == train_label).sum().item()
+#             total_acc_train += acc
+#
+#             model.zero_grad()
+#             batch_loss.backward()
+#             optimizer.step()
+#
+#         train_preds_t = torch.tensor(train_preds)
+#         train_targets_t = torch.tensor(train_targets)
+#         precision_i = Precision(average='weighted', num_classes=len(set(np.array(train_targets_t))))
+#         precision = precision_i(train_preds_t, train_targets_t)
+#         recall_i = Recall(average='weighted', num_classes=len(set(np.array(train_targets_t))))
+#         recall = recall_i(train_preds_t, train_targets_t)
+#
+#         # precision = Precision(preds, targets)
+#         # recall = Recall(preds, targets)
+#
+#         f1_score_train = 2 * (precision * recall) / (precision + recall)
+#
+#         if np.mod(epoch_num,10) == 0:
+#             print(f'Saving model to: {path_for_saving_last_model}...')
+#             torch.save({"model_state_dict": model.state_dict(),
+#                         "optimizer_state_dict": optimizer.state_dict(),
+#                         }, path_for_saving_last_model)
+#         total_acc_val = 0
+#         total_loss_val = 0
+#         print("Calculate  validation...")
+#         with torch.no_grad():
+#
+#             preds = []
+#             targets = []
+#             for val_input, val_label in val_dataloader:
+#                 targets.extend(val_label.cpu().data.numpy())
+#                 val_label = val_label.to(device)
+#                 mask = val_input['attention_mask'].to(device)
+#                 input_id = val_input['input_ids'].squeeze(1).to(device)
+#
+#                 output = model(input_id, mask)
+#                 preds.extend(output.argmax(dim=1).cpu().data.numpy())
+#                 batch_loss = criterion(output, val_label.long())
+#                 total_loss_val += batch_loss.item()
+#
+#                 acc = (output.argmax(dim=1) == val_label).sum().item()
+#                 total_acc_val += acc
+#
+#
+#             preds_t = torch.tensor(preds)
+#             targets_t = torch.tensor(targets)
+#
+#             precision_i = Precision(average='weighted', num_classes=len(set(np.array(targets_t))))
+#             precision = precision_i(preds_t, targets_t)
+#             recall_i = Recall(average='weighted', num_classes=len(set(np.array(targets_t))))
+#             recall = recall_i(preds_t, targets_t)
+#
+#             f1_score_val = 2*(precision*recall)/(precision+recall)
+#             #f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
+#
+#
+#             print(f"f1_score_val:{f1_score_val}")
+#
+#         print(
+#             f'Epochs: {epoch_num + 1} | Train Loss: {total_loss_train / len(train_data): .3f} \
+#                 | Train Accuracy: {total_acc_train / len(train_data): .3f} \
+#                 | f1_score_train: {f1_score_train: .3f} \
+#                 | Val Loss: {total_loss_val / len(val_data): .3f} \
+#                 | Val Accuracy: {total_acc_val/len(val_data): .3f} \
+#                 | f1_score_val: {f1_score_val: .3f}')
+#         log_dict = {'train/epoch': epoch_num,
+#                     'train/loss_train': total_loss_train / len(train_data),
+#                     'train/acc_train': total_acc_train / len(train_data),
+#                     'train/f1_score_train': f1_score_train,
+#                     'val/loss_val': total_loss_val / len(val_data),
+#                     'val/acc_val': total_acc_val/len(val_data),
+#                     'val/f1_score_val': f1_score_val}
+#
+#         wandb.log(log_dict)
+#
+#         if f1_score_val>best_f1_score_val:
+#             print(f'Saving ***best**** model to: {path_for_saving_best_model}...')
+#             torch.save({"model_state_dict": model.state_dict(),
+#                         "optimizer_state_dict": optimizer.state_dict(),
+#                         }, path_for_saving_best_model)
+#             best_f1_score_val = f1_score_val
+#     print("finish train")
+
+def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
+          path_for_saving_best_model, device, config):
     print("Training the model...")
-    train, val = Dataset(train_data, labels_dict), Dataset(val_data, labels_dict)
+    train_data_set, val_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict)
+    train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
+                                                   batch_size=config['batch_size'], shuffle=True,
+                                                   num_workers=config['num_workers'])
+    val_dataloader = torch.utils.data.DataLoader(val_data_set, collate_fn=collate_fn, batch_size=config['batch_size'],
+                                                 shuffle=True, num_workers=config['num_workers'])
 
-    train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
-    val_dataloader = torch.utils.data.DataLoader(val, batch_size=batch_size)
+    print('Starting to train...')
+    model = model.to(device)
 
-    use_cuda = torch.cuda.is_available()
-    device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
+    best_loss = 1e16
+    log_dict = {}
+    criterion = nn.BCELoss()
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = Adam(model.parameters(), lr=learning_rate)
-
-    if use_cuda:
-        model = model.to(device)
-        criterion = criterion.to(device)
     best_f1_score_val = 0
-    for epoch_num in range(epochs):
+    for epoch in range(config['epochs']):
+        if epoch == config['freeze_after_n_epochs']:
+            model.freeze_layers(-1)
+        model.train()
 
         total_acc_train = 0
         total_loss_train = 0
 
         train_preds = []
         train_targets = []
-        for train_input, train_label in tqdm(train_dataloader):
-            train_targets.extend(train_label.cpu().data.numpy())
-            train_label = train_label.to(device)
-            mask = train_input['attention_mask'].to(device)
-            input_id = train_input['input_ids'].squeeze(1).to(device)
+        for step, (tokenized_texts_list, labels, texts_list) in enumerate(
+                pbar := tqdm(train_dataloader, desc="Training", leave=False, )):  # model based on bert
+            train_targets.extend(labels.cpu().data.numpy())
+            train_label = torch.from_numpy(np.asarray(labels)).to(device)
+            outputs = model(tokenized_texts_list['input_ids'].to(device),
+                            tokenized_texts_list['attention_mask'].to(device))  # model based on bert
 
-            output = model(input_id, mask)
-            train_preds.extend(output.cpu().data.numpy())
-            batch_loss = criterion(output, train_label.long())
+            train_preds.extend(outputs.cpu().data.numpy())
+            batch_loss = criterion(outputs, train_label.long()) #todo:check it
             total_loss_train += batch_loss.item()
-
-            acc = (output.argmax(dim=1) == train_label).sum().item()
+            #######
+            acc = (outputs == train_label).sum().item() #todo:check it
             total_acc_train += acc
 
             model.zero_grad()
@@ -146,7 +346,7 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
 
         f1_score_train = 2 * (precision * recall) / (precision + recall)
 
-        if np.mod(epoch_num,10) == 0:
+        if np.mod(epoch,10) == 0:
             print(f'Saving model to: {path_for_saving_last_model}...')
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
@@ -154,27 +354,26 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
         total_acc_val = 0
         total_loss_val = 0
         print("Calculate  validation...")
+        model.eval()
+        preds = []
+        val_targets = []
         with torch.no_grad():
+            for step, (tokenized_texts_list, val_labels, texts_list) in enumerate(
+                    pbar := tqdm(val_dataloader, desc="Validation", leave=False, )):
+                val_targets.extend(val_labels.cpu().data.numpy())
+                val_labels = torch.from_numpy(np.asarray(val_labels)).to(device)
+                outputs = model(tokenized_texts_list['input_ids'].to(device),
+                                tokenized_texts_list['attention_mask'].to(device))  # model based on bert
 
-            preds = []
-            targets = []
-            for val_input, val_label in val_dataloader:
-                targets.extend(val_label.cpu().data.numpy())
-                val_label = val_label.to(device)
-                mask = val_input['attention_mask'].to(device)
-                input_id = val_input['input_ids'].squeeze(1).to(device)
-
-                output = model(input_id, mask)
-                preds.extend(output.argmax(dim=1).cpu().data.numpy())
-                batch_loss = criterion(output, val_label.long())
+                preds.extend(outputs.cpu().data.numpy())
+                batch_loss = criterion(outputs, val_labels.long())
                 total_loss_val += batch_loss.item()
 
-                acc = (output.argmax(dim=1) == val_label).sum().item()
+                acc = (outputs == val_labels).sum().item()
                 total_acc_val += acc
 
-
             preds_t = torch.tensor(preds)
-            targets_t = torch.tensor(targets)
+            targets_t = torch.tensor(val_targets)
 
             precision_i = Precision(average='weighted', num_classes=len(set(np.array(targets_t))))
             precision = precision_i(preds_t, targets_t)
@@ -188,20 +387,19 @@ def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch
             print(f"f1_score_val:{f1_score_val}")
 
         print(
-            f'Epochs: {epoch_num + 1} | Train Loss: {total_loss_train / len(train_data): .3f} \
-                | Train Accuracy: {total_acc_train / len(train_data): .3f} \
+            f'Epochs: {epoch + 1} | Train Loss: {total_loss_train / len(df_train): .3f} \
+                | Train Accuracy: {total_acc_train / len(df_train): .3f} \
                 | f1_score_train: {f1_score_train: .3f} \
-                | Val Loss: {total_loss_val / len(val_data): .3f} \
-                | Val Accuracy: {total_acc_val/len(val_data): .3f} \
+                | Val Loss: {total_loss_val / len(df_val): .3f} \
+                | Val Accuracy: {total_acc_val/len(df_val): .3f} \
                 | f1_score_val: {f1_score_val: .3f}')
-        log_dict = {'train/epoch': epoch_num,
-                    'train/loss_train': total_loss_train / len(train_data),
-                    'train/acc_train': total_acc_train / len(train_data),
+        log_dict = {'train/epoch': epoch,
+                    'train/loss_train': total_loss_train / len(df_train),
+                    'train/acc_train': total_acc_train / len(df_train),
                     'train/f1_score_train': f1_score_train,
-                    'val/loss_val': total_loss_val / len(val_data),
-                    'val/acc_val': total_acc_val/len(val_data),
+                    'val/loss_val': total_loss_val / len(df_val),
+                    'val/acc_val': total_acc_val/len(df_val),
                     'val/f1_score_val': f1_score_val}
-
         wandb.log(log_dict)
 
         if f1_score_val>best_f1_score_val:
@@ -242,93 +440,127 @@ def evaluate(model, test_data, labels, desired_cuda_num):
     print("finish evaluate")
     return total_acc_test_for_all_data
 
-
-
 def get_train_val_data(data_set_path):
     f'''
-    
+
     :param data_set_path: dict. keys =   ['train', 'val', 'test'], values = path to pickl file
-    :return: ds: dict:keys=['train', 'val', 'test'],values = dict:keys = list(dataset_name), values=dict:keys=key_frame,values:dict:keys=style,values=data from pkl
+    :return: ds: dict:keys=['train', 'val', 'test'],values = dict:keys = list(dataset_name), values=dict:keys=key_frame,values:dict:keys=style,values=dataframe
     '''
     ds = {}
-    for set_type in data_set_path:  # ['train', 'val', 'test']
-        ds[set_type] = {}
-        for dataset_name in data_set_path[set_type]:
-            with open(data_set_path[set_type][dataset_name], 'rb') as r:
-                data = pickle.load(r)
-            for k in data:
-                ds[set_type][k] = {}
-                #ds[set_type][k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
-                #ds[set_type][k]['img_path'] = data[k]['image_path']
-                if dataset_name == 'flickrstyle10k':
-                    ds[set_type][k]['humor'] = data[k]['humor']
-                    ds[set_type][k]['romantic'] = data[k]['romantic']
-                elif dataset_name == 'senticap':
-                    ds[set_type][k]['positive'] = data[k]['positive']
-                    ds[set_type][k]['negative'] = data[k]['negative']
-    return ds
-
-
-def convert_ds_to_df(ds,data_dir):
-    df_train=None; df_val = None; df_test=None
-    for set_type in ds:  # ['train', 'val', 'test']
-        all_data = {'category': [], 'text': []}
-        for k in ds[set_type]:
-            for style in ds[set_type][k]:
+    for data_type in data_set_path:  # ['train', 'val', 'test']
+        ds[data_type] = {}
+        with open(data_set_path[data_type], 'rb') as r:
+            data = pickle.load(r)
+        for k in data:
+            ds[data_type][k] = {}
+            # ds[data_type][k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
+            # ds[data_type][k]['img_path'] = data[k]['image_path']
+            for style in data[k]:
                 if style == 'img_path':
                     continue
-                all_data['category'].extend([style]*len(ds[set_type][k][style]))
-                all_data['text'].extend(ds[set_type][k][style])
-        if set_type == 'train':
+                ds[data_type][k][style] = data[k][style]
+    return ds
+
+def convert_ds_to_df(ds, data_dir):
+    df_train = None
+    df_val = None
+    df_test = None
+    for data_type in ds:  # ['train', 'val', 'test']
+        all_data = {'category': [], 'text': []}
+        for k in ds[data_type]:
+            for style in ds[data_type][k]:
+                if style == 'image_path' or style == 'factual':
+                    continue
+                all_data['category'].extend([style] * len(ds[data_type][k][style]))
+                all_data['text'].extend(ds[data_type][k][style])
+        if data_type == 'train':
             df_train = pd.DataFrame(all_data)
-            df_train.to_csv(os.path.join(data_dir,'train.csv'))
-        elif set_type == 'val':
+            df_train.to_csv(os.path.join(data_dir, 'train.csv'))
+        elif data_type == 'val':
             df_val = pd.DataFrame(all_data)
             df_val.to_csv(os.path.join(data_dir, 'val.csv'))
-        elif set_type == 'test':
+        elif data_type == 'test':
             df_test = pd.DataFrame(all_data)
             df_test.to_csv(os.path.join(data_dir, 'test.csv'))
     return df_train, df_val, df_test
 
+def get_model_and_optimizer(config, path_for_loading_best_model, device):
+    if config['load_model']:  # load_model
+        print(f"Loading model from: {path_for_loading_best_model}")
+        model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
+                               last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
+        #todo: check if to take only non-frozen params:
+        # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
+        #                 weight_decay=config['weight_decay'])
+        optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        if 'cuda' in device.type:
+            checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
+        else:
+            checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    else:
+        #  train from scratch
+        print("Train model from scratch")
+        model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
+                               last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
+        optimizer = Adam(model.parameters(), lr=float(config['lr']))
+    return model, optimizer
+
+
+
 def main():
-    desired_cuda_num = 3
+    args = get_args()
+    config = get_hparams(args)
+    print(f'main: config_file: {args.config_file}')
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
-    exp_dir = os.path.join(os.path.expanduser('~'), 'checkpoints',cur_time)
-    os.makedirs(exp_dir)
-    path_for_saving_last_model = os.path.join(exp_dir, 'last_text_style_classification_model.pth')
-    path_for_saving_best_model = os.path.join(exp_dir, 'best_text_style_classification_model.pth')
-    EPOCHS = 50
-    LR = 1e-6
-    batch_size = 16
-    data_dir = os.path.join(os.path.expanduser('~'), 'data')
-    # dataset_names = ['senticap', 'flickrstyle10k']
-    dataset_names = ['senticap']
-    labels_dict = {'positive': 0, 'negative': 1}
-   # labels_dict = {'humor': 0, 'romantic': 1}
 
-    path_to_csv_file = os.path.join(data_dir,'_'.join(dataset_names)+'.csv')
+    desired_cuda_num = 0
+
+    np.random.seed(112)  # todo there may be many more seeds to fix
+    torch.cuda.manual_seed(112)
+    # overwrite_pairs = True  # todo
+
+    checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
+    experiment_dir = os.path.join(checkpoints_dir, cur_time)
+    os.makedirs(experiment_dir)
+    data_dir = os.path.join(os.path.expanduser('~'), 'data')
+
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
-    for dataset_name in dataset_names:
-        for set_type in ['train', 'val', 'test']:
-            data_set_path[set_type][dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', set_type+'.pkl')
+    for data_type in ['train', 'val', 'test']:
+        data_set_path[data_type] = os.path.join(data_dir, config['data_name'], 'annotations',
+                                                             data_type + '.pkl')
+
+    path_for_saving_last_model = os.path.join(experiment_dir, config['model_name'])
+    path_for_saving_best_model = os.path.join(experiment_dir, config['best_model_name'])
+    # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
+    path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
+
+    use_cuda = torch.cuda.is_available()
+    # device = torch.device(f"cuda:{config['desired_cuda_num']}" if use_cuda else "cpu")  # todo: remove
+    device = torch.device("cuda" if use_cuda else "cpu")  # todo: remove
+
 
     wandb.init(project='text-style-classification',
-               config=None,
-               #resume=False,
-               id=None,
-               mode='online',#'disabled, offline, online'
-               tags='+')  # '+',None,
+               config=config,
+               resume=config['resume'],
+               id=config['run_id'],
+               mode=config['wandb_mode'], #disabled, offline, online'
+               tags=config['tags'])
+
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
-
     print(len(df_train), len(df_val), len(df_test))
-    print(f"labels: {labels_dict}")
-    model = BertClassifier()
+    print(f"labels: {config['labels_set_dict']}")
 
+    # df_train,df_test = get_train_test_data(config, config['undesired_label'])
+    model, optimizer = get_model_and_optimizer(config, path_for_loading_best_model, device)
+    # config['labels_set_dict'],config['labels_idx_to_str'] = getting_labels_map(df_train)
 
-    train(model, df_train, df_val, LR, EPOCHS, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model,path_for_saving_best_model)
-    total_acc_test_for_all_data = evaluate(model, df_test, labels_dict, desired_cuda_num)
+    train(model, optimizer, df_train, df_val, config['labels_set_dict'], config['labels_idx_to_str'], path_for_saving_last_model,
+          path_for_saving_best_model, device,  config)
+    total_acc_test_for_all_data = evaluate(model, df_test,  config['labels_set_dict'], desired_cuda_num)
 
     print("finish main")
 

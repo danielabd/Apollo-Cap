@@ -1,0 +1,53 @@
+data_name: flickrstyle10k
+best_model_name: best_flickrstyle10k_text_style_classification_model.pth #best_twitter_trained_model.pth
+model_name: flickrstyle10k_text_style_classification_model.pth
+
+#arithmetics_style_imgs: [49, 52, 53]
+style_img:
+  factual: 49
+  humor: 52
+  romantic: 53
+
+labels_dict_idxs:
+  humor: 0
+  romantic: 1
+
+
+arithmetics_weights: [1, -0.5, 0.5]
+img_idx_to_start_from: 0
+desired_labels: [humor, romantic] #[factual, humor, romantic]
+
+epochs: 20
+lr: 0.00001
+batch_size: 16
+margin: 0.26
+hidden_state_to_take: -4
+last_layer_idx_to_freeze: 10
+freeze_after_n_epochs: 4
+inner_batch_size: 1
+
+txt_cls_model_path: checkpoints/best_models/flickrstyle10k/humor_romantic_best_text_style_classification_model.pth
+data_file: ['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
+experiment_name: cur_time
+csv_file_name_train: 'flickrstyle10k_train.csv'
+csv_file_name_test: 'flickrstyle10k_test.csv'
+visual_csv_file_name_train: 'visual_flickrstyle10k_train.csv'
+visual_csv_file_name_test: 'visual_flickrstyle10k_test.csv'
+tgt_file_pairs_list: flickrstyle10k_pairs_list.p
+num_workers: 10
+plot_only_clustering: False
+#desired_labels: 'all' #[embarrassment, joy, anger, love, annoyance, nervousness]
+undesired_label: 'neutral'
+resume: False # resume running in wb
+load_model: False
+run_id: 0
+
+
+#text style embedding
+cuda_idx_num: 0
+labels_set_dict:
+  humor: 0
+  romantic: 1
+labels_idx_to_str:
+  0: humor
+  1: romantic

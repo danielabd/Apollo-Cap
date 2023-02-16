@@ -47,11 +47,9 @@ parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled
 
 #parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','emotions_config_all_classes.yaml'), help='full path to config file')
 #parser.add_argument('--config_file', type=str, default=os.spath.join('.', 'configs','twitter_config.yaml'), help='full path to config file')
-parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','flickrstyle10k_config.yaml'), help='full path to config file')
+# parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','flickrstyle10k_config.yaml'), help='full path to config file')
 #parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','senticap_config.yaml'), help='full path to config file')
-
-
-# parser.add_argument('--config_file', type=str, default=os.path.join('..',  'configs','text_style_classification.yaml'), help='full path to config file')
+parser.add_argument('--config_file', type=str, default=os.path.join('..',  'configs','flickrstyle10k_text_style_classification.yaml'), help='full path to config file')
 
 parser.add_argument('--plot_only_clustering', type=str2bool, default=False, help='plot only clustering of the best model')
 # parser.add_argument('--rundry', type=str2bool, default=False)
