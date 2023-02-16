@@ -327,8 +327,9 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             outputs = model(tokenized_texts_list['input_ids'].to(device),
                             tokenized_texts_list['attention_mask'].to(device))  # model based on bert
 
+            outputs2 = torch.FloatTensor([i[0] for i in outputs])
             train_preds.extend(outputs.cpu().data.numpy())
-            batch_loss = criterion(outputs, train_label.long()) #todo:check it
+            batch_loss = criterion(outputs2, train_label.float()) #todo:check it
             total_loss_train += batch_loss.item()
             #######
             acc = (outputs == train_label).sum().item() #todo:check it
