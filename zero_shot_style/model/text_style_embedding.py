@@ -112,11 +112,11 @@ class TextStyleEmbed(nn.Module):
         x = attention_hidden_states[self.hidden_state_to_take][:, 0, :]  # CLS output of self.hidden_state_to_take layer.
         x = self.dropout(x)
         x = self.linear1(x)
-        # x = torch.nn.functional.normalize(x)
-
-        #add gaussian noise
-        x = x + torch.randn_like(x) * self.scale_noise
-        x = x / x.norm(dim=-1, keepdim=True)
+        x = torch.nn.functional.normalize(x)
+        # todo: remove comment
+        # #add gaussian noise
+        # x = x + torch.randn_like(x) * self.scale_noise
+        # x = x / x.norm(dim=-1, keepdim=True)
         return x
 
 
@@ -224,7 +224,7 @@ def plot_graph_on_all_data(df_data, total_outputs, total_labels_str, total_texts
         print("Calculate mean and median embedding vectors...")
         mean_embedding_vectors = {}
         median_embedding_vectors = {}
-        std_avg_embedding_vectors =  {}
+        std_avg_embedding_vectors = {}
         for label in set(df_data["category"]):
             vectors_embedding = total_outputs[np.where(np.array(total_labels_str) == label), :]
             median_vector_embedding = np.median(vectors_embedding[0], 0)
@@ -780,6 +780,7 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
         # optimizer = SGD(model.parameters(), lr=config['lr'])
         # take only non-frozen params:
+        #todo: change optimizer like from scratch
         optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
                         weight_decay=config['weight_decay'])
         if 'cuda' in device.type:
