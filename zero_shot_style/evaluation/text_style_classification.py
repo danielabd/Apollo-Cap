@@ -565,10 +565,6 @@ def main():
 
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
-    #todo:remove
-    df_train   = df_train.iloc[:3,:]
-    df_val = df_val.iloc[:3,:]
-    #########
     print(len(df_train), len(df_val), len(df_test))
     print(f"labels: {config['labels_set_dict']}")
 
