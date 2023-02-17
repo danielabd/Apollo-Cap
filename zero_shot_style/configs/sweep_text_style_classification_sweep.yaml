@@ -1,4 +1,4 @@
-program: evaluation/text_style_classification.py
+program: text_style_classification.py
 project: text_style_classification
 method: bayes
 metric:
