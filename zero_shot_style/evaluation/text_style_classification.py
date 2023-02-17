@@ -334,7 +334,8 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
             total_loss_train += batch_loss.item()
             #######
-            acc = (outputs == train_label).sum().item() #todo:check it
+            outputs_bin = torch.round(outputs)
+            acc = (outputs_bin == train_label).sum().item() #todo:check it
             total_acc_train += acc
 
             model.zero_grad()
@@ -378,7 +379,8 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                 batch_loss = criterion(outputs, val_label2)  # todo:check it
                 total_loss_val += batch_loss.item()
 
-                acc = (outputs == val_labels).sum().item()
+                outputs_bin = torch.round(outputs)
+                acc = (outputs_bin == val_labels).sum().item()
                 total_acc_val += acc
 
             # train_preds_t = torch.tensor(train_preds)
