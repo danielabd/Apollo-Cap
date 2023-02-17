@@ -346,7 +346,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         train_targets_t = torch.tensor(train_targets)
         precision_i = Precision(average='weighted', task='binary',  num_classes=len(set(np.array(train_targets_t))),multiclass=True)
         precision = precision_i(train_preds_bin, train_targets_t)
-        recall_i = Recall(average='weighted', num_classes=len(set(np.array(train_targets_t))),multiclass=True)
+        recall_i = Recall(average='weighted', num_classes=len(set(np.array(train_targets_t))), task='multiclass', multiclass=True)
         recall = recall_i(train_preds_bin, train_targets_t)
 
         # precision = Precision(preds, targets)
@@ -387,7 +387,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             precision_i = Precision(average='weighted', task='binary', num_classes=len(set(np.array(val_targets_t))),
                                     multiclass=True)
             precision = precision_i(val_preds_bin, val_targets_t)
-            recall_i = Recall(average='weighted', num_classes=len(set(np.array(val_targets_t))), multiclass=True)
+            recall_i = Recall(average='weighted', num_classes=len(set(np.array(val_targets_t))), task='multiclass', multiclass=True)
             recall = recall_i(val_preds_bin, val_targets_t)
 
             f1_score_val = 2*(precision*recall)/(precision+recall)
