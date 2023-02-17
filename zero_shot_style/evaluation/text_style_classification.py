@@ -326,7 +326,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             train_label = torch.from_numpy(np.asarray(labels)).to(device)
             outputs = model(tokenized_texts_list['input_ids'].to(device),
                             tokenized_texts_list['attention_mask'].to(device))  # model based on bert
-            train_preds.extend(outputs.cpu().data.numpy())
+            train_preds.extend([i[0] for i in outputs.cpu().data.numpy()])
 
             train_label2 = torch.from_numpy(np.asarray([[float(i)] for i in labels])).to(device).float()
             outputs = outputs.float()
@@ -341,12 +341,13 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             batch_loss.backward()
             optimizer.step()
 
-        train_preds_t = torch.tensor(train_preds)
+        # train_preds_t = torch.tensor(train_preds)
+        train_preds_bin = torch.round(torch.tensor(train_preds))
         train_targets_t = torch.tensor(train_targets)
-        precision_i = Precision(average='weighted', task='binary',  num_classes=len(set(np.array(train_targets_t))))
-        precision = precision_i(train_preds_t, train_targets_t)
-        recall_i = Recall(average='weighted', num_classes=len(set(np.array(train_targets_t))))
-        recall = recall_i(train_preds_t, train_targets_t)
+        precision_i = Precision(average='weighted', task='binary',  num_classes=len(set(np.array(train_targets_t))),multiclass=True)
+        precision = precision_i(train_preds_bin, train_targets_t)
+        recall_i = Recall(average='weighted', num_classes=len(set(np.array(train_targets_t))),multiclass=True)
+        recall = recall_i(train_preds_bin, train_targets_t)
 
         # precision = Precision(preds, targets)
         # recall = Recall(preds, targets)
@@ -362,7 +363,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         total_loss_val = 0
         print("Calculate  validation...")
         model.eval()
-        preds = []
+        val_preds = []
         val_targets = []
         with torch.no_grad():
             for step, (tokenized_texts_list, val_labels, texts_list) in enumerate(
@@ -371,8 +372,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                 val_labels = torch.from_numpy(np.asarray(val_labels)).to(device)
                 outputs = model(tokenized_texts_list['input_ids'].to(device),
                                 tokenized_texts_list['attention_mask'].to(device))  # model based on bert
-                preds.extend(outputs.cpu().data.numpy())
-
+                val_preds.extend([i[0] for i in outputs.cpu().data.numpy()])
                 val_label2 = torch.from_numpy(np.asarray([[float(i)] for i in val_labels])).to(device).float()
                 outputs = outputs.float()
                 batch_loss = criterion(outputs, val_label2)  # todo:check it
@@ -381,13 +381,14 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                 acc = (outputs == val_labels).sum().item()
                 total_acc_val += acc
 
-            preds_t = torch.tensor(preds)
-            targets_t = torch.tensor(val_targets)
-
-            precision_i = Precision(average='weighted', task='binary', num_classes=len(set(np.array(targets_t))))
-            precision = precision_i(preds_t, targets_t)
-            recall_i = Recall(average='weighted', num_classes=len(set(np.array(targets_t))))
-            recall = recall_i(preds_t, targets_t)
+            # train_preds_t = torch.tensor(train_preds)
+            val_preds_bin = torch.round(torch.tensor(val_preds))
+            val_targets_t = torch.tensor(val_targets)
+            precision_i = Precision(average='weighted', task='binary', num_classes=len(set(np.array(val_targets_t))),
+                                    multiclass=True)
+            precision = precision_i(val_preds_bin, val_targets_t)
+            recall_i = Recall(average='weighted', num_classes=len(set(np.array(val_targets_t))), multiclass=True)
+            recall = recall_i(val_preds_bin, val_targets_t)
 
             f1_score_val = 2*(precision*recall)/(precision+recall)
             #f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
@@ -564,6 +565,10 @@ def main():
 
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
+    #todo:remove
+    df_train   = df_train.iloc[:3,:]
+    df_val = df_val.iloc[:3,:]
+    #########
     print(len(df_train), len(df_val), len(df_test))
     print(f"labels: {config['labels_set_dict']}")
 
