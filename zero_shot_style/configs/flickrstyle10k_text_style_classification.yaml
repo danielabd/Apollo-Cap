@@ -19,7 +19,7 @@ img_idx_to_start_from: 0
 desired_labels: [humor, romantic] #[factual, humor, romantic]
 
 epochs: 50
-lr: 0.000001
+lr: 0.00001
 batch_size: 16
 margin: 0.26
 hidden_state_to_take: -2
