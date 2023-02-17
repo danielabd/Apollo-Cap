@@ -330,12 +330,12 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
             train_label2 = torch.from_numpy(np.asarray([[float(i)] for i in labels])).to(device).float()
             outputs = outputs.float()
-            batch_loss = criterion(outputs, train_label2)  # todo:check it
+            batch_loss = criterion(outputs, train_label2)
 
             total_loss_train += batch_loss.item()
 
-            outputs_bin = torch.round(outputs)
-            acc = (outputs_bin == train_label).sum().item() #todo:check it
+            outputs_bin = torch.round(torch.tensor([out[0] for out in outputs]))
+            acc = (outputs_bin == train_label).sum().item()
             total_acc_train += acc
 
             model.zero_grad()
@@ -343,17 +343,17 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             optimizer.step()
 
         # train_preds_t = torch.tensor(train_preds)
-        train_preds_bin = torch.round(torch.tensor(train_preds))
-        train_targets_t = torch.tensor(train_targets)
-        precision_i = Precision(average='weighted', task='binary',  num_classes=len(set(np.array(train_targets_t))),multiclass=True)
-        precision = precision_i(train_preds_bin, train_targets_t)
-        recall_i = Recall(average='weighted', num_classes=len(set(np.array(train_targets_t))), task='multiclass', multiclass=True)
-        recall = recall_i(train_preds_bin, train_targets_t)
+        # train_preds_bin = torch.round(torch.tensor(train_preds))
+        # train_targets_t = torch.tensor(train_targets)
+        # precision_i = Precision(average='weighted', task='binary',  num_classes=len(set(np.array(train_targets_t))),multiclass=True)
+        # precision = precision_i(train_preds_bin, train_targets_t)
+        # recall_i = Recall(average='weighted', num_classes=len(set(np.array(train_targets_t))), task='multiclass', multiclass=True)
+        # recall = recall_i(train_preds_bin, train_targets_t)
 
         # precision = Precision(preds, targets)
         # recall = Recall(preds, targets)
 
-        f1_score_train = 2 * (precision * recall) / (precision + recall)
+        # f1_score_train = 2 * (precision * recall) / (precision + recall)
 
         if np.mod(epoch,10) == 0:
             print(f'Saving model to: {path_for_saving_last_model}...')
@@ -376,10 +376,10 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                 val_preds.extend([i[0] for i in outputs.cpu().data.numpy()])
                 val_label2 = torch.from_numpy(np.asarray([[float(i)] for i in val_labels])).to(device).float()
                 outputs = outputs.float()
-                batch_loss = criterion(outputs, val_label2)  # todo:check it
+                batch_loss = criterion(outputs, val_label2)
                 total_loss_val += batch_loss.item()
 
-                outputs_bin = torch.round(outputs)
+                outputs_bin = torch.round(torch.tensor([out[0] for out in outputs]))
                 acc = (outputs_bin == val_labels).sum().item()
                 total_acc_val += acc
 
@@ -399,16 +399,15 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             print(f"f1_score_val:{f1_score_val}")
 
         print(
-            f'Epochs: {epoch + 1} | Train Loss: {total_loss_train / len(df_train): .3f} \
+            f'Epochs: {epoch + 1} \
+                | Train Loss: {total_loss_train / len(df_train): .3f} \
                 | Train Accuracy: {total_acc_train / len(df_train): .3f} \
-                | f1_score_train: {f1_score_train: .3f} \
                 | Val Loss: {total_loss_val / len(df_val): .3f} \
                 | Val Accuracy: {total_acc_val/len(df_val): .3f} \
                 | f1_score_val: {f1_score_val: .3f}')
         log_dict = {'train/epoch': epoch,
                     'train/loss_train': total_loss_train / len(df_train),
                     'train/acc_train': total_acc_train / len(df_train),
-                    'train/f1_score_train': f1_score_train,
                     'val/loss_val': total_loss_val / len(df_val),
                     'val/acc_val': total_acc_val/len(df_val ),
                     'val/f1_score_val': f1_score_val}
@@ -608,11 +607,11 @@ def main():
 
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
-    #######
-    #todo: debug
-    df_train = df_train.iloc[:18,:]
-    df_val = df_val.iloc[:18,:]
-    ######
+    # #######
+    # #todo: debug
+    # df_train = df_train.iloc[:3,:]
+    # df_val = df_val.iloc[:3,:]
+    # ######
     print(len(df_train), len(df_val), len(df_test))
     print(f"labels: {config['labels_set_dict']}")
 
