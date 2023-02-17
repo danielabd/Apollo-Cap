@@ -252,7 +252,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             print(f"f1_score_val:{f1_score_val}")
 
         if f1_score_val>best_f1_score_val:
-            print(f'f1_score_val = {best_f1_score_val} improved.\nSaving ***best**** model to: {path_for_saving_best_model}...')
+            print(f'f1_score_val = {f1_score_val} improved.\nSaving ***best**** model to: {path_for_saving_best_model}...')
             torch.save({"model_state_dict": model.state_dict(),
                         "optimizer_state_dict": optimizer.state_dict(),
                         }, path_for_saving_best_model)
@@ -463,7 +463,12 @@ def main():
     path_for_saving_last_model = os.path.join(experiment_dir, config['model_name'])
     path_for_saving_best_model = os.path.join(experiment_dir, config['best_model_name'])
     # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
-    path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
+
+    if 'path_for_loading_best_model' in config and config['path_for_loading_best_model']:
+        path_for_loading_best_model = config['path_for_loading_best_model']
+    else:
+        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
+
 
     use_cuda = torch.cuda.is_available()
     # device = torch.device(f"cuda:{config['desired_cuda_num']}" if use_cuda else "cpu")  # todo: remove

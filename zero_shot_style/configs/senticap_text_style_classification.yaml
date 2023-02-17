@@ -2,7 +2,7 @@ data_name: senticap
 best_model_name: best_senticap_text_style_classification_model.pth #best_twitter_trained_model.pth
 model_name: senticap_text_style_classification_model.pth
 wandb_mode: online #'disabled, offline, online'
-
+path_for_loading_best_model: /home/nlp/tzufar/checkpoints/17_02_2023/12_59_29__17_02_2023/best_senticap_text_style_classification_model.pth
 
 labels_dict_idxs:
   positive: 0
