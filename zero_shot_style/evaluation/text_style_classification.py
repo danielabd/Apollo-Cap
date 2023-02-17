@@ -334,7 +334,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
             total_loss_train += batch_loss.item()
 
-            outputs_bin = torch.round(torch.tensor([out[0] for out in outputs]))
+            outputs_bin = torch.round(torch.tensor([out[0] for out in outputs])).to(device)
             acc = (outputs_bin == train_label).sum().item()
             total_acc_train += acc
 
@@ -379,7 +379,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                 batch_loss = criterion(outputs, val_label2)
                 total_loss_val += batch_loss.item()
 
-                outputs_bin = torch.round(torch.tensor([out[0] for out in outputs]))
+                outputs_bin = torch.round(torch.tensor([out[0] for out in outputs])).to(device)
                 acc = (outputs_bin == val_labels).sum().item()
                 total_acc_val += acc
 
