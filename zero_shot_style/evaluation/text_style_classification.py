@@ -425,9 +425,19 @@ def main():
     args = get_args()
     config = get_hparams(args)
     print(f'main: config_file: {args.config_file}')
+    cur_date = datetime.now().strftime("%d_%m_%Y")
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
 
+    wandb.init(project='text-style-classification',
+               config=config,
+               resume=config['resume'],
+               id=config['run_id'],
+               mode=config['wandb_mode'],  # disabled, offline, online'
+               tags=config['tags'])
+
+    config['training_name'] = f'{wandb.run.id}-{wandb.run.name}'
+    print(f"training_name = {config['training_name']}")
     desired_cuda_num = 0
 
     np.random.seed(112)  # todo there may be many more seeds to fix
@@ -435,9 +445,13 @@ def main():
     # overwrite_pairs = True  # todo
 
     checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
-    experiment_dir = os.path.join(checkpoints_dir, cur_time)
+    experiment_dir_date = os.path.join(checkpoints_dir, cur_date)
+    if not os.path.isdir(experiment_dir_date):
+        os.makedirs(experiment_dir_date)
+    experiment_dir = os.path.join(checkpoints_dir, cur_date, cur_time)
     if not os.path.isdir(experiment_dir):
         os.makedirs(experiment_dir)
+
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
 
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
@@ -455,12 +469,6 @@ def main():
     device = torch.device("cuda" if use_cuda else "cpu")  # todo: remove
 
 
-    wandb.init(project='text-style-classification',
-               config=config,
-               resume=config['resume'],
-               id=config['run_id'],
-               mode=config['wandb_mode'], #disabled, offline, online'
-               tags=config['tags'])
 
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
