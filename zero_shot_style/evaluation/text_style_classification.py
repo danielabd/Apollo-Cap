@@ -158,6 +158,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
     print('Starting to train...')
     model = model.to(device)
+    optimizer = optimizer.to(device)
 
     criterion = nn.BCELoss()
 

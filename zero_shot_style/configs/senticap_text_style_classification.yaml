@@ -33,7 +33,7 @@ plot_only_clustering: False
 undesired_label: 'neutral'
 resume: False # resume running in wb
 load_model: False
-run_id: 0
+run_id:
 
 
 #text style embedding
