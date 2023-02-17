@@ -435,7 +435,8 @@ def main():
 
     checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
     experiment_dir = os.path.join(checkpoints_dir, cur_time)
-    os.makedirs(experiment_dir)
+    if not os.path.isdir(experiment_dir):
+        os.makedirs(experiment_dir)
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
 
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
