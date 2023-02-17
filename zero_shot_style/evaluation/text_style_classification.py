@@ -271,7 +271,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                     'train/acc_train': total_acc_train / len(df_train),
                     'val/loss_val': total_loss_val / len(df_val),
                     'val/acc_val': total_acc_val/len(df_val ),
-                    'val/f1_score_val': total_acc_val/len(f1_score_val),
+                    'val/f1_score_val': f1_score_val,
                     'val/best_f1_score_val': best_f1_score_val}
         wandb.log(log_dict)
     print("finish train")
