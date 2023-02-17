@@ -85,14 +85,50 @@ class Dataset(torch.utils.data.Dataset):
             batch_tweets = random.sample(full_tweets_list, min(len(full_tweets_list), self.batch_size_per_label))
             return batch_tweets, label
 
+#
+# # based on bert
+# class TextStyleEmbed(nn.Module):
+#     def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1, last_layer_idx_to_freeze=-1, scale_noise=0):
+#         super(TextStyleEmbed, self).__init__()
+#         bert_config = BertConfig.from_pretrained("bert-base-cased", output_hidden_states=True)
+#         self.bert = BertModel.from_pretrained('bert-base-cased', config=bert_config)
+#         self.freeze_layers(last_layer_idx_to_freeze)
+#         # for param in self.bert.parameters():
+#         #   param.requires_grad = False
+#         self.dropout = nn.Dropout(dropout)
+#         # self.linear = nn.Linear(768, NUM_OF_CLASSES)
+#         self.linear1 = nn.Linear(768, 128)
+#         # self.linear2 = nn.Linear(128, NUM_OF_CLASSES)
+#         self.relu = nn.ReLU()
+#         self.hidden_state_to_take = hidden_state_to_take
+#         self.scale_noise = scale_noise
+
+    # def forward(self, input_id, mask):
+    #     # _, x = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+    #     outputs = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+    #     hidden_states = outputs[2]
+    #     # embedding_output = hidden_states[0]
+    #     attention_hidden_states = hidden_states[1:]
+    #     x = attention_hidden_states[self.hidden_state_to_take][:, 0, :]  # CLS output of self.hidden_state_to_take layer.
+    #     x = self.dropout(x)
+    #     x = self.linear1(x)
+    #     # x = torch.nn.functional.normalize(x)
+    #     # todo: remove comment
+    #     # #add gaussian noise
+    #     x = x + torch.randn_like(x) * self.scale_noise
+    #     x = x / x.norm(dim=-1, keepdim=True)
+    #     return x
 
 # based on bert
 class TextStyleEmbed(nn.Module):
-    def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1, last_layer_idx_to_freeze=-1, scale_noise=0):
+    def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1,
+                 last_layer_idx_to_freeze=-1, scale_noise=0):
         super(TextStyleEmbed, self).__init__()
         bert_config = BertConfig.from_pretrained("bert-base-cased", output_hidden_states=True)
         self.bert = BertModel.from_pretrained('bert-base-cased', config=bert_config)
         self.freeze_layers(last_layer_idx_to_freeze)
+        self.hidden_state_to_take = hidden_state_to_take
+        self.scale_noise = scale_noise
         # for param in self.bert.parameters():
         #   param.requires_grad = False
         self.dropout = nn.Dropout(dropout)
@@ -100,8 +136,6 @@ class TextStyleEmbed(nn.Module):
         self.linear1 = nn.Linear(768, 128)
         # self.linear2 = nn.Linear(128, NUM_OF_CLASSES)
         self.relu = nn.ReLU()
-        self.hidden_state_to_take = hidden_state_to_take
-        self.scale_noise = scale_noise
 
     def forward(self, input_id, mask):
         # _, x = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
@@ -110,6 +144,7 @@ class TextStyleEmbed(nn.Module):
         # embedding_output = hidden_states[0]
         attention_hidden_states = hidden_states[1:]
         x = attention_hidden_states[self.hidden_state_to_take][:, 0, :]  # CLS output of self.hidden_state_to_take layer.
+        # x = self.relu(x) # todo: maybe I need to do it
         x = self.dropout(x)
         x = self.linear1(x)
         # x = torch.nn.functional.normalize(x)
@@ -118,8 +153,6 @@ class TextStyleEmbed(nn.Module):
         x = x + torch.randn_like(x) * self.scale_noise
         x = x / x.norm(dim=-1, keepdim=True)
         return x
-
-
 
     def freeze_layers(self, last_layer_idx_to_freeze):
         '''
@@ -405,9 +438,9 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     best_loss = 1e16
     log_dict = {}
     for epoch in range(config['epochs']):
+        model.train()
         if epoch == config['freeze_after_n_epochs']:
             model.freeze_layers(-1)
-        model.train()
         train_list_all_triplet_loss_batch = []
         train_list_positive_loss_batch = []
         train_list_fraction_positive_triplets_batch = []

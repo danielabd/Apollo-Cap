@@ -146,152 +146,6 @@ def collate_fn(data):  # for model based on bert
                                      return_tensors="pt")
     return tokenized_texts_list, labels_list, texts_list
 
-# def train(model, train_data, val_data, learning_rate, epochs, labels_dict, batch_size, desired_cuda_num,path_for_saving_last_model, path_for_saving_best_model):
-# def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
-#           path_for_saving_best_model, device, tgt_file_vec_emb, config):
-#     print("Training the model...")
-#     train_data_set, val_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict)
-#     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
-#                                                    batch_size=config['batch_size'], shuffle=True,
-#                                                    num_workers=config['num_workers'])
-#     val_dataloader = torch.utils.data.DataLoader(val_data_set, collate_fn=collate_fn, batch_size=config['batch_size'],
-#                                                  shuffle=True, num_workers=config['num_workers'])
-#
-#     print('Starting to train...')
-#     model = model.to(device)
-#
-#     best_loss = 1e16
-#     log_dict = {}
-#     criterion = nn.BinaryCrossEntropyLoss()
-#
-#
-#     # train, val = Dataset(train_data, labels_dict), Dataset(val_data, labels_dict)
-#     #
-#     # train_dataloader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
-#     # val_dataloader = torch.utils.data.DataLoader(val, batch_size=batch_size)
-#     #
-#     # use_cuda = torch.cuda.is_available()
-#     # device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
-#     #
-#     # criterion = nn.CrossEntropyLoss()
-#     # optimizer = Adam(model.parameters(), lr=learning_rate)
-#     #
-#     # if use_cuda:
-#     #     model = model.to(device)
-#     #     criterion = criterion.to(device)
-#     best_f1_score_val = 0
-#     for epoch in range(config['epochs']):
-#         if epoch == config['freeze_after_n_epochs']:
-#             model.freeze_layers(-1)
-#         model.train()
-#
-#         total_acc_train = 0
-#         total_loss_train = 0
-#
-#         train_preds = []
-#         train_targets = []
-#         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
-#                 pbar := tqdm(train_dataloader, desc="Training", leave=False, )):  # model based on bert
-#             labels = torch.from_numpy(np.asarray(labels)).to(device)
-#             outputs = model(tokenized_texts_list['input_ids'].to(device),
-#                             tokenized_texts_list['attention_mask'].to(device))  # model based on bert
-#
-#         for train_input, train_label in tqdm(train_dataloader):
-#             train_targets.extend(train_label.cpu().data.numpy())
-#             train_label = train_label.to(device)
-#             mask = train_input['attention_mask'].to(device)
-#             input_id = train_input['input_ids'].squeeze(1).to(device)
-#
-#             output = model(input_id, mask)
-#             train_preds.extend(output.cpu().data.numpy())
-#             batch_loss = criterion(output, train_label.long())
-#             total_loss_train += batch_loss.item()
-#
-#             acc = (output.argmax(dim=1) == train_label).sum().item()
-#             total_acc_train += acc
-#
-#             model.zero_grad()
-#             batch_loss.backward()
-#             optimizer.step()
-#
-#         train_preds_t = torch.tensor(train_preds)
-#         train_targets_t = torch.tensor(train_targets)
-#         precision_i = Precision(average='weighted', num_classes=len(set(np.array(train_targets_t))))
-#         precision = precision_i(train_preds_t, train_targets_t)
-#         recall_i = Recall(average='weighted', num_classes=len(set(np.array(train_targets_t))))
-#         recall = recall_i(train_preds_t, train_targets_t)
-#
-#         # precision = Precision(preds, targets)
-#         # recall = Recall(preds, targets)
-#
-#         f1_score_train = 2 * (precision * recall) / (precision + recall)
-#
-#         if np.mod(epoch_num,10) == 0:
-#             print(f'Saving model to: {path_for_saving_last_model}...')
-#             torch.save({"model_state_dict": model.state_dict(),
-#                         "optimizer_state_dict": optimizer.state_dict(),
-#                         }, path_for_saving_last_model)
-#         total_acc_val = 0
-#         total_loss_val = 0
-#         print("Calculate  validation...")
-#         with torch.no_grad():
-#
-#             preds = []
-#             targets = []
-#             for val_input, val_label in val_dataloader:
-#                 targets.extend(val_label.cpu().data.numpy())
-#                 val_label = val_label.to(device)
-#                 mask = val_input['attention_mask'].to(device)
-#                 input_id = val_input['input_ids'].squeeze(1).to(device)
-#
-#                 output = model(input_id, mask)
-#                 preds.extend(output.argmax(dim=1).cpu().data.numpy())
-#                 batch_loss = criterion(output, val_label.long())
-#                 total_loss_val += batch_loss.item()
-#
-#                 acc = (output.argmax(dim=1) == val_label).sum().item()
-#                 total_acc_val += acc
-#
-#
-#             preds_t = torch.tensor(preds)
-#             targets_t = torch.tensor(targets)
-#
-#             precision_i = Precision(average='weighted', num_classes=len(set(np.array(targets_t))))
-#             precision = precision_i(preds_t, targets_t)
-#             recall_i = Recall(average='weighted', num_classes=len(set(np.array(targets_t))))
-#             recall = recall_i(preds_t, targets_t)
-#
-#             f1_score_val = 2*(precision*recall)/(precision+recall)
-#             #f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
-#
-#
-#             print(f"f1_score_val:{f1_score_val}")
-#
-#         print(
-#             f'Epochs: {epoch_num + 1} | Train Loss: {total_loss_train / len(train_data): .3f} \
-#                 | Train Accuracy: {total_acc_train / len(train_data): .3f} \
-#                 | f1_score_train: {f1_score_train: .3f} \
-#                 | Val Loss: {total_loss_val / len(val_data): .3f} \
-#                 | Val Accuracy: {total_acc_val/len(val_data): .3f} \
-#                 | f1_score_val: {f1_score_val: .3f}')
-#         log_dict = {'train/epoch': epoch_num,
-#                     'train/loss_train': total_loss_train / len(train_data),
-#                     'train/acc_train': total_acc_train / len(train_data),
-#                     'train/f1_score_train': f1_score_train,
-#                     'val/loss_val': total_loss_val / len(val_data),
-#                     'val/acc_val': total_acc_val/len(val_data),
-#                     'val/f1_score_val': f1_score_val}
-#
-#         wandb.log(log_dict)
-#
-#         if f1_score_val>best_f1_score_val:
-#             print(f'Saving ***best**** model to: {path_for_saving_best_model}...')
-#             torch.save({"model_state_dict": model.state_dict(),
-#                         "optimizer_state_dict": optimizer.state_dict(),
-#                         }, path_for_saving_best_model)
-#             best_f1_score_val = f1_score_val
-#     print("finish train")
-
 def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
           path_for_saving_best_model, device, config):
     print("Training the model...")
@@ -305,8 +159,6 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     print('Starting to train...')
     model = model.to(device)
 
-    best_loss = 1e16
-    log_dict = {}
     criterion = nn.BCELoss()
 
     best_f1_score_val = 0
@@ -398,27 +250,30 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
             print(f"f1_score_val:{f1_score_val}")
 
+        if f1_score_val>best_f1_score_val:
+            print(f'f1_score_val = {best_f1_score_val} improved.\nSaving ***best**** model to: {path_for_saving_best_model}...')
+            torch.save({"model_state_dict": model.state_dict(),
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        }, path_for_saving_best_model)
+            best_f1_score_val = f1_score_val
+
+
         print(
             f'Epochs: {epoch + 1} \
                 | Train Loss: {total_loss_train / len(df_train): .3f} \
                 | Train Accuracy: {total_acc_train / len(df_train): .3f} \
                 | Val Loss: {total_loss_val / len(df_val): .3f} \
                 | Val Accuracy: {total_acc_val/len(df_val): .3f} \
-                | f1_score_val: {f1_score_val: .3f}')
+                | f1_score_val: {f1_score_val: .3f} \
+                | best_f1_score_val: {best_f1_score_val: .3f}')
         log_dict = {'train/epoch': epoch,
                     'train/loss_train': total_loss_train / len(df_train),
                     'train/acc_train': total_acc_train / len(df_train),
                     'val/loss_val': total_loss_val / len(df_val),
                     'val/acc_val': total_acc_val/len(df_val ),
-                    'val/f1_score_val': f1_score_val}
+                    'val/f1_score_val': total_acc_val/len(f1_score_val),
+                    'val/best_f1_score_val': best_f1_score_val}
         wandb.log(log_dict)
-
-        if f1_score_val>best_f1_score_val:
-            print(f'Saving ***best**** model to: {path_for_saving_best_model}...')
-            torch.save({"model_state_dict": model.state_dict(),
-                        "optimizer_state_dict": optimizer.state_dict(),
-                        }, path_for_saving_best_model)
-            best_f1_score_val = f1_score_val
     print("finish train")
 
 

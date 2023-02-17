@@ -3,7 +3,7 @@ project: text_style_classification
 method: bayes
 metric:
   goal: maximize
-  name: val/f1_score_val
+  name: val/best_f1_score_val
 parameters:
   lr:
     values:
