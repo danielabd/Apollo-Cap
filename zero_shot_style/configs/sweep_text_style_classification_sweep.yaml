@@ -1,9 +1,9 @@
-program: model/text_style_embedding.py
-project: text_style_embedding
+program: evaluation/text_style_classification.py
+project: text_style_classification
 method: bayes
 metric:
-  goal: minimize
-  name: val/best_val_all_triplet_loss_avg
+  goal: maximize
+  name: val/f1_score_val
 parameters:
   lr:
     values:
