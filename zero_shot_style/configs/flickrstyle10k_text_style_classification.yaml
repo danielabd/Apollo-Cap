@@ -19,13 +19,16 @@ img_idx_to_start_from: 0
 desired_labels: [humor, romantic] #[factual, humor, romantic]
 
 epochs: 50
-lr: 0.00001
+lr: 0.000001
 batch_size: 16
 margin: 0.26
-hidden_state_to_take: -1
-last_layer_idx_to_freeze: 10
-freeze_after_n_epochs: 4
+hidden_state_to_take: -2
+last_layer_idx_to_freeze: 8
+freeze_after_n_epochs: 6
 inner_batch_size: 1
+path_for_loading_best_model: /home/nlp/tzufar/checkpoints/17_02_2023/13_21_30__17_02_2023/best_flickrstyle10k_text_style_classification_model.pth
+
+#--freeze_after_n_epochs=6 --hidden_state_to_take=-2 --last_layer_idx_to_freeze=8 --lr=1e-05 --scale_noise=0.04
 
 txt_cls_model_path: checkpoints/best_models/flickrstyle10k/humor_romantic_best_text_style_classification_model.pth
 data_file: ['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
