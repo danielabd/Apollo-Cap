@@ -311,9 +311,9 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
     best_f1_score_val = 0
     for epoch in range(config['epochs']):
+        model.train()
         if epoch == config['freeze_after_n_epochs']:
             model.freeze_layers(-1)
-        model.train()
 
         total_acc_train = 0
         total_loss_train = 0
@@ -333,7 +333,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             batch_loss = criterion(outputs, train_label2)  # todo:check it
 
             total_loss_train += batch_loss.item()
-            #######
+
             outputs_bin = torch.round(outputs)
             acc = (outputs_bin == train_label).sum().item() #todo:check it
             total_acc_train += acc
@@ -363,9 +363,9 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         total_acc_val = 0
         total_loss_val = 0
         print("Calculate  validation...")
-        # model.eval()
         val_preds = []
         val_targets = []
+        model.eval()
         with torch.no_grad():
             for step, (tokenized_texts_list, val_labels, texts_list) in enumerate(
                     pbar := tqdm(val_dataloader, desc="Validation", leave=False, )):
@@ -410,7 +410,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                     'train/acc_train': total_acc_train / len(df_train),
                     'train/f1_score_train': f1_score_train,
                     'val/loss_val': total_loss_val / len(df_val),
-                    'val/acc_val': total_acc_val/len(df_val),
+                    'val/acc_val': total_acc_val/len(df_val ),
                     'val/f1_score_val': f1_score_val}
         wandb.log(log_dict)
 
@@ -422,16 +422,57 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             best_f1_score_val = f1_score_val
     print("finish train")
 
+
+'''
+    print('Starting to train...')
+    model = model.to(device)
+
+    best_loss = 1e16
+    log_dict = {}
+    criterion = nn.BCELoss()
+
+    best_f1_score_val = 0
+    for epoch in range(config['epochs']):
+        if epoch == config['freeze_after_n_epochs']:
+            model.freeze_layers(-1)
+        model.train()
+
+        total_acc_train = 0
+        total_loss_train = 0
+
+        train_preds = []
+        train_targets = []
+        for step, (tokenized_texts_list, labels, texts_list) in enumerate(
+                pbar := tqdm(train_dataloader, desc="Training", leave=False, )):  # model based on bert
+            train_targets.extend(labels)
+            train_label = torch.from_numpy(np.asarray(labels)).to(device)
+            outputs = model(tokenized_texts_list['input_ids'].to(device),
+                            tokenized_texts_list['attention_mask'].to(device))  # model based on bert
+            train_preds.extend([i[0] for i in outputs.cpu().data.numpy()])
+
+            train_label2 = torch.from_numpy(np.asarray([[float(i)] for i in labels])).to(device).float()
+            outputs = outputs.float()
+            batch_loss = criterion(outputs, train_label2)  # todo:check it
+
+            total_loss_train += batch_loss.item()
+
 def evaluate(model, test_data, labels, desired_cuda_num):
-    test = Dataset(test_data, labels)
+    print("Evaluating the model the model...")
+    test_data_set = Dataset(df_test, labels_set_dict)
+    test_dataloader = torch.utils.data.DataLoader(test_data_set, collate_fn=collate_fn,
+                                                   batch_size=config['batch_size'], shuffle=True,
+                                                   num_workers=config['num_workers'])
 
-    test_dataloader = torch.utils.data.DataLoader(test, batch_size=16)
 
-    use_cuda = torch.cuda.is_available()
-    device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")
+    print('Starting to train...')
+    model = model.to(device)
 
-    if use_cuda:
-        model = model.cuda()
+    best_loss = 1e16
+    log_dict = {}
+    criterion = nn.BCELoss()
+
+    best_f1_score_val = 0
+
 
     total_acc_test = 0
     with torch.no_grad():
@@ -451,7 +492,7 @@ def evaluate(model, test_data, labels, desired_cuda_num):
     print(f'Test Accuracy: {total_acc_test_for_all_data: .3f}')
     print("finish evaluate")
     return total_acc_test_for_all_data
-
+'''
 def get_train_val_data(data_set_path):
     f'''
 
@@ -567,6 +608,11 @@ def main():
 
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
+    #######
+    #todo: debug
+    df_train = df_train.iloc[:18,:]
+    df_val = df_val.iloc[:18,:]
+    ######
     print(len(df_train), len(df_val), len(df_test))
     print(f"labels: {config['labels_set_dict']}")
 
@@ -576,7 +622,7 @@ def main():
 
     train(model, optimizer, df_train, df_val, config['labels_set_dict'], config['labels_idx_to_str'], path_for_saving_last_model,
           path_for_saving_best_model, device,  config)
-    total_acc_test_for_all_data = evaluate(model, df_test,  config['labels_set_dict'], desired_cuda_num)
+    # total_acc_test_for_all_data = evaluate(model, df_test,  config['labels_set_dict'], desired_cuda_num)
 
     print("finish main")
 
