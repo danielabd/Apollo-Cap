@@ -449,10 +449,7 @@ def main():
     experiment_dir_date = os.path.join(checkpoints_dir, cur_date)
     if not os.path.isdir(experiment_dir_date):
         os.makedirs(experiment_dir_date)
-    experiment_dir_date_training = os.path.join(checkpoints_dir, cur_date, config['training_name'])
-    if not os.path.isdir(experiment_dir_date_training):
-        os.makedirs(experiment_dir_date_training)
-    experiment_dir = os.path.join(checkpoints_dir, cur_date, config['training_name'], cur_time)
+    experiment_dir = os.path.join(checkpoints_dir, cur_date, cur_time)
     if not os.path.isdir(experiment_dir):
         os.makedirs(experiment_dir)
 
