@@ -402,6 +402,7 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
         #                 weight_decay=config['weight_decay'])
         # optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        model.to(device)
         optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
                          weight_decay=config['weight_decay'])
         if 'cuda' in device.type:
