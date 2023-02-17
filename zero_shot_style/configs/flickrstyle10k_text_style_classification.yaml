@@ -1,6 +1,7 @@
 data_name: flickrstyle10k
 best_model_name: best_flickrstyle10k_text_style_classification_model.pth #best_twitter_trained_model.pth
 model_name: flickrstyle10k_text_style_classification_model.pth
+wandb_mode: online #'disabled, offline, online'
 
 #arithmetics_style_imgs: [49, 52, 53]
 style_img:
