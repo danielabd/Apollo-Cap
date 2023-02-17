@@ -326,10 +326,12 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             train_label = torch.from_numpy(np.asarray(labels)).to(device)
             outputs = model(tokenized_texts_list['input_ids'].to(device),
                             tokenized_texts_list['attention_mask'].to(device))  # model based on bert
-
-            outputs2 = torch.FloatTensor([i[0] for i in outputs]).to(device)
             train_preds.extend(outputs.cpu().data.numpy())
-            batch_loss = criterion(outputs2, train_label.float()) #todo:check it
+
+            train_label2 = torch.from_numpy(np.asarray([[float(i)] for i in labels])).to(device).float()
+            outputs = outputs.float()
+            batch_loss = criterion(outputs, train_label2)  # todo:check it
+
             total_loss_train += batch_loss.item()
             #######
             acc = (outputs == train_label).sum().item() #todo:check it
@@ -369,9 +371,11 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                 val_labels = torch.from_numpy(np.asarray(val_labels)).to(device)
                 outputs = model(tokenized_texts_list['input_ids'].to(device),
                                 tokenized_texts_list['attention_mask'].to(device))  # model based on bert
-
                 preds.extend(outputs.cpu().data.numpy())
-                batch_loss = criterion(outputs, val_labels.long())
+
+                val_label2 = torch.from_numpy(np.asarray([[float(i)] for i in val_labels])).to(device).float()
+                outputs = outputs.float()
+                batch_loss = criterion(outputs, val_label2)  # todo:check it
                 total_loss_val += batch_loss.item()
 
                 acc = (outputs == val_labels).sum().item()
