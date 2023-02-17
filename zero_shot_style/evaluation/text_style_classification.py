@@ -362,7 +362,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         total_acc_val = 0
         total_loss_val = 0
         print("Calculate  validation...")
-        model.eval()
+        # model.eval()
         val_preds = []
         val_targets = []
         with torch.no_grad():
