@@ -207,11 +207,12 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
         # f1_score_train = 2 * (precision * recall) / (precision + recall)
 
-        if np.mod(epoch,10) == 0:
-            print(f'Saving model to: {path_for_saving_last_model}...')
-            torch.save({"model_state_dict": model.state_dict(),
-                        "optimizer_state_dict": optimizer.state_dict(),
-                        }, path_for_saving_last_model)
+        #remove save last model bacause size
+        # if np.mod(epoch,10) == 0:
+        #     print(f'Saving model to: {path_for_saving_last_model}...')
+        #     torch.save({"model_state_dict": model.state_dict(),
+        #                 "optimizer_state_dict": optimizer.state_dict(),
+        #                 }, path_for_saving_last_model)
         total_acc_val = 0
         total_loss_val = 0
         print("Calculate  validation...")
