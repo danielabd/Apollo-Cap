@@ -278,60 +278,63 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     print("finish train")
 
 
-def evaluate(model, df_test, labels_set_dict, device, config):
+def evaluate(model, all_df, labels_set_dict, device, config):
+    for set_name in all_df:
+        print(f"Evaluating the model on {set_name}:")
+        df = all_df[set_name]
+        test_data_set = Dataset(df, labels_set_dict)
+        test_dataloader = torch.utils.data.DataLoader(test_data_set, collate_fn=collate_fn,
+                                                       batch_size=config['batch_size'], shuffle=True,
+                                                       num_workers=config['num_workers'])
 
-    print("Evaluating the model the model...")
-    test_data_set = Dataset(df_test, labels_set_dict)
-    test_dataloader = torch.utils.data.DataLoader(test_data_set, collate_fn=collate_fn,
-                                                   batch_size=config['batch_size'], shuffle=True,
-                                                   num_workers=config['num_workers'])
+        print('Starting to evaluate on test set...')
+        model = model.to(device)
+        model.freeze_layers(-1)
+        model.eval()
+        total_acc_test = 0
+        total_loss_test = 0
+        test_preds = []
+        test_targets = []
+        criterion = nn.BCELoss()
+        with torch.no_grad():
+            for step, (tokenized_texts_list, labels, texts_list) in enumerate(
+                    pbar := tqdm(test_dataloader, desc="Testing", leave=False, )):  # model based on bert
+                test_targets.extend(labels)
+                test_label = torch.from_numpy(np.asarray(labels)).to(device)
+                outputs = model(tokenized_texts_list['input_ids'].to(device),
+                                tokenized_texts_list['attention_mask'].to(device))  # model based on bert
+                test_preds.extend([i[0] for i in outputs.cpu().data.numpy()])
 
-    print('Starting to evaluate on test set...')
-    model = model.to(device)
-    model.freeze_layers(-1)
-    model.eval()
-    total_acc_test = 0
-    total_loss_test = 0
-    test_preds = []
-    test_targets = []
-    criterion = nn.BCELoss()
-    with torch.no_grad():
-        for step, (tokenized_texts_list, labels, texts_list) in enumerate(
-                pbar := tqdm(test_dataloader, desc="Testing", leave=False, )):  # model based on bert
-            test_targets.extend(labels)
-            test_label = torch.from_numpy(np.asarray(labels)).to(device)
-            outputs = model(tokenized_texts_list['input_ids'].to(device),
-                            tokenized_texts_list['attention_mask'].to(device))  # model based on bert
-            test_preds.extend([i[0] for i in outputs.cpu().data.numpy()])
+                test_label2 = torch.from_numpy(np.asarray([[float(i)] for i in labels])).to(device).float()
+                outputs = outputs.float()
+                batch_loss = criterion(outputs, test_label2)
+                total_loss_test += batch_loss.item()
 
-            test_label2 = torch.from_numpy(np.asarray([[float(i)] for i in labels])).to(device).float()
-            outputs = outputs.float()
-            batch_loss = criterion(outputs, test_label2)
-            total_loss_test += batch_loss.item()
+                outputs_bin = torch.round(torch.tensor([out[0] for out in outputs])).to(device)
+                acc = (outputs_bin == test_label).sum().item()
+                total_acc_test += acc
 
-            outputs_bin = torch.round(torch.tensor([out[0] for out in outputs])).to(device)
-            acc = (outputs_bin == test_label).sum().item()
-            total_acc_test += acc
 
-    test_preds_bin = torch.round(torch.tensor(test_preds))
-    test_targets_t = torch.tensor(test_targets)
-    precision_i = Precision(average='weighted', task='binary', num_classes=len(set(np.array(test_targets_t))),
-                            multiclass=True)
-    precision = precision_i(test_preds_bin, test_targets_t)
-    recall_i = Recall(average='weighted', num_classes=len(set(np.array(test_targets_t))), task='multiclass',
-                      multiclass=True)
-    recall = recall_i(test_preds_bin, test_targets_t)
+        print(f"test loss: {total_loss_test / len(df): .3f}")
 
-    f1_score_test = 2 * (precision * recall) / (precision + recall)
-    # f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
+        test_preds_bin = torch.round(torch.tensor(test_preds))
+        test_targets_t = torch.tensor(test_targets)
+        precision_i = Precision(average='weighted', task='binary', num_classes=len(set(np.array(test_targets_t))),
+                                multiclass=True)
+        precision = precision_i(test_preds_bin, test_targets_t)
+        recall_i = Recall(average='weighted', num_classes=len(set(np.array(test_targets_t))), task='multiclass',
+                          multiclass=True)
+        recall = recall_i(test_preds_bin, test_targets_t)
 
-    print(f"f1_score_val:{f1_score_test}")
+        f1_score_test = 2 * (precision * recall) / (precision + recall)
+        # f1_score_val = f1_score(label_cpu, output_cpu, average='weighted')
 
-    total_acc_test_for_all_data = total_acc_test / len(df_test)
+        print(f"f1_score_val:{f1_score_test}")
 
-    print(f'Test Accuracy: {total_acc_test_for_all_data: .3f}')
-    print("finish evaluate")
-    return total_acc_test_for_all_data
+        total_acc_test_for_all_data = total_acc_test / len(df)
+
+        print(f'Test Accuracy: {total_acc_test_for_all_data: .3f}')
+        print("finish evaluate")
 
 def get_train_val_data(data_set_path):
     f'''
@@ -481,7 +484,15 @@ def main():
         train(model, optimizer, df_train, df_val, config['labels_set_dict'], config['labels_idx_to_str'], path_for_saving_last_model,
               path_for_saving_best_model, device,  config)
     elif config['task'] == 'test':
-        evaluate(model, df_test, config['labels_set_dict'], device, config)
+        all_df = {}
+        for d in config['test_on_df']:
+            if d=='train':
+                all_df[d] = df_train
+            elif d=='val':
+                all_df[d] = val
+            elif d=='test':
+                all_df[d] = test
+        evaluate(model, all_df, config['labels_set_dict'], device, config)
 
     print("finish main")
 

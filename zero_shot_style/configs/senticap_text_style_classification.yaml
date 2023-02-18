@@ -1,6 +1,7 @@
 data_name: senticap
 task: test
 load_model: True
+test_on_df: [train, val, test]
 
 best_model_name: best_senticap_text_style_classification_model.pth #best_twitter_trained_model.pth
 model_name: senticap_text_style_classification_model.pth
