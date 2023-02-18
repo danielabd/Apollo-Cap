@@ -489,9 +489,9 @@ def main():
             if d=='train':
                 all_df[d] = df_train
             elif d=='val':
-                all_df[d] = val
+                all_df[d] = df_val
             elif d=='test':
-                all_df[d] = test
+                all_df[d] = df_test
         evaluate(model, all_df, config['labels_set_dict'], device, config)
 
     print("finish main")
