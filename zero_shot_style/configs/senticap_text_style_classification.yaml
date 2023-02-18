@@ -1,14 +1,15 @@
 data_name: senticap
+task: test
+load_model: True
+
 best_model_name: best_senticap_text_style_classification_model.pth #best_twitter_trained_model.pth
 model_name: senticap_text_style_classification_model.pth
 wandb_mode: online #'disabled, offline, online'
-path_for_loading_best_model: /home/nlp/tzufar/checkpoints/17_02_2023/12_59_29__17_02_2023/best_senticap_text_style_classification_model.pth
-
+path_for_loading_best_model: '/home/nlp/tzufar/checkpoints/11_24_02__17_02_2023/best_senticap_text_style_classification_model.pth'
+# /home/nlp/tzufar/checkpoints/17_02_2023/12_59_29__17_02_2023/best_senticap_text_style_classification_model.pth
 labels_dict_idxs:
   positive: 0
   negative: 1
-
-
 desired_labels: [positive, negative] #[factual, positive, negative]
 
 epochs: 50
@@ -32,7 +33,6 @@ num_workers: 10
 plot_only_clustering: False
 undesired_label: 'neutral'
 resume: False # resume running in wb
-load_model: False
 run_id:
 
 
