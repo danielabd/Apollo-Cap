@@ -122,7 +122,7 @@ class Dataset(torch.utils.data.Dataset):
 # based on bert
 class TextStyleEmbed(nn.Module):
     def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1,
-                 last_layer_idx_to_freeze=-1, scale_noise=0):
+                 last_layer_idx_to_freeze=BERT_NUM_OF_LAYERS, scale_noise=0):
         super(TextStyleEmbed, self).__init__()
         bert_config = BertConfig.from_pretrained("bert-base-cased", output_hidden_states=True)
         self.bert = BertModel.from_pretrained('bert-base-cased', config=bert_config)
@@ -154,7 +154,7 @@ class TextStyleEmbed(nn.Module):
         x = x / x.norm(dim=-1, keepdim=True)
         return x
 
-    def freeze_layers(self, last_layer_idx_to_freeze):
+    def freeze_layers(self, last_layer_idx_to_freeze=BERT_NUM_OF_LAYERS):
         '''
 
         #:param freeze_layers: list of layers num to freeze
@@ -440,7 +440,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     for epoch in range(config['epochs']):
         model.train()
         if epoch == config['freeze_after_n_epochs']:
-            model.freeze_layers(-1)
+            model.freeze_layers(BERT_NUM_OF_LAYERS)
         train_list_all_triplet_loss_batch = []
         train_list_positive_loss_batch = []
         train_list_fraction_positive_triplets_batch = []

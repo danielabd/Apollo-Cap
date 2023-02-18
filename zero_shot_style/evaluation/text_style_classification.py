@@ -68,7 +68,7 @@ class Dataset(torch.utils.data.Dataset):
 
 
 class BertClassifier(nn.Module):
-    def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1, last_layer_idx_to_freeze=-1,
+    def __init__(self, dropout=0.05, device=torch.device('cpu'), hidden_state_to_take=-1, last_layer_idx_to_freeze=BERT_NUM_OF_LAYERS,
                  scale_noise=0):
         super(BertClassifier, self).__init__()
         bert_config = BertConfig.from_pretrained("bert-base-cased", output_hidden_states=True)
@@ -114,11 +114,11 @@ class BertClassifier(nn.Module):
         x = self.sigmoid(x)
         return x
 
-    def freeze_layers(self, last_layer_idx_to_freeze):
+    def freeze_layers(self, last_layer_idx_to_freeze=BERT_NUM_OF_LAYERS):
         '''
 
         #:param freeze_layers: list of layers num to freeze
-        :param last_layer_idx_to_freeze: int
+        :param last_layer_idx_to_freeze: int , from which layer need to freeze the model
         :return:
         '''
         for layer_idx in range(BERT_NUM_OF_LAYERS):
@@ -165,7 +165,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     for epoch in range(config['epochs']):
         model.train()
         if epoch == config['freeze_after_n_epochs']:
-            model.freeze_layers(-1)
+            model.freeze_layers(BERT_NUM_OF_LAYERS)
 
         total_acc_train = 0
         total_loss_train = 0
@@ -289,7 +289,7 @@ def evaluate(model, all_df, labels_set_dict, device, config):
 
         print('Starting to evaluate on test set...')
         model = model.to(device)
-        model.freeze_layers(-1)
+        model.freeze_layers(BERT_NUM_OF_LAYERS)
         model.eval()
         total_acc_test = 0
         total_loss_test = 0

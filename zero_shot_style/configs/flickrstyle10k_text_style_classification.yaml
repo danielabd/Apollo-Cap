@@ -1,7 +1,15 @@
 data_name: flickrstyle10k
+task: test
+load_model: True
+test_on_df: [train, val, test]
+
+path_for_loading_best_model: /home/nlp/tzufar/checkpoints/17_02_2023/14_33_26__17_02_2023/best_flickrstyle10k_text_style_classification_model.pth
+
+
 best_model_name: best_flickrstyle10k_text_style_classification_model.pth #best_twitter_trained_model.pth
 model_name: flickrstyle10k_text_style_classification_model.pth
 wandb_mode: online #'disabled, offline, online'
+
 
 #arithmetics_style_imgs: [49, 52, 53]
 style_img:
@@ -24,9 +32,8 @@ batch_size: 16
 margin: 0.26
 hidden_state_to_take: -2
 last_layer_idx_to_freeze: 8
-freeze_after_n_epochs: 6
+freeze_after_n_epochs: 0 #6
 inner_batch_size: 1
-path_for_loading_best_model: /home/nlp/tzufar/checkpoints/17_02_2023/13_21_30__17_02_2023/best_flickrstyle10k_text_style_classification_model.pth
 
 #--freeze_after_n_epochs=6 --hidden_state_to_take=-2 --last_layer_idx_to_freeze=8 --lr=1e-05 --scale_noise=0.04
 
@@ -43,8 +50,7 @@ plot_only_clustering: False
 #desired_labels: 'all' #[embarrassment, joy, anger, love, annoyance, nervousness]
 undesired_label: 'neutral'
 resume: False # resume running in wb
-load_model: False
-run_id: 0
+run_id:
 
 
 #text style embedding
