@@ -112,7 +112,7 @@ def get_args():
 def run(config, img_path,desired_style_embedding_vector,desired_style_embedding_vector_std,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator=None,image_features=None):
     #debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
-        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, text_style_scale=config['text_style_scale'], **vars(config))
+        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, text_style_scale=config['text_style_scale'], config=config, **vars(config))
     if image_features == None:
         image_features = text_generator.get_img_feature([img_path], None)
 
@@ -143,7 +143,7 @@ def run(config, img_path,desired_style_embedding_vector,desired_style_embedding_
 
 def run_arithmetic(text_generator,config,model_path, img_dict_img_arithmetic,base_img,dataset_type, imgs_path, img_weights, cuda_idx,title2print):
     if text_generator == None:
-        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path, **vars(config))
+        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path, config=config, **vars(config))
     # text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(config))
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
@@ -169,7 +169,7 @@ def run_arithmetic(text_generator,config,model_path, img_dict_img_arithmetic,bas
 
 def run_img_and_prompt_manipulation(config, img_dict_img_arithmetic,base_img,dataset_type, imgs_path, img_weights, cuda_idx,title2print):
     #text_generator = CLIPTextGenerator(**vars(args))
-    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(config))
+    text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, config=config, **vars(config))
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
     t1 = timeit.default_timer();
@@ -531,7 +531,7 @@ def main():
     if config["data_name"] == "senticap": #todo:debug
         gts_data = get_gts_data(data_path,factual_captions, config['data_name'])
     if not config['debug_mac']:
-        text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path, tmp_text_loss=tmp_text_loss,
+        text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path, tmp_text_loss=tmp_text_loss, config=config,
                                            **config)
     else:
         text_generator = None

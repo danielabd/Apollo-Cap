@@ -88,6 +88,7 @@ class CLIPTextGenerator:
                  model_path = None,
                  tmp_text_loss = None,
                  use_style_model = False,
+                 config = None,
                  **kwargs):
 
         self.debug_tracking = {} # debug_tracking: debug_tracking[word_num][iteration][module]:<list>
