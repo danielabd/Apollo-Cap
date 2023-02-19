@@ -194,10 +194,10 @@ class CLIPTextGenerator:
         if self.use_style_model:
             print(f"Loading embedding style model from: {self.text_style_model_name}")
             self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'], scale_noise=config['scale_noise_txt_style_embedding'])
-            if 'cuda' in self.device.type:
-                checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
-            else:
+            if 'cpu' in self.device:
                 checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
+            else:
+                checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
             self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
             self.text_style_model.to(self.device)
             self.text_style_model.eval()
