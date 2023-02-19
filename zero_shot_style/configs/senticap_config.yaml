@@ -1,9 +1,9 @@
 ###### stylized ZeroCap: create captions - for run.py
-debug: True
+debug: False
 debug_mac: False
 wandb_mode: online #'disabled, offline, online'
 
-max_num_of_imgs: 7 #-1
+max_num_of_imgs: 5 #-1
 target_seq_length: 15
 desired_labels: [positive, negative] #[factual, positive, ngeative]
 
