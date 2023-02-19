@@ -29,6 +29,9 @@ from evaluate import load
 MAX_PERPLEXITY = 500
 
 def get_args():
+    parser.add_argument('--config_file', type=str,
+                        default=os.path.join('..', 'configs', 'senticap_config.yaml'),
+                        help='full path to config file')
     #parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     #parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
     parser.add_argument("--img_name", type=int, default=0)
