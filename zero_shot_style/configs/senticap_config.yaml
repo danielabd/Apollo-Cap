@@ -2,6 +2,8 @@
 use_style_model: False
 use_text_style_example: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
+global_dir_name_for_save_models: senticap_text_style_embedding
+
 cond_text_dict:
   positive: The beautiful image of a
   negative: The disturbing image of a

@@ -1,5 +1,5 @@
-program: text_style_classification.py
-project: text_style_classification
+program: text_style_classification_senticap.py
+project: text_style_classification_senticap
 method: bayes
 metric:
   goal: maximize

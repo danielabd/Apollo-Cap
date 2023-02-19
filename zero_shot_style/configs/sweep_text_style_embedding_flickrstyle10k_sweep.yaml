@@ -1,10 +1,14 @@
-program: text_style_classification.py
-project: text_style_classification
+program: model/text_style_embedding_flickrstyle10k.py
+project: text_style_embedding_flickrstyle10k
 method: bayes
 metric:
-  goal: maximize
-  name: val/best_f1_score_val
+  goal: minimize
+  name: val/best_val_all_triplet_loss_avg
 parameters:
+  margin:
+    max: 2
+    min: 0.2
+    distribution: uniform
   lr:
     values:
     - 0.001

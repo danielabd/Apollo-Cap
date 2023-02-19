@@ -3,6 +3,7 @@ data_name: flickrstyle10k
 use_style_model: True
 use_text_style_example: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
+global_dir_name_for_save_models: flickrstyle10k_text_style_embedding
 #cond_text_dict:
 #  humor: The humorous image of a
 #  romantic: The romantic image of a
@@ -79,7 +80,6 @@ margin: 0.26
 hidden_state_to_take: -4
 last_layer_idx_to_freeze: 10
 freeze_after_n_epochs: 4
-inner_batch_size: 1
 
 inner_batch_size: 1
 best_model_name: checkpoints/best_models/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth

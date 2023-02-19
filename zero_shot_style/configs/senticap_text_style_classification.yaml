@@ -1,7 +1,8 @@
 data_name: senticap
-task: test
-load_model: True
+task: train
+load_model: False
 test_on_df: [train, val, test]
+global_dir_name_for_save_models: senticap_text_style_classification
 
 best_model_name: best_senticap_text_style_classification_model.pth #best_twitter_trained_model.pth
 model_name: senticap_text_style_classification_model.pth

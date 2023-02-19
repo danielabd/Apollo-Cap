@@ -413,7 +413,9 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
 def main():
     args = get_args()
     config = get_hparams(args)
+    config["config_file"] = os.path.join('..',  'configs','senticap_text_style_classification.yaml')
     print(f"config_file = {config['config_file']}")
+
     cur_date = datetime.now().strftime("%d_%m_%Y")
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
@@ -437,10 +439,10 @@ def main():
     global_dir_name_for_save_models = os.path.join(checkpoints_dir, config['global_dir_name_for_save_models'])
     if not os.path.isdir(global_dir_name_for_save_models):
         os.makedirs(global_dir_name_for_save_models)
-    experiment_dir_date = os.path.join(checkpoints_dir, config['global_dir_name_for_save_models'], cur_date)
+    experiment_dir_date = os.path.join(checkpoints_dir,config['global_dir_name_for_save_models'], cur_date)
     if not os.path.isdir(experiment_dir_date):
         os.makedirs(experiment_dir_date)
-    experiment_dir = os.path.join(checkpoints_dir, config['global_dir_name_for_save_models'], cur_date, cur_time)
+    experiment_dir = os.path.join(checkpoints_dir,config['global_dir_name_for_save_models'], cur_date, cur_time)
     if not os.path.isdir(experiment_dir):
         os.makedirs(experiment_dir)
 

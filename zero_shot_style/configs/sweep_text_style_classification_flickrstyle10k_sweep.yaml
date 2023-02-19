@@ -1,5 +1,5 @@
-program: text_style_classification.py
-project: text_style_classification
+program: text_style_classification_flickrstyle10k.py
+project: text_style_classification_flickrstyle10k
 method: bayes
 metric:
   goal: maximize

@@ -1,7 +1,8 @@
 data_name: flickrstyle10k
-task: test
-load_model: True
+task: train #test
+load_model: False
 test_on_df: [train, val, test]
+global_dir_name_for_save_models: flickrstyle10k_text_style_classification
 
 path_for_loading_best_model: /home/nlp/tzufar/checkpoints/17_02_2023/14_33_26__17_02_2023/best_flickrstyle10k_text_style_classification_model.pth
 

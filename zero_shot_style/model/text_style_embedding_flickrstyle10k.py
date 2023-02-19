@@ -975,7 +975,9 @@ def main():
     print('Start!')
     args = get_args()
     config = get_hparams(args)
+    config["config_file"] = os.path.join('.', 'configs', 'flickrstyle10k_config.yaml')
     print(f"config_file: {config['config_file']}")
+
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
     cur_date = datetime.now().strftime("%d_%m_%Y")
