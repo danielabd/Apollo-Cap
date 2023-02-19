@@ -366,7 +366,7 @@ def get_list_of_imgs_for_caption(config):
     imgs_to_test = []
     print(f"config['max_num_of_imgs']: {config['max_num_of_imgs']}")
     for i,im in enumerate(os.listdir(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']),'images',config['data_type']))):
-        if i >= config['max_num_of_imgs'] and config['max_num_of_imgs']>0:
+        if i >= int(config['max_num_of_imgs']) and int(config['max_num_of_imgs']) >0:
             break
         if ('.jpg' or '.jpeg' or '.png') not in im:
             continue
