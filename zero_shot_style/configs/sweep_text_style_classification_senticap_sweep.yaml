@@ -14,18 +14,19 @@ parameters:
     distribution: categorical
   hidden_state_to_take:
     max: -1
-    min: -4
+    min: -8
     distribution: int_uniform
-  last_layer_idx_to_freeze:
-    max: 11
-    min: 0
-    distribution: int_uniform
-  freeze_after_n_epochs:
-    max: 10
-    min: 0
-    distribution: int_uniform
+#  last_layer_idx_to_freeze:
+#    max: 11
+#    min: 0
+#    distribution: int_uniform
+#  freeze_after_n_epochs:
+#    max: 10
+#    min: 0
+#    distribution: int_uniform
   scale_noise:
     values:
+      - 0.20
       - 0.16
       - 0.12
       - 0.08

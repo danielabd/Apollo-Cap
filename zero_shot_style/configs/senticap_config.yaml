@@ -19,8 +19,8 @@ cond_text_dict:
 
 max_num_of_imgs: -1 #10 #-1
 wandb_mode: online #'disabled, offline, online'
-data_type: test
-calc_evaluation: False
+data_type: val
+calc_evaluation: True
 
 #debug- tocheck:
 #mild -- 531
@@ -67,7 +67,7 @@ imitate_text_style: False
 text_to_imitate_list: ["positive"]
 
 
-specific_imgs_to_test: [77954, 123810, 479597, 458137, 21604, 450724]
+#specific_imgs_to_test: [77954, 123810, 479597, 458137, 21604, 450724]
 
 
 epochs: 20
@@ -86,6 +86,7 @@ mean_vec_emb_file:  checkpoints/best_models/senticap/senticap_mean_class_embeddi
 median_vec_emb_file: checkpoints/best_models/senticap/senticap_median_class_embedding.p
 std_vec_emb_file: senticap/senticap_std_class_embedding.p
 txt_cls_model_path: checkpoints/best_models/senticap/pos_neg_best_text_style_classification_model.pth
+#txt_cls_model_path: checkpoints/best_models/senticap/pos_neg_best_text_style_classification_model.pth
 
 data_file: #['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 experiment_name: cur_time

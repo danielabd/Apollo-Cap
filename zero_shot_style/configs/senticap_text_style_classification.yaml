@@ -1,8 +1,8 @@
 data_name: senticap
-task: test #train / test / single_test
-load_model: True
+task: train #train / test / single_test
+load_model: False
 test_on_df: [train, val, test]
-global_dir_name_for_save_models: senticap_text_style_classification
+global_dir_name_for_save_models: senticap_text_style_classification_fast_search
 
 best_model_name: best_senticap_text_style_classification_model.pth #best_twitter_trained_model.pth
 model_name: senticap_text_style_classification_model.pth
@@ -20,8 +20,8 @@ lr: 0.000001
 batch_size: 16
 margin: 0.26
 hidden_state_to_take: -4
-last_layer_idx_to_freeze: 9
-freeze_after_n_epochs: 10
+last_layer_idx_to_freeze: -1  # 9
+freeze_after_n_epochs: 1000000 #10
 inner_batch_size: 1
 scale_noise: 0.01
 
