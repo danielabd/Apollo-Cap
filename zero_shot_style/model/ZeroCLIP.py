@@ -138,9 +138,9 @@ class CLIPTextGenerator:
         self.clip.eval()
 
         # Init arguments
-        self.target_seq_length = target_seq_length
+        self.target_seq_length = int(target_seq_length)
         self.reset_context_delta = reset_context_delta
-        self.num_iterations = num_iterations
+        self.num_iterations = int(num_iterations)
         self.clip_loss_temperature = clip_loss_temperature
         self.text_style_loss_temperature = text_style_loss_temperature
         self.clip_scale = clip_scale
