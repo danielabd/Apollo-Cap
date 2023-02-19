@@ -27,6 +27,7 @@ from datetime import datetime
 from utils import parser, get_hparams
 from evaluate import load
 MAX_PERPLEXITY = 500
+DEFAULT_PERPLEXITY_SCORE = 1
 
 def get_args():
     parser.add_argument('--config_file', type=str,
@@ -489,7 +490,7 @@ def initial_variables():
     results_dir = config['experiment_dir']
     tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
     if config["debug"]:
-        config['max_num_of_imgs'] = 1
+        config['max_num_of_imgs'] = 2
         config['target_seq_length'] = 1
         config['desired_labels'] = ['positive']
         config['calc_fluency'] = False
@@ -527,96 +528,13 @@ def initial_variables():
            mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
            tmp_text_loss,  factual_captions, desired_labels_list, embedding_vectors_to_load
 
-
-
-
-def main():
-    config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
-    mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
-    tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load = initial_variables()
-
-    imgs_to_test = get_list_of_imgs_for_caption(config)
-    if config["data_name"] == "senticap": #todo:debug
-        gts_data = get_gts_data(data_path,factual_captions, config['data_name'])
-    if not config['debug_mac']:
-        text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path, tmp_text_loss=tmp_text_loss, config=config,
-                                           **config)
-    else:
-        text_generator = None
-    evaluation_obj, fluency_obj = get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir)
-
-    # go over all images
-    evaluation_results = {} #total_results_structure
-    for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
-        # if int(img_path.split('.')[0].split('/')[-1]) == 429063:
-        #     print(f'img_path_idx={img_path_idx}')
-        wandb.log({'test/img_idx': img_path_idx})
-        print(f"Img num = {img_path_idx}")
-        if not config['debug_mac']:
-            image_features = text_generator.get_img_feature([img_path], None)
-        else:
-            image_features = None
-        if img_path_idx < config['img_idx_to_start_from']:
-            continue
-        img_name = img_path.split('/')[-1].split('.')[0]
-        if config["data_name"] == "senticap":
-            img_name = int(img_name)
-        config['img_path'] = img_path
-        evaluation_results[img_name] = {'img_path': img_path}
-        if not os.path.isfile(config['img_path']):
-            continue
-        #go over all labels
-        for label_idx, label in enumerate(desired_labels_list):
-            config['cond_text'] = config["cond_text_dict"][label]
-            config = update_running_params(label, config)
-            text_generator.set_params(config['ce_scale'], config['clip_scale'], config['text_style_scale'],
-                                      config['beam_size'], config['num_iterations'])
-
-            evaluation_results[img_name][label] = {}
-            if not config['imitate_text_style']:
-                if config['use_style_model']:
-                    desired_style_embedding_vector = embedding_vectors_to_load[label]
-                    desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
-                else:
-                    desired_style_embedding_vector = None; desired_style_embedding_vector_std = None
-            if config['debug_mac']:
-                evaluation_results[img_name][label] = {'res': 'bla'}
-                continue
-            print(f"Img num = {img_path_idx}")
-            #prompt manipulation or using text style model
-            if config['run_type'] == 'caption':
-                title2print = get_title2print(config['img_path'], config['data_name'], label,  config)
-                print(title2print)
-                best_caption = run(config, config['img_path'], desired_style_embedding_vector, desired_style_embedding_vector_std,
-                    config['cuda_idx_num'], title2print, model_path, config['data_name'],tmp_text_loss,label,img_dict,debug_tracking,text_generator,image_features)
-                write_caption_results(img_dict, results_dir, tgt_results_path)
-                # write_results_of_text_style_all_models(img_dict, desired_labels_list,
-                #                                    results_dir, 1, tgt_results_path)
-                if config['write_debug_tracking_file']:
-                    write_debug_tracking(results_dir, debug_tracking)
-                fluency_obj.add_test(best_caption, img_name, label)
-
-            #image manipulation
-            elif config['run_type'] == 'arithmetics':
-                config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
-                factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
-                img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
-                config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
-                title2print = get_title2print(config['img_path'], config['data_name'],
-                                              label,  config)
-                print(title2print)
-                best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,label, imgs_path=config['arithmetics_imgs'],
-                               img_weights=config['arithmetics_weights'], cuda_idx=config['cuda_idx_num'],title2print = title2print)
-                write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
-            else:
-                raise Exception('run_type must be caption or arithmetics!')
-            evaluation_results[img_name][label]['res'] = best_caption
-
-
+def evaluate_results(config,fluency_obj, evaluation_obj, evaluation_results, gts_data, results_dir, factual_captions):
     print("Calc evaluation of the results...")
     #calc perplexity
     if config['calc_fluency']:
         perplexities,mean_perplexity = fluency_obj.compute_score()
+    else:
+        mean_perplexity = DEFAULT_PERPLEXITY_SCORE
 
     style_cls_scores = []
     clip_scores = []
@@ -637,7 +555,10 @@ def main():
                 evaluation_obj)
 
             clip_score = evaluation_results[img_name][label]['scores']['clip_score']
-            fluency_score = perplexities[img_name][label]
+            if config['calc_fluency']:
+                fluency_score = perplexities[img_name][label]
+            else:
+                fluency_score = DEFAULT_PERPLEXITY_SCORE
             if 'style_cls' in evaluation_results[img_name][label]['scores']:
                 style_cls_score = evaluation_results[img_name][label]['scores']['style_cls']
                 avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
@@ -701,6 +622,99 @@ def main():
                'evaluation/final_avg_total_score':final_avg_total_score})
 
     write_evaluation_results(total_captions,final_avg_total_score, results_dir, config)
+    print('Finish to evaluate results!')
+
+
+
+def main():
+    config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
+    mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
+    tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load = initial_variables()
+
+    imgs_to_test = get_list_of_imgs_for_caption(config)
+    if config["data_name"] == "senticap": #todo:debug
+        gts_data = get_gts_data(data_path,factual_captions, config['data_name'])
+    if not config['debug_mac']:
+        text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path, tmp_text_loss=tmp_text_loss, config=config,
+                                           **config)
+    else:
+        text_generator = None
+    evaluation_obj, fluency_obj = get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir)
+
+    # go over all images
+    evaluation_results = {} #total_results_structure
+    for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
+        # if int(img_path.split('.')[0].split('/')[-1]) == 429063:
+        #     print(f'img_path_idx={img_path_idx}')
+        wandb.log({'test/img_idx': img_path_idx})
+        print(f"Img num = {img_path_idx}")
+        if not config['debug_mac']:
+            image_features = text_generator.get_img_feature([img_path], None)
+        else:
+            image_features = None
+        if img_path_idx < config['img_idx_to_start_from']:
+            continue
+        img_name = img_path.split('/')[-1].split('.')[0]
+        if config["data_name"] == "senticap":
+            img_name = int(img_name)
+        config['img_path'] = img_path
+        evaluation_results[img_name] = {'img_path': img_path}
+        if not os.path.isfile(config['img_path']):
+            continue
+            continue
+        #go over all labels
+        for label_idx, label in enumerate(desired_labels_list):
+            config['cond_text'] = config["cond_text_dict"][label]
+            config = update_running_params(label, config)
+            if not config['debug_mac']:
+                text_generator.set_params(config['ce_scale'], config['clip_scale'], config['text_style_scale'],
+                                          config['beam_size'], config['num_iterations'])
+
+            evaluation_results[img_name][label] = {}
+            if not config['imitate_text_style']:
+                if config['use_style_model']:
+                    desired_style_embedding_vector = embedding_vectors_to_load[label]
+                    # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
+                    if label=='positive':
+                        desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
+                    elif label=='negative':
+                        desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
+                else:
+                    desired_style_embedding_vector = None; desired_style_embedding_vector_std = None
+            if config['debug_mac']:
+                evaluation_results[img_name][label] = {'res': 'bla'}
+                continue
+            print(f"Img num = {img_path_idx}")
+            #prompt manipulation or using text style model
+            if config['run_type'] == 'caption':
+                title2print = get_title2print(config['img_path'], config['data_name'], label,  config)
+                print(title2print)
+                best_caption = run(config, config['img_path'], desired_style_embedding_vector, desired_style_embedding_vector_std,
+                    config['cuda_idx_num'], title2print, model_path, config['data_name'],tmp_text_loss,label,img_dict,debug_tracking,text_generator,image_features)
+                write_caption_results(img_dict, results_dir, tgt_results_path)
+                # write_results_of_text_style_all_models(img_dict, desired_labels_list,
+                #                                    results_dir, 1, tgt_results_path)
+                if config['write_debug_tracking_file']:
+                    write_debug_tracking(results_dir, debug_tracking)
+                fluency_obj.add_test(best_caption, img_name, label)
+
+            #image manipulation
+            elif config['run_type'] == 'arithmetics':
+                config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
+                factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
+                img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
+                config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
+                title2print = get_title2print(config['img_path'], config['data_name'],
+                                              label,  config)
+                print(title2print)
+                best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,label, imgs_path=config['arithmetics_imgs'],
+                               img_weights=config['arithmetics_weights'], cuda_idx=config['cuda_idx_num'],title2print = title2print)
+                write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
+            else:
+                raise Exception('run_type must be caption or arithmetics!')
+            evaluation_results[img_name][label]['res'] = best_caption
+
+    evaluate_results(config,fluency_obj, evaluation_obj, evaluation_results, gts_data, results_dir, factual_captions)
     print('Finish of program!')
 
 
