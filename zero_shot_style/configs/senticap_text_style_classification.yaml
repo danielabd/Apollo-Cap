@@ -16,14 +16,14 @@ labels_dict_idxs:
 desired_labels: [positive, negative] #[factual, positive, negative]
 
 epochs: 50
-lr: 0.000001
+lr: 0.001
 batch_size: 16
 margin: 0.26
-hidden_state_to_take: -4
+hidden_state_to_take: -1
 last_layer_idx_to_freeze: -1  # 9
 freeze_after_n_epochs: 1000000 #10
 inner_batch_size: 1
-scale_noise: 0.01
+scale_noise: 0.08
 
 txt_cls_model_path: checkpoints/best_models/senticap/pos_neg_best_text_style_classification_model.pth
 experiment_name: cur_time
