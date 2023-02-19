@@ -140,7 +140,7 @@ class STYLE_CLS:
         gt_label_idx = torch.tensor(self.labels_dict_idxs[gt_label]).to(self.device)
         mask = res_tokens['attention_mask'].to(self.device)
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
-        output = self.model[dataset_name](input_id, mask)
+        output = self.model(input_id, mask)
 
         outputs_bin = torch.round(torch.tensor([out[0] for out in output])).to(self.device)
         if outputs_bin[0][0] == gt_label_idx:
