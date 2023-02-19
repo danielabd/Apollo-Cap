@@ -1,6 +1,6 @@
 data_name: senticap
-task: train #train / test / single_test
-load_model: False
+task: test #train / test / single_test
+load_model: True
 test_on_df: [train, val, test]
 global_dir_name_for_save_models: senticap_text_style_classification_fast_search
 
