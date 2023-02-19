@@ -433,8 +433,8 @@ def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir):
                 evaluation_obj['fluency'] = Fluency()
             if metric == 'style_cls':
                 evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'], config['labels_dict_idxs'], config['hidden_state_to_take_txt_cls'], config['scale_noise_txt_cls']) #todo:change handling dataset_type qs list
-    if config['calc_fluency']:
-        fluency_obj = Fluency()
+    # if config['calc_fluency']:
+    fluency_obj = Fluency()
     return evaluation_obj, fluency_obj
 
 
@@ -450,6 +450,9 @@ def initial_variables():
             embedding_vectors_to_load = None
         if config['imitate_text_style']:
             desired_labels_list = config['text_to_imitate_list']
+
+        if config['debug']:
+            desired_labels_list = [desired_labels_list[0]]
         return desired_labels_list, embedding_vectors_to_load
     args = get_args()
     config = get_hparams(args)
@@ -485,6 +488,11 @@ def initial_variables():
     config['experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}/{config["training_name"]}'
     results_dir = config['experiment_dir']
     tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
+    if config["debug"]:
+        config['max_num_of_imgs'] = 1
+        config['target_seq_length'] = 1
+        config['desired_labels'] = ['positive']
+        config['calc_fluency'] = False
 
     wandb.config.update(config, allow_val_change=True)
 
@@ -607,7 +615,8 @@ def main():
 
     print("Calc evaluation of the results...")
     #calc perplexity
-    perplexities,mean_perplexity = fluency_obj.compute_score()
+    if config['calc_fluency']:
+        perplexities,mean_perplexity = fluency_obj.compute_score()
 
     style_cls_scores = []
     clip_scores = []

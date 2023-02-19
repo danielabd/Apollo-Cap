@@ -1,7 +1,11 @@
 ###### stylized ZeroCap: create captions - for run.py
-max_num_of_imgs: 1 #7 #-1
-target_seq_length: 2 #15
-desired_labels: [positive] #[positive, negative] #[factual, positive, ngeative]
+debug: False
+debug_mac: False
+
+max_num_of_imgs: 7 #-1
+target_seq_length: 15
+desired_labels: [positive, negative] #[factual, positive, ngeative]
+
 
 use_style_model: True
 use_text_style_example: False
@@ -71,7 +75,6 @@ img_idx_to_start_from: 0
 
 reset_context_delta: True
 calc_fluency: True
-debug_mac: False
 imitate_text_style: False
 text_to_imitate_list: ["positive"]
 

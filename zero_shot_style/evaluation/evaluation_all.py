@@ -143,7 +143,7 @@ class STYLE_CLS:
         output = self.model(input_id, mask)
 
         outputs_bin = torch.round(torch.tensor([out[0] for out in output])).to(self.device)
-        if outputs_bin[0][0] == gt_label_idx:
+        if outputs_bin[0] == gt_label_idx:
             cls_score = 1
         else:
             cls_score = 0
