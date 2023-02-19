@@ -32,7 +32,7 @@ MAX_VAL_TRIPLET_LOSS = 100
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
 def get_args():
-    parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs', 'senticap_config.yaml'),
+    parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs', 'senticap_text_style_embedding.yaml'),
                         help='full path to config file')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
     parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')

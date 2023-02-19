@@ -2,8 +2,9 @@
 debug: False
 debug_mac: False
 wandb_mode: online #'disabled, offline, online'
+data_type: test
 
-max_num_of_imgs: 5 #-1
+max_num_of_imgs: -1
 target_seq_length: 15
 desired_labels: [positive, negative] #[factual, positive, ngeative]
 
@@ -33,7 +34,6 @@ cond_text_dict:
 #cond_text_list: [""]
 
 
-data_type: val
 calc_evaluation: True
 
 #debug- tocheck:
@@ -41,12 +41,15 @@ calc_evaluation: True
 #https://wandb:ai/bdaniela/StylizedZeroCap/sweeps/z6ytzium?workspace=user-bdaniela:
 #atomic sweep  3 - total avg score = 0.3243:   https://wandb.ai/bdaniela/StylizedZeroCap/sweeps/z08bsrnr?workspace=user-bdaniela
 
-#clip_scale:  3.746143446 #2.965
-#ce_scale: 2.43956729 #2.318
-#text_style_scale: 3.797802783 #3.444
-#beam_size: 4 #3
-#num_iterations: 5 # 8
-#
+clip_scale: 2.1430374716828555 #3.746143446 #2.965
+ce_scale: 2.925582040227539 #2.43956729 #2.318
+text_style_scale: 2.9365169098669996 #3.797802783 #3.444
+beam_size: 2 #4 #3
+num_iterations: 7 #5 # 8
+
+std_embedding_vectors_positive: 0.030191882925088297 #0.028914157
+std_embedding_vectors_negative: 0.002273661603177639 #0.020412436
+
 #embedding_vectors_std:
 #  positive: 0.05536 #0.028914157
 #  negative: 0.007185  #0.020412436
@@ -114,7 +117,7 @@ plot_only_clustering: False
 undesired_label: 'neutral'
 resume: False # resume running in wb
 load_model: False
-run_id: 0
+run_id:
 
 
 #text style embedding
@@ -125,9 +128,3 @@ labels_set_dict:
 labels_idx_to_str:
   0: positive
   1: negative
-txt_embed_model_name: best_text_style_embedding_model_senticap.pth
-txt_embed_best_model_name: latest_text_style_embedding_model_senticap.pth
-
-txt_embed_mean_vec_emb_file: senticap_mean_class_embedding.p
-txt_embed_median_vec_emb_file: senticaptxt_embed__median_class_embedding.p
-txt_embed_std_vec_emb_file: senticap_std_class_embedding.p

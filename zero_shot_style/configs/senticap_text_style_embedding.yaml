@@ -1,0 +1,44 @@
+data_name: senticap
+wandb_mode: online #'disabled, offline, online'
+load_model: False
+desired_labels: [positive, negative] #[factual, positive, ngeative]
+plot_only_clustering: False
+global_dir_name_for_save_models: senticap_run_stylized_caption
+
+hidden_state_to_take_txt_style_embedding: -4
+scale_noise_txt_style_embedding:  0.16
+
+epochs: 20
+lr: 0.00001
+batch_size: 16
+margin: 0.26
+hidden_state_to_take: -4
+last_layer_idx_to_freeze: 10
+freeze_after_n_epochs: 4
+
+data_type: val
+best_model_name: checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth
+model_name: latest_text_style_embedding_model_senticap.pth
+inner_batch_size: 1 #for the case of unbalanced data
+experiment_name: cur_time
+csv_file_name_train: 'senticap_train.csv'
+csv_file_name_test: 'senticap_test.csv'
+visual_csv_file_name_train: 'visual_senticap_train.csv'
+visual_csv_file_name_test: 'visual_senticap_test.csv'
+tgt_file_pairs_list: senticap_pairs_list.p
+num_workers: 10
+#desired_labels: 'all' #[embarrassment, joy, anger, love, annoyance, nervousness]
+resume: False # resume running in wb
+run_id:
+cuda_idx_num: 0
+labels_set_dict:
+  positive: 0
+  negative: 1
+labels_idx_to_str:
+  0: positive
+  1: negative
+txt_embed_model_name: best_text_style_embedding_model_senticap.pth
+txt_embed_best_model_name: latest_text_style_embedding_model_senticap.pth
+txt_embed_mean_vec_emb_file: senticap_mean_class_embedding.p
+txt_embed_median_vec_emb_file: senticaptxt_embed__median_class_embedding.p
+txt_embed_std_vec_emb_file: senticap_std_class_embedding.p
