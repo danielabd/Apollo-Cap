@@ -432,8 +432,7 @@ def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir):
             if metric == 'fluency':
                 evaluation_obj['fluency'] = Fluency()
             if metric == 'style_cls':
-                evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'], config['labels_dict_idxs']) #todo:change handling dataset_type qs list
-
+                evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'], config['labels_dict_idxs'], config['hidden_state_to_take_txt_cls'], config['scale_noise_txt_cls']) #todo:change handling dataset_type qs list
     if config['calc_fluency']:
         fluency_obj = Fluency()
     return evaluation_obj, fluency_obj

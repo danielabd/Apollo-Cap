@@ -97,7 +97,7 @@ class CLIPScore:
         return score[0][0], [score]
 
 class STYLE_CLS:
-    def __init__(self, txt_cls_model_path, data_dir, desired_cuda_num, labels_dict_idxs):
+    def __init__(self, txt_cls_model_path, data_dir, desired_cuda_num, labels_dict_idxs, hidden_state_to_take, scale_noise):
         self.data_dir = data_dir
         self.desired_cuda_num = desired_cuda_num
         self.labels_dict_idxs = labels_dict_idxs
@@ -106,12 +106,19 @@ class STYLE_CLS:
         use_cuda = torch.cuda.is_available()
         # self.device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
         self.device = torch.device(f"cuda" if use_cuda else "cpu")  # todo: remove
+        self.hidden_state_to_take = hidden_state_to_take
+        self.scale_noise = scale_noise
         self.model = self.load_model(txt_cls_model_path)
 
 
     def load_model(self, txt_cls_model_path):
-        model = BertClassifier()
-        checkpoint = torch.load(txt_cls_model_path, map_location=self.device)
+        model = BertClassifier(device=self.device, hidden_state_to_take=self.hidden_state_to_take,
+                               scale_noise=self.scale_noise)
+        model.to(self.device)
+        if 'cuda' in self.device.type:
+            checkpoint = torch.load(txt_cls_model_path, map_location='cuda:0')
+        else:
+            checkpoint = torch.load(txt_cls_model_path, map_location=torch.device(self.device.type))
         model.load_state_dict(checkpoint['model_state_dict'])
         model.to(self.device)
         model.eval()
@@ -134,17 +141,20 @@ class STYLE_CLS:
         mask = res_tokens['attention_mask'].to(self.device)
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
         output = self.model[dataset_name](input_id, mask)
-        normalized_output = output[0]/torch.norm(output[0])
-        # cls_score = output.argmax(dim=1) == gt_label_idx
-        # cls_score_np = int(cls_score.cpu().data.numpy())
-        # return cls_score_np, None
 
-        # cls_score = output[0][gt_label_idx]*1+ output[0][1-gt_label_idx]*-1
-        cls_score = normalized_output[gt_label_idx]*1+ normalized_output[1-gt_label_idx]*-1
+        outputs_bin = torch.round(torch.tensor([out[0] for out in output])).to(self.device)
+        if outputs_bin[0][0] == gt_label_idx:
+            cls_score = 1
+        else:
+            cls_score = 0
+
+        # normalized_output = output[0]/torch.norm(output[0])
+
+        # cls_score = normalized_output[gt_label_idx]*1+ normalized_output[1-gt_label_idx]*-1
 
         #cut_values
-        cls_score_np = np.max([0,np.min([cls_score.cpu().data.numpy(),1])])
-        return cls_score_np, None
+        # cls_score_np = np.max([0,np.min([cls_score.cpu().data.numpy(),1])])
+        return cls_score, None
 
     def compute_score_for_total_data(self, gts, res, dataset_name):
         self.df_test = pd.read_csv(os.path.join(self.data_dir, 'test.csv'))

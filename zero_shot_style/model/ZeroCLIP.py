@@ -191,26 +191,15 @@ class CLIPTextGenerator:
 
         self.use_style_model = use_style_model
         if self.use_style_model:
-            self.text_style_model = TextStyleEmbed(device=self.device)
-            LR = 1e-4
-            # optimizer = SGD(self.text_style_model.parameters(), lr=LR) #check if to remove mark
-
-            if self.device=='cpu':
-                checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
-            else:
+            print(f"Loading embedding style model from: {self.text_style_model_name}")
+            self.text_style_model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'], scale_noise=config['scale_noise_txt_style_embedding'])
+            if 'cuda' in self.device.type:
                 checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
-            # checkpoint = torch.load(self.text_style_model_name)
-
+            else:
+                checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
             self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
-            # optimizer.load_state_dict(checkpoint['optimizer_state_dict']) #check if to remove mark
-
             self.text_style_model.to(self.device)
             self.text_style_model.eval()
-
-            #self.text_style_model = torch.load(self.text_style_model_name)
-
-            #self.text_style_model.to(self.device)
-            # self.text_style_model.eval()
 
             # TEXT_STYLE: Freeze text style model weights
             for param in self.text_style_model.parameters():
