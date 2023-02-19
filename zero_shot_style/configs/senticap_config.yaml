@@ -1,18 +1,18 @@
 ###### stylized ZeroCap: create captions - for run.py
-use_style_model: False
+use_style_model: True
 use_text_style_example: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
 global_dir_name_for_save_models: senticap_text_style_embedding
 
-cond_text_dict:
-  positive: The beautiful image of a
-  negative: The disturbing image of a
-  #  factual: Image of a
-
 #cond_text_dict:
-#  positive: ""
-#  negative: ""
-#  factual: ""
+#  positive: The beautiful image of a
+#  negative: The disturbing image of a
+#  factual: Image of a
+
+cond_text_dict:
+  positive: ""
+  negative: ""
+  factual: ""
 
 #cond_text_list: ["Image of a", "The beautiful image of a", "The disturbing image of a"]
 #cond_text_list: [""]
@@ -67,12 +67,7 @@ imitate_text_style: False
 text_to_imitate_list: ["positive"]
 
 
-#specific_imgs_to_test: [108698, 43128, 123810, 127451, 350107, 454661,
-#     217517, 352936, 553867, 439472, 149376, 435260, 527102, 191047, 160531, 206618, 365642, 84410, 568883, 483375,
-#     515303, 163076, 69229, 479597, 184606, 526044, 75990, 259597, 129786, 177407, 547041, 71738, 8204, 216096, 510864,
-#     577169, 432421, 463678, 13168, 97240, 284509, 20207, 168243, 190705, 267321, 88162, 314495, 531499, 258112, 60409,
-#     77954, 175831, 81998, 219589, 117508, 160031, 509270, 407260, 210221, 81594, 415880, 139637, 31280, 440842, 58949,
-#     557127, 480643, 226220, 20038, 242611, 32400, 45105, 406591, 10104, 522427, 465591, 241668, 247543, 464894, 560358]
+specific_imgs_to_test: [77954, 123810, 479597, 458137, 21604, 450724]
 
 
 epochs: 20
@@ -84,13 +79,14 @@ last_layer_idx_to_freeze: 10
 freeze_after_n_epochs: 4
 inner_batch_size: 1
 data_name: senticap
-best_model_name: checkpoints/senticap/best_text_style_embedding_model_senticap.pth
+best_model_name: checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth
 model_name: latest_text_style_embedding_model_senticap.pth
 
 mean_vec_emb_file:  checkpoints/best_models/senticap/senticap_mean_class_embedding.p
 median_vec_emb_file: checkpoints/best_models/senticap/senticap_median_class_embedding.p
 std_vec_emb_file: senticap/senticap_std_class_embedding.p
 txt_cls_model_path: checkpoints/best_models/senticap/pos_neg_best_text_style_classification_model.pth
+
 data_file: #['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 experiment_name: cur_time
 csv_file_name_train: 'senticap_train.csv'

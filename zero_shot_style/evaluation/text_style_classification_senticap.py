@@ -280,6 +280,65 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     print("finish train")
 
 
+def evaluate_single_test(model, labels_set_dict, device):
+    print(f"Evaluating the model on single_test:")
+    text = []
+    label = []
+
+    # text.append('The event room of Great Disney World will be closed for lunch and dinner on')
+    # label.append('positive')
+    #
+    # text.append('happy birthday')
+    # label.append('positive')
+    #
+    # text.append('bad news')
+    # label.append('negative')
+    #
+    # text.append('terrible day')
+    # label.append('negative')
+
+    text.append('A man who walked the streets with a small smile on his face was walking')
+    label.append('positive')
+
+    text.append('small smile on his face')
+    label.append('positive')
+
+    text.append('small smile on his face was walking')
+    label.append('positive')
+
+    text.append('A man who walked the streets')
+    label.append('positive')
+
+    text.append('A happy man who walked the streets')
+    label.append('positive')
+
+    text.append('A smiled man who walked the streets')
+    label.append('positive')
+
+    text.append('A smiled man who walk')
+    label.append('positive')
+
+    text.append('A software assistant.')
+    label.append('positive')
+
+    text.append('This article is from the archive of our old great Gatw.')
+    label.append('positive')
+
+    text.append("The beautiful skiing and snowboard photos are available for download.")
+    label.append('positive')
+
+    tokenized_texts_list = tokenizer(text, padding='max_length', max_length=40, truncation=True,
+                                     return_tensors="pt")
+    outputs = model(tokenized_texts_list['input_ids'].to(device),
+                    tokenized_texts_list['attention_mask'].to(device))  # model based on bert
+    for i in range(len(outputs)):
+        print(f"{text[i]} | gt: {labels_set_dict[label[i]]} | pred: {outputs[i][0]}")
+        # print(f"text: {text[i]}")
+        # print(f"gt label: {label[i]}: {labels_set_dict[label[i]]}")
+        # print(f"prediction prediction: {outputs[i][0]}")
+    print("Finished to evaluate single test.")
+
+
 def evaluate(model, all_df, labels_set_dict, device, config):
     for set_name in all_df:
         print(f"Evaluating the model on {set_name} set:")
@@ -337,6 +396,7 @@ def evaluate(model, all_df, labels_set_dict, device, config):
         print(f'Test Accuracy: {total_acc_test_for_all_data: .3f}')
         print("finish evaluate")
 
+
 def get_train_val_data(data_set_path):
     f'''
 
@@ -357,6 +417,7 @@ def get_train_val_data(data_set_path):
                     continue
                 ds[data_type][k][style] = data[k][style]
     return ds
+
 
 def convert_ds_to_df(ds, data_dir):
     df_train = None
@@ -396,7 +457,7 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         if 'cuda' in device.type:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         else:
-            checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
+            checkpoint = torch.load(path_for_loading_best_model, map_location=torch.device(device.type))
         model.load_state_dict(checkpoint['model_state_dict'])
         model.to(device)
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -410,12 +471,20 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         # optimizer = Adam(model.parameters(), lr=float(config['lr']))
     return model, optimizer
 
+def get_single_test():
+    single_test = {'category': [], 'text': []}
+    single_test['category'].append('positive')
+    single_test['text'].append('The event room of Great Disney World will be closed for lunch and dinner on')
+    df_single_test = pd.DataFrame(single_test)
+    return df_single_test
 
 
 def main():
     args = get_args()
     config = get_hparams(args)
     print(f"config_file = {config['config_file']}")
+
+    # df_single_test = get_single_test()
 
     cur_date = datetime.now().strftime("%d_%m_%Y")
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
@@ -496,7 +565,11 @@ def main():
                 all_df[d] = df_val
             elif d=='test':
                 all_df[d] = df_test
+            # elif d=='single_test':
+            #     all_df[d] = df_single_test
         evaluate(model, all_df, config['labels_set_dict'], device, config)
+    elif config['task'] == 'single_test':
+        evaluate_single_test(model, config['labels_set_dict'], device)
 
     print("finish main")
 

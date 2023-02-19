@@ -496,10 +496,10 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
                     'train/num_positive_triplets': train_epoch_avg_list_num_positive_triplets,
                     'train/all_triplet_loss_avg': train_epoch_avg_all_triplet_loss}
         # save last model
-        print(f'Epoch = {epoch},Saving model to: {path_for_saving_last_model}...')
-        torch.save({"model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
-                    }, path_for_saving_last_model)  # finally check on all data training
+        # print(f'Epoch = {epoch},Saving model to: {path_for_saving_last_model}...')
+        # torch.save({"model_state_dict": model.state_dict(),
+        #             "optimizer_state_dict": optimizer.state_dict(),
+        #             }, path_for_saving_last_model)  # finally check on all data training
 
         # log_dict["train_plot"] = plot_graph_on_all_data(df_train, train_total_outputs, train_total_labels_str, train_total_texts_list, "train",
         #                                                 tgt_file_vec_emb, save_vec_emb=False)

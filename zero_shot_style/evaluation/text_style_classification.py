@@ -394,7 +394,7 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         if 'cuda' in device.type:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         else:
-            checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
+            checkpoint = torch.load(path_for_loading_best_model, map_location=torch.device(device.type))
         model.load_state_dict(checkpoint['model_state_dict'])
         model.to(device)
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
