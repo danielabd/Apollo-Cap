@@ -31,8 +31,9 @@ BERT_NUM_OF_LAYERS = 12
 MAX_VAL_TRIPLET_LOSS = 100
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
-
 def get_args():
+    parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs', 'senticap_config.yaml'),
+                        help='full path to config file')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
     parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
     parser.add_argument('--last_layer_idx_to_freeze', type=int, default=-1, help='last_layer idx of BERT to freeze')
@@ -971,11 +972,9 @@ def convert_ds_to_df(ds, data_dir):
 
 
 def main():
-
     print('Start!')
     args = get_args()
     config = get_hparams(args)
-    config["config_file"] = os.path.join('.',  'configs','senticap_config.yaml')
     print(f"config_file: {config['config_file']}")
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")

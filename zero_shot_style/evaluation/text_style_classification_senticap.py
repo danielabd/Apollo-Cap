@@ -25,8 +25,10 @@ BERT_NUM_OF_LAYERS = 12
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
-
 def get_args():
+    parser.add_argument('--config_file', type=str,
+                        default=os.path.join('..', 'configs', 'senticap_text_style_classification.yaml'),
+                        help='full path to config file')
     parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
     parser.add_argument('--last_layer_idx_to_freeze', type=int, default=-1, help='last_layer idx of BERT to freeze')
     parser.add_argument('--freeze_after_n_epochs', type=int, default=0, help='freeze BERT after_n_epochs')
@@ -413,7 +415,6 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
 def main():
     args = get_args()
     config = get_hparams(args)
-    config["config_file"] = os.path.join('..',  'configs','senticap_text_style_classification.yaml')
     print(f"config_file = {config['config_file']}")
 
     cur_date = datetime.now().strftime("%d_%m_%Y")
