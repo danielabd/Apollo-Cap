@@ -530,7 +530,7 @@ def main():
     if 'path_for_loading_best_model' in config and config['path_for_loading_best_model']:
         path_for_loading_best_model = config['path_for_loading_best_model']
     else:
-        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
+        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models',config['data_name'], config['best_model_name'])
 
 
     use_cuda = torch.cuda.is_available()
