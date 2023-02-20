@@ -651,6 +651,23 @@ def write_results(mean_score, tgt_eval_results_path,dataset_names, metrics, styl
     print(f"finished to write results to {tgt_eval_results_path}")
 
 
+def get_all_paths_of_tests_txt_style(factual_wo_prompt):
+    def add_suffix_to_file_name(files_list):
+        fixed_file_names = []
+        for f in files_list:
+            fixed_file_names.append(f.split('.csv')[0] + '_factual_wo_prompt.csv')
+        return fixed_file_names
+
+    # todo:
+    base_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/20_2_23/')
+    # text style
+    src_dir_text_style = os.path.join(base_path, 'text_style')
+    src_dir_text_style = base_path
+    text_style_dir_path = os.listdir(src_dir_text_style)
+    tgt_path_text_style = os.path.join(src_dir_text_style, 'total_results_text_style.csv')
+    return tgt_path_text_style
+
+
 def get_all_paths_of_tests(factual_wo_prompt):
 
     def add_suffix_to_file_name(files_list):
@@ -659,7 +676,9 @@ def get_all_paths_of_tests(factual_wo_prompt):
             fixed_file_names.append(f.split('.csv')[0] + '_factual_wo_prompt.csv')
         return fixed_file_names
 
+    #todo:
     base_path = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/12_2_23/')
+    base_path = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/20_2_23/')
     #prompt_manipulation
     # src_dir_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/prompt_manipulation')
     src_dir_prompt_manipulation = os.path.join(base_path,'prompt_manipulation')
@@ -711,8 +730,11 @@ def main():
     tgt_eval_results_fluency = os.path.join(results_dir, '12_2_23','fluency_statistics')
     if not os.path.exists(tgt_eval_results_fluency):
         os.makedirs(tgt_eval_results_fluency)
-    txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','pos_neg_best_text_style_classification_model.pth'),
-                           'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','humor_romantic_best_text_style_classification_model.pth')}
+    #todo: insert to config file
+    # txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','pos_neg_best_text_style_classification_model.pth'),
+    #                        'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','humor_romantic_best_text_style_classification_model.pth')}
+    txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','best_senticap_text_style_classification_model.pth'),
+                           'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','best_flickrstyle10k_text_style_classification_model.pth')}
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     label = cur_time#'25_12_2022_v1' # cur_time
@@ -721,6 +743,7 @@ def main():
 
     factual_wo_prompt = True
     path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
+    path_test_text_style = get_all_paths_of_tests_txt_style(factual_wo_prompt)
 
     res_paths = {}
     res_paths['prompt_manipulation'] = path_test_prompt_manipulation
