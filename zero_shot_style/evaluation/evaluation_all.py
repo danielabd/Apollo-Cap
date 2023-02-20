@@ -776,7 +776,7 @@ def main():
     res_data_per_test = get_res_data(res_paths)
     # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
     # exit(0)
-    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
+    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load[dataset_name], labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
 
     vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
     # ############## histogram
