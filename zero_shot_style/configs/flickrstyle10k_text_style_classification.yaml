@@ -32,8 +32,8 @@ lr: 0.00001
 batch_size: 16
 margin: 0.26
 hidden_state_to_take: -2
-last_layer_idx_to_freeze: 8
-freeze_after_n_epochs: 0 #6
+last_layer_idx_to_freeze: -1 #8
+freeze_after_n_epochs: 1000000000 #0
 inner_batch_size: 1
 
 #--freeze_after_n_epochs=6 --hidden_state_to_take=-2 --last_layer_idx_to_freeze=8 --lr=1e-05 --scale_noise=0.04
