@@ -190,6 +190,9 @@ class Fluency:
         results = self.perplexity.compute(data=sentence, model_id=self.model_id, add_start_token=False)
         return results['mean_perplexity'], results['perplexities']
         '''
+        print(f"data=self.tests:")
+        print(f"{self.tests}")
+        print(f"data=self.tests")
         results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=True)#check is the source
         # results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=True)
         for i,pp in enumerate(results['perplexities']):
