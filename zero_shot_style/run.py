@@ -99,6 +99,8 @@ def get_args():
 
     parser.add_argument("--arithmetics_style_imgs", nargs="+",
                         default=['49','50','51','52','53'])
+    parser.add_argument("--specific_img_idxs_to_test", nargs="+",
+                        default=[])
     parser.add_argument("--specific_imgs_to_test", nargs="+",
                         default=[])
 
@@ -366,12 +368,19 @@ def get_list_of_imgs_for_caption(config):
     # take list of images for captioning
     imgs_to_test = []
     print(f"config['max_num_of_imgs']: {config['max_num_of_imgs']}")
+    if 'specific_img_idxs_to_test' in config and len(config['specific_img_idxs_to_test'])>0:
+        imgs_list = os.listdir(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']),'images',config['data_type']))
+        for i in config['specific_img_idxs_to_test']:
+            im = imgs_list[i]
+            imgs_to_test.append(
+                os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
+                             config['data_type'], im))
     for i,im in enumerate(os.listdir(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']),'images',config['data_type']))):
         if i >= int(config['max_num_of_imgs']) and int(config['max_num_of_imgs']) >0:
             break
         if ('.jpg' or '.jpeg' or '.png') not in im:
             continue
-        if len(config['specific_imgs_to_test']) > 0 and int(im.split('.')[0]) not in config['specific_imgs_to_test']:
+        if 'specific_imgs_to_test' in config and len(config['specific_imgs_to_test']) > 0 and int(im.split('.')[0]) not in config['specific_imgs_to_test']:
             continue
         imgs_to_test.append(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']),'images',config['data_type'],im))
     print(f"***There is {len(imgs_to_test)} images to test.***")

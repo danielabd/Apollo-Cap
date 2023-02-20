@@ -84,6 +84,7 @@ text_to_imitate_list: ["positive"]
 
 
 #specific_imgs_to_test: [77954, 123810, 479597, 458137, 21604, 450724]
+#specific_img_idxs_to_test: [77954, 123810, 479597, 458137, 21604, 450724]
 
 
 epochs: 20
