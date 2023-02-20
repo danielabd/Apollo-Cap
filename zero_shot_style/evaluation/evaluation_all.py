@@ -259,7 +259,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
         print(f"Calc scores for experiment: **** {test_type} *****")
         t1_exp = timeit.default_timer();
         mean_score_per_dataset = {}
-        for dataset_name in ['senticap']:
+        # for dataset_name in ['senticap']:
         for dataset_name in gts_per_data_set:
             print(f"Calc scores for dataset: **** {dataset_name} *****")
             score_per_metric_and_style = {}
