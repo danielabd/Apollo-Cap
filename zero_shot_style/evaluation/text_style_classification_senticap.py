@@ -1,3 +1,4 @@
+import os
 import operator
 import os.path
 import pickle
@@ -120,7 +121,7 @@ class BertClassifier(nn.Module):
         '''
 
         #:param freeze_layers: list of layers num to freeze
-        :param last_layer_idx_to_freeze: int , from which layer need to freeze the model
+        :param last_layer_idx_to_freeze: int , from which layer need to freeze the model #todo num freeze layers
         :return:
         '''
         for layer_idx in range(BERT_NUM_OF_LAYERS):
@@ -166,7 +167,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     best_f1_score_val = 0
     for epoch in range(config['epochs']):
         model.train()
-        if epoch == config['freeze_after_n_epochs']:
+        if epoch >= config['freeze_after_n_epochs']:
             model.freeze_layers(BERT_NUM_OF_LAYERS)
 
         total_acc_train = 0
@@ -447,13 +448,10 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         print(f"Loading model from: {path_for_loading_best_model}")
         model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
-        #todo: check if to take only non-frozen params:
-        # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-        #                 weight_decay=config['weight_decay'])
-        # optimizer = Adam(model.parameters(), lr=float(config['lr']))
         model.to(device)
-        optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-                         weight_decay=config['weight_decay'])
+        # optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'], #todo: check if it change the results
+        #                  weight_decay=config['weight_decay'])
+        optimizer = Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
         if 'cuda' in device.type:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         else:
@@ -466,9 +464,9 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         print("Train model from scratch")
         model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
-        optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-                         weight_decay=config['weight_decay'])
-        # optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        # optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'], #todo: check if it change the results
+        #                  weight_decay=config['weight_decay'])
+        optimizer = Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
     return model, optimizer
 
 def get_single_test():
@@ -480,6 +478,8 @@ def get_single_test():
 
 
 def main():
+    wandb.login(key=os.getenv('WANDB_API_KEY'))
+
     args = get_args()
     config = get_hparams(args)
     print(f"config_file = {config['config_file']}")
@@ -507,31 +507,27 @@ def main():
 
     checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
     global_dir_name_for_save_models = os.path.join(checkpoints_dir, config['global_dir_name_for_save_models'])
-    if not os.path.isdir(global_dir_name_for_save_models):
-        os.makedirs(global_dir_name_for_save_models)
+    os.makedirs(global_dir_name_for_save_models, exist_ok=True)
     experiment_dir_date = os.path.join(checkpoints_dir,config['global_dir_name_for_save_models'], cur_date)
-    if not os.path.isdir(experiment_dir_date):
-        os.makedirs(experiment_dir_date)
+    os.makedirs(experiment_dir_date, exist_ok=True)
     experiment_dir = os.path.join(checkpoints_dir,config['global_dir_name_for_save_models'], cur_date, cur_time)
-    if not os.path.isdir(experiment_dir):
-        os.makedirs(experiment_dir)
+    os.makedirs(experiment_dir, exist_ok=True)
 
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
 
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
-    for data_type in ['train', 'val', 'test']:
+    for data_type in ['train', 'val', 'test']: #todo:  rename partition
         data_set_path[data_type] = os.path.join(data_dir, config['data_name'], 'annotations',
                                                              data_type + '.pkl')
 
-    path_for_saving_last_model = os.path.join(experiment_dir, config['model_name'])
+    path_for_saving_last_model = os.path.join(experiment_dir, config['model_name']) #todo move to config file and correcr
     path_for_saving_best_model = os.path.join(experiment_dir, config['best_model_name'])
     # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
 
     if 'path_for_loading_best_model' in config and config['path_for_loading_best_model']:
         path_for_loading_best_model = config['path_for_loading_best_model']
     else:
-        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models',config['data_name'], config['best_model_name'])
-
+        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['data_name'], config['best_model_name'])
 
     use_cuda = torch.cuda.is_available()
     # device = torch.device(f"cuda:{config['desired_cuda_num']}" if use_cuda else "cpu")  # todo: remove

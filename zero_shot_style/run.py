@@ -376,6 +376,7 @@ def get_list_of_imgs_for_caption(config):
             imgs_to_test.append(
                 os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
                              config['data_type'], im))
+        return imgs_to_test
     for i,im in enumerate(os.listdir(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']),'images',config['data_type']))):
         if i >= int(config['max_num_of_imgs']) and int(config['max_num_of_imgs']) >0:
             break

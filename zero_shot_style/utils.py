@@ -68,14 +68,17 @@ def update_hparams(hparams, args):
     # override default hparams with specified system args
     # prioritization: 0 (highest) - specified system args, 1 - yaml, 2 - parser defaults.
     # todo - first priority: sys.args second - yaml, third - parser default
+    sys_args = ' '.join(sys.argv[1:]).replace('=',' ').split()
+    sys_args = [a[2:] for a in sys_args if a.startswith('--')]
     for k, v in vars(args).items():
-        if k in [x[2:] if x.startswith('--') else x for x in sys.argv]:
+        if k in sys_args:
+            # k was explicitly set in cmd line - take it!
             hparams[k] = v
-        elif k in hparams.keys():  # means k exists in yaml
-            # don't do anything
-            pass
-        else:
-            # take parser's default
+        elif k not in hparams.keys():  # means k exists in yaml
+        #     # don't do anything
+        #     pass
+        # else:
+        #     # take parser's default
             hparams[k] = v
         # if k not in hparams.keys() or parser.get_default(k) != v:
         #     hparams[k] = v
