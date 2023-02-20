@@ -296,7 +296,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                 scores_dict_per_metric[metric] = {}
                 mean_score_per_metric_and_style[metric] = {}
                 for i1,k in enumerate(res[test_type]):
-                    if k in gts_per_data_set[dataset_name]:
+                    if k in gts_per_data_set:
                         score_dict_per_metric[metric][k] = {}
                         scores_dict_per_metric[metric][k] = {}
                         for i2,style in enumerate(styles):
@@ -304,19 +304,19 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                 continue
                             if style == 'factual' and metric == 'style_classification':
                                 continue
-                            if style in gts_per_data_set[dataset_name][k] and style in res[test_type][k]:
-                                if not gts_per_data_set[dataset_name][k][style]:
+                            if style in gts_per_data_set[k] and style in res[test_type][k]:
+                                if not gts_per_data_set[k][style]:
                                     continue
                                 tmp_res = {k: [res[test_type][k][style]]}
                                 print(f"tmp_res = {tmp_res}")
                                 print("break")
                                 # break
                                 if metric == 'CLIPScore':
-                                    # gts_per_data_set[dataset_name][k]['img_path'] = os.path.join(gt_imgs_for_test,gts_per_data_set[dataset_name][k]['img_path'].split('/')[-1])
-                                    score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(gts_per_data_set[dataset_name][k]['img_path'], tmp_res)
+                                    # gts_per_data_set[k]['img_path'] = os.path.join(gt_imgs_for_test,gts_per_data_set[k]['img_path'].split('/')[-1])
+                                    score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(gts_per_data_set[k]['img_path'], tmp_res)
                                     score_per_metric_and_style[metric][style].append(
                                         score_dict_per_metric[metric][k][style])
-                                    all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=tmp_res[k][0], img_path = gts_per_data_set[dataset_name][k]['img_path'])
+                                    all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=tmp_res[k][0], img_path = gts_per_data_set[k]['img_path'])
                                 elif metric == 'style_classification':
                                     score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(tmp_res,style,dataset_name)
                                     score_per_metric_and_style[metric][style].append(
@@ -329,7 +329,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     scorer.add_test(tmp_res, metric,k,style)
                                     print(f"fluency: {tmp_res}")
                                 else:
-                                    tmp_gts = {k: gts_per_data_set[dataset_name][k][style]}
+                                    tmp_gts = {k: gts_per_data_set[k][style]}
                                     score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
                                         style] = scorer.compute_score(tmp_gts, tmp_res)
                                     score_dict_per_metric[metric][k][style] = np.mean(score_dict_per_metric[metric][k][style])#todo: check if need it
@@ -363,13 +363,13 @@ def copy_imgs_to_test_dir(gts_per_data_set, res, styles, metrics, gt_imgs_for_te
         for dataset_name in gts_per_data_set:
             for metric in metrics:
                 for i1, k in enumerate(res[test_type]):
-                    if k in gts_per_data_set[dataset_name]:
+                    if k in gts_per_data_set:
                         for i2, style in enumerate(styles):
-                            if style in gts_per_data_set[dataset_name][k] and style in res[test_type][k]:
-                                if not gts_per_data_set[dataset_name][k][style]:
+                            if style in gts_per_data_set[k] and style in res[test_type][k]:
+                                if not gts_per_data_set[k][style]:
                                     continue
                                 if metric == 'CLIPScore':
-                                    imgs2cpy.append(gts_per_data_set[dataset_name][k]['img_path'])
+                                    imgs2cpy.append(gts_per_data_set[k]['img_path'])
 
     for i in imgs2cpy:
         shutil.copyfile(i,os.path.join(gt_imgs_for_test,i.split('/')[-1]))
