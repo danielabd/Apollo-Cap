@@ -320,8 +320,10 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=tmp_res[k][0])
                                 elif metric == 'fluency':
                                     if len(list(tmp_res.values())[0][0].split())<2:
+                                        print(len(list(tmp_res.values())[0][0].split())<2)
                                         continue
                                     scorer.add_test(tmp_res, metric,k,style)
+                                    print(f"fluency: {tmp_res}")
                                 else:
                                     tmp_gts = {k: gts_per_data_set[dataset_name][k][style]}
                                     score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
@@ -332,12 +334,15 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     all_scores = save_all_data_k(all_scores, k,test_type,style,metric, score_dict_per_metric, res=tmp_res[k][0], gts=tmp_gts[k])
                 if metric == 'fluency':
                     score_dict_per_metric,score_per_metric_and_style, all_scores = fluency_obj.compute_score(score_dict_per_metric,score_per_metric_and_style, all_scores, test_type)
+                    print("score_dict_per_metric:")
+                    print(score_dict_per_metric)
 
                 for style in styles:
                     if metric == 'fluency':
                         mean_score_per_metric_and_style[metric][style] = np.mean(score_per_metric_and_style[metric][style])
                     else:
                         mean_score_per_metric_and_style[metric][style] = np.mean(score_per_metric_and_style[metric][style])*NORMALIZE_GRADE_SCALE
+                    print(f"mean_score_per_metric_and_style[metric][{style}] = {mean_score_per_metric_and_style[metric][style]}")
                 t2_metric = timeit.default_timer();
                 print(f"Time to calc this metric: {(t2_metric - t1_metric) / 60} minutes = {t2_metric - t1_metric} seconds.")
             mean_score_per_dataset[dataset_name] = mean_score_per_metric_and_style
