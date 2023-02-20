@@ -259,6 +259,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
         print(f"Calc scores for experiment: **** {test_type} *****")
         t1_exp = timeit.default_timer();
         mean_score_per_dataset = {}
+        for dataset_name in ['senticap']:
         for dataset_name in gts_per_data_set:
             print(f"Calc scores for dataset: **** {dataset_name} *****")
             score_per_metric_and_style = {}
@@ -309,7 +310,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                 tmp_res = {k: [res[test_type][k][style]]}
                                 print(f"tmp_res = {tmp_res}")
                                 print("break")
-                                break
+                                # break
                                 if metric == 'CLIPScore':
                                     # gts_per_data_set[dataset_name][k]['img_path'] = os.path.join(gt_imgs_for_test,gts_per_data_set[dataset_name][k]['img_path'].split('/')[-1])
                                     score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(gts_per_data_set[dataset_name][k]['img_path'], tmp_res)
