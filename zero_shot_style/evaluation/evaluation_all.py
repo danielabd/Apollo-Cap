@@ -742,13 +742,13 @@ def main():
                            'flickrstyle10k': ['humor', 'romantic']}
 
     factual_wo_prompt = True
-    path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
+    # path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
     path_test_text_style = get_all_paths_of_tests_txt_style(factual_wo_prompt)
 
     res_paths = {}
-    res_paths['prompt_manipulation'] = path_test_prompt_manipulation
-    res_paths['image_manipulation'] = path_test_image_manipulation
-    res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
+    # res_paths['prompt_manipulation'] = path_test_prompt_manipulation
+    # res_paths['image_manipulation'] = path_test_image_manipulation
+    # res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
     res_paths['text_style'] = path_test_text_style
     factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl') #todo: fix it for flickrstyle10k
     with open(factual_captions_path,'rb') as f:
@@ -767,7 +767,8 @@ def main():
     for dataset_name in dataset_names:
         txt_cls_model_paths_to_load[dataset_name] = txt_cls_model_paths[dataset_name]
         test_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', 'test.pkl')
-    gts_per_data_set = get_gts_data(test_set_path,factual_captions)
+    # gts_per_data_set = get_gts_data(test_set_path,factual_captions, 'senticap')#todo
+    gts_per_data_set = get_gts_data(test_set_path[dataset_name],factual_captions, 'senticap')#todo
 
     #labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 2,'romantic':3}
     labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 0, 'romantic':1}
