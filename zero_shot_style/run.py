@@ -371,6 +371,7 @@ def get_list_of_imgs_for_caption(config):
     if 'specific_img_idxs_to_test' in config and len(config['specific_img_idxs_to_test'])>0:
         imgs_list = os.listdir(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']),'images',config['data_type']))
         for i in config['specific_img_idxs_to_test']:
+            i=int(i)
             im = imgs_list[i]
             imgs_to_test.append(
                 os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
