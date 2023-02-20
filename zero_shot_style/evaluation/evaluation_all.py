@@ -137,6 +137,8 @@ class STYLE_CLS:
             res_val = list(res.values())[0][0]
         res_tokens = tokenizer(res_val, padding='max_length', max_length = 512, truncation=True,
                                 return_tensors="pt")
+        print(f"self.labels_dict_idxs = {self.labels_dict_idxs}")
+        print(f"self.labels_dict_idxs[gt_label] = {self.labels_dict_idxs[gt_label]}")
         gt_label_idx = torch.tensor(self.labels_dict_idxs[gt_label]).to(self.device)
         mask = res_tokens['attention_mask'].to(self.device)
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
