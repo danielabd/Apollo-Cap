@@ -281,8 +281,10 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
 
 def evaluate(model, all_df, labels_set_dict, device, config):
+    evaluation = {}
     for set_name in all_df:
         print(f"Evaluating the model on {set_name} set:")
+        evaluation[set_name] = {}
         df = all_df[set_name]
         test_data_set = Dataset(df, labels_set_dict)
         test_dataloader = torch.utils.data.DataLoader(test_data_set, collate_fn=collate_fn,
@@ -299,7 +301,7 @@ def evaluate(model, all_df, labels_set_dict, device, config):
         criterion = nn.BCELoss()
         with torch.no_grad():
             for step, (tokenized_texts_list, labels, texts_list) in enumerate(
-                    pbar := tqdm(test_dataloader, desc="Testing", leave=False, )):  # model based on bert
+                    pbar := tqdm(test_dataloader, desc=f"eval {set_name}", leave=False, )):  # model based on bert
                 test_targets.extend(labels)
                 test_label = torch.from_numpy(np.asarray(labels)).to(device)
                 outputs = model(tokenized_texts_list['input_ids'].to(device),
@@ -335,7 +337,15 @@ def evaluate(model, all_df, labels_set_dict, device, config):
         total_acc_test_for_all_data = total_acc_test / len(df)
 
         print(f'Test Accuracy: {total_acc_test_for_all_data: .3f}')
-        print("finish evaluate")
+        evaluation[set_name]['f1_score'] = f1_score_test
+        evaluation[set_name]['acc'] = total_acc_test_for_all_data
+        evaluation[set_name]['loss'] = total_loss_test / len(df)
+        print(f"finish to evaluate {set_name}")
+    for set_name in evaluation:
+        print(f"evaluation of {set_name}:")
+        for metric in evaluation[set_name]:
+            print(f"{set_name}_{metric} = {evaluation[set_name][metric]}")
+    print("Finish!")
 
 def get_train_val_data(data_set_path):
     f'''
@@ -386,13 +396,8 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         print(f"Loading model from: {path_for_loading_best_model}")
         model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
-        #todo: check if to take only non-frozen params:
-        # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-        #                 weight_decay=config['weight_decay'])
-        # optimizer = Adam(model.parameters(), lr=float(config['lr']))
         model.to(device)
-        optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-                         weight_decay=config['weight_decay'])
+        optimizer = Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
         if 'cuda' in device.type:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         else:
@@ -405,9 +410,7 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         print("Train model from scratch")
         model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
-        optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-                         weight_decay=config['weight_decay'])
-        # optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        optimizer = Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
     return model, optimizer
 
 

@@ -4,7 +4,7 @@ load_model: False
 test_on_df: [train, val, test]
 global_dir_name_for_save_models: flickrstyle10k_text_style_classification
 
-path_for_loading_best_model: /home/nlp/tzufar/checkpoints/17_02_2023/14_33_26__17_02_2023/best_flickrstyle10k_text_style_classification_model.pth
+path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification/21_02_2023/03_05_17__21_02_2023/best_flickrstyle10k_text_style_classification_model.pth
 
 
 best_model_name: best_flickrstyle10k_text_style_classification_model.pth #best_twitter_trained_model.pth
@@ -28,10 +28,10 @@ img_idx_to_start_from: 0
 desired_labels: [humor, romantic] #[factual, humor, romantic]
 
 epochs: 50
-lr: 0.00001
+lr: 0.00001 # 0.00001
 batch_size: 16
-margin: 0.26
-hidden_state_to_take: -2
+margin: 0.04 #0.26
+hidden_state_to_take: -1 #-2
 last_layer_idx_to_freeze: -1 #8
 freeze_after_n_epochs: 1000000000 #0
 inner_batch_size: 1
