@@ -27,10 +27,14 @@ parameters:
 #    distribution: int_uniform
   scale_noise:
     values:
+      - 0.64
+      - 0.45
+      - 0.40
       - 0.32
       - 0.16
       - 0.12
       - 0.08
       - 0.04
+      - 0.02
       - 0
     distribution: categorical
