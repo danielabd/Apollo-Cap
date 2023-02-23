@@ -308,8 +308,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                 if not gts_per_data_set[k][style]:
                                     continue
                                 tmp_res = {k: [res[test_type][k][style]]}
-                                print(f"tmp_res = {tmp_res}")
-                                print("break")
+                                # print(f"tmp_res = {tmp_res}")
+                                # print("break")
                                 # break
                                 if metric == 'CLIPScore':
                                     # gts_per_data_set[k]['img_path'] = os.path.join(gt_imgs_for_test,gts_per_data_set[k]['img_path'].split('/')[-1])
