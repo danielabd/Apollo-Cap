@@ -134,6 +134,8 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
                 #     path_file = os.path.join(src_dirs[test_type],d,f)
                 #     break
                 #######
+                if f.startswith('avg_'):
+                    continue
                 if f.endswith('.csv'):
                     path_file = os.path.join(src_dirs[test_type],d,f)
                     break
@@ -202,7 +204,7 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
 def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/'
-    base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/20_2_23/'
+    base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/'
 
     # prompt_manipulation
     if 'prompt_manipulation' in exp_to_merge:
@@ -239,12 +241,17 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
         # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/text_style'
         # 20.2.23
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/20_2_23/ZeroStyleCap_8'
+        # 23.2.23
+
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast'
+        final_name = src_dir_text_style.split('Cap')[-1] #39
+
         # src_dir_text_style = os.path.join(base_path,'text_style')
         text_style_dir_path = os.listdir(src_dir_text_style)
         if factual_wo_prompt:
-            tgt_path_text_style = os.path.join(src_dir_text_style,'total_results_text_style_factual_wo_prompt.csv')
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}_factual_wo_prompt.csv')
         else:
-            tgt_path_text_style = os.path.join(src_dir_text_style,'total_results_text_style.csv')
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}.csv')
     else:
         src_dir_text_style = ''
         text_style_dir_path = ''
@@ -275,8 +282,33 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
 
     return res_paths, src_dirs, tgt_paths
 
+def get_missed_img_nums(f1,f2):
+    '''
+    f1- good file
+    f2 - missed file
+    '''
+    def get_first_col(f1):
+        c = []
+        with open(f1, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            for i,row in enumerate(reader):
+                if i==0:
+                    continue
+                c.append(int(row[0]))
+        return c
+    c1 = get_first_col(f1)
+    c2 = get_first_col(f2)
+    diff = list(set(c1)-set(c2))
+    print(f"The difference is: {diff}")
+    missed_img_nums = diff
+    return missed_img_nums
 
+# [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 def main():
+    f1 = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCap8/total_results_text_style_8_factual_wo_prompt.csv'
+    f2 = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast/total_results_text_style_Past_factual_wo_prompt.csv'
+    missed_img_nums = get_missed_img_nums(f1, f2)
+
     args = get_args()
     cuda_idx = args.cuda_idx_num
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
@@ -309,6 +341,7 @@ def main():
     exp_to_merge = ["text_style"]
     res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge)
 
+    missed_img_nums = get_missed_img_nums()
 
     # exp_to_merge = ["text_style"]
     use_factual = False

@@ -365,7 +365,7 @@ def get_factual_captions(factual_file_path_list):
 
 
 def get_list_of_imgs_for_caption(config):
-    # take list of images for captioning
+    print("take list of images for captioning...")
     imgs_to_test = []
     print(f"config['max_num_of_imgs']: {config['max_num_of_imgs']}")
     if 'specific_img_idxs_to_test' in config and len(config['specific_img_idxs_to_test'])>0:
@@ -451,93 +451,6 @@ def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir):
 
 
 
-def initial_variables():
-    def get_desired_labels(config, mean_embedding_vec_path):
-        if config['use_style_model']:
-            with open(mean_embedding_vec_path, 'rb') as fp:
-                embedding_vectors_to_load = pickle.load(fp)
-            desired_labels_list = list(embedding_vectors_to_load.keys())
-        else:
-            desired_labels_list = config['desired_labels']
-            embedding_vectors_to_load = None
-        if config['imitate_text_style']:
-            desired_labels_list = config['text_to_imitate_list']
-
-        if config['debug']:
-            desired_labels_list = [desired_labels_list[0]]
-        return desired_labels_list, embedding_vectors_to_load
-    args = get_args()
-    config = get_hparams(args)
-    # os.environ["CUDA_VISIBLE_DEVICES"] = config['cuda_idx_num']
-    data_dir = os.path.join(os.path.expanduser('~'), 'data')
-    factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl')
-    mean_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['mean_vec_emb_file'])
-
-    if not config['use_style_model']:
-        config['text_style_scale'] = 0
-
-
-    with open(factual_captions_path,'rb') as f:
-        factual_captions = pickle.load(f)
-
-    data_path = os.path.join(data_dir, config['data_name'], 'annotations', config['data_type'] + '.pkl')
-
-    wandb.init(project='StylizedZeroCap',
-               config=config,
-               resume=config['resume'],
-               id=config['run_id'],
-               mode=config['wandb_mode'],  # disabled, offline, online'
-               tags=config['tags'])
-
-    # handle sweep training names
-    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
-    print(f'Current time is: {cur_time}')
-    cur_date = datetime.now().strftime("%d_%m_%Y")
-    config['training_name'] = f'{wandb.run.id}-{wandb.run.name}'
-    tmp_dir = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}'
-    if not os.path.isdir(tmp_dir):
-        os.makedirs(tmp_dir)
-    config['experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}/{config["training_name"]}'
-    results_dir = config['experiment_dir']
-    tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
-    if config["debug"]:
-        config['max_num_of_imgs'] = 2
-        config['target_seq_length'] = 1
-        config['desired_labels'] = ['positive']
-        config['calc_fluency'] = False
-
-    wandb.config.update(config, allow_val_change=True)
-
-    txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
-
-    desired_labels_list, embedding_vectors_to_load = get_desired_labels(config, mean_embedding_vec_path)
-
-
-    print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
-
-    if not os.path.exists(config['experiment_dir']):
-        os.makedirs(config['experiment_dir'])
-    print('------------------------------------------------------------------------------------------------------')
-    print('Training config:')
-    for k, v in config.items():
-        print(f'{k}: {v}')
-    print('------------------------------------------------------------------------------------------------------')
-    with open(os.path.join(config['experiment_dir'], 'config.pkl'), 'wb') as f:
-        pickle.dump(config, f)
-    with open(os.path.join(config['experiment_dir'], 'config.yaml'), 'w') as f:
-        yaml.dump(config, f, default_flow_style=False)
-    print('saved experiment config in ', os.path.join(config['experiment_dir'], 'config.pkl'))
-
-
-    img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
-    img_dict_img_arithmetic = defaultdict(lambda: defaultdict(lambda: ""))  # img_path,dataset_type
-    tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
-    debug_tracking = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [])))  # word_num:iteration:module:list
-    model_path = os.path.join(os.path.expanduser('~'), config['best_model_name'])
-
-    return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path,\
-           mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
-           tmp_text_loss,  factual_captions, desired_labels_list, embedding_vectors_to_load
 
 def evaluate_results(config,fluency_obj, evaluation_obj, evaluation_results, gts_data, results_dir, factual_captions):
     print("Calc evaluation of the results...")
@@ -636,13 +549,102 @@ def evaluate_results(config,fluency_obj, evaluation_obj, evaluation_results, gts
     print('Finish to evaluate results!')
 
 
+def initial_variables():
+    def get_desired_labels(config, mean_embedding_vec_path):
+        if config['use_style_model']:
+            with open(mean_embedding_vec_path, 'rb') as fp:
+                embedding_vectors_to_load = pickle.load(fp)
+            desired_labels_list = list(embedding_vectors_to_load.keys())
+        else:
+            desired_labels_list = config['desired_labels']
+            embedding_vectors_to_load = None
+        if config['imitate_text_style']:
+            desired_labels_list = config['text_to_imitate_list']
+
+        if config['debug']:
+            desired_labels_list = [desired_labels_list[0]]
+        return desired_labels_list, embedding_vectors_to_load
+    args = get_args()
+    config = get_hparams(args)
+    # os.environ["CUDA_VISIBLE_DEVICES"] = config['cuda_idx_num']
+    data_dir = os.path.join(os.path.expanduser('~'), 'data')
+    factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl')
+    mean_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['mean_vec_emb_file'])
+    imgs_to_test = get_list_of_imgs_for_caption(config)
+
+    if not config['use_style_model']:
+        config['text_style_scale'] = 0
+
+
+    with open(factual_captions_path,'rb') as f:
+        factual_captions = pickle.load(f)
+
+    data_path = os.path.join(data_dir, config['data_name'], 'annotations', config['data_type'] + '.pkl')
+
+    wandb.init(project='StylizedZeroCap',
+               config=config,
+               resume=config['resume'],
+               id=config['run_id'],
+               mode=config['wandb_mode'],  # disabled, offline, online'
+               tags=config['tags'])
+
+    # handle sweep training names
+    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    print(f'Current time is: {cur_time}')
+    cur_date = datetime.now().strftime("%d_%m_%Y")
+    config['training_name'] = f'{wandb.run.id}-{wandb.run.name}'
+    tmp_dir = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}'
+    if not os.path.isdir(tmp_dir):
+        os.makedirs(tmp_dir)
+    config['experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}/{config["training_name"]}'
+    results_dir = config['experiment_dir']
+    tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
+    if config["debug"]:
+        config['max_num_of_imgs'] = 2
+        config['target_seq_length'] = 1
+        config['desired_labels'] = ['positive']
+        config['calc_fluency'] = False
+
+    wandb.config.update(config, allow_val_change=True)
+
+    txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
+
+    desired_labels_list, embedding_vectors_to_load = get_desired_labels(config, mean_embedding_vec_path)
+
+
+    print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
+
+    if not os.path.exists(config['experiment_dir']):
+        os.makedirs(config['experiment_dir'])
+    print('------------------------------------------------------------------------------------------------------')
+    print('Training config:')
+    for k, v in config.items():
+        print(f'{k}: {v}')
+    print('------------------------------------------------------------------------------------------------------')
+    with open(os.path.join(config['experiment_dir'], 'config.pkl'), 'wb') as f:
+        pickle.dump(config, f)
+    with open(os.path.join(config['experiment_dir'], 'config.yaml'), 'w') as f:
+        yaml.dump(config, f, default_flow_style=False)
+    print('saved experiment config in ', os.path.join(config['experiment_dir'], 'config.pkl'))
+
+
+    img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
+    img_dict_img_arithmetic = defaultdict(lambda: defaultdict(lambda: ""))  # img_path,dataset_type
+    tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
+    debug_tracking = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [])))  # word_num:iteration:module:list
+    model_path = os.path.join(os.path.expanduser('~'), config['best_model_name'])
+
+    return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path,\
+           mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
+           tmp_text_loss,  factual_captions, desired_labels_list, embedding_vectors_to_load, imgs_to_test
+
+
 
 def main():
     config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
     mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
-    tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load = initial_variables()
+    tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load,imgs_to_test = initial_variables()
 
-    imgs_to_test = get_list_of_imgs_for_caption(config)
     if config["data_name"] == "senticap": #todo:debug
         gts_data = get_gts_data(data_path,factual_captions, config['data_name'])
     if not config['debug_mac']:
@@ -671,7 +673,6 @@ def main():
         config['img_path'] = img_path
         evaluation_results[img_name] = {'img_path': img_path}
         if not os.path.isfile(config['img_path']):
-            continue
             continue
         #go over all labels
         for label_idx, label in enumerate(desired_labels_list):

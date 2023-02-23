@@ -78,6 +78,10 @@ def mapping_data(base_path,styles):
                 idx = int(line.split('p')[1].split('\n')[0])
             else: #img name
                 img_name = line.split('.')[0]
+                if idx in stylized_mapping_idx_to_img_name[style]:
+                    print("idx in stylized_mapping_idx_to_img_name[style] - check it!")
+                if img_name in stylized_mapping_idx_to_img_name[style].values():
+                    print("img_name in stylized_mapping_idx_to_img_name[style].values() - check it!")
                 stylized_mapping_idx_to_img_name[style][idx] = img_name[2:]
         print(f'Finihsed to map {style}')
     return stylized_mapping_idx_to_img_name
