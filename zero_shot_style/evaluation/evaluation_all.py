@@ -721,6 +721,35 @@ def get_all_paths_of_tests(factual_wo_prompt):
         tgt_path_prompt_manipulation, tgt_path_image_manipulation, tgt_path_image_and_prompt_manipulation, tgt_path_text_style = add_suffix_to_file_name(files_list)
     return tgt_path_prompt_manipulation, tgt_path_image_manipulation, tgt_path_image_and_prompt_manipulation, tgt_path_text_style
 
+def get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt):
+
+    def add_suffix_to_file_name(files_list):
+        fixed_file_names = []
+        for f in files_list:
+            fixed_file_names.append(f.split('.csv')[0] + '_factual_wo_prompt.csv')
+        return fixed_file_names
+
+    #todo:
+    base_path = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/12_2_23/')
+    base_path = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/20_2_23/')
+    base_path = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/23_2_23/')
+    #ZeroStyleCap8
+    src_dir_ZeroStyleCap8 = os.path.join(base_path,'ZeroStyleCap8')
+    tgt_path_ZeroStyleCap8 = os.path.join(src_dir_ZeroStyleCap8,'total_results_ZeroStyleCap8.csv')
+
+    # ZeroStyleCap39
+    src_dir_ZeroStyleCap39 = os.path.join(base_path, 'ZeroStyleCap39')
+    tgt_path_ZeroStyleCap39 = os.path.join(src_dir_ZeroStyleCap39, 'total_results_ZeroStyleCap39.csv')
+
+    # ZeroStyleCapPast
+    src_dir_ZeroStyleCapPast = os.path.join(base_path, 'ZeroStyleCapPast')
+    tgt_path_ZeroStyleCapPast = os.path.join(src_dir_ZeroStyleCapPast, 'total_results_ZeroStyleCapPast.csv')
+    if factual_wo_prompt:
+        files_list = [tgt_path_ZeroStyleCap8, tgt_path_ZeroStyleCap39, tgt_path_ZeroStyleCapPast]
+        tgt_path_ZeroStyleCap8, tgt_path_ZeroStyleCap39, tgt_path_ZeroStyleCapPast = add_suffix_to_file_name(files_list)
+
+    return tgt_path_ZeroStyleCap8, tgt_path_ZeroStyleCap39, tgt_path_ZeroStyleCapPast
+
 
 def main():
     cuda_idx = "0"
@@ -737,11 +766,11 @@ def main():
     # tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '10_2_23',
     #                                                     'evaluation_all_frames.csv')
 
-    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/12_2_23', 'evaluation.csv')
-    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/12_2_23',
+    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/23_2_23', 'evaluation.csv')
+    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/23_2_23',
                                                         'evaluation_all_frames.csv')
 
-    tgt_eval_results_fluency = os.path.join(results_dir, '12_2_23','fluency_statistics')
+    tgt_eval_results_fluency = os.path.join(results_dir, '23_2_23','fluency_statistics')
     if not os.path.exists(tgt_eval_results_fluency):
         os.makedirs(tgt_eval_results_fluency)
     #todo: insert to config file
@@ -757,13 +786,16 @@ def main():
 
     factual_wo_prompt = True
     # path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
-    path_test_text_style = get_all_paths_of_tests_txt_style(factual_wo_prompt)
+    path_test_ZeroStyleCap8, path_test_ZeroStyleCap39, path_test_ZeroStyleCapPast = get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt)
+    # path_test_text_style = get_all_paths_of_tests_txt_style(factual_wo_prompt)
 
     res_paths = {}
     # res_paths['prompt_manipulation'] = path_test_prompt_manipulation
     # res_paths['image_manipulation'] = path_test_image_manipulation
     # res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
-    res_paths['text_style'] = path_test_text_style
+    res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
+    res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
+    res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
     factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl') #todo: fix it for flickrstyle10k
     with open(factual_captions_path,'rb') as f:
         factual_captions = pickle.load(f)

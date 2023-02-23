@@ -305,9 +305,9 @@ def get_missed_img_nums(f1,f2):
 
 # [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 def main():
-    f1 = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCap8/total_results_text_style_8_factual_wo_prompt.csv'
-    f2 = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast/total_results_text_style_Past_factual_wo_prompt.csv'
-    missed_img_nums = get_missed_img_nums(f1, f2)
+    # f1 = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCap8/total_results_text_style_8_factual_wo_prompt.csv'
+    # f2 = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast/total_results_text_style_Past_factual_wo_prompt.csv'
+    # missed_img_nums = get_missed_img_nums(f1, f2)
 
     args = get_args()
     cuda_idx = args.cuda_idx_num
@@ -336,12 +336,11 @@ def main():
         img_idx_to_name[img_path_idx] = img_name
 
     t = {"prompt_manipulation": "img_num\prompt","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
-    factual_wo_prompt = True
+    factual_wo_prompt = False
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     exp_to_merge = ["text_style"]
     res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge)
 
-    missed_img_nums = get_missed_img_nums()
 
     # exp_to_merge = ["text_style"]
     use_factual = False
