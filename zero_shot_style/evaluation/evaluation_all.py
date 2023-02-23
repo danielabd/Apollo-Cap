@@ -246,7 +246,6 @@ def evaluate_single_res(res, gt, img_path, label, dataset_name, metrics, evaluat
 
 def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test, styles_per_dataset):
     print("Calculate scores...")
-
     mean_score = {}
     if ('CLIPScoreRef' in metrics) or ('CLIPScore'in metrics):
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx)
@@ -314,8 +313,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                 tmp_res = {k: [res[test_type][k][style]]}
                                 # print(f"tmp_res = {tmp_res}")
                                 # print("break")
-                                print(f"style={style}")
-                                break
+                                # print(f"style={style}")
+                                # break
                                 if metric == 'CLIPScore':
                                     # gts_per_data_set[k]['img_path'] = os.path.join(gt_imgs_for_test,gts_per_data_set[k]['img_path'].split('/')[-1])
                                     score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(gts_per_data_set[k]['img_path'], tmp_res)
@@ -559,6 +558,7 @@ def get_res_data(res_paths):
         with open(res_paths[test_type], 'r') as csvfile:
             spamreader = csv.reader(csvfile)
             title = True
+            styles = []
             for row in spamreader:
                 if '.jpg' in row[0]:
                     k = row[0].split('.jpg')[0]
@@ -571,16 +571,19 @@ def get_res_data(res_paths):
                 except:
                     pass
                 if title:
+                    styles = row[1:]
                     title = False
                     continue
                 else:
                     try:
                         res_data[k]={}
-                        res_data[k]['factual'] = row[1]
-                        res_data[k]['positive'] = row[2]
-                        res_data[k]['negative'] = row[3]
-                        res_data[k]['humor'] = row[4]
-                        res_data[k]['romantic'] = row[5]
+                        for i,s in enumerate(styles):
+                            res_data[k][s] = row[i+1]
+                        # res_data[k]['factual'] = row[1]
+                        # res_data[k]['positive'] = row[2]
+                        # res_data[k]['negative'] = row[3]
+                        # res_data[k]['humor'] = row[4]
+                        # res_data[k]['romantic'] = row[5]
                     except:
                         pass
         res_data_per_test[test_type] = res_data
