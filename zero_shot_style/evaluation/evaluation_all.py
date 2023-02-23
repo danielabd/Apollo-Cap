@@ -137,8 +137,8 @@ class STYLE_CLS:
             res_val = list(res.values())[0][0]
         res_tokens = tokenizer(res_val, padding='max_length', max_length = 512, truncation=True,
                                 return_tensors="pt")
-        print(f"self.labels_dict_idxs = {self.labels_dict_idxs}")
-        print(f"self.labels_dict_idxs[gt_label] = {self.labels_dict_idxs[gt_label]}")
+        # print(f"self.labels_dict_idxs = {self.labels_dict_idxs}")
+        # print(f"self.labels_dict_idxs[gt_label] = {self.labels_dict_idxs[gt_label]}")
         gt_label_idx = torch.tensor(self.labels_dict_idxs[gt_label]).to(self.device)
         mask = res_tokens['attention_mask'].to(self.device)
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
@@ -190,9 +190,9 @@ class Fluency:
         results = self.perplexity.compute(data=sentence, model_id=self.model_id, add_start_token=False)
         return results['mean_perplexity'], results['perplexities']
         '''
-        print(f"data=self.tests:")
-        print(f"{self.tests}")
-        print(f"data=self.tests")
+        # print(f"data=self.tests:")
+        # print(f"{self.tests}")
+        # print(f"data=self.tests")
         results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=True)#check is the source
         # results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=True)
         for i,pp in enumerate(results['perplexities']):
@@ -700,7 +700,7 @@ def get_all_paths_of_tests(factual_wo_prompt):
 
     #todo:
     base_path = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/12_2_23/')
-    base_path = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/20_2_23/')
+    # base_path = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/20_2_23/')
     #prompt_manipulation
     # src_dir_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/prompt_manipulation')
     src_dir_prompt_manipulation = os.path.join(base_path,'prompt_manipulation')
@@ -774,11 +774,11 @@ def main():
     # tgt_eval_results_path_for_all_frames = os.path.join(results_dir, '10_2_23',
     #                                                     'evaluation_all_frames.csv')
 
-    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/23_2_23', 'evaluation.csv')
-    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/23_2_23',
+    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/12_2_23', 'evaluation.csv')
+    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/12_2_23',
                                                         'evaluation_all_frames.csv')
 
-    tgt_eval_results_fluency = os.path.join(results_dir, '23_2_23','fluency_statistics')
+    tgt_eval_results_fluency = os.path.join(results_dir, '12_2_23','fluency_statistics')
     if not os.path.exists(tgt_eval_results_fluency):
         os.makedirs(tgt_eval_results_fluency)
     #todo: insert to config file
@@ -793,8 +793,8 @@ def main():
                            'flickrstyle10k': ['humor', 'romantic']}
 
     factual_wo_prompt = True
-    # path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
-    path_test_ZeroStyleCap8, path_test_ZeroStyleCap39, path_test_ZeroStyleCapPast = get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt)
+    path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
+    # path_test_ZeroStyleCap8, path_test_ZeroStyleCap39, path_test_ZeroStyleCapPast = get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt)
     # path_test_text_style = get_all_paths_of_tests_txt_style(factual_wo_prompt)
 
     res_paths = {}
