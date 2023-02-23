@@ -269,7 +269,11 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
             for metric in metrics:
                 print(f"    Calc scores for metric: ***{metric}***")
                 t1_metric = timeit.default_timer();
-                if metric == 'bleu':
+                if metric == 'bleu1':
+                    scorer = Bleu(n=1)
+                if metric == 'bleu3':
+                    scorer = Bleu(n=3)
+                if metric == 'bleu4':
                     scorer = Bleu(n=4)
                 elif metric == 'cider':
                     scorer = Cider()
@@ -310,7 +314,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                 tmp_res = {k: [res[test_type][k][style]]}
                                 # print(f"tmp_res = {tmp_res}")
                                 # print("break")
-                                # break
+                                print(f"style={style}")
+                                break
                                 if metric == 'CLIPScore':
                                     # gts_per_data_set[k]['img_path'] = os.path.join(gt_imgs_for_test,gts_per_data_set[k]['img_path'].split('/')[-1])
                                     score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(gts_per_data_set[k]['img_path'], tmp_res)
@@ -803,7 +808,7 @@ def main():
 
     dataset_names =['senticap', 'flickrstyle10k']
     dataset_names =['senticap']
-    metrics = ['bleu', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+    metrics = ['bleu1', 'bleu3', 'bleu4', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     # metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     # metrics = ['fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     #metrics = ['CLIPScore']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
