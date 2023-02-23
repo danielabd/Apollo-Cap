@@ -1,8 +1,9 @@
 ###### stylized ZeroCap: create captions - for run.py
 debug: False
 debug_mac: False
-wandb_mode: online #'disabled, offline, online'
+wandb_mode: disabled #'disabled, offline, online'
 data_type: test
+specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 
 max_num_of_imgs: -1
 target_seq_length: 15
@@ -81,7 +82,6 @@ reset_context_delta: True
 calc_fluency: True
 imitate_text_style: False
 text_to_imitate_list: ["positive"]
-
 
 #specific_imgs_to_test: [77954, 123810, 479597, 458137, 21604, 450724]
 #specific_img_idxs_to_test:  [52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135]
