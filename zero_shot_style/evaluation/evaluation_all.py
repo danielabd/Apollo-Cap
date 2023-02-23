@@ -798,12 +798,13 @@ def main():
     # path_test_text_style = get_all_paths_of_tests_txt_style(factual_wo_prompt)
 
     res_paths = {}
-    # res_paths['prompt_manipulation'] = path_test_prompt_manipulation
-    # res_paths['image_manipulation'] = path_test_image_manipulation
-    # res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
-    res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
-    res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
-    res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
+    res_paths['prompt_manipulation'] = path_test_prompt_manipulation
+    res_paths['image_manipulation'] = path_test_image_manipulation
+    res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
+    res_paths['text_style'] = path_test_text_style
+    # res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
+    # res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
+    # res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
     factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl') #todo: fix it for flickrstyle10k
     with open(factual_captions_path,'rb') as f:
         factual_captions = pickle.load(f)
