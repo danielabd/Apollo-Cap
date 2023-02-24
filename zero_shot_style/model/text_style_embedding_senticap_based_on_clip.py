@@ -530,8 +530,9 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     log_dict = {}
     for epoch in range(config['epochs']):
         model.train()
-        if epoch == config['freeze_after_n_epochs']:
-            model.freeze_layers(BERT_NUM_OF_LAYERS)
+        if config["model_based_on"] == 'bert':
+            if epoch == config['freeze_after_n_epochs']:
+                model.freeze_layers(BERT_NUM_OF_LAYERS)
         train_list_all_triplet_loss_batch = []
         train_list_positive_loss_batch = []
         train_list_fraction_positive_triplets_batch = []
