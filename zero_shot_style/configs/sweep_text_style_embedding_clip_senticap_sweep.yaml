@@ -1,0 +1,27 @@
+program: model/text_style_embedding_senticap_based_on_clip.py
+project: text_style_embedding_clip_senticap
+method: bayes
+metric:
+  goal: minimize
+  name: val/best_val_all_triplet_loss_avg
+parameters:
+  margin:
+    max: 2
+    min: 0.2
+    distribution: uniform
+  lr:
+    values:
+    - 0.01
+    - 0.001
+    - 0.0001
+    - 0.00001
+    - 0.000001
+    distribution: categorical
+#  scale_noise:
+#    values:
+#      - 0.16
+#      - 0.12
+#      - 0.08
+#      - 0.04
+#      - 0
+#    distribution: categorical

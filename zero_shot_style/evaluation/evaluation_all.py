@@ -342,8 +342,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     all_scores = save_all_data_k(all_scores, k,test_type,style,metric, score_dict_per_metric, res=tmp_res[k][0], gts=tmp_gts[k])
                 if metric == 'fluency':
                     score_dict_per_metric,score_per_metric_and_style, all_scores = fluency_obj.compute_score(score_dict_per_metric,score_per_metric_and_style, all_scores, test_type)
-                    print("score_dict_per_metric:")
-                    print(score_dict_per_metric)
+                    # print("score_dict_per_metric:")
+                    # print(score_dict_per_metric)
 
                 for style in styles:
                     if metric == 'fluency':
@@ -775,10 +775,14 @@ def main():
     #                                                     'evaluation_all_frames.csv')
 
     tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/12_2_23', 'evaluation.csv')
-    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/12_2_23',
+    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'),
+                                                        'experiments/stylized_zero_cap_experiments/12_2_23',
+                                                        'evaluation_all_frames.csv')
+    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/capdec/23_2_23', 'evaluation.csv')
+    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/capdec/23_2_23',
                                                         'evaluation_all_frames.csv')
 
-    tgt_eval_results_fluency = os.path.join(results_dir, '12_2_23','fluency_statistics')
+    tgt_eval_results_fluency = os.path.join(results_dir, '23_2_23','fluency_statistics')
     if not os.path.exists(tgt_eval_results_fluency):
         os.makedirs(tgt_eval_results_fluency)
     #todo: insert to config file
@@ -797,14 +801,26 @@ def main():
     # path_test_ZeroStyleCap8, path_test_ZeroStyleCap39, path_test_ZeroStyleCapPast = get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt)
     # path_test_text_style = get_all_paths_of_tests_txt_style(factual_wo_prompt)
 
+    # path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
+    path_positive = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_positive.csv')
+    path_negative = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_negative.csv')
+    path_humor = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_humor.csv')
+    path_romantic = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_romantic.csv')
+
     res_paths = {}
-    res_paths['prompt_manipulation'] = path_test_prompt_manipulation
-    res_paths['image_manipulation'] = path_test_image_manipulation
-    res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
-    res_paths['text_style'] = path_test_text_style
+    # res_paths['prompt_manipulation'] = path_test_prompt_manipulation
+    # res_paths['image_manipulation'] = path_test_image_manipulation
+    # res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
+    # res_paths['text_style'] = path_test_text_style
+
     # res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
     # res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
     # res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
+
+    res_paths['positive'] = path_positive
+    res_paths['negative'] = path_negative
+    # res_paths['humor'] = path_humor
+    # res_paths['romantic'] = path_romantic
     factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl') #todo: fix it for flickrstyle10k
     with open(factual_captions_path,'rb') as f:
         factual_captions = pickle.load(f)
