@@ -174,6 +174,7 @@ class TextStyleEmbedCLIP(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.linear1 = nn.Linear(512, 128)
         self.relu = nn.ReLU()
+        self.device = device
 
     def forward(self, text):
         inputs = clip.tokenize(text, truncate=True).to(self.device)
