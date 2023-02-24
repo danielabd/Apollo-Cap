@@ -1,7 +1,7 @@
 import pandas as pd
 import torch
 import numpy as np
-from transformers import BertTokenizer, BertConfig
+from transformers import BertTokenizer, BertConfig, AdamW, get_linear_schedule_with_warmup
 from torch import nn
 from transformers import BertModel
 from torch.optim import SGD
@@ -518,7 +518,7 @@ def plot_final_graph_after_training(device, config, path_for_best_model, labels_
                                                   tgt_file_vec_emb, save_vec_emb)
 
 def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
-          path_for_saving_best_model, device, tgt_file_vec_emb, config):
+          path_for_saving_best_model, device, tgt_file_vec_emb, config, warmup_steps: int = 5000):
     best_val_all_triplet_loss_avg = MAX_VAL_TRIPLET_LOSS
     train_data_set, val_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
@@ -529,7 +529,9 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
 
     print('Starting to train...')
     model = model.to(device)
-
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer, num_warmup_steps=warmup_steps, num_training_steps=config['epochs'] * len(train_dataloader)
+    )
     best_loss = 1e16
     log_dict = {}
     for epoch in range(config['epochs']):
@@ -564,6 +566,8 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
             # gradient step
             loss.backward()
             optimizer.step()
+            scheduler.step()
+            optimizer.zero_grad()
             # update locals
             train_list_all_triplet_loss_batch.append(all_triplet_loss_avg)
             train_list_positive_loss_batch.append(loss)
@@ -918,7 +922,8 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
                                    scale_noise=config['scale_noise'])
         elif config["model_based_on"] == 'clip':
             model = TextStyleEmbedCLIP(device=device, scale_noise=config['scale_noise'])
-        optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        # optimizer = Adam(model.parameters(), lr=float(config['lr'])) #todo  24.2.23 check if it is better
+        optimizer = AdamW(model.parameters(), lr=float(config['lr']))
         if 'cuda' in device.type:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         else:
@@ -934,7 +939,8 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
                                    scale_noise=config['scale_noise'])
         elif config["model_based_on"] == 'clip':
             model = TextStyleEmbedCLIP(device=device, scale_noise=config['scale_noise'])
-        optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        # optimizer = Adam(model.parameters(), lr=float(config['lr'])) #todo  24.2.23 check if it is better
+        optimizer = AdamW(model.parameters(), lr=float(config['lr']))
     return model, optimizer
 
 
