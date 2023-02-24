@@ -172,7 +172,8 @@ class TextStyleEmbedCLIP(nn.Module):
 
         self.scale_noise = scale_noise
         self.dropout = nn.Dropout(dropout)
-        self.linear1 = nn.Linear(512, 128)
+        self.linear1 = nn.Linear(512, 256)
+        self.linear2 = nn.Linear(256, 128)
         self.relu = nn.ReLU()
         self.device = device
 
@@ -185,6 +186,9 @@ class TextStyleEmbedCLIP(nn.Module):
         x = self.relu(x)
         x = self.dropout(x)
         x = self.linear1(x.float())
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.linear2(x.float())
         x = x / x.norm(dim=-1, keepdim=True)
         return x
 

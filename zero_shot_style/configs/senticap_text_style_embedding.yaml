@@ -7,7 +7,8 @@ plot_only_clustering: False
 global_dir_name_for_save_models: senticap_run_stylized_caption
 
 hidden_state_to_take_txt_style_embedding: -4
-scale_noise_txt_style_embedding:  0.16
+#scale_noise_txt_style_embedding:  0.16
+scale_noise_txt_style_embedding:  0.016
 
 epochs: 20
 lr: 0.00001
