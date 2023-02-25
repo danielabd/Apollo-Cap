@@ -63,7 +63,6 @@ zerocap_beam_size: 5
 zerocap_num_iterations: 5
 zerocap_text_style_scale: 0
 
-
 write_debug_tracking_file: False
 
 #arithmetics_style_imgs: [49, 50, 51]

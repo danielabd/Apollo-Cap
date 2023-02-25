@@ -86,13 +86,14 @@ class CLIPTextGenerator:
                  end_token='.',
                  end_factor=1.01,
                  forbidden_factor=20,
-                 cuda_idx = None,
-                 model_path = None,
-                 tmp_text_loss = None,
-                 use_style_model = False,
+                 cuda_idx = 0,
+                 model_path=None,
+                 tmp_text_loss=None,
+                 use_style_model=False,
                  config = None,
                  **kwargs):
 
+        self.model_based_on = config['model_based_on']
         self.debug_tracking = {} # debug_tracking: debug_tracking[word_num][iteration][module]:<list>
         self.tmp_text_loss = tmp_text_loss
         self.cuda_idx = cuda_idx
@@ -195,9 +196,9 @@ class CLIPTextGenerator:
         self.use_style_model = use_style_model
         if self.use_style_model:
             print(f"Loading embedding style model from: {self.text_style_model_name}")
-            if config["model_based_on"] == 'bert':
+            if self.model_based_on == 'bert':
                 self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'], scale_noise=config['scale_noise_txt_style_embedding'])
-            elif config["model_based_on"] == 'clip':
+            elif self.model_based_on == 'clip':
                 self.text_style_model = TextStyleEmbedCLIP(device=self.device)
 
             if 'cpu' in self.device:
@@ -535,7 +536,12 @@ class CLIPTextGenerator:
                 inputs = self.text_style_tokenizer(top_texts, padding=True, return_tensors="pt")
                 inputs['input_ids'] = inputs['input_ids'].to(self.device)
                 inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
-                logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
+
+                if self.model_based_on == 'bert':
+                    logits = self.text_style_model(inputs['input_ids'], inputs['attention_mask'])
+                elif self.model_based_on == 'clip':
+                    logits = self.text_style_model(top_texts)
+
                 # ## based on clip
                 # logits = self.text_style_model(top_texts)
 
