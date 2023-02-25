@@ -785,9 +785,9 @@ def main():
     tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'),
                                                         'experiments/stylized_zero_cap_experiments/12_2_23',
                                                         'evaluation_all_frames.csv')
-    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/capdec/23_2_23', 'evaluation.csv')
+    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/capdec/23_2_23', 'evaluation_only_style_cls.csv')
     tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/capdec/23_2_23',
-                                                        'evaluation_all_frames.csv')
+                                                        'evaluation_all_frames_only_style_cls.csv')
 
     tgt_eval_results_fluency = os.path.join(results_dir, '23_2_23','fluency_statistics')
     if not os.path.exists(tgt_eval_results_fluency):
