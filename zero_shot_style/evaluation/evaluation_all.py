@@ -900,8 +900,8 @@ def main():
                 for style in styles:
                     print(f'{test_type}: {dataset} {metric} score for {style} = {mean_score[test_type][dataset][metric][style]}')
     for test_type in res_data_per_test:
-        print(f'Vocabulary size for experiment{test_type} dataset is {vocab_size[test_type]}')
-    write_results(mean_score, tgt_eval_results_path,dataset_names, metrics, styles, vocab_size)
+        print(f'Vocabulary size for experiment {test_type} dataset is {vocab_size[test_type]}')
+    write_results(mean_score, tgt_eval_results_path, dataset_names, metrics, styles, vocab_size)
     write_results_for_all_frames(all_scores, tgt_eval_results_path_for_all_frames, metrics)
 
     print('Finished to evaluate')

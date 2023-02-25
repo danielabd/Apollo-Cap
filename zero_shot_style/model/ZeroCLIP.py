@@ -69,8 +69,10 @@ class CLIPTextGenerator:
     def __init__(self,
                  seed=0,
                  lm_model='gpt-2',
-                 forbidden_tokens_file_path='./forbidden_tokens.npy',
-                 clip_checkpoints='./clip_checkpoints',
+                 # forbidden_tokens_file_path='./forbidden_tokens.npy',
+                 # clip_checkpoints='./clip_checkpoints', #todo
+                 forbidden_tokens_file_path=os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','forbidden_tokens.npy'), #todo
+                 clip_checkpoints=os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','clip_checkpoints'), #todo
                  target_seq_length=15,
                  reset_context_delta=True,
                  num_iterations=5,

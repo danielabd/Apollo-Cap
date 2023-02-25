@@ -25,12 +25,12 @@ parameters:
     max: 0.04
     min: 0.0
     distribution: uniform
-  num_iterations:
-    max: 9
-    min: 5
-    distribution: int_uniform
-  beam_size:
-    max: 4
-    min: 2
-    distribution: int_uniform
+#  num_iterations:
+#    max: 9
+#    min: 5
+#    distribution: int_uniform
+#  beam_size:
+#    max: 4
+#    min: 2
+#    distribution: int_uniform
 

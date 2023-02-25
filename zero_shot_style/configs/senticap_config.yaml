@@ -6,9 +6,13 @@ data_type: val
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 model_based_on: 'clip' # 'clip' /  'bert'
 
-max_num_of_imgs: 7 #-1
+max_num_of_imgs: 5 #-1
 target_seq_length: 15
 desired_labels: [positive, negative] #[factual, positive, ngeative]
+##todo
+#max_num_of_imgs: 1
+#target_seq_length: 2
+#desired_labels: [positive] #[factual, positive, ngeative]
 
 
 use_style_model: True
@@ -46,8 +50,8 @@ calc_evaluation: True
 #clip_scale: 2.1430374716828555 #3.746143446 #2.965
 #ce_scale: 2.925582040227539 #2.43956729 #2.318
 #text_style_scale: 2.9365169098669996 #3.797802783 #3.444
-#beam_size: 2 #4 #3
-#num_iterations: 7 #5 # 8
+beam_size: 5 #4 #3
+num_iterations: 5 #5 # 8
 #
 #std_embedding_vectors_positive: 0.030191882925088297 #0.028914157
 #std_embedding_vectors_negative: 0.002273661603177639 #0.020412436

@@ -534,8 +534,9 @@ def evaluate_results(config,fluency_obj, evaluation_obj, evaluation_results, gts
     print("*****************************")
     print("*****************************")
     if style_cls_score!='None':
-        print(f'style_cls_scores={style_cls_scores}')
-    print(f'clip_scores={clip_scores},\nfluency_scores={fluency_scores}')
+        print(f'style_cls_scores={style_cls_scores}, avg_style_cls_score={avg_style_cls_score}')
+    print(f'clip_scores={clip_scores}, avg_clip_score={avg_clip_score}'
+          f'\nfluency_scores={fluency_scores}, avg_fluency_score={avg_fluency_score}')
     print(f'final_avg_total_score={final_avg_total_score}')
     print("*****************************")
     print("*****************************")
