@@ -752,11 +752,18 @@ def get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt):
     # ZeroStyleCapPast
     src_dir_ZeroStyleCapPast = os.path.join(base_path, 'ZeroStyleCapPast')
     tgt_path_ZeroStyleCapPast = os.path.join(src_dir_ZeroStyleCapPast, 'total_results_ZeroStyleCapPast.csv')
+
+    # text style
+    # src_dir_text_style = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/7_2_23/text_style')
+    text_style_base_path = os.path.join(os.path.expanduser('~'), 'experiments/stylized_zero_cap_experiments/12_2_23/')
+    src_dir_text_style = os.path.join(text_style_base_path, 'text_style')
+    tgt_path_text_style = os.path.join(src_dir_text_style, 'total_results_text_style.csv')
+
     if factual_wo_prompt:
         files_list = [tgt_path_ZeroStyleCap8, tgt_path_ZeroStyleCap39, tgt_path_ZeroStyleCapPast]
         tgt_path_ZeroStyleCap8, tgt_path_ZeroStyleCap39, tgt_path_ZeroStyleCapPast = add_suffix_to_file_name(files_list)
 
-    return tgt_path_ZeroStyleCap8, tgt_path_ZeroStyleCap39, tgt_path_ZeroStyleCapPast
+    return tgt_path_ZeroStyleCap8, tgt_path_ZeroStyleCap39, tgt_path_ZeroStyleCapPast, tgt_path_text_style
 
 
 def main():
@@ -798,7 +805,7 @@ def main():
 
     factual_wo_prompt = True
     path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
-    # path_test_ZeroStyleCap8, path_test_ZeroStyleCap39, path_test_ZeroStyleCapPast = get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt)
+    path_test_ZeroStyleCap8, path_test_ZeroStyleCap39, path_test_ZeroStyleCapPast, path_test_text_style = get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt)
     # path_test_text_style = get_all_paths_of_tests_txt_style(factual_wo_prompt)
 
     # path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
@@ -808,14 +815,14 @@ def main():
     path_romantic = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_romantic.csv')
 
     res_paths = {}
-    # res_paths['prompt_manipulation'] = path_test_prompt_manipulation
-    # res_paths['image_manipulation'] = path_test_image_manipulation
-    # res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
-    # res_paths['text_style'] = path_test_text_style
+    res_paths['prompt_manipulation'] = path_test_prompt_manipulation
+    res_paths['image_manipulation'] = path_test_image_manipulation
+    res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
+    res_paths['text_style'] = path_test_text_style
 
-    # res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
-    # res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
-    # res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
+    res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
+    res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
+    res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
 
     res_paths['positive'] = path_positive
     res_paths['negative'] = path_negative
@@ -829,6 +836,7 @@ def main():
     dataset_names =['senticap', 'flickrstyle10k']
     dataset_names =['senticap']
     metrics = ['bleu1', 'bleu3', 'bleu4', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+    metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     # metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     # metrics = ['fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     #metrics = ['CLIPScore']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
