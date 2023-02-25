@@ -1,11 +1,11 @@
 ###### stylized ZeroCap: create captions - for run.py
 debug: False
 debug_mac: False
-wandb_mode: disabled #'disabled, offline, online'
-data_type: test
-specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
+wandb_mode: online #'disabled, offline, online'
+data_type: val
+#specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 
-max_num_of_imgs: -1
+max_num_of_imgs: 7 #-1
 target_seq_length: 15
 desired_labels: [positive, negative] #[factual, positive, ngeative]
 
@@ -16,7 +16,7 @@ run_type: caption #caption, arithmetics, img_prompt_manipulation
 global_dir_name_for_save_models: senticap_run_stylized_caption
 
 hidden_state_to_take_txt_cls: -1
-scale_noise_txt_cls: 0.08
+scale_noise_txt_cls: 0
 
 hidden_state_to_take_txt_style_embedding: -4
 scale_noise_txt_style_embedding:  0.16

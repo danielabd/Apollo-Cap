@@ -97,7 +97,7 @@ class CLIPScore:
         return score[0][0], [score]
 
 class STYLE_CLS:
-    def __init__(self, txt_cls_model_path, data_dir, desired_cuda_num, labels_dict_idxs, hidden_state_to_take=-1, scale_noise=0.08):
+    def __init__(self, txt_cls_model_path, data_dir, desired_cuda_num, labels_dict_idxs, hidden_state_to_take=-1, scale_noise=0):
         self.data_dir = data_dir
         self.desired_cuda_num = desired_cuda_num
         self.labels_dict_idxs = labels_dict_idxs
