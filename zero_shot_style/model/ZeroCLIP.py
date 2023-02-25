@@ -198,7 +198,7 @@ class CLIPTextGenerator:
             if config["model_based_on"] == 'bert':
                 self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'], scale_noise=config['scale_noise_txt_style_embedding'])
             elif config["model_based_on"] == 'clip':
-                self.text_style_model = TextStyleEmbedCLIP(device=device)
+                self.text_style_model = TextStyleEmbedCLIP(device=self.device)
 
             if 'cpu' in self.device:
                 checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
