@@ -4,6 +4,7 @@ debug_mac: False
 wandb_mode: online #'disabled, offline, online'
 data_type: val
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
+model_based_on: 'clip' # 'clip' /  'bert'
 
 max_num_of_imgs: 7 #-1
 target_seq_length: 15
