@@ -244,7 +244,7 @@ def calculate_avg_score(clip_score, fluency_score,style_cls_score=None):
     if style_cls_score:
         avg_total_score = 3*(style_cls_score*clip_score*fluency_score)/(style_cls_score+clip_score+fluency_score)
     else:
-        avg_total_score = 3*(clip_score*fluency_score)/(clip_score+fluency_score)
+        avg_total_score = 2*(clip_score*fluency_score)/(clip_score+fluency_score)
     return avg_total_score
 
 
