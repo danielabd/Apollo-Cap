@@ -129,7 +129,14 @@ def run(config, img_path,desired_style_embedding_vector,desired_style_embedding_
     captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],config['text_style_scale'],text_style,desired_style_embedding_vector,desired_style_embedding_vector_std,dataset_type)
     debug_tracking[img_path][label] = text_generator.get_debug_tracking()
     t2 = timeit.default_timer();
-    encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
+
+    if config['model_based_on'] == 'bert':
+        encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in
+                            captions]
+    elif config['model_based_on'] == 'clip':  # for text_style
+        encoded_captions = [text_generator.text_style_model(c) for c in captions]
+
+
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
 
@@ -154,7 +161,12 @@ def run_arithmetic(text_generator,config,model_path, img_dict_img_arithmetic,bas
     captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'])
     t2 = timeit.default_timer();
 
-    encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
+    if config['model_based_on'] == 'bert':
+        encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in
+                            captions]
+    elif config['model_based_on'] == 'clip':  # for text_style
+        encoded_captions = [text_generator.text_style_model(c) for c in captions]
+
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
 
@@ -179,7 +191,12 @@ def run_img_and_prompt_manipulation(config, img_dict_img_arithmetic,base_img,dat
     captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'])
     t2 = timeit.default_timer();
 
-    encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in captions]
+
+    if config['model_based_on'] == 'bert':
+        encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in
+                            captions]
+    elif config['model_based_on'] == 'clip':  # for text_style
+        encoded_captions = [text_generator.text_style_model(c) for c in captions]
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
 

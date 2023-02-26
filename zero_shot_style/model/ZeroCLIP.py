@@ -241,7 +241,10 @@ class CLIPTextGenerator:
         clip_imgs = [self.clip_preprocess(x).unsqueeze(0).to(self.device) for x in imgs]
 
         with torch.no_grad():
-            image_fts = [self.clip.encode_image(x) for x in clip_imgs]
+            if self.model_based_on == 'bert':
+                image_fts = [self.clip.encode_image(x) for x in clip_imgs]
+            elif self.model_based_on == 'clip': #for text_style
+                image_fts = [self.text_style_model.forward_im(x) for x in clip_imgs]
 
             if weights is not None:
                 image_features = sum([x * weights[i] for i, x in enumerate(image_fts)])
@@ -252,10 +255,12 @@ class CLIPTextGenerator:
             return image_features.detach()
 
     def get_txt_features(self, text):
-        clip_texts = clip.tokenize(text).to(self.device)
-
         with torch.no_grad():
-            text_features = self.clip.encode_text(clip_texts)
+            if self.model_based_on == 'bert':
+                clip_texts = clip.tokenize(text).to(self.device)
+                text_features = self.clip.encode_text(clip_texts)
+            elif self.model_based_on == 'clip':  # for text_style
+                text_features = self.text_style_model(text)
 
             text_features = text_features / text_features.norm(dim=-1, keepdim=True)
         return text_features.detach()
@@ -266,8 +271,13 @@ class CLIPTextGenerator:
         clip_texts = [clip.tokenize(x).to(self.device) for x in texts]
 
         with torch.no_grad():
-            image_fts = [self.clip.encode_image(x) for x in clip_imgs]
-            text_fts = [self.clip.encode_text(x) for x in clip_texts]
+            if self.model_based_on == 'bert':
+                image_fts = [self.clip.encode_image(x) for x in clip_imgs]
+                text_fts = [self.clip.encode_text(x) for x in clip_texts]
+            elif self.model_based_on == 'clip': #for text_style
+                image_fts = [self.text_style_model.forward_im(x) for x in clip_imgs]
+                text_fts = [self.text_style_model(x) for x in texts]
+
 
             features = sum([x * weights_i[i] for i, x in enumerate(image_fts)])
             if weights_t is not None:

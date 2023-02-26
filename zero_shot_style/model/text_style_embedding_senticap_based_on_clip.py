@@ -160,7 +160,7 @@ class Dataset(torch.utils.data.Dataset):
 
 # based on CLIP - 24.2.23
 class TextStyleEmbedCLIP(nn.Module):
-    def __init__(self, dropout=0.05, device=torch.device('cpu'), scale_noise=0.016):
+    def __init__(self, dropout=0.05, device=torch.device('cpu'), scale_noise=0):
         super(TextStyleEmbedCLIP, self).__init__()
         # Initialize CLIP
         clip_checkpoints = './clip_checkpoints'
@@ -182,6 +182,18 @@ class TextStyleEmbedCLIP(nn.Module):
         x = self.clip.encode_text(inputs)
         # add gaussian noise
         x = x + torch.randn_like(x) * self.scale_noise
+        x = x / x.norm(dim=-1, keepdim=True)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.linear1(x.float())
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.linear2(x.float())
+        x = x / x.norm(dim=-1, keepdim=True)
+        return x
+
+    def forward_im(self, clip_preprocessesd_im):
+        x = self.clip.encode_image(clip_preprocessesd_im)
         x = x / x.norm(dim=-1, keepdim=True)
         x = self.relu(x)
         x = self.dropout(x)
