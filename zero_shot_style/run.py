@@ -344,11 +344,15 @@ class Fluency:
     def compute_score(self):
         results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=False)
         perplexities = {}
+        total_perplexities = []
         for i,p in enumerate(results['perplexities']):
             if self.img_names[i] not in perplexities:
                 perplexities[self.img_names[i]] = {}
-            perplexities[self.img_names[i]][self.styles[i]] = 1-np.min([p,MAX_PERPLEXITY])/MAX_PERPLEXITY #less is better
-        total_avg_perplexity = 1-np.min([results['mean_perplexity'],MAX_PERPLEXITY])/MAX_PERPLEXITY
+            fixed_perplexity = 1-np.min([p,MAX_PERPLEXITY])/MAX_PERPLEXITY
+            perplexities[self.img_names[i]][self.styles[i]] = fixed_perplexity
+            total_perplexities.append(fixed_perplexity)
+        total_avg_perplexity = np.mean(total_perplexities)
+        # total_avg_perplexity = 1-np.min([results['mean_perplexity'],MAX_PERPLEXITY])/MAX_PERPLEXITY
         return perplexities, total_avg_perplexity
 
 
