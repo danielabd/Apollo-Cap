@@ -53,8 +53,8 @@ calc_evaluation: True
 beam_size: 5 #4 #3
 num_iterations: 5 #5 # 8
 #
-#std_embedding_vectors_positive: 0.030191882925088297 #0.028914157
-#std_embedding_vectors_negative: 0.002273661603177639 #0.020412436
+std_embedding_vectors_positive: 0 # 0.030191882925088297 #0.028914157
+std_embedding_vectors_negative: 0 #0.002273661603177639 #0.020412436
 
 #embedding_vectors_std:
 #  positive: 0.05536 #0.028914157
