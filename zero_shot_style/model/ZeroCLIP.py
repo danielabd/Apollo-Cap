@@ -233,7 +233,7 @@ class CLIPTextGenerator:
         return self.debug_tracking
 
 
-    def get_img_feature(self, img_path, weights):
+    def get_img_feature(self, img_path, weights, source_clip = False):
         #imgs = [Image.fromarray(cv2.imread(x)) for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x).astype('uint8'), 'RGB') for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x), 'RGB') for x in img_path]
@@ -241,7 +241,7 @@ class CLIPTextGenerator:
         clip_imgs = [self.clip_preprocess(x).unsqueeze(0).to(self.device) for x in imgs]
 
         with torch.no_grad():
-            if self.model_based_on == 'bert':
+            if self.model_based_on == 'bert' or source_clip:
                 image_fts = [self.clip.encode_image(x) for x in clip_imgs]
             elif self.model_based_on == 'clip': #for text_style
                 image_fts = [self.text_style_model.forward_im(x) for x in clip_imgs]
@@ -254,9 +254,9 @@ class CLIPTextGenerator:
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
             return image_features.detach()
 
-    def get_txt_features(self, text):
+    def get_txt_features(self, text, source_clip = False):
         with torch.no_grad():
-            if self.model_based_on == 'bert':
+            if self.model_based_on == 'bert' or source_clip:
                 clip_texts = clip.tokenize(text).to(self.device)
                 text_features = self.clip.encode_text(clip_texts)
             elif self.model_based_on == 'clip':  # for text_style

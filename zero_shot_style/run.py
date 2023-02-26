@@ -467,19 +467,21 @@ def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir):
             if metric == 'style_cls':
                 evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'], config['labels_dict_idxs'], config['hidden_state_to_take_txt_cls']) #todo:change handling dataset_type qs list
     # if config['calc_fluency']:
-    fluency_obj = Fluency()
-    return evaluation_obj, fluency_obj
+    # fluency_obj = Fluency()
+    return evaluation_obj
 
 
 
 
-def evaluate_results(config,fluency_obj, evaluation_obj, evaluation_results, gts_data, results_dir, factual_captions):
+def evaluate_results(config,fluency_obj, evaluation_results, gts_data, results_dir, factual_captions, txt_cls_model_path, data_dir, text_generator):
     print("Calc evaluation of the results...")
     #calc perplexity
     if config['calc_fluency']:
         perplexities,mean_perplexity = fluency_obj.compute_score()
     else:
         mean_perplexity = DEFAULT_PERPLEXITY_SCORE
+
+    evaluation_obj = get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir)
 
     style_cls_scores = []
     clip_scores = []
@@ -674,7 +676,7 @@ def main():
                                            **config)
     else:
         text_generator = None
-    evaluation_obj, fluency_obj = get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir)
+    fluency_obj = Fluency()
 
     # go over all images
     evaluation_results = {} #total_results_structure
@@ -748,7 +750,7 @@ def main():
                 raise Exception('run_type must be caption or arithmetics!')
             evaluation_results[img_name][label]['res'] = best_caption
 
-    evaluate_results(config,fluency_obj, evaluation_obj, evaluation_results, gts_data, results_dir, factual_captions)
+    evaluate_results(config,fluency_obj, evaluation_results, gts_data, results_dir, factual_captions, txt_cls_model_path, data_dir, text_generator)
     print('Finish of program!')
 
 

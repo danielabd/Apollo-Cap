@@ -56,14 +56,14 @@ class CLIPScoreRef:
                         if len(gt)>1:
                             if gt[1] =='.':
                                 gt = gt[2:]
-                        text_features_gt = self.text_generator.get_txt_features(gt)
-                        text_features_ref = self.text_generator.get_txt_features(list(res.values())[0])
+                        text_features_gt = self.text_generator.get_txt_features(gt, source_clip=True)
+                        text_features_ref = self.text_generator.get_txt_features(list(res.values())[0], source_clip=True)
                         with torch.no_grad():
                             clip_score_ref = (text_features_ref @ text_features_gt.T)
                             score = clip_score_ref.cpu().numpy()
                         scores_for_all.append(score)
-                text_features_gt = self.text_generator.get_txt_features(gt)
-                text_features_ref = self.text_generator.get_txt_features(list(res.values())[0])
+                text_features_gt = self.text_generator.get_txt_features(gt, source_clip=True)
+                text_features_ref = self.text_generator.get_txt_features(list(res.values())[0], source_clip=True)
                 with torch.no_grad():
                     clip_score_ref = (text_features_ref @ text_features_gt.T)
                     score = clip_score_ref.cpu().numpy()
@@ -87,8 +87,8 @@ class CLIPScore:
         res_val = res
         if type(res) == dict:
             res_val = list(res.values())[0]
-        image_features = self.text_generator.get_img_feature([img_path], None)
-        text_features = self.text_generator.get_txt_features(res_val)
+        image_features = self.text_generator.get_img_feature([img_path], None, source_clip=True)
+        text_features = self.text_generator.get_txt_features(res_val, source_clip=True)
         with torch.no_grad():
             clip_score = (image_features @ text_features.T)
         score = clip_score.cpu().numpy()
