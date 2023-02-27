@@ -815,14 +815,14 @@ def main():
     path_romantic = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_romantic.csv')
 
     res_paths = {}
-    res_paths['prompt_manipulation'] = path_test_prompt_manipulation
-    res_paths['image_manipulation'] = path_test_image_manipulation
-    res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
-    res_paths['text_style'] = path_test_text_style
-
-    res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
-    res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
-    res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
+    # res_paths['prompt_manipulation'] = path_test_prompt_manipulation
+    # res_paths['image_manipulation'] = path_test_image_manipulation
+    # res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
+    # res_paths['text_style'] = path_test_text_style
+    #
+    # res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
+    # res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
+    # res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
 
     res_paths['positive'] = path_positive
     res_paths['negative'] = path_negative
@@ -836,7 +836,7 @@ def main():
     dataset_names =['senticap', 'flickrstyle10k']
     dataset_names =['senticap']
     metrics = ['bleu1', 'bleu3', 'bleu4', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-    metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+    # metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     # metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     # metrics = ['fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     #metrics = ['CLIPScore']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
