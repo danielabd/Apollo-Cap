@@ -485,14 +485,19 @@ def diversitiy(res,gts):
     print("Calculate vocabulary size...")
     vocab_size = {}
     for test_type in res:
-        vocab_list = []
+        vocab_list = {}
         for k in res[test_type]:
             for style in res[test_type][k]:
+                if style == 'factual':
+                    continue
+                if style not in vocab_list:
+                    vocab_list[style] = []
                 tokenized_text = list(map(str.lower, nltk.tokenize.word_tokenize(res[test_type][k][style])))
-                vocab_list.extend(tokenized_text)
-                vocab_list = list(set(vocab_list))
-        vocab_size[test_type] = len(vocab_list)
-    #print(f'Vocabulary size is: {vocab_size}')
+                vocab_list[style].extend(tokenized_text)
+                vocab_list[style] = list(set(vocab_list[style]))
+        for style in vocab_list:
+            vocab_size[test_type] = {style: len(vocab_list[style])}
+            print(f'Vocabulary size for ***{test_type}, {style}*** is: {vocab_size[test_type][style]}')
     return vocab_size
 
 
@@ -815,14 +820,14 @@ def main():
     path_romantic = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_romantic.csv')
 
     res_paths = {}
-    # res_paths['prompt_manipulation'] = path_test_prompt_manipulation
-    # res_paths['image_manipulation'] = path_test_image_manipulation
-    # res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
-    # res_paths['text_style'] = path_test_text_style
-    #
-    # res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
-    # res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
-    # res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
+    res_paths['prompt_manipulation'] = path_test_prompt_manipulation
+    res_paths['image_manipulation'] = path_test_image_manipulation
+    res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
+    res_paths['text_style'] = path_test_text_style
+
+    res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
+    res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
+    res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
 
     res_paths['positive'] = path_positive
     res_paths['negative'] = path_negative
@@ -855,7 +860,7 @@ def main():
     res_data_per_test = get_res_data(res_paths)
     # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
     # exit(0)
-    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load[dataset_name], labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
+    # mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load[dataset_name], labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
 
     vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
     # ############## histogram
@@ -894,7 +899,7 @@ def main():
     # fig1.savefig(os.path.join(tgt_eval_results_fluency, f'_{test_type}_{style}.png'))
     # ##############
 
-    for test_type in mean_score:
+    for test_type in res_data_per_test:
         for dataset in dataset_names:
             for metric in metrics:
                 for style in styles:

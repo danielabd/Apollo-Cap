@@ -1,14 +1,14 @@
 data_name: senticap
 wandb_mode: online #'disabled, offline, online'
 load_model: False
-model_based_on: 'clip' # 'clip' /  'bert'
+model_based_on: 'bert' # 'clip' /  'bert'
 desired_labels: [positive, negative] #[factual, positive, ngeative]
 plot_only_clustering: False
 global_dir_name_for_save_models: senticap_run_stylized_caption
 
 hidden_state_to_take_txt_style_embedding: -4
 #scale_noise_txt_style_embedding:  0.16
-scale_noise_txt_style_embedding:  0.016
+scale_noise_txt_style_embedding:  0
 
 epochs: 30
 lr: 0.00001
