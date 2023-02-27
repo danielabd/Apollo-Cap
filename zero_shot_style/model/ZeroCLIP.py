@@ -92,10 +92,14 @@ class CLIPTextGenerator:
                  model_path=None,
                  tmp_text_loss=None,
                  use_style_model=False,
-                 config = None,
+                 config=None,
+                 model_based_on='bert',
                  **kwargs):
 
-        self.model_based_on = config['model_based_on']
+        if config:
+            self.model_based_on = config['model_based_on']
+        else:
+            self.model_based_on = model_based_on
         self.debug_tracking = {} # debug_tracking: debug_tracking[word_num][iteration][module]:<list>
         self.tmp_text_loss = tmp_text_loss
         self.cuda_idx = cuda_idx
