@@ -6,16 +6,16 @@ metric:
   name:  evaluation/final_avg_total_score
 parameters:
   ce_scale:
-    max: 6
+    max: 5
     min: 1 #1.9
     distribution: uniform
   clip_scale:
     max: 6 #4
-    min: 1 #1.5
+    min: 1.5 #1.5
     distribution: uniform
   text_style_scale:
     max: 6 #6
-    min: 1 #2
+    min: 1.5 #2
     distribution: uniform
 #  std_embedding_vectors_positive: #0.028914157
 #    max: 0.06
