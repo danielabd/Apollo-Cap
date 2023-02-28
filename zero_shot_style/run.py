@@ -73,7 +73,7 @@ def get_args():
     parser.add_argument("--beam_size", type=int, default=5)
 
     parser.add_argument("--max_num_of_imgs", type=int, default=2)  # 1e6)
-    parser.add_argument("--evaluationo_metrics", nargs="+",
+    parser.add_argument("--evaluation_metrics", nargs="+",
                         default=['clip_score', 'fluency', 'style_cls'])
     # default=['bleu', 'rouge', 'clip_score_ref', 'clip_score', 'fluency', 'style_cls'])
 
@@ -117,11 +117,11 @@ def get_args():
 
 def run(config, img_path, desired_style_embedding_vector, desired_style_embedding_vector_std, cuda_idx, title2print,
         model_path, dataset_type, tmp_text_loss, label, img_dict, debug_tracking, text_generator=None,
-        image_features=None):
+        image_features=None, evaluation_obj=None):
     # debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, tmp_text_loss=tmp_text_loss,
-                                           text_style_scale=config['text_style_scale'], config=config, **vars(config))
+                                           text_style_scale=config['text_style_scale'], config=config, evaluation_obj=evaluation_obj, **vars(config))
     if image_features == None:
         image_features = text_generator.get_img_feature([img_path], None)
 
@@ -474,10 +474,11 @@ def update_running_params(label, config):
     return config
 
 
-def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir):
-    evaluation_obj = {}
+def get_evaluation_obj(config, text_generator, evaluation_obj):
+    if not evaluation_obj:
+        evaluation_obj = {}
     if config["calc_evaluation"]:
-        for metric in config['evaluationo_metrics']:
+        for metric in config['evaluation_metrics']:
             if metric == 'bleu':
                 evaluation_obj['bleu'] = Bleu(n=4)
             if metric == 'rouge':
@@ -488,17 +489,11 @@ def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir):
                 evaluation_obj['clip_score'] = CLIPScore(text_generator)
             if metric == 'fluency':
                 evaluation_obj['fluency'] = Fluency()
-            if metric == 'style_cls':
-                evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'],
-                                                        config['labels_dict_idxs'], config[
-                                                            'hidden_state_to_take_txt_cls'])  # todo:change handling dataset_type qs list
-    # if config['calc_fluency']:
-    # fluency_obj = Fluency()
     return evaluation_obj
 
 
 def evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_dir, factual_captions,
-                     txt_cls_model_path, data_dir, text_generator):
+                     txt_cls_model_path, data_dir, text_generator, evaluation_obj):
     print("Calc evaluation of the results...")
     # calc perplexity
     if config['calc_fluency']:
@@ -506,7 +501,7 @@ def evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_
     else:
         mean_perplexity = DEFAULT_PERPLEXITY_SCORE
 
-    evaluation_obj = get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir)
+    evaluation_obj = get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir, evaluation_obj)
 
     style_cls_scores = []
     clip_scores = []
@@ -523,7 +518,7 @@ def evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_
                 evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
             evaluation_results[img_name][label]['scores'] = evaluate_single_res(
                 evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
-                evaluation_results[img_name]['img_path'], label, config['data_name'], config['evaluationo_metrics'],
+                evaluation_results[img_name]['img_path'], label, config['data_name'], config['evaluation_metrics'],
                 evaluation_obj)
 
             clip_score = evaluation_results[img_name][label]['scores']['clip_score']
@@ -658,7 +653,11 @@ def initial_variables():
     wandb.config.update(config, allow_val_change=True)
 
     txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
-
+    evaluation_obj = {}
+    if 'style_cls' in config['evaluation_metrics']:
+        evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'],
+                                                config['labels_dict_idxs'], config[
+                                                    'hidden_state_to_take_txt_cls'])
     desired_labels_list, embedding_vectors_to_load = get_desired_labels(config, mean_embedding_vec_path)
 
     print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
@@ -684,19 +683,19 @@ def initial_variables():
 
     return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
            mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
-           tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load, imgs_to_test
+           tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load, imgs_to_test, evaluation_obj
 
 
 def main():
     config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
     mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
-    tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load, imgs_to_test = initial_variables()
+    tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load, imgs_to_test, evaluation_obj = initial_variables()
 
     if config["data_name"] == "senticap":  # todo:debug
         gts_data = get_gts_data(data_path, factual_captions, config['data_name'])
     if not config['debug_mac']:
         text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
-                                           tmp_text_loss=tmp_text_loss, config=config,
+                                           tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj
                                            **config)
     else:
         text_generator = None
@@ -753,7 +752,7 @@ def main():
                 best_caption = run(config, config['img_path'], desired_style_embedding_vector,
                                    desired_style_embedding_vector_std,
                                    config['cuda_idx_num'], title2print, model_path, config['data_name'], tmp_text_loss,
-                                   label, img_dict, debug_tracking, text_generator, image_features)
+                                   label, img_dict, debug_tracking, text_generator, image_features, evaluation_obj)
                 write_caption_results(img_dict, results_dir, tgt_results_path)
                 # write_results_of_text_style_all_models(img_dict, desired_labels_list,
                 #                                    results_dir, 1, tgt_results_path)
@@ -780,7 +779,7 @@ def main():
             evaluation_results[img_name][label]['res'] = best_caption
 
     evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_dir, factual_captions,
-                     txt_cls_model_path, data_dir, text_generator)
+                     txt_cls_model_path, data_dir, text_generator,evaluation_obj)
     print('Finish of program!')
 
 

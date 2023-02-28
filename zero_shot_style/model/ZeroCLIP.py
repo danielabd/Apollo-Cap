@@ -94,8 +94,11 @@ class CLIPTextGenerator:
                  use_style_model=False,
                  config=None,
                  model_based_on='bert',
+                 evaluation_obj = None
                  **kwargs):
 
+        if evaluation_obj:
+            evaluation_obj = evaluation_obj
         if config:
             self.model_based_on = config['model_based_on']
         else:
@@ -650,13 +653,6 @@ class CLIPTextGenerator:
         window_mask = torch.ones_like(context[0][0]).to(self.device)
 
         for i in range(self.num_iterations):
-        #cur_iter=-1
-        #tmp_text_loss = {}
-        #while(1):
-        #    cur_iter=cur_iter+1
-        #    if cur_iter>5: #todo: change
-        #        break
-            #print(f' iteration num = {cur_iter}')
             self.debug_tracking[word_loc][i] = {}
             curr_shift = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_]) for p_ in
                           context_delta]
@@ -848,6 +844,8 @@ class CLIPTextGenerator:
 
             with torch.no_grad():
                 similiraties = (self.image_features @ text_features.T)
+
+                #todo:28.2.23: add grades according to match to style
 
                 ############
                 # top_texts = ['Ugly and disgusting  image', 'Beautiful and amazing image']

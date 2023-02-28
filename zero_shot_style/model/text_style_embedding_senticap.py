@@ -1007,15 +1007,9 @@ def main():
     path_for_saving_best_model = os.path.join(experiment_dir, config['txt_embed_best_model_name'])
     # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
     path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
-    if config['plot_only_clustering']:
-        tgt_file_vec_emb = {
-            'mean': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_mean_vec_emb_file']),
-            'median': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_median_vec_emb_file']),
-            'std':  os.path.join(checkpoints_dir, 'best_models', config['txt_embed_std_vec_emb_file'])}
-    else:
-        tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['txt_embed_mean_vec_emb_file']),
-                            'median': os.path.join(experiment_dir, config['txt_embed_median_vec_emb_file']),
-                            'std':  os.path.join(experiment_dir, config['txt_embed_std_vec_emb_file'])}
+    tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['txt_embed_mean_vec_emb_file']),
+                        'median': os.path.join(experiment_dir, config['txt_embed_median_vec_emb_file']),
+                        'std':  os.path.join(experiment_dir, config['txt_embed_std_vec_emb_file'])}
     # tgt_file_pairs_list = os.path.join(config['data_dir'],config['tgt_file_pairs_list'])
 
     use_cuda = torch.cuda.is_available()
@@ -1038,6 +1032,10 @@ def main():
     # config['labels_set_dict'],config['labels_idx_to_str'] = getting_labels_map(df_train)
     if config['plot_only_clustering']:
         print("********plot_only_clustering********")
+        tgt_file_vec_emb = {
+            'mean': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_mean_vec_emb_file']),
+            'median': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_median_vec_emb_file']),
+            'std': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_std_vec_emb_file'])}
         log_dict = {}
         train_data_set, val_data_set, test_data_set = Dataset(df_train, config['labels_set_dict']), Dataset(df_val, config['labels_set_dict']), Dataset(df_test, config['labels_set_dict'])
         train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
