@@ -1035,9 +1035,9 @@ def main():
     if config['plot_only_clustering']:
         print("********plot_only_clustering********")
         tgt_file_vec_emb = {
-            'mean': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_mean_vec_emb_file']),
-            'median': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_median_vec_emb_file']),
-            'std': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_std_vec_emb_file'])}
+            'mean': os.path.join(checkpoints_dir, 'best_models',config['data_name'], config['txt_embed_mean_vec_emb_file']),
+            'median': os.path.join(checkpoints_dir, 'best_models',config['data_name'], config['txt_embed_median_vec_emb_file']),
+            'std': os.path.join(checkpoints_dir, 'best_models',config['data_name'], config['txt_embed_std_vec_emb_file'])}
         log_dict = {}
         train_data_set, val_data_set, test_data_set = Dataset(df_train, config['labels_set_dict']), Dataset(df_val, config['labels_set_dict']), Dataset(df_test, config['labels_set_dict'])
         train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
