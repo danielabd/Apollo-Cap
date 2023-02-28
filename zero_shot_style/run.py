@@ -26,23 +26,25 @@ import pickle
 from datetime import datetime
 from utils import parser, get_hparams
 from evaluate import load
+
 MAX_PERPLEXITY = 500
 DEFAULT_PERPLEXITY_SCORE = 1
+
 
 def get_args():
     parser.add_argument('--config_file', type=str,
                         default=os.path.join('.', 'configs', 'senticap_config.yaml'),
                         help='full path to config file')
-    #parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
-    #parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
+    # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
+    # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
     parser.add_argument("--img_name", type=int, default=0)
     parser.add_argument("--use_all_imgs", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
-    #parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
+    # parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo or gpt-j")
     parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
-    parser.add_argument("--data_type", type=str, default='val', choices = ['train', 'val', 'test'])
+    parser.add_argument("--data_type", type=str, default='val', choices=['train', 'val', 'test'])
     parser.add_argument("--cond_text", type=str, default="Image of a")
     # parser.add_argument("--cond_text_list", nargs="+", type=str, default=["Image of a"])
     # parser.add_argument("--cond_text_list", nargs="+", type=str, default=["A creative short caption I can generate to describe this image is:",
@@ -70,11 +72,10 @@ def get_args():
     parser.add_argument("--forbidden_factor", type=float, default=20, help="Factor to decrease forbidden tokens")
     parser.add_argument("--beam_size", type=int, default=5)
 
-    parser.add_argument("--max_num_of_imgs", type=int, default=2)#1e6)
+    parser.add_argument("--max_num_of_imgs", type=int, default=2)  # 1e6)
     parser.add_argument("--evaluationo_metrics", nargs="+",
                         default=['clip_score', 'fluency', 'style_cls'])
-                        # default=['bleu', 'rouge', 'clip_score_ref', 'clip_score', 'fluency', 'style_cls'])
-
+    # default=['bleu', 'rouge', 'clip_score_ref', 'clip_score', 'fluency', 'style_cls'])
 
     parser.add_argument("--cuda_idx_num", type=str, default="0")
     parser.add_argument("--img_idx_to_start_from", type=int, default=0)
@@ -82,14 +83,15 @@ def get_args():
     parser.add_argument('--run_type',
                         default='caption',
                         nargs='?',
-                        choices=['caption', 'arithmetics','img_prompt_manipulation'])
+                        choices=['caption', 'arithmetics', 'img_prompt_manipulation'])
 
     # parser.add_argument("--data_name", type=str, default="senticap")  # todo: add: "flickrstyle10k"])
 
-    parser.add_argument("--imgs_dict", type=str, default=os.path.join(os.path.expanduser('~'),'data','senticap'),
+    parser.add_argument("--imgs_dict", type=str, default=os.path.join(os.path.expanduser('~'), 'data', 'senticap'),
                         help="Path to images dict for captioning")
 
-    parser.add_argument("--caption_img_path", type=str, default=os.path.join(os.path.expanduser('~'),'data','imgs','101.jpeg'),
+    parser.add_argument("--caption_img_path", type=str,
+                        default=os.path.join(os.path.expanduser('~'), 'data', 'imgs', '101.jpeg'),
                         help="Path to image for captioning")
 
     parser.add_argument("--arithmetics_imgs", nargs="+",
@@ -98,7 +100,7 @@ def get_args():
                                  'example_images/arithmetics/man2.jpg'])
 
     parser.add_argument("--arithmetics_style_imgs", nargs="+",
-                        default=['49','50','51','52','53'])
+                        default=['49', '50', '51', '52', '53'])
     parser.add_argument("--specific_img_idxs_to_test", nargs="+",
                         default=[])
     parser.add_argument("--specific_imgs_to_test", nargs="+",
@@ -112,10 +114,14 @@ def get_args():
 
     return args
 
-def run(config, img_path,desired_style_embedding_vector,desired_style_embedding_vector_std,cuda_idx,title2print,model_path,dataset_type,tmp_text_loss,label,img_dict,debug_tracking,text_generator=None,image_features=None):
-    #debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
+
+def run(config, img_path, desired_style_embedding_vector, desired_style_embedding_vector_std, cuda_idx, title2print,
+        model_path, dataset_type, tmp_text_loss, label, img_dict, debug_tracking, text_generator=None,
+        image_features=None):
+    # debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
-        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path,tmp_text_loss= tmp_text_loss, text_style_scale=config['text_style_scale'], config=config, **vars(config))
+        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, tmp_text_loss=tmp_text_loss,
+                                           text_style_scale=config['text_style_scale'], config=config, **vars(config))
     if image_features == None:
         image_features = text_generator.get_img_feature([img_path], None)
 
@@ -126,7 +132,9 @@ def run(config, img_path,desired_style_embedding_vector,desired_style_embedding_
         text_style = None
     t1 = timeit.default_timer();
 
-    captions = text_generator.run(image_features, config['cond_text'], config['beam_size'],config['text_style_scale'],text_style,desired_style_embedding_vector,desired_style_embedding_vector_std,dataset_type)
+    captions = text_generator.run(image_features, config['cond_text'], config['beam_size'], config['text_style_scale'],
+                                  text_style, desired_style_embedding_vector, desired_style_embedding_vector_std,
+                                  dataset_type)
     debug_tracking[img_path][label] = text_generator.get_debug_tracking()
     t2 = timeit.default_timer();
 
@@ -135,7 +143,6 @@ def run(config, img_path,desired_style_embedding_vector,desired_style_embedding_
                             captions]
     elif config['model_based_on'] == 'clip':  # for text_style
         encoded_captions = [text_generator.text_style_model(c) for c in captions]
-
 
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
@@ -147,13 +154,15 @@ def run(config, img_path,desired_style_embedding_vector,desired_style_embedding_
     print(new_title2print)
 
     print('best clip:', config['cond_text'] + captions[best_clip_idx])
-    print(f"Time to create caption is: {(t2-t1)/60} minutes = {t2-t1} seconds.")
+    print(f"Time to create caption is: {(t2 - t1) / 60} minutes = {t2 - t1} seconds.")
     img_dict[img_path][dataset_type][config['text_style_scale']][label] = config['cond_text'] + captions[best_clip_idx]
     return config['cond_text'] + captions[best_clip_idx]
 
-def run_arithmetic(text_generator,config,model_path, img_dict_img_arithmetic,base_img,dataset_type, imgs_path, img_weights, cuda_idx,title2print):
+
+def run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, base_img, dataset_type, imgs_path,
+                   img_weights, cuda_idx, title2print):
     if text_generator == None:
-        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx,model_path = model_path, config=config, **vars(config))
+        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, config=config, **vars(config))
     # text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(config))
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
@@ -177,20 +186,21 @@ def run_arithmetic(text_generator,config,model_path, img_dict_img_arithmetic,bas
     print(new_title2print)
 
     print('best clip:', config['cond_text'] + captions[best_clip_idx])
-    print(f"Time to create caption is: {(t2-t1)/60} minutes = {t2-t1} seconds.")
+    print(f"Time to create caption is: {(t2 - t1) / 60} minutes = {t2 - t1} seconds.")
     img_dict_img_arithmetic[base_img][dataset_type] = config['cond_text'] + captions[best_clip_idx]
 
     return config['cond_text'] + captions[best_clip_idx]
 
-def run_img_and_prompt_manipulation(config, img_dict_img_arithmetic,base_img,dataset_type, imgs_path, img_weights, cuda_idx,title2print):
-    #text_generator = CLIPTextGenerator(**vars(args))
+
+def run_img_and_prompt_manipulation(config, img_dict_img_arithmetic, base_img, dataset_type, imgs_path, img_weights,
+                                    cuda_idx, title2print):
+    # text_generator = CLIPTextGenerator(**vars(args))
     text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, config=config, **vars(config))
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
-    t1 = timeit.default_timer();
+    t1 = timeit.default_timer()
     captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'])
-    t2 = timeit.default_timer();
-
+    t2 = timeit.default_timer()
 
     if config['model_based_on'] == 'bert':
         encoded_captions = [text_generator.clip.encode_text(clip.tokenize(c).to(text_generator.device)) for c in
@@ -207,13 +217,13 @@ def run_img_and_prompt_manipulation(config, img_dict_img_arithmetic,base_img,dat
     print(new_title2print)
 
     print('best clip:', config['cond_text'] + captions[best_clip_idx])
-    print(f"Time to create caption is: {(t2-t1)/60} minutes = {t2-t1} seconds.")
+    print(f"Time to create caption is: {(t2 - t1) / 60} minutes = {t2 - t1} seconds.")
     img_dict_img_arithmetic[base_img][dataset_type] = config['cond_text'] + captions[best_clip_idx]
 
     return config['cond_text'] + captions[best_clip_idx]
 
 
-def get_title2print(caption_img_path, dataset_type, label,config):
+def get_title2print(caption_img_path, dataset_type, label, config):
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     title2print = f"~~~~~~~~\n{dt_string} | Work on img path: {caption_img_path} with:" \
                   f"\nresults dir= *** {config['experiment_dir']} ***" \
@@ -233,18 +243,19 @@ def get_full_path_of_stylized_images(data_dir, i):
         return os.path.join(data_dir, 'stylized_images',
                             str(i) + ".jpg")
     elif os.path.isfile(os.path.join(data_dir, 'stylized_images',
-                                   str(i) + ".png")):
+                                     str(i) + ".png")):
         return os.path.join(data_dir, 'stylized_images',
                             str(i) + ".png")
     else:
         return None
 
 
-def calculate_avg_score(clip_score, fluency_score,style_cls_score=None):
+def calculate_avg_score(clip_score, fluency_score, style_cls_score=None):
     if style_cls_score:
-        avg_total_score = 3*(style_cls_score*clip_score*fluency_score)/(style_cls_score+clip_score+fluency_score)
+        avg_total_score = 3 * (style_cls_score * clip_score * fluency_score) / (
+                    style_cls_score + clip_score + fluency_score)
     else:
-        avg_total_score = 2*(clip_score*fluency_score)/(clip_score+fluency_score)
+        avg_total_score = 2 * (clip_score * fluency_score) / (clip_score + fluency_score)
     return avg_total_score
 
 
@@ -258,7 +269,7 @@ def get_img_full_path(base_path, i):
         return os.path.join(base_path, 'data', 'imgs',
                             str(i) + ".jpg")
     elif os.path.isfile(os.path.join(base_path, 'data', 'imgs',
-                                   str(i) + ".png")):
+                                     str(i) + ".png")):
         return os.path.join(base_path, 'data', 'imgs',
                             str(i) + ".png")
     else:
@@ -266,7 +277,8 @@ def get_img_full_path(base_path, i):
 
 
 class Caption:
-    def __init__(self, img_name, style, res_caption_text,  gt_caption_text, img_path,classification,clip_score,fluency,avg_total_score, factual_captions,style_cls_score=None):
+    def __init__(self, img_name, style, res_caption_text, gt_caption_text, img_path, classification, clip_score,
+                 fluency, avg_total_score, factual_captions, style_cls_score=None):
         self.img_name = img_name
         self.style = style
         self.res_caption_text = res_caption_text
@@ -313,20 +325,21 @@ class Caption:
     def get_total_score(self):
         return self.avg_total_score
 
-    def set_classification(self,classification):
+    def set_classification(self, classification):
         self.classification = classification
 
-    def set_style_cls_score(self,avg_style_cls_score):
+    def set_style_cls_score(self, avg_style_cls_score):
         self.avg_style_cls_score = avg_style_cls_score
 
-    def set_clip_score(self,avg_clip_score):
+    def set_clip_score(self, avg_clip_score):
         self.avg_clip_score = avg_clip_score
 
-    def set_fluency_score(self,avg_fluency_score):
+    def set_fluency_score(self, avg_fluency_score):
         self.avg_fluency_score = avg_fluency_score
 
-    def set_total_score(self,avg_total_score):
+    def set_total_score(self, avg_total_score):
         self.avg_total_score = avg_total_score
+
 
 class Fluency:
     def __init__(self):
@@ -345,10 +358,10 @@ class Fluency:
         results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=False)
         perplexities = {}
         total_perplexities = []
-        for i,p in enumerate(results['perplexities']):
+        for i, p in enumerate(results['perplexities']):
             if self.img_names[i] not in perplexities:
                 perplexities[self.img_names[i]] = {}
-            fixed_perplexity = 1-np.min([p,MAX_PERPLEXITY])/MAX_PERPLEXITY
+            fixed_perplexity = 1 - np.min([p, MAX_PERPLEXITY]) / MAX_PERPLEXITY
             perplexities[self.img_names[i]][self.styles[i]] = fixed_perplexity
             total_perplexities.append(fixed_perplexity)
         total_avg_perplexity = np.mean(total_perplexities)
@@ -360,7 +373,6 @@ def get_table_for_wandb(data_list):
     data = [[x, y] for (x, y) in zip(data_list, list(range(len(data_list))))]
     table = wandb.Table(data=data, columns=["x", "y"])
     return table
-
 
 
 def get_factual_captions(factual_file_path_list):
@@ -389,29 +401,39 @@ def get_list_of_imgs_for_caption(config):
     print("take list of images for captioning...")
     imgs_to_test = []
     print(f"config['max_num_of_imgs']: {config['max_num_of_imgs']}")
-    if 'specific_img_idxs_to_test' in config and len(config['specific_img_idxs_to_test'])>0:
-        imgs_list = os.listdir(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']),'images',config['data_type']))
+    if 'specific_img_idxs_to_test' in config and len(config['specific_img_idxs_to_test']) > 0:
+        imgs_list = os.listdir(
+            os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
+                         config['data_type']))
         for i in config['specific_img_idxs_to_test']:
-            i=int(i)
+            i = int(i)
             im = imgs_list[i]
             imgs_to_test.append(
                 os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
                              config['data_type'], im))
         return imgs_to_test
-    for i,im in enumerate(os.listdir(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']),'images',config['data_type']))):
-        if i >= int(config['max_num_of_imgs']) and int(config['max_num_of_imgs']) >0:
+    for i, im in enumerate(os.listdir(
+            os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
+                         config['data_type']))):
+        if i >= int(config['max_num_of_imgs']) > 0:
             break
+        if int(config['specific_idxs_to_skip']) > 0 and len(imgs_to_test)>=config['specific_idxs_to_skip']:
+            continue
         if ('.jpg' or '.jpeg' or '.png') not in im:
             continue
-        if 'specific_imgs_to_test' in config and len(config['specific_imgs_to_test']) > 0 and int(im.split('.')[0]) not in config['specific_imgs_to_test']:
+        if 'specific_imgs_to_test' in config and len(config['specific_imgs_to_test']) > 0 and int(
+                im.split('.')[0]) not in config['specific_imgs_to_test']:
             continue
-        imgs_to_test.append(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']),'images',config['data_type'],im))
+        imgs_to_test.append(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
+                                         config['data_type'], im))
     print(f"***There is {len(imgs_to_test)} images to test.***")
     return imgs_to_test
 
 
 def update_running_params(label, config):
-    '''Assume that in the configuration of the running there is single value of use_style_model, otherwise will be mistake in running params'''
+    """Assume that in the configuration of the running there is single value of use_style_model, otherwise will be
+    mistake in running params """
+
     def save_running_params(config):
         if 'running_param_clip_scale' not in config:
             config['running_param_use_style_model'] = config['use_style_model']
@@ -421,6 +443,7 @@ def update_running_params(label, config):
             config['running_param_beam_size'] = config['beam_size']
             config['running_param_num_iterations'] = config['num_iterations']
         return config
+
     def update_zerocap_params(config):
         save_running_params(config)
         config['clip_scale'] = config['zerocap_clip_scale']
@@ -429,6 +452,7 @@ def update_running_params(label, config):
         config['num_iterations'] = config['zerocap_num_iterations']
         config['text_style_scale'] = config['zerocap_text_style_scale']
         return config
+
     def update_running_params(config):
         save_running_params(config)
         config['use_style_model'] = config['running_param_use_style_model']
@@ -438,10 +462,11 @@ def update_running_params(label, config):
         config['beam_size'] = config['running_param_beam_size']
         config['num_iterations'] = config['running_param_num_iterations']
         return config
+
     if label == 'factual':
         config = update_zerocap_params(config)  # todo:check if need to return it
         config['use_style_model'] = False
-    else: #label=positive,negative...
+    else:  # label=positive,negative...
         if config['use_style_model']:
             config = update_running_params(config)
         else:
@@ -449,14 +474,13 @@ def update_running_params(label, config):
     return config
 
 
-
 def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir):
     evaluation_obj = {}
     if config["calc_evaluation"]:
         for metric in config['evaluationo_metrics']:
-            if metric=='bleu':
+            if metric == 'bleu':
                 evaluation_obj['bleu'] = Bleu(n=4)
-            if metric=='rouge':
+            if metric == 'rouge':
                 evaluation_obj['rouge'] = Rouge()
             if metric == 'clip_score_ref':
                 evaluation_obj['clip_score_ref'] = CLIPScoreRef(text_generator)
@@ -465,19 +489,20 @@ def get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir):
             if metric == 'fluency':
                 evaluation_obj['fluency'] = Fluency()
             if metric == 'style_cls':
-                evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'], config['labels_dict_idxs'], config['hidden_state_to_take_txt_cls']) #todo:change handling dataset_type qs list
+                evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'],
+                                                        config['labels_dict_idxs'], config[
+                                                            'hidden_state_to_take_txt_cls'])  # todo:change handling dataset_type qs list
     # if config['calc_fluency']:
     # fluency_obj = Fluency()
     return evaluation_obj
 
 
-
-
-def evaluate_results(config,fluency_obj, evaluation_results, gts_data, results_dir, factual_captions, txt_cls_model_path, data_dir, text_generator):
+def evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_dir, factual_captions,
+                     txt_cls_model_path, data_dir, text_generator):
     print("Calc evaluation of the results...")
-    #calc perplexity
+    # calc perplexity
     if config['calc_fluency']:
-        perplexities,mean_perplexity = fluency_obj.compute_score()
+        perplexities, mean_perplexity = fluency_obj.compute_score()
     else:
         mean_perplexity = DEFAULT_PERPLEXITY_SCORE
 
@@ -495,7 +520,7 @@ def evaluate_results(config,fluency_obj, evaluation_results, gts_data, results_d
             if label == 'img_path':
                 continue
             if config["data_name"] == "senticap":
-                evaluation_results[img_name][label]['gt'] = gts_data[img_name][label] #todo: handle style type
+                evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
             evaluation_results[img_name][label]['scores'] = evaluate_single_res(
                 evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
                 evaluation_results[img_name]['img_path'], label, config['data_name'], config['evaluationo_metrics'],
@@ -511,7 +536,7 @@ def evaluate_results(config,fluency_obj, evaluation_results, gts_data, results_d
                 avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
                 style_cls_scores.append(style_cls_score)
             else:
-                style_cls_score='None'
+                style_cls_score = 'None'
                 avg_total_score = calculate_avg_score(clip_score, fluency_score)
 
             clip_scores.append(clip_score)
@@ -522,8 +547,8 @@ def evaluate_results(config,fluency_obj, evaluation_results, gts_data, results_d
 
             total_res_text.append(res_text)
             total_gt_text.append(gt_text)
-            total_captions.append(Caption(img_name, label, res_text,gt_text, evaluation_results[img_name]['img_path'],
-                                          label,clip_score,fluency_score,avg_total_score,factual_captions[img_name],
+            total_captions.append(Caption(img_name, label, res_text, gt_text, evaluation_results[img_name]['img_path'],
+                                          label, clip_score, fluency_score, avg_total_score, factual_captions[img_name],
                                           style_cls_score))
 
     clip_scores_table = get_table_for_wandb(clip_scores)
@@ -546,17 +571,17 @@ def evaluate_results(config,fluency_obj, evaluation_results, gts_data, results_d
     avg_clip_score = np.mean(clip_scores)
     avg_fluency_score = mean_perplexity
 
-    if style_cls_score!='None':
+    if style_cls_score != 'None':
         avg_style_cls_score = np.mean(style_cls_scores)
         final_avg_total_score = calculate_avg_score(avg_clip_score, avg_fluency_score, avg_style_cls_score)
     else:
         avg_style_cls_score = 0
-        final_avg_total_score = calculate_avg_score(avg_clip_score,avg_fluency_score)
+        final_avg_total_score = calculate_avg_score(avg_clip_score, avg_fluency_score)
 
     print("*****************************")
     print("*****************************")
     print("*****************************")
-    if style_cls_score!='None':
+    if style_cls_score != 'None':
         print(f'style_cls_scores={style_cls_scores}, avg_style_cls_score={avg_style_cls_score}')
     print(f'clip_scores={clip_scores}, avg_clip_score={avg_clip_score}'
           f'\nfluency_scores={fluency_scores}, avg_fluency_score={avg_fluency_score}')
@@ -564,12 +589,12 @@ def evaluate_results(config,fluency_obj, evaluation_results, gts_data, results_d
     print("*****************************")
     print("*****************************")
     print("*****************************")
-    wandb.log({'evaluation/mean_style_cls_scores':avg_style_cls_score,
-               'evaluation/mean_clip_scores':avg_clip_score,
-               'evaluation/mean_fluency_scores':avg_fluency_score,
-               'evaluation/final_avg_total_score':final_avg_total_score})
+    wandb.log({'evaluation/mean_style_cls_scores': avg_style_cls_score,
+               'evaluation/mean_clip_scores': avg_clip_score,
+               'evaluation/mean_fluency_scores': avg_fluency_score,
+               'evaluation/final_avg_total_score': final_avg_total_score})
 
-    write_evaluation_results(total_captions,final_avg_total_score, results_dir, config)
+    write_evaluation_results(total_captions, final_avg_total_score, results_dir, config)
     print('Finish to evaluate results!')
 
 
@@ -588,6 +613,7 @@ def initial_variables():
         if config['debug']:
             desired_labels_list = [desired_labels_list[0]]
         return desired_labels_list, embedding_vectors_to_load
+
     args = get_args()
     config = get_hparams(args)
     # os.environ["CUDA_VISIBLE_DEVICES"] = config['cuda_idx_num']
@@ -599,8 +625,7 @@ def initial_variables():
     if not config['use_style_model']:
         config['text_style_scale'] = 0
 
-
-    with open(factual_captions_path,'rb') as f:
+    with open(factual_captions_path, 'rb') as f:
         factual_captions = pickle.load(f)
 
     data_path = os.path.join(data_dir, config['data_name'], 'annotations', config['data_type'] + '.pkl')
@@ -620,7 +645,8 @@ def initial_variables():
     tmp_dir = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}'
     if not os.path.isdir(tmp_dir):
         os.makedirs(tmp_dir)
-    config['experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}/{config["training_name"]}'
+    config[
+        'experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}/{config["training_name"]}'
     results_dir = config['experiment_dir']
     tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
     if config["debug"]:
@@ -634,7 +660,6 @@ def initial_variables():
     txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
 
     desired_labels_list, embedding_vectors_to_load = get_desired_labels(config, mean_embedding_vec_path)
-
 
     print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
 
@@ -651,35 +676,34 @@ def initial_variables():
         yaml.dump(config, f, default_flow_style=False)
     print('saved experiment config in ', os.path.join(config['experiment_dir'], 'config.pkl'))
 
-
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
     img_dict_img_arithmetic = defaultdict(lambda: defaultdict(lambda: ""))  # img_path,dataset_type
     tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
     debug_tracking = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [])))  # word_num:iteration:module:list
     model_path = os.path.join(os.path.expanduser('~'), config['best_model_name'])
 
-    return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path,\
+    return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
            mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
-           tmp_text_loss,  factual_captions, desired_labels_list, embedding_vectors_to_load, imgs_to_test
-
+           tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load, imgs_to_test
 
 
 def main():
     config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
     mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
-    tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load,imgs_to_test = initial_variables()
+    tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load, imgs_to_test = initial_variables()
 
-    if config["data_name"] == "senticap": #todo:debug
-        gts_data = get_gts_data(data_path,factual_captions, config['data_name'])
+    if config["data_name"] == "senticap":  # todo:debug
+        gts_data = get_gts_data(data_path, factual_captions, config['data_name'])
     if not config['debug_mac']:
-        text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path, tmp_text_loss=tmp_text_loss, config=config,
+        text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
+                                           tmp_text_loss=tmp_text_loss, config=config,
                                            **config)
     else:
         text_generator = None
     fluency_obj = Fluency()
 
     # go over all images
-    evaluation_results = {} #total_results_structure
+    evaluation_results = {}  # total_results_structure
     for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
         # if int(img_path.split('.')[0].split('/')[-1]) == 429063:
         #     print(f'img_path_idx={img_path_idx}')
@@ -698,7 +722,7 @@ def main():
         evaluation_results[img_name] = {'img_path': img_path}
         if not os.path.isfile(config['img_path']):
             continue
-        #go over all labels
+        # go over all labels
         for label_idx, label in enumerate(desired_labels_list):
             config['cond_text'] = config["cond_text_dict"][label]
             config = update_running_params(label, config)
@@ -711,22 +735,25 @@ def main():
                 if config['use_style_model']:
                     desired_style_embedding_vector = embedding_vectors_to_load[label]
                     # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
-                    if label=='positive':
+                    if label == 'positive':
                         desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
-                    elif label=='negative':
+                    elif label == 'negative':
                         desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
                 else:
-                    desired_style_embedding_vector = None; desired_style_embedding_vector_std = None
+                    desired_style_embedding_vector = None;
+                    desired_style_embedding_vector_std = None
             if config['debug_mac']:
                 evaluation_results[img_name][label] = {'res': 'bla'}
                 continue
             print(f"Img num = {img_path_idx}")
-            #prompt manipulation or using text style model
+            # prompt manipulation or using text style model
             if config['run_type'] == 'caption':
-                title2print = get_title2print(config['img_path'], config['data_name'], label,  config)
+                title2print = get_title2print(config['img_path'], config['data_name'], label, config)
                 print(title2print)
-                best_caption = run(config, config['img_path'], desired_style_embedding_vector, desired_style_embedding_vector_std,
-                    config['cuda_idx_num'], title2print, model_path, config['data_name'],tmp_text_loss,label,img_dict,debug_tracking,text_generator,image_features)
+                best_caption = run(config, config['img_path'], desired_style_embedding_vector,
+                                   desired_style_embedding_vector_std,
+                                   config['cuda_idx_num'], title2print, model_path, config['data_name'], tmp_text_loss,
+                                   label, img_dict, debug_tracking, text_generator, image_features)
                 write_caption_results(img_dict, results_dir, tgt_results_path)
                 # write_results_of_text_style_all_models(img_dict, desired_labels_list,
                 #                                    results_dir, 1, tgt_results_path)
@@ -734,23 +761,26 @@ def main():
                     write_debug_tracking(results_dir, debug_tracking)
                 fluency_obj.add_test(best_caption, img_name, label)
 
-            #image manipulation
+            # image manipulation
             elif config['run_type'] == 'arithmetics':
                 config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
                 factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
                 img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
                 config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
                 title2print = get_title2print(config['img_path'], config['data_name'],
-                                              label,  config)
+                                              label, config)
                 print(title2print)
-                best_caption = run_arithmetic(text_generator,config,model_path,img_dict_img_arithmetic,img_name,label, imgs_path=config['arithmetics_imgs'],
-                               img_weights=config['arithmetics_weights'], cuda_idx=config['cuda_idx_num'],title2print = title2print)
+                best_caption = run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, img_name,
+                                              label, imgs_path=config['arithmetics_imgs'],
+                                              img_weights=config['arithmetics_weights'],
+                                              cuda_idx=config['cuda_idx_num'], title2print=title2print)
                 write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
             else:
                 raise Exception('run_type must be caption or arithmetics!')
             evaluation_results[img_name][label]['res'] = best_caption
 
-    evaluate_results(config,fluency_obj, evaluation_results, gts_data, results_dir, factual_captions, txt_cls_model_path, data_dir, text_generator)
+    evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_dir, factual_captions,
+                     txt_cls_model_path, data_dir, text_generator)
     print('Finish of program!')
 
 

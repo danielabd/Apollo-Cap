@@ -149,7 +149,6 @@ class TextStyleEmbed(nn.Module):
         x = self.dropout(x)
         x = self.linear1(x)
         # x = torch.nn.functional.normalize(x)
-
         # add gaussian noise
         x = x + torch.randn_like(x) * self.scale_noise
         x = x / x.norm(dim=-1, keepdim=True)
