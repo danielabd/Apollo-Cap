@@ -637,11 +637,14 @@ def initial_variables():
     print(f'Current time is: {cur_time}')
     cur_date = datetime.now().strftime("%d_%m_%Y")
     config['training_name'] = f'{wandb.run.id}-{wandb.run.name}'
-    tmp_dir = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}'
-    if not os.path.isdir(tmp_dir):
-        os.makedirs(tmp_dir)
-    config[
-        'experiment_dir'] = f'{os.path.expanduser("~")}/experiments/stylized_zero_cap_experiments/{cur_date}/{config["training_name"]}'
+
+    experiment_type_dir = os.path.join(os.path.expanduser("~"),'experiments','stylized_zero_cap_experiments',config['global_dir_name_for_save_models'])
+    if not os.path.isdir(experiment_type_dir):
+        os.makedirs(experiment_type_dir)
+    cur_date_dir = os.path.join(experiment_type_dir,cur_date)
+    if not os.path.isdir(cur_date_dir):
+        os.makedirs(cur_date_dir)
+    config['experiment_dir'] = os.path.join(cur_date_dir,config["training_name"])
     results_dir = config['experiment_dir']
     tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
     if config["debug"]:

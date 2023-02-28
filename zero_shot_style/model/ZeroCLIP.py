@@ -95,7 +95,7 @@ class CLIPTextGenerator:
                  use_style_model=False,
                  config=None,
                  model_based_on='bert',
-                 evaluation_obj = None
+                 evaluation_obj = None,
                  **kwargs):
 
         if evaluation_obj:
