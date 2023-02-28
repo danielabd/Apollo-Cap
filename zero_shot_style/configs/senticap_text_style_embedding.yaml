@@ -42,6 +42,5 @@ labels_idx_to_str:
 txt_embed_model_name: latest_text_style_embedding_model_senticap.pth
 txt_embed_best_model_name: best_text_style_embedding_model_senticap.pth
 txt_embed_mean_vec_emb_file: senticap_mean_class_embedding.p
-txt_embed_median_vec_emb_file: senticaptxt_embed__median_class_embedding.p
 txt_embed_std_vec_emb_file: senticap_std_class_embedding.p
 

@@ -254,14 +254,11 @@ def get_auc(all_embeddings, pos_combinations_labels, neg_combinations_labels):
 def plot_graph_on_all_data(df_data, total_outputs, total_labels_str, total_texts_list, title, tgt_file_vec_emb, save_vec_emb=False):
     print(f"Plotting graph for {title}...")
     if save_vec_emb:
-        print("Calculate mean and median embedding vectors...")
+        print("Calculate mean embedding vector...")
         mean_embedding_vectors = {}
-        median_embedding_vectors = {}
         std_avg_embedding_vectors = {}
         for label in set(df_data["category"]):
             vectors_embedding = total_outputs[np.where(np.array(total_labels_str) == label), :]
-            median_vector_embedding = np.median(vectors_embedding[0], 0)
-            median_embedding_vectors[label] = median_vector_embedding
             mean_vector_embedding = np.mean(vectors_embedding[0], 0)
             mean_embedding_vectors[label] = mean_vector_embedding
             std_avg_embedding_vectors[label] = np.mean(np.std(vectors_embedding[0], 0))
@@ -272,21 +269,16 @@ def plot_graph_on_all_data(df_data, total_outputs, total_labels_str, total_texts
         print(f'Saving avg of std of embedding vectors to: ' + tgt_file_vec_emb['std'] + '...')
         with open(tgt_file_vec_emb['std'], 'wb') as fp:
             pickle.dump(std_avg_embedding_vectors, fp)
-        print(f'Saving median of embedding vectors to: '+tgt_file_vec_emb['median']+'...')
-        with open(tgt_file_vec_emb['median'], 'wb') as fp:
-           pickle.dump(median_embedding_vectors, fp)
         print(f'Finished to save.')
 
     if os.path.exists(tgt_file_vec_emb['mean']):
-        print("take mean and median vectors for plotting.")
+        print("take mean vector for plotting.")
         with open(tgt_file_vec_emb['mean'], "rb") as input_file:
             mean_embedding_vectors = pickle.load(input_file)
-        with open(tgt_file_vec_emb['median'], "rb") as input_file:
-            median_embedding_vectors = pickle.load(input_file)
 
         total_outputs_with_representation = total_outputs
         for label in set(df_data["category"]):
-            # insert mean and median to the beginning
+            # insert mean to the beginning
             total_labels_str = [f'mean_{label}'] + total_labels_str
             total_texts_list = [f'mean_{label}'] + total_texts_list
 
@@ -303,92 +295,6 @@ def plot_graph_on_all_data(df_data, total_outputs, total_labels_str, total_texts
     all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
     return all_data
 
-
-def bu_plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, device, model, inner_batch_size, batch_size,
-                              title, tgt_file_vec_emb, all_data=False, save_vec_emb=False, num_workers=0,
-                              desired_labels='all', pos_combinations_labels=None, neg_combinations_labels=None):
-    print(f"Plotting graph for {title} for {desired_labels} labels...")
-    if desired_labels == 'all':
-        desired_df = df_data
-    else:
-        desired_df = pd.DataFrame()
-        for l in desired_labels:
-            l_df = df_data.iloc[np.where(np.array(df_data["category"]) == l)[0], :]
-            desired_df = pd.concat([desired_df, l_df])
-    data_set = Dataset(desired_df, labels_set_dict, inner_batch_size, all_data)
-    eval_dataloader = torch.utils.data.DataLoader(data_set, collate_fn=collate_fn, batch_size=batch_size, shuffle=True,
-                                                  num_workers=num_workers)
-    model.to(device)
-    model.eval()
-
-    log_dict = {}
-    total_outputs = []
-    total_labels = []
-    total_texts_list = []
-    with torch.no_grad():
-        for step, (tokenized_texts_list, labels, texts_list) in enumerate(
-                tqdm(eval_dataloader, desc="evaluation", leave=False)):  # for model based on bert
-            total_labels.extend(labels)
-            outputs = model(tokenized_texts_list['input_ids'].to(device),
-                            tokenized_texts_list['attention_mask'].to(device))  # model based on bert
-            outputs = outputs.to(torch.device('cpu'))
-            total_outputs.extend(outputs)
-            total_texts_list.extend(texts_list)
-        total_outputs = torch.stack(total_outputs)
-        total_labels_str = [labels_idx_to_str[user_idx] for user_idx in total_labels]
-    print(f"**************\nBefor mean, media, len(total_outputs)={len(total_outputs)},len(total_labels)={len(total_labels)},len(total_texts_list)={len(total_texts_list)}")
-    if save_vec_emb:
-        print("Calculate mean and median embedding vectors...")
-        mean_embedding_vectors = {}
-        median_embedding_vectors = {}
-        for label in set(desired_df["category"]):
-            vectors_embedding = total_outputs[np.where(np.array(total_labels_str) == label), :]
-            # median_vector_embedding = np.median(vectors_embedding[0], 0)
-            # median_embedding_vectors[label] = median_vector_embedding
-            mean_vector_embedding = torch.mean(vectors_embedding[0], 0)
-            mean_embedding_vectors[label] = mean_vector_embedding
-        print('Saving mean of embedding vectors to: ' + tgt_file_vec_emb['mean'] + '...')
-        with open(tgt_file_vec_emb['mean'], 'wb') as fp:
-            pickle.dump(mean_embedding_vectors, fp)
-        # print(f'Saving median of embedding vectors to: '+tgt_file_vec_emb['median']+'...')
-        # with open(tgt_file_vec_emb['median'], 'wb') as fp:
-        #    pickle.dump(median_embedding_vectors, fp)
-        print(f'Finished to save.')
-
-        print('print for wandb')
-        # variables with mean
-        total_outputs_with_representation = total_outputs.to(torch.device('cpu'))
-        for label in set(desired_df["category"]):
-            # #insert mean and median to the beginning
-            # total_labels_str = [f'mean_{label}',f'median_{label}']+total_labels_str
-            # total_texts_list = [f'mean_{label}', f'median_{label}'] + total_texts_list
-            # total_outputs_with_representation = np.concatenate(
-            #     (np.array([mean_embedding_vectors[label]]),
-            #      np.array([median_embedding_vectors[label]]), total_outputs_with_representation), axis=0)
-            # insert mean and median to the beginning
-            total_labels_str = [f'mean_{label}'] + total_labels_str
-            total_texts_list = [f'mean_{label}'] + total_texts_list
-            # total_outputs_with_representation = np.concatenate(
-            #     (np.array(mean_embedding_vectors[label]), total_outputs_with_representation), axis=0)
-            total_outputs_with_representation = np.concatenate(
-                (np.expand_dims(np.array(mean_embedding_vectors[label]), axis=0),
-                 total_outputs_with_representation), axis=0)
-        total_outputs = total_outputs_with_representation
-    print(f"**************\nafter mean, median, len(total_outputs)={len(total_outputs)},len(total_labels)={len(total_labels)},len(total_texts_list)={len(total_texts_list)}")
-    labeldf = pd.DataFrame({'Label': total_labels_str})
-    embdf = pd.DataFrame(total_outputs, columns=[f'emb{i}' for i in range(total_outputs.shape[1])])
-    textdf = pd.DataFrame({'text': total_texts_list})
-    all_data = pd.concat([labeldf, embdf, textdf], axis=1, ignore_index=True)
-    all_data.columns = ['Label'] + [f'emb{i}' for i in range(total_outputs.shape[1])] + ['text']
-    log_dict[title] = all_data
-    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
-    print(f"cur time is: {cur_time}")
-    print("send data to wb")
-    wandb.log({title: all_data})  # todo log without commit
-    if pos_combinations_labels:
-        roc_auc = get_auc(total_outputs, pos_combinations_labels, neg_combinations_labels)
-        return log_dict, roc_auc
-    return log_dict
 
 def plot_final_graph_after_training(device, config, path_for_best_model, labels_idx_to_str, tgt_file_vec_emb,df,dataloader, title, save_vec_emb=False):
     print(title+" dataset...")
@@ -1010,7 +916,6 @@ def main():
     # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
     path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['data_name'], config['txt_embed_best_model_name'])
     tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['txt_embed_mean_vec_emb_file']),
-                        'median': os.path.join(experiment_dir, config['txt_embed_median_vec_emb_file']),
                         'std':  os.path.join(experiment_dir, config['txt_embed_std_vec_emb_file'])}
     # tgt_file_pairs_list = os.path.join(config['data_dir'],config['tgt_file_pairs_list'])
 
@@ -1036,7 +941,6 @@ def main():
         print("********plot_only_clustering********")
         tgt_file_vec_emb = {
             'mean': os.path.join(checkpoints_dir, 'best_models',config['data_name'], config['txt_embed_mean_vec_emb_file']),
-            'median': os.path.join(checkpoints_dir, 'best_models',config['data_name'], config['txt_embed_median_vec_emb_file']),
             'std': os.path.join(checkpoints_dir, 'best_models',config['data_name'], config['txt_embed_std_vec_emb_file'])}
         log_dict = {}
         train_data_set, val_data_set, test_data_set = Dataset(df_train, config['labels_set_dict']), Dataset(df_val, config['labels_set_dict']), Dataset(df_test, config['labels_set_dict'])
