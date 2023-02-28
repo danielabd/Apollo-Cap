@@ -698,7 +698,7 @@ def main():
         gts_data = get_gts_data(data_path, factual_captions, config['data_name'])
     if not config['debug_mac']:
         text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
-                                           tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj
+                                           tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj,
                                            **config)
     else:
         text_generator = None
