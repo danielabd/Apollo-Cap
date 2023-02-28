@@ -21,8 +21,6 @@ last_layer_idx_to_freeze: 10
 freeze_after_n_epochs: 4
 
 data_type: val
-best_model_name: checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth
-model_name: latest_text_style_embedding_model_senticap.pth
 inner_batch_size: 1 #for the case of unbalanced data
 experiment_name: cur_time
 csv_file_name_train: 'senticap_train.csv'

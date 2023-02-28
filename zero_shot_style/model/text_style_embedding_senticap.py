@@ -1008,7 +1008,7 @@ def main():
     path_for_saving_last_model = os.path.join(experiment_dir, config['txt_embed_model_name'])
     path_for_saving_best_model = os.path.join(experiment_dir, config['txt_embed_best_model_name'])
     # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
-    path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
+    path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['data_name'], config['txt_embed_best_model_name'])
     tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['txt_embed_mean_vec_emb_file']),
                         'median': os.path.join(experiment_dir, config['txt_embed_median_vec_emb_file']),
                         'std':  os.path.join(experiment_dir, config['txt_embed_std_vec_emb_file'])}
