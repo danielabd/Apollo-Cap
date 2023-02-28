@@ -52,7 +52,7 @@ calc_evaluation: True
 #clip_scale: 2.1430374716828555 #3.746143446 #2.965
 #ce_scale: 2.925582040227539 #2.43956729 #2.318
 #text_style_scale: 2.9365169098669996 #3.797802783 #3.444
-beam_size: 5 #4 #3
+beam_size: 8 #4 #3
 num_iterations: 5 #5 # 8
 #
 std_embedding_vectors_positive: 0 # 0.030191882925088297 #0.028914157
