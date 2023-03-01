@@ -501,7 +501,7 @@ def evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_
     else:
         mean_perplexity = DEFAULT_PERPLEXITY_SCORE
 
-    evaluation_obj = get_evaluation_obj(config, text_generator, txt_cls_model_path, data_dir, evaluation_obj)
+    evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
 
     style_cls_scores = []
     clip_scores = []
