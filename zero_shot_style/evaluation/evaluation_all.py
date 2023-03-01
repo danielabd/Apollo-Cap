@@ -340,6 +340,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     score_per_metric_and_style[metric][style].append(
                                         score_dict_per_metric[metric][k][style])
                                     all_scores = save_all_data_k(all_scores, k,test_type,style,metric, score_dict_per_metric, res=tmp_res[k][0], gts=tmp_gts[k])
+                            break#todo rmove
                 if metric == 'fluency':
                     score_dict_per_metric,score_per_metric_and_style, all_scores = fluency_obj.compute_score(score_dict_per_metric,score_per_metric_and_style, all_scores, test_type)
                     # print("score_dict_per_metric:")
@@ -793,15 +794,20 @@ def main():
     tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/capdec/23_2_23', 'evaluation_only_style_cls.csv')
     tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/capdec/23_2_23',
                                                         'evaluation_all_frames_only_style_cls.csv')
+    #capdec flicrstyle 17.2.23
+    tgt_eval_results_path = os.path.join(os.path.expanduser('~'), 'experiments/capdec/27_2_23',
+                                         'evaluation.csv')
+    tgt_eval_results_path_for_all_frames = os.path.join(os.path.expanduser('~'), 'experiments/capdec/23_2_23',
+                                                        'evaluation_all_frames.csv')
 
-    tgt_eval_results_fluency = os.path.join(results_dir, '23_2_23','fluency_statistics')
+    tgt_eval_results_fluency = os.path.join(results_dir, '27_2_23','fluency_statistics')
     if not os.path.exists(tgt_eval_results_fluency):
         os.makedirs(tgt_eval_results_fluency)
     #todo: insert to config file
     # txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','pos_neg_best_text_style_classification_model.pth'),
     #                        'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','humor_romantic_best_text_style_classification_model.pth')}
     txt_cls_model_paths = {'senticap': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','senticap','best_senticap_text_style_classification_model.pth'),
-                           'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','best_flickrstyle10k_text_style_classification_model.pth')}
+                           'flickrstyle10k': os.path.join(os.path.expanduser('~'),'checkpoints','best_models','flickrstyle10k','best_flickrstyle10k_text_style_classification_model.pth')}
 
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     label = cur_time#'25_12_2022_v1' # cur_time
@@ -814,25 +820,28 @@ def main():
     # path_test_text_style = get_all_paths_of_tests_txt_style(factual_wo_prompt)
 
     # path_test_prompt_manipulation, path_test_image_manipulation, path_test_image_and_prompt_manipulation, path_test_text_style = get_all_paths_of_tests(factual_wo_prompt)
-    path_positive = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_positive.csv')
-    path_negative = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_negative.csv')
-    path_humor = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_humor.csv')
-    path_romantic = os.path.join(os.path.expanduser('~'), 'experiments/capdec','res_romantic.csv')
+    path_positive = os.path.join(os.path.expanduser('~'), 'experiments/capdec/27_2_23','res_positive.csv')
+    path_negative = os.path.join(os.path.expanduser('~'), 'experiments/capdec/27_2_23','res_negative.csv')
+    path_humor = os.path.join(os.path.expanduser('~'), 'experiments/capdec/27_2_23','res_humor.csv')
+    path_romantic = os.path.join(os.path.expanduser('~'), 'experiments/capdec/27_2_23','res_romantic.csv')
+
+
 
     res_paths = {}
-    res_paths['prompt_manipulation'] = path_test_prompt_manipulation
-    res_paths['image_manipulation'] = path_test_image_manipulation
-    res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
-    res_paths['text_style'] = path_test_text_style
+    # res_paths['prompt_manipulation'] = path_test_prompt_manipulation
+    # res_paths['image_manipulation'] = path_test_image_manipulation
+    # res_paths['image_and_prompt_manipulation'] = path_test_image_and_prompt_manipulation
+    # res_paths['text_style'] = path_test_text_style
+    #
+    # res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
+    # res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
+    # res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
+    #
+    # res_paths['positive'] = path_positive
+    # res_paths['negative'] = path_negative
 
-    res_paths['ZeroStyleCap8'] = path_test_ZeroStyleCap8
-    res_paths['ZeroStyleCap39'] = path_test_ZeroStyleCap39
-    res_paths['ZeroStyleCapPast'] = path_test_ZeroStyleCapPast
-
-    res_paths['positive'] = path_positive
-    res_paths['negative'] = path_negative
-    # res_paths['humor'] = path_humor
-    # res_paths['romantic'] = path_romantic
+    res_paths['humor'] = path_humor
+    res_paths['romantic'] = path_romantic
     factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl') #todo: fix it for flickrstyle10k
     with open(factual_captions_path,'rb') as f:
         factual_captions = pickle.load(f)
@@ -840,6 +849,7 @@ def main():
 
     dataset_names =['senticap', 'flickrstyle10k']
     dataset_names =['senticap']
+    dataset_names =['flickrstyle10k']
     metrics = ['bleu1', 'bleu3', 'bleu4', 'rouge', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     # metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
     # metrics = ['style_classification']   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
@@ -851,8 +861,8 @@ def main():
     for dataset_name in dataset_names:
         txt_cls_model_paths_to_load[dataset_name] = txt_cls_model_paths[dataset_name]
         test_set_path[dataset_name] = os.path.join(data_dir, dataset_name, 'annotations', 'test.pkl')
-    # gts_per_data_set = get_gts_data(test_set_path,factual_captions, 'senticap')#todo
-    gts_per_data_set = get_gts_data(test_set_path[dataset_name],factual_captions, 'senticap')#todo
+        # gts_per_data_set = get_gts_data(test_set_path,factual_captions, 'senticap')#todo
+        # gts_per_data_set = get_gts_data(test_set_path[dataset_name],factual_captions, dataset_name)#todo
 
     #labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 2,'romantic':3}
     labels_dict_idxs = {'positive': 0, 'negative':1, 'humor': 0, 'romantic':1}
@@ -860,7 +870,7 @@ def main():
     res_data_per_test = get_res_data(res_paths)
     # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
     # exit(0)
-    # mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load[dataset_name], labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
+    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, styles, metrics,cuda_idx, data_dir, txt_cls_model_paths_to_load[dataset_name], labels_dict_idxs, gt_imgs_for_test, styles_per_dataset)
 
     vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
     # ############## histogram
