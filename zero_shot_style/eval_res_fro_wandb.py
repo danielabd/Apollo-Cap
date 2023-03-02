@@ -794,7 +794,7 @@ def get_img_path(config, img_name):
     for i in os.listdir(img_dir):
         if int(i.split('.')[0]) == int(img_name):
             img_file_name = i
-        break
+            break
     img_path = os.path.join(img_dir, img_file_name)
     return img_path
 
@@ -819,11 +819,11 @@ def main():
             config = yaml.load(f, Loader=yaml.FullLoader)
         model_path = os.path.join(os.path.expanduser('~'), config['best_model_name'])
         txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
-        if 'style_cls' in config['evaluation_metrics']:
-            if 'style_cls' not in evaluation_obj:
-                evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'],
-                                                    config['labels_dict_idxs'], config[
-                                                        'hidden_state_to_take_txt_cls'])
+        # if 'style_cls' in config['evaluation_metrics']:
+            # if 'style_cls' not in evaluation_obj:
+                # evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'],
+                #                                     config['labels_dict_idxs'], config[
+                #                                         'hidden_state_to_take_txt_cls'])
         results_dir = config['experiment_dir']
         data_path = os.path.join(data_dir, config['data_name'], 'annotations', config['data_type'] + '.pkl')
         factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl')
@@ -837,10 +837,10 @@ def main():
         #            id=config['run_id'],
         #            mode=config['wandb_mode'],  # disabled, offline, online'
         #            tags=config['tags'])
-        if not text_generator:
-            text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
-                                               tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj,
-                                               **config)
+        # if not text_generator:
+            # text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
+            #                                    tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj,
+            #                                    **config)
         for f in os.listdir(os.path.join(dir_path, d)):
             if f.startswith('res') and f.endswith('.csv'):
                 res_file = f
