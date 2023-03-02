@@ -10,14 +10,12 @@ model_based_on: 'bert' # 'clip' /  'bert'
 
 max_num_of_imgs: 5 #-1
 specific_idxs_to_skip: [2,3]
-
 target_seq_length: 15
 desired_labels: [positive, negative] #[factual, positive, ngeative]
 ##todo
 #max_num_of_imgs: 1
 #target_seq_length: 2
 #desired_labels: [positive] #[factual, positive, ngeative]
-
 
 use_style_model: True
 use_text_style_example: False

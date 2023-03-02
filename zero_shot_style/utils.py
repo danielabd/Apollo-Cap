@@ -84,6 +84,15 @@ def update_hparams(hparams, args):
         #     hparams[k] = v
     return hparams
 
+def replace_user_home_dir(path):
+    if str(path)[0] == '~':
+        path = os.path.join(os.path.expanduser('~'), path[1:])
+    elif str(path).split('/')[0] == 'Users':
+        path = os.path.join(os.path.expanduser('~'), "/".join(path.split('/')[3:]))
+    elif '/' in str(path) and str(path).split('/')[1] == 'home':
+        path = os.path.join(os.path.expanduser('~'), "/".join(path.split('/')[4:]))
+    return path
+
 
 def get_hparams(args):
     # read data specifications
@@ -102,6 +111,15 @@ def get_hparams(args):
     # general hparam dict for all modules
     # hparams = {**experiment_config, **data_config}  # combine dictionaries (latter overrides the former values if same k in both)
 
+    #fix params in config file according to the serer
+    for k in experiment_config:
+        experiment_config[k] = replace_user_home_dir(experiment_config[k])
+
+    # update params according to dataset
+    if 'dataset' in experiment_config:
+        for k in experiment_config:
+            if type(experiment_config[k]) == dict and experiment_config['dataset'] in experiment_config[k]:
+                experiment_config[k] = experiment_config[k][experiment_config['dataset']]
     # update hparams with system args
     # hparams = update_hparams(hparams, args)
     hparams = update_hparams(experiment_config, args)

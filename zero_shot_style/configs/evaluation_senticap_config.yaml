@@ -1,0 +1,48 @@
+#senticap
+dataset: senticap # senticap,flickrstyle10k
+model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
+metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+
+res_path2eval:
+  senticap:
+    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
+    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
+  flickrstyle10k:
+  capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
+  capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
+
+
+tgt_eval_results_path: ~/experiments/stylized_zero_cap_experiments/27_2_23/avg_evaluation.csv
+tgt_eval_results_path_for_all_frames: ~/experiments/stylized_zero_cap_experiments/27_2_23/evaluation_all_frames.csv
+dir_path_for_eval_only_fluency: ~/experiments/stylized_zero_cap_experiments/27_2_23/fluency_statistics
+
+factual_captions_path:
+  senticap: /Users/danielabendavid/data/source/coco/factual_captions.pkl
+test_set_path:
+  senticap: /Users/danielabendavid/data/senticap/annotations/test.pkl
+
+txt_cls_model_paths:
+  senticap: ~/checkpoints/best_models/senticap/best_senticap_text_style_classification_model.pth
+  flickrstyle10k: ~/checkpoints/best_models/flickrstyle10k/best_flickrstyle10k_text_style_classification_model.pth
+
+hidden_state_to_take_txt_cls:
+  senticap: -1
+
+styles:
+  senticap: [positive, negative]
+  flickrstyle10k: [humor, romantic]
+
+#specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
+#specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
+img_idx_to_start_from: 0
+max_num_of_imgs: 5 #-1
+specific_idxs_to_skip: [2,3]
+
+labels_dict_idxs:
+  senticap:
+    positive: 0
+    negative: 1
+  flickrstyle10k:
+    humor: 0
+    romantic: 1
+
