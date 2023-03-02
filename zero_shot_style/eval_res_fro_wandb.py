@@ -812,6 +812,7 @@ def main():
     text_generator = ''
     evaluation_obj = {}
     for d in os.listdir(dir_path):
+        skip_dir=False
         print(f'dir={d}')
         fluency_obj = Fluency()
         tmp_text_loss = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: "")))
@@ -844,9 +845,14 @@ def main():
                                                tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj,
                                                **config)
         for f in os.listdir(os.path.join(dir_path, d)):
+            if f.startswith('avg_total_score'):
+                skip_dir=True
+                break
             if f.startswith('res') and f.endswith('.csv'):
                 res_file = f
                 break
+        if skip_dir:
+            continue
         if res_file:
             df = pd.read_csv(os.path.join(dir_path,d, res_file))
             for i,im in enumerate(range(df.shape[0])):
@@ -857,7 +863,7 @@ def main():
                     evaluation_results[img_name][label] = {}
                     best_caption = df.iloc[i,c+1]
                     evaluation_results[img_name][label]['res'] = best_caption
-                    if len(best_caption)>1:
+                    if len(str(best_caption))>1:
                         fluency_obj.add_test(best_caption, img_name, label)
 
         if len(fluency_obj.tests)>0:
