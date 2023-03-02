@@ -17,7 +17,8 @@ from transformers import AutoModelForCausalLM #gpt-J
 from transformers import BertModel
 from torch.optim import Adam, SGD
 # from zero_shot_style.model.text_style_embedding import TextStyleEmbed
-from zero_shot_style.model.text_style_embedding_senticap_based_on_clip import TextStyleEmbed, TextStyleEmbedCLIP
+from zero_shot_style.model.text_style_embedding_senticap import TextStyleEmbed
+from zero_shot_style.model.text_style_embedding_senticap_based_on_clip import TextStyleEmbedCLIP
 
 import pickle
 DEBUG_NUM_WORDS = 10
@@ -207,7 +208,7 @@ class CLIPTextGenerator:
         if self.use_style_model:
             print(f"Loading embedding style model from: {self.text_style_model_name}")
             if self.model_based_on == 'bert':
-                self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'], scale_noise=config['scale_noise_txt_style_embedding'])
+                self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
             elif self.model_based_on == 'clip':
                 self.text_style_model = TextStyleEmbedCLIP(device=self.device)
 

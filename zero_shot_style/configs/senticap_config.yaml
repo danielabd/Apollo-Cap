@@ -4,6 +4,8 @@ debug_mac: False
 wandb_mode: online #'disabled, offline, online'
 data_type: val
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
+#specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
+
 model_based_on: 'bert' # 'clip' /  'bert'
 
 max_num_of_imgs: 5 #-1
@@ -25,8 +27,7 @@ global_dir_name_for_save_models: senticap_ZeroStyleCap
 hidden_state_to_take_txt_cls: -1
 scale_noise_txt_cls: 0
 
-hidden_state_to_take_txt_style_embedding: -4
-scale_noise_txt_style_embedding:  0.16
+hidden_state_to_take_txt_style_embedding: -2
 
 #cond_text_dict:
 #  positive: The beautiful image of a
@@ -43,11 +44,6 @@ cond_text_dict:
 
 
 calc_evaluation: True
-
-#debug- tocheck:
-#mild -- 531
-#https://wandb:ai/bdaniela/StylizedZeroCap/sweeps/z6ytzium?workspace=user-bdaniela:
-#atomic sweep  3 - total avg score = 0.3243:   https://wandb.ai/bdaniela/StylizedZeroCap/sweeps/z08bsrnr?workspace=user-bdaniela
 
 #ce_scale: 2.925582040227539 #2.43956729 #2.318
 clip_scale: 5.6 #2.1430374716828555 #3.746143446 #2.965
@@ -89,16 +85,10 @@ calc_fluency: True
 imitate_text_style: False
 text_to_imitate_list: ["positive"]
 
-#specific_imgs_to_test: [77954, 123810, 479597, 458137, 21604, 450724]
-#specific_img_idxs_to_test:  [52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135]
-#specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
-
 epochs: 20
 lr: 0.00001
 batch_size: 16
 margin: 0.26
-hidden_state_to_take: -4
-last_layer_idx_to_freeze: 10
 freeze_after_n_epochs: 4
 inner_batch_size: 1
 data_name: senticap
@@ -125,13 +115,3 @@ undesired_label: 'neutral'
 resume: False # resume running in wb
 load_model: False
 run_id:
-
-
-#text style embedding
-cuda_idx_num: 0
-labels_set_dict:
-  positive: 0
-  negative: 1
-labels_idx_to_str:
-  0: positive
-  1: negative
