@@ -788,6 +788,16 @@ def initial_variables():
            tmp_text_loss, factual_captions, desired_labels_list, embedding_vectors_to_load, imgs_to_test, evaluation_obj
 
 
+def get_img_path(config, img_name):
+    img_dir = os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
+                           config['data_type'])
+    for i in os.listdir(img_dir):
+        if int(i.split('.')[0]) == img_name:
+            img_file_name = i
+        break
+    img_path = os.path.join(img_dir, img_file_name)
+    return img_path
+
 def main():
     dir_path = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap/02_03_2023'
     dir_path_rel = 'experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap/02_03_2023'
@@ -839,8 +849,7 @@ def main():
             df = pd.read_csv(os.path.join(dir_path,d, res_file))
             for i,im in enumerate(range(df.shape[0])):
                 img_name = df.iloc[i,0]
-                img_path = os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
-                                         config['data_type'], str(img_name))
+                img_path = get_img_path(config,img_name)
                 evaluation_results[img_name] = {'img_path': img_path}
                 for c,label in enumerate(df.columns[1:]):
                     evaluation_results[img_name][label] = {}
