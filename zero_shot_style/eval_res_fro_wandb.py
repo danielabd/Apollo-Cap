@@ -837,7 +837,7 @@ def main():
             for i,im in enumerate(range(df.shape[0])):
                 img_name = df.iloc[i,0]
                 img_path = os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
-                                         config['data_type'], im)
+                                         config['data_type'], str(im))
                 evaluation_results[img_name] = {'img_path': img_path}
                 for c,label in enumerate(df.columns[1:]):
                     evaluation_results[img_name][label] = {}
