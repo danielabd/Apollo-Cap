@@ -4,7 +4,6 @@ method: bayes
 metric:
   goal: maximize #minimize
   name:  evaluation/final_avg_total_score
-#   --ce_scale=1.6853687865174414 --clip_scale=5.732254336282659 --text_style_scale=2.398406689783691
 parameters:
   ce_scale:
     max: 4
