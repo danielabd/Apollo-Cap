@@ -792,7 +792,7 @@ def get_img_path(config, img_name):
     img_dir = os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
                            config['data_type'])
     for i in os.listdir(img_dir):
-        if int(i.split('.')[0]) == img_name:
+        if int(i.split('.')[0]) == int(img_name):
             img_file_name = i
         break
     img_path = os.path.join(img_dir, img_file_name)
