@@ -586,7 +586,9 @@ def evaluate_results_for_debug(config, fluency_obj, evaluation_results, gts_data
     #            'evaluation/mean_clip_scores': avg_clip_score,
     #            'evaluation/mean_fluency_scores': avg_fluency_score,
     #            'evaluation/final_avg_total_score': final_avg_total_score})
+    print("*********************")
     print(f"final_avg_total_score={final_avg_total_score}, mean_fluency_scores={avg_fluency_score}, mean_style_cls_scores={avg_style_cls_score}, mean_clip_scores={avg_clip_score}.")
+    print("*********************")
     write_evaluation_results(total_captions, final_avg_total_score, results_dir, config)
     return final_avg_total_score,avg_fluency_score,avg_style_cls_score,avg_clip_score
     # print('Finish to evaluate results!')
@@ -855,15 +857,17 @@ def main():
                     evaluation_results[img_name][label] = {}
                     best_caption = df.iloc[i,c+1]
                     evaluation_results[img_name][label]['res'] = best_caption
-                    fluency_obj.add_test(best_caption, img_name, label)
+                    if len(best_caption)>1:
+                        fluency_obj.add_test(best_caption, img_name, label)
 
-        final_avg_total_score,avg_fluency_score,avg_style_cls_score,avg_clip_score = evaluate_results_for_debug(config, fluency_obj, evaluation_results, gts_data, results_dir, factual_captions,
-                         txt_cls_model_path, data_dir, text_generator, evaluation_obj)
-        all_scores_per_dir[d] = {'avg_all':final_avg_total_score, 'fluency':avg_fluency_score,'style_cls':avg_style_cls_score,'clip':avg_clip_score}
-        total_avg_final_score_list.append(final_avg_total_score)
-        if final_avg_total_score>best_avg_score:
-            best_avg_score = final_avg_total_score
-            best_dir = d
+        if len(fluency_obj.tests)>0:
+            final_avg_total_score,avg_fluency_score,avg_style_cls_score,avg_clip_score = evaluate_results_for_debug(config, fluency_obj, evaluation_results, gts_data, results_dir, factual_captions,
+                             txt_cls_model_path, data_dir, text_generator, evaluation_obj)
+            all_scores_per_dir[d] = {'avg_all':final_avg_total_score, 'fluency':avg_fluency_score,'style_cls':avg_style_cls_score,'clip':avg_clip_score}
+            total_avg_final_score_list.append(final_avg_total_score)
+            if final_avg_total_score>best_avg_score:
+                best_avg_score = final_avg_total_score
+                best_dir = d
     print(f"best_avg_score={best_avg_score}, for dir={best_dir}")
     exit(0)
     config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
