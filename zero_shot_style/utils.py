@@ -86,8 +86,8 @@ def update_hparams(hparams, args):
 
 def replace_user_home_dir(path):
     if str(path)[0] == '~':
-        path = os.path.join(os.path.expanduser('~'), path[1:])
-    elif str(path).split('/')[0] == 'Users':
+        path = os.path.join(os.path.expanduser('~'), path[2:])
+    elif str(path).split('/')[1] == 'Users':
         path = os.path.join(os.path.expanduser('~'), "/".join(path.split('/')[3:]))
     elif '/' in str(path) and str(path).split('/')[1] == 'home':
         path = os.path.join(os.path.expanduser('~'), "/".join(path.split('/')[4:]))
@@ -111,16 +111,24 @@ def get_hparams(args):
     # general hparam dict for all modules
     # hparams = {**experiment_config, **data_config}  # combine dictionaries (latter overrides the former values if same k in both)
 
-    #fix params in config file according to the serer
-    for k in experiment_config:
-        experiment_config[k] = replace_user_home_dir(experiment_config[k])
 
-    # update params according to dataset
-    if 'dataset' in experiment_config:
-        for k in experiment_config:
-            if type(experiment_config[k]) == dict and experiment_config['dataset'] in experiment_config[k]:
-                experiment_config[k] = experiment_config[k][experiment_config['dataset']]
     # update hparams with system args
     # hparams = update_hparams(hparams, args)
     hparams = update_hparams(experiment_config, args)
+
+    # update params according to dataset
+    if 'dataset' in hparams:
+        for k in hparams:
+            if type(hparams[k]) == dict and hparams['dataset'] in hparams[k]:
+                hparams[k] = hparams[k][hparams['dataset']]
+
+    #fix paths in config file according to the homw dir in th server
+    for k1 in hparams:
+        if type(hparams[k1])==dict:
+            for k2 in hparams[k1]:
+                if '/' in str(hparams[k1][k2]):
+                    hparams[k1][k2] = replace_user_home_dir(hparams[k1][k2])
+        else:
+            if '/' in str(hparams[k1]):
+                hparams[k1] = replace_user_home_dir(hparams[k1])
     return hparams

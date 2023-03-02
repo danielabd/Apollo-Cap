@@ -295,11 +295,14 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None):
+    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None,img_idx=None, img_name=None, style=None):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
         self.text_style_list = text_to_imitate
+        self.img_idx = img_idx
+        self.img_name = img_name
+        self.style = style
         if self.use_style_model:
             self.text_style_scale = text_style_scale
             self.style_type = style_type #'clip','twitter','emotions'
@@ -649,6 +652,7 @@ class CLIPTextGenerator:
 
     
     def shift_context(self, word_loc, context, last_token, context_tokens, probs_before_shift):
+        print(f"img_idx={self.img_idx},img_name={self.img_name}, style={self.style}")
         print(f"self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations = {self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations}")
         context_delta = [tuple([np.zeros(x.shape).astype("float32") for x in p]) for p in context]
 

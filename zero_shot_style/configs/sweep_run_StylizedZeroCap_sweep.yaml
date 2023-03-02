@@ -7,25 +7,25 @@ metric:
 #   --ce_scale=1.6853687865174414 --clip_scale=5.732254336282659 --text_style_scale=2.398406689783691
 parameters:
   ce_scale:
-    max: 4.5
-    min: 2.5  #1.6 #1
+    max: 4
+    min: 3  #1.6 #1
     distribution: uniform
-  clip_scale:
-    max: 6.5 #6
-    min: 4.5
+#  clip_scale:
+#    max: 6.5 #6
+#    min: 4.5
+#    distribution: uniform
+#  text_style_scale:
+#    max: 5.5 #6
+#    min: 2.5 #1.5
+#    distribution: uniform
+  std_embedding_vectors_positive: #0.015731973987010497#0.028914157
+    max: 0.03
+    min: 0.0
     distribution: uniform
-  text_style_scale:
-    max: 5.5 #6
-    min: 2.5 #1.5
-#    distribution: uniform
-#  std_embedding_vectors_positive: #0.028914157
-#    max: 0.06
-#    min: 0.0
-#    distribution: uniform
-#  std_embedding_vectors_negative: #0.020412436
-#    max: 0.04
-#    min: 0.0
-#    distribution: uniform
+  std_embedding_vectors_negative: #0.03894146313631765#0.020412436
+    max: 0.06
+    min: 0.0
+    distribution: uniform
 #  num_iterations:
 #    max: 9
 #    min: 5
@@ -35,3 +35,4 @@ parameters:
 #    min: 2
 #    distribution: int_uniform
 
+td_embedding_vectors_negative=0.03894146313631765 --std_embedding_vectors_positive=0.015731973987010497

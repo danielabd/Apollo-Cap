@@ -8,7 +8,7 @@ data_type: val
 
 model_based_on: 'bert' # 'clip' /  'bert'
 
-max_num_of_imgs: 5 #-1
+max_num_of_imgs: 5 # 5 #-1
 specific_idxs_to_skip: [2,3]
 target_seq_length: 15
 desired_labels: [positive, negative] #[factual, positive, ngeative]
@@ -43,14 +43,14 @@ cond_text_dict:
 
 calc_evaluation: True
 
-#ce_scale: 2.925582040227539 #2.43956729 #2.318
+ce_scale: 3.34 #2.925582040227539 #2.43956729 #2.318
 clip_scale: 5.6 #2.1430374716828555 #3.746143446 #2.965
 text_style_scale: 3.3 #2.9365169098669996 #3.797802783 #3.444
 beam_size: 8 #4 #3
 num_iterations: 5 #5 # 8
 #
-std_embedding_vectors_positive: 0 # 0.030191882925088297 #0.028914157
-std_embedding_vectors_negative: 0 #0.002273661603177639 #0.020412436
+std_embedding_vectors_positive: 0.015731973987010497 # 0.030191882925088297 #0.028914157
+std_embedding_vectors_negative: 0.03894146313631765 #0.002273661603177639 #0.020412436
 
 #embedding_vectors_std:
 #  positive: 0.05536 #0.028914157

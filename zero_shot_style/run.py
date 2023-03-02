@@ -134,7 +134,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
     captions = text_generator.run(image_features, config['cond_text'], config['beam_size'], config['text_style_scale'],
                                   text_style, desired_style_embedding_vector, desired_style_embedding_vector_std,
-                                  dataset_type)
+                                  dataset_type, img_idx=config['img_path_idx'], img_name=img_path.split('/')[-1], style=label)
     debug_tracking[img_path][label] = text_generator.get_debug_tracking()
     t2 = timeit.default_timer();
 
@@ -721,6 +721,7 @@ def main():
         if config["data_name"] == "senticap":
             img_name = int(img_name)
         config['img_path'] = img_path
+        config['img_path_idx'] = img_path_idx
         evaluation_results[img_name] = {'img_path': img_path}
         if not os.path.isfile(config['img_path']):
             continue

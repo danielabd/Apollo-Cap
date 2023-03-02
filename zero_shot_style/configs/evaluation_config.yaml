@@ -1,15 +1,19 @@
 #senticap
-dataset: senticap # senticap,flickrstyle10k
+dataset: flickrstyle10k # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#metrics: [bleu1]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
 res_path2eval:
   senticap:
     capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
     capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
   flickrstyle10k:
-  capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
-  capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
+    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
+    capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
+
+tgt_eval_results_file_name: avg_evaluation.csv
+tgt_eval_results_file_name_for_all_frames: evaluation_all_frames.csv
 
 
 tgt_eval_results_path: ~/experiments/stylized_zero_cap_experiments/27_2_23/avg_evaluation.csv
@@ -20,6 +24,7 @@ factual_captions_path:
   senticap: /Users/danielabendavid/data/source/coco/factual_captions.pkl
 test_set_path:
   senticap: /Users/danielabendavid/data/senticap/annotations/test.pkl
+  flickrstyle10k: /Users/danielabendavid/data/flickrstyle10k/annotations/test.pkl
 
 txt_cls_model_paths:
   senticap: ~/checkpoints/best_models/senticap/best_senticap_text_style_classification_model.pth

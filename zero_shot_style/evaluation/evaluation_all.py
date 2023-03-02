@@ -130,7 +130,7 @@ class STYLE_CLS:
         return model
 
 
-    def compute_score(self, res, gt_label, dataset_name):
+    def compute_score(self, res, gt_label):
         '''
 
         :param gts: list of text
@@ -305,26 +305,19 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                     score_dict_per_metric[metric][k] = {}
                     scores_dict_per_metric[metric][k] = {}
                     for i2,style in enumerate(styles):
-                        if style not in styles[dataset_name] and style!='factual':
-                            continue
                         if style == 'factual' and metric == 'style_classification':
                             continue
                         if style in gts_per_data_set[k] and style in res[test_type][k]:
                             if not gts_per_data_set[k][style]:
                                 continue
                             tmp_res = {k: [res[test_type][k][style]]}
-                            # print(f"tmp_res = {tmp_res}")
-                            # print("break")
-                            # print(f"style={style}")
-                            # break
                             if metric == 'CLIPScore':
-                                # gts_per_data_set[k]['img_path'] = os.path.join(gt_imgs_for_test,gts_per_data_set[k]['img_path'].split('/')[-1])
                                 score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(gts_per_data_set[k]['img_path'], tmp_res)
                                 score_per_metric_and_style[metric][style].append(
                                     score_dict_per_metric[metric][k][style])
                                 all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=tmp_res[k][0], img_path = gts_per_data_set[k]['img_path'])
                             elif metric == 'style_classification':
-                                score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(tmp_res,style,dataset_name)
+                                score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(tmp_res,style)
                                 score_per_metric_and_style[metric][style].append(
                                     score_dict_per_metric[metric][k][style])
                                 all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=tmp_res[k][0])
@@ -525,7 +518,7 @@ def get_all_sentences(data_dir, dataset_name,type_set):
     return sentences
 
 
-def get_gts_data(test_set_path,factual_captions):
+def get_gts_data(test_set_path, factual_captions=None):
     '''
 
     :param test_set_path: dictionary:keys=dataset names, values=path to pickle file
@@ -537,8 +530,10 @@ def get_gts_data(test_set_path,factual_captions):
         data = pickle.load(r)
     for k in data:
         gts[k] = {}
-        # gts[k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
-        gts[k]['factual'] = factual_captions[k]
+        if factual_captions:
+            gts[k]['factual'] = factual_captions[k]
+        else:
+            gts[k]['factual'] = data[k]['factual']
         gts[k]['img_path'] = replace_user_home_dir(data[k]['image_path'])
         for style in data[k]:
             if style!='image_path' and style!='factual':
@@ -662,7 +657,11 @@ def write_results(mean_score, tgt_eval_results_path,dataset, metrics, styles, vo
                             avg_metric[metric] = [mean_score[test_type][metric][style]]
                         else:
                             avg_metric[metric].append(mean_score[test_type][metric][style])
-            avg_metric['diversity - vocab'] = [vocab_size[test_type]]
+                if 'diversity-vocab_size' not in avg_metric:
+                    avg_metric['diversity-vocab_size'] = [vocab_size[test_type][style]]
+                else:
+                    if style in vocab_size[test_type]:
+                        avg_metric['diversity-vocab_size'].append(vocab_size[test_type][style])
             for m in avg_metric:
                 if title:
                     dataset_row.append('total avg.')
@@ -761,45 +760,45 @@ def get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt):
 
     return tgt_path_ZeroStyleCap8, tgt_path_ZeroStyleCap39, tgt_path_ZeroStyleCapPast, tgt_path_text_style
 
-def analyze_fluency(all_scores,config):
-    ############## histogram
-    fluency_statistic = {}
-    for k in all_scores:
-        for test_type in all_scores[k]:
-            if test_type not in fluency_statistic:
-                fluency_statistic[test_type] = {}
-            for style in all_scores[k][test_type]:
-                if style not in fluency_statistic[test_type]:
-                    fluency_statistic[test_type][style] = [all_scores[k][test_type][style]['fluency']]
-                else:
-                    fluency_statistic[test_type][style].append(all_scores[k][test_type][style]['fluency'])
-
-    print('finish to calc statistic of fluency')
-    # Generate data on commute times.
-    size, scale = 1000, 10
-    commutes = pd.Series(np.random.gamma(scale, size=size) ** 1.5)
-    commutes = pd.Series([1,1,2,2,3,3,3,3,3])
-    fig1 = plt.gcf()
-    for i, test_type in enumerate(fluency_statistic):
-        for j, style in enumerate(fluency_statistic[test_type]):
-            plt.subplot(len(fluency_statistic),len(fluency_statistic[test_type]),i*len(fluency_statistic[test_type])+j+1)
-
-            commutes = pd.Series(fluency_statistic[test_type][style])
-            commutes.plot.hist(grid=True, bins=20, rwidth=0.9,
-                               color='#607c8e')
-            plt.title(f'Fluency Histogram for: {test_type} - {style}')
-            plt.xlabel('Counts')
-            plt.ylabel('Commute Time')
-            plt.grid(axis='y', alpha=0.75)
-    plt.show(block=False)
-    os.makedirs(config['dir_path_for_eval_only_fluency'], exist_ok=True)
-    fig1.savefig(os.path.join(config['dir_path_for_eval_only_fluency'], f'_{test_type}_{style}.png'))
-    ##############
+# def analyze_fluency(all_scores,config):
+#     ############## histogram
+#     fluency_statistic = {}
+#     for k in all_scores:
+#         for test_type in all_scores[k]:
+#             if test_type not in fluency_statistic:
+#                 fluency_statistic[test_type] = {}
+#             for style in all_scores[k][test_type]:
+#                 if style not in fluency_statistic[test_type]:
+#                     fluency_statistic[test_type][style] = [all_scores[k][test_type][style]['fluency']]
+#                 else:
+#                     fluency_statistic[test_type][style].append(all_scores[k][test_type][style]['fluency'])
+#
+#     print('finish to calc statistic of fluency')
+#     # Generate data on commute times.
+#     size, scale = 1000, 10
+#     commutes = pd.Series(np.random.gamma(scale, size=size) ** 1.5)
+#     commutes = pd.Series([1,1,2,2,3,3,3,3,3])
+#     fig1 = plt.gcf()
+#     for i, test_type in enumerate(fluency_statistic):
+#         for j, style in enumerate(fluency_statistic[test_type]):
+#             plt.subplot(len(fluency_statistic),len(fluency_statistic[test_type]),i*len(fluency_statistic[test_type])+j+1)
+#
+#             commutes = pd.Series(fluency_statistic[test_type][style])
+#             commutes.plot.hist(grid=True, bins=20, rwidth=0.9,
+#                                color='#607c8e')
+#             plt.title(f'Fluency Histogram for: {test_type} - {style}')
+#             plt.xlabel('Counts')
+#             plt.ylabel('Commute Time')
+#             plt.grid(axis='y', alpha=0.75)
+#     plt.show(block=False)
+#     os.makedirs(config['dir_path_for_eval_only_fluency'], exist_ok=True)
+#     fig1.savefig(os.path.join(config['dir_path_for_eval_only_fluency'], f'_{test_type}_{style}.png'))
+#     ##############
 
 def get_args():
     parser = ArgumentParser()
     parser.add_argument('--config_file', type=str,
-                        default=os.path.join('..', 'configs', 'evaluation_senticap_config.yaml'),
+                        default=os.path.join('.', 'configs', 'evaluation_config.yaml'),
                         help='full path to config file')
     parser.add_argument("--cuda_idx", type=int, default=0)
     args = parser.parse_args()
@@ -814,8 +813,11 @@ def main():
     os.makedirs(results_evaluation_dir, exist_ok=True)
     gt_imgs_for_test = os.path.join(data_dir, 'gt_imgs_for_test')
 
-    with open(config['factual_captions_path'],'rb') as f:
-        factual_captions = pickle.load(f)
+    if config['dataset']=='senticap':
+        with open(config['factual_captions_path'],'rb') as f:
+            factual_captions = pickle.load(f)
+    else:
+        factual_captions = None
     gts_per_data_set = get_gts_data(config['test_set_path'],factual_captions)
 
     res_data_per_test = get_res_data(config['res_path2eval'])
@@ -832,8 +834,12 @@ def main():
                 print(f"{test_type}: {config['dataset']}: {metric} score for {style} = {mean_score[test_type][metric][style]}")
     for test_type in res_data_per_test:
         print(f'Vocabulary size for experiment {test_type} dataset is {vocab_size[test_type]}')
-    write_results(mean_score, config['tgt_eval_results_path'], config['dataset'], config['metrics'], config['styles'], vocab_size)
-    write_results_for_all_frames(all_scores, config['tgt_eval_results_path_for_all_frames'], config['metrics'])
+
+    tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0], config['tgt_eval_results_file_name'])
+    tgt_eval_results_file_name_for_all_frames = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0], config['tgt_eval_results_file_name_for_all_frames'])
+
+    write_results(mean_score, tgt_eval_results_file_name, config['dataset'], config['metrics'], config['styles'], vocab_size)
+    write_results_for_all_frames(all_scores, tgt_eval_results_file_name_for_all_frames, config['metrics'])
 
     print('Finished to evaluate')
 
