@@ -146,6 +146,7 @@ class CLIPTextGenerator:
             param.requires_grad = False
 
         # Initialize CLIP
+        # self.clip, self.clip_preprocess = clip.load(os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','ViT-B/32'), device=self.device,download_root=clip_checkpoints, jit=False)
         self.clip, self.clip_preprocess = clip.load("ViT-B/32", device=self.device,
                                                     download_root=clip_checkpoints, jit=False)
         # convert_models_to_fp32(self.clip)
