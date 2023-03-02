@@ -231,7 +231,7 @@ def save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metr
     return all_scores
 
 
-def evaluate_single_res(res, gt, img_path, label, dataset_name, metrics, evaluation_obj):
+def evaluate_single_res(res, gt, img_path, label, metrics, evaluation_obj):
     evaluation = {}
     print('evaluate single res.')
     for metric in metrics:
@@ -240,7 +240,7 @@ def evaluate_single_res(res, gt, img_path, label, dataset_name, metrics, evaluat
                 evaluation['style_classification'] = None
                 continue
             else:
-                evaluation['style_cls'], _ = evaluation_obj[metric].compute_score(res, label, dataset_name)
+                evaluation['style_cls'], _ = evaluation_obj[metric].compute_score(res, label)
         elif metric == 'clip_score':
             evaluation['clip_score'], _ = evaluation_obj[metric].compute_score(img_path, res)
         elif metric == 'fluency':  # calc fluency only on all data

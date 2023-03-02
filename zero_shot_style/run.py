@@ -518,7 +518,7 @@ def evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_
                 evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
             evaluation_results[img_name][label]['scores'] = evaluate_single_res(
                 evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
-                evaluation_results[img_name]['img_path'], label, config['data_name'], config['evaluation_metrics'],
+                evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
                 evaluation_obj)
 
             clip_score = evaluation_results[img_name][label]['scores']['clip_score']
