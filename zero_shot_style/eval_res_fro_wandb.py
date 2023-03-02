@@ -582,10 +582,10 @@ def evaluate_results_for_debug(config, fluency_obj, evaluation_results, gts_data
     # print("*****************************")
     # print("*****************************")
     # print("*****************************")
-    wandb.log({'evaluation/mean_style_cls_scores': avg_style_cls_score,
-               'evaluation/mean_clip_scores': avg_clip_score,
-               'evaluation/mean_fluency_scores': avg_fluency_score,
-               'evaluation/final_avg_total_score': final_avg_total_score})
+    # wandb.log({'evaluation/mean_style_cls_scores': avg_style_cls_score,
+    #            'evaluation/mean_clip_scores': avg_clip_score,
+    #            'evaluation/mean_fluency_scores': avg_fluency_score,
+    #            'evaluation/final_avg_total_score': final_avg_total_score})
     print(f"final_avg_total_score={final_avg_total_score}, mean_fluency_scores={avg_fluency_score}, mean_style_cls_scores={avg_style_cls_score}, mean_clip_scores={avg_clip_score}.")
     write_evaluation_results(total_captions, final_avg_total_score, results_dir, config)
     return final_avg_total_score,avg_fluency_score,avg_style_cls_score,avg_clip_score
@@ -821,12 +821,12 @@ def main():
             factual_captions = pickle.load(f)
         if config["data_name"] == "senticap":  # todo:debug
             gts_data = get_gts_data(data_path, factual_captions)
-        wandb.init(project='StylizedZeroCap',
-                   config=config,
-                   resume=config['resume'],
-                   id=config['run_id'],
-                   mode=config['wandb_mode'],  # disabled, offline, online'
-                   tags=config['tags'])
+        # wandb.init(project='StylizedZeroCap',
+        #            config=config,
+        #            resume=config['resume'],
+        #            id=config['run_id'],
+        #            mode=config['wandb_mode'],  # disabled, offline, online'
+        #            tags=config['tags'])
         if not text_generator:
             text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
                                                tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj,
@@ -840,7 +840,7 @@ def main():
             for i,im in enumerate(range(df.shape[0])):
                 img_name = df.iloc[i,0]
                 img_path = os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
-                                         config['data_type'], img_name)
+                                         config['data_type'], str(img_name))
                 evaluation_results[img_name] = {'img_path': img_path}
                 for c,label in enumerate(df.columns[1:]):
                     evaluation_results[img_name][label] = {}
