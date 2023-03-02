@@ -35,4 +35,3 @@ parameters:
 #    min: 2
 #    distribution: int_uniform
 
-td_embedding_vectors_negative=0.03894146313631765 --std_embedding_vectors_positive=0.015731973987010497
