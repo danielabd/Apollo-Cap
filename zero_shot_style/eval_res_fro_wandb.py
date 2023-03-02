@@ -801,6 +801,17 @@ def get_img_path(config, img_name):
     return img_path
 
 def main():
+    tgt_file='/Users/danielabendavid/experiments/stylized_zero_cap_experiments/2_3_23/val_wandb.txt'
+    final_avg_total_score_list = []
+    best_final_avg_total_score = 0
+    with open(tgt_file,'r') as fp:
+        lines = fp.readlines()
+    for line in lines:
+        if line.startswith('final_avg_total_score='):
+            final_avg_total_score =  float(line.split('final_avg_total_score=')[1].split(',')[0])
+            if final_avg_total_score>best_final_avg_total_score:
+                best_final_avg_total_score=final_avg_total_score
+            final_avg_total_score_list.append(final_avg_total_score)
     dir_path = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap/02_03_2023'
     dir_path_rel = 'experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap/02_03_2023'
     dir_path = os.path.join(os.path.expanduser('~'),dir_path_rel)
