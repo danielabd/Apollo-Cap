@@ -2,14 +2,14 @@
 debug: False
 debug_mac: False
 wandb_mode: online #'disabled, offline, online'
-data_type: val
+data_type: test #val
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 #specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
 
 model_based_on: 'bert' # 'clip' /  'bert'
 
-max_num_of_imgs: 5 # 5 #-1
-specific_idxs_to_skip: [2,3]
+max_num_of_imgs: -1 # 5 #-1
+specific_idxs_to_skip: [] #[2,3]
 target_seq_length: 15
 desired_labels: [positive, negative] #[factual, positive, ngeative]
 ##todo
@@ -20,7 +20,7 @@ desired_labels: [positive, negative] #[factual, positive, ngeative]
 use_style_model: True
 use_text_style_example: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
-global_dir_name_for_save_models: senticap_ZeroStyleCap
+global_dir_name_for_save_models: senticap_ZeroStyleCap_f_036
 
 hidden_state_to_take_txt_cls: -1
 scale_noise_txt_cls: 0
