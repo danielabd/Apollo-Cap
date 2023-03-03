@@ -18,12 +18,12 @@ parameters:
 #    min: 2.5 #1.5
 #    distribution: uniform
   std_embedding_vectors_positive: #0.015731973987010497#0.028914157
-    max: 0.03
-    min: 0.0
+    max: 0.15
+    min: 0.029
     distribution: uniform
   std_embedding_vectors_negative: #0.03894146313631765#0.020412436
-    max: 0.06
-    min: 0.0
+    max: 0.15
+    min: 0.055
     distribution: uniform
 #  num_iterations:
 #    max: 9
