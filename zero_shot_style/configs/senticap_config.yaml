@@ -95,7 +95,7 @@ model_name: latest_text_style_embedding_model_senticap.pth
 
 mean_vec_emb_file:  checkpoints/best_models/senticap/senticap_mean_class_embedding.p
 median_vec_emb_file: checkpoints/best_models/senticap/senticap_median_class_embedding.p
-std_vec_emb_file: senticap/senticap_std_class_embedding.p
+std_vec_emb_file: checkpoints/best_models/senticap/senticap_std_class_embedding.p
 txt_cls_model_path: checkpoints/best_models/senticap/best_senticap_text_style_classification_model.pth
 #txt_cls_model_path: checkpoints/best_models/senticap/pos_neg_best_text_style_classification_model.pth
 
