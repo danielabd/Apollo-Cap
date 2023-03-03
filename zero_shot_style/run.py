@@ -742,11 +742,12 @@ def main():
                 if config['use_style_model']:
                     desired_style_embedding_vector = mean_embedding_vectors_to_load[label]
                     # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
-                    desired_style_embedding_vector_std = std_embedding_vectors[label]
-                    # if label == 'positive':
-                    #     desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
-                    # elif label == 'negative':
-                    #     desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
+                    #real std
+                    # desired_style_embedding_vector_std = std_embedding_vectors[label]
+                    if label == 'positive':
+                        desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
+                    elif label == 'negative':
+                        desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
                 else:
                     desired_style_embedding_vector = None;
                     desired_style_embedding_vector_std = None
