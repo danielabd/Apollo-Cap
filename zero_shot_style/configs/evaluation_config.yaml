@@ -1,13 +1,15 @@
 #senticap
-dataset: flickrstyle10k # senticap,flickrstyle10k
+#dataset: flickrstyle10k # senticap,flickrstyle10k
+dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #metrics: [bleu1]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
 res_path2eval:
   senticap:
-    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
-    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
+    text_style: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023/total_results_text_style_f_36.csv
+#    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
+#    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
   flickrstyle10k:
     capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
     capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
