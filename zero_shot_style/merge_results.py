@@ -112,6 +112,7 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
         total_data = {}
         # go over all dirs of this test type
         for d in res_paths[test_type]:
+            path_file = ''
             if d.startswith(".") or os.path.isfile(os.path.join(src_dirs[test_type],d)):
                 continue
             files = os.listdir(os.path.join(src_dirs[test_type],d))
@@ -139,11 +140,12 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
                 if f.endswith('.csv'):
                     path_file = os.path.join(src_dirs[test_type],d,f)
                     break
-
+            if not path_file:
+                continue
             data = pd.read_csv(path_file)
             # if f!='results_all_models_source_classes_03_43_42__10_02_2023.csv' and f!='results_all_models_source_classes_00_18_04__12_02_2023.csv':
             #     data = data.head(data.shape[0] - 1) #remove last line for the case that it is not completed
-            if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1,-1]):
+            if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
                  data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
             for i,k in enumerate(data[t[test_type]]):
                 pos = data['positive'][i]
@@ -205,6 +207,7 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/'
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/'
+    base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
 
     # prompt_manipulation
     if 'prompt_manipulation' in exp_to_merge:
@@ -245,6 +248,10 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
 
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast'
         final_name = src_dir_text_style.split('Cap')[-1] #39
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
+        src_dir_text_style = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
+        final_name = 'f_36'
 
         # src_dir_text_style = os.path.join(base_path,'text_style')
         text_style_dir_path = os.listdir(src_dir_text_style)
