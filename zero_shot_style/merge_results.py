@@ -251,6 +251,7 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
         src_dir_text_style = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
+        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std'
         final_name = 'f_36'
 
         # src_dir_text_style = os.path.join(base_path,'text_style')
