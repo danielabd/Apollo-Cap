@@ -107,7 +107,6 @@ class STYLE_CLS:
         self.desired_cuda_num = desired_cuda_num
         self.labels_dict_idxs = labels_dict_idxs
         #self.df_test = pd.read_csv(os.path.join(data_dir, 'test.csv'))
-        self.data_dir = data_dir
         use_cuda = torch.cuda.is_available()
         # self.device = torch.device(f"cuda:{desired_cuda_num}" if use_cuda else "cpu")  # todo: remove
         self.device = torch.device(f"cuda" if use_cuda else "cpu")  # todo: remove
@@ -140,7 +139,7 @@ class STYLE_CLS:
         res_val = res
         if type(res)==dict:
             res_val = list(res.values())[0][0]
-        res_tokens = tokenizer(res_val, padding='max_length', max_length = 512, truncation=True,
+        res_tokens = tokenizer(res_val, padding='max_length', max_length = 512, truncation=True, #todo: check if need to put 40
                                 return_tensors="pt")
         # print(f"self.labels_dict_idxs = {self.labels_dict_idxs}")
         # print(f"self.labels_dict_idxs[gt_label] = {self.labels_dict_idxs[gt_label]}")
@@ -162,6 +161,22 @@ class STYLE_CLS:
         #cut_values
         # cls_score_np = np.max([0,np.min([cls_score.cpu().data.numpy(),1])])
         return cls_score, None
+
+    def compute_label_for_list(self, res):
+        '''
+
+        :param gts: list of labels
+        :param res: list of sentences
+        :return:
+        '''
+        res_tokens = tokenizer(res, padding='max_length', max_length = 512, truncation=True, #todo check if max need to be 40 like in train
+                                return_tensors="pt")
+        masks = res_tokens['attention_mask'].to(self.device)
+        input_ids = res_tokens['input_ids'].squeeze(1).to(self.device)
+        outputs = self.model(input_ids, masks)
+
+        outputs_bin = torch.round(torch.tensor([out[0] for out in outputs])).to(self.device)
+        return outputs_bin
 
     def compute_score_for_total_data(self, gts, res, dataset_name):
         self.df_test = pd.read_csv(os.path.join(self.data_dir, 'test.csv'))
@@ -249,11 +264,11 @@ def evaluate_single_res(res, gt, img_path, label, metrics, evaluation_obj):
             evaluation[metric], _ = evaluation_obj[metric].compute_score(gt, res)
     return evaluation
 
-def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test):
+def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_cls_model_paths_to_load, labels_dict_idxs, gt_imgs_for_test, config):
     print("Calculate scores...")
     mean_score = {}
     if ('CLIPScoreRef' in metrics) or ('CLIPScore'in metrics):
-        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx)
+        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, config=config)
     if 'style_classification' in metrics:
         style_cls_obj = STYLE_CLS(txt_cls_model_paths_to_load, data_dir, cuda_idx, labels_dict_idxs)
     if 'fluency' in metrics:
@@ -823,7 +838,7 @@ def main():
     res_data_per_test = get_res_data(config['res_path2eval'])
     # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
     # exit(0)
-    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'], config['cuda_idx'], data_dir, config['txt_cls_model_paths'], config['labels_dict_idxs'], gt_imgs_for_test)
+    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'], config['cuda_idx'], data_dir, config['txt_cls_model_paths'], config['labels_dict_idxs'], gt_imgs_for_test, config)
 
     vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
     # analyze_fluency(all_scores,config)

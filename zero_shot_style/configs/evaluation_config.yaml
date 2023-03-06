@@ -7,7 +7,9 @@ metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classificat
 
 res_path2eval:
   senticap:
-    text_style: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023/total_results_text_style_f_36.csv
+    ZeroStyleCap_f_36:  /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/total_results_text_style_f_36.csv
+    ZeroStyleCap_real_std: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std/total_results_ZeroStyleCap_real_std.csv
+
 #    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
 #    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
   flickrstyle10k:
@@ -31,9 +33,17 @@ test_set_path:
 txt_cls_model_paths:
   senticap: ~/checkpoints/best_models/senticap/best_senticap_text_style_classification_model.pth
   flickrstyle10k: ~/checkpoints/best_models/flickrstyle10k/best_flickrstyle10k_text_style_classification_model.pth
-
 hidden_state_to_take_txt_cls:
   senticap: -1
+
+txt_embed_model_paths:
+  senticap: ~/checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth
+  flickrstyle10k: ~/checkpoints/best_models/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth
+
+hidden_state_to_take_txt_style_embedding:
+  senticap: -2
+
+model_based_on: 'bert'
 
 styles:
   senticap: [positive, negative]

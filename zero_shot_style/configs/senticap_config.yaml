@@ -1,10 +1,14 @@
 ###### stylized ZeroCap: create captions - for run.py
+dataset: senticap # senticap,flickrstyle10k
+
 debug: False
 debug_mac: False
 wandb_mode: online #'disabled, offline, online'
 data_type: test #val
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 #specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
+
+use_text_style_cutting: False
 
 model_based_on: 'bert' # 'clip' /  'bert'
 
@@ -90,14 +94,23 @@ margin: 0.26
 freeze_after_n_epochs: 4
 inner_batch_size: 1
 data_name: senticap
+
+# todo - merge it
 best_model_name: checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth
 model_name: latest_text_style_embedding_model_senticap.pth
+txt_embed_model_paths:
+  senticap: ~/checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth
+  flickrstyle10k: ~/checkpoints/best_models/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth
 
 mean_vec_emb_file:  checkpoints/best_models/senticap/senticap_mean_class_embedding.p
 median_vec_emb_file: checkpoints/best_models/senticap/senticap_median_class_embedding.p
 std_vec_emb_file: checkpoints/best_models/senticap/senticap_std_class_embedding.p
-txt_cls_model_path: checkpoints/best_models/senticap/best_senticap_text_style_classification_model.pth
 #txt_cls_model_path: checkpoints/best_models/senticap/pos_neg_best_text_style_classification_model.pth
+
+
+txt_cls_model_paths:
+  senticap: ~/checkpoints/best_models/senticap/best_senticap_text_style_classification_model.pth
+  flickrstyle10k: ~/checkpoints/best_models/flickrstyle10k/best_flickrstyle10k_text_style_classification_model.pth
 
 data_file: #['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 experiment_name: cur_time
@@ -113,3 +126,12 @@ undesired_label: 'neutral'
 resume: False # resume running in wb
 load_model: False
 run_id:
+
+
+labels_dict_idxs:
+  senticap:
+    positive: 0
+    negative: 1
+  flickrstyle10k:
+    humor: 0
+    romantic: 1

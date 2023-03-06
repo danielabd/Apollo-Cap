@@ -42,7 +42,7 @@ def get_args():
     parser.add_argument("--seed", type=int, default=0)
     # parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo")
     parser.add_argument("--lm_model", type=str, default="gpt-2", help="gpt-2 or gpt-neo or gpt-j")
-    parser.add_argument("--clip_checkpoints", type=str, default="./clip_checkpoints", help="path to CLIP")
+    parser.add_argument("--clip_checkpoints", type=str, default="~/projects/zero-shot-style/zero_shot_style/clip_checkpoints", help="path to CLIP")
     parser.add_argument("--target_seq_length", type=int, default=15)
     parser.add_argument("--data_type", type=str, default='val', choices=['train', 'val', 'test'])
     parser.add_argument("--cond_text", type=str, default="Image of a")
@@ -117,7 +117,7 @@ def get_args():
 
 def run(config, img_path, desired_style_embedding_vector, desired_style_embedding_vector_std, cuda_idx, title2print,
         model_path, dataset_type, tmp_text_loss, label, img_dict, debug_tracking, text_generator=None,
-        image_features=None, evaluation_obj=None):
+        image_features=None, evaluation_obj=None, desired_style_bin = False):
     # debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, tmp_text_loss=tmp_text_loss,
@@ -134,7 +134,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
     captions = text_generator.run(image_features, config['cond_text'], config['beam_size'], config['text_style_scale'],
                                   text_style, desired_style_embedding_vector, desired_style_embedding_vector_std,
-                                  dataset_type, img_idx=config['img_path_idx'], img_name=img_path.split('/')[-1], style=label)
+                                  dataset_type, img_idx=config['img_path_idx'], img_name=img_path.split('/')[-1], style=label, desired_style_bin=config['labels_dict_idxs'][label])
     debug_tracking[img_path][label] = text_generator.get_debug_tracking()
     t2 = timeit.default_timer();
 

@@ -19,7 +19,7 @@ from torch.optim import Adam, SGD
 # from zero_shot_style.model.text_style_embedding import TextStyleEmbed
 from zero_shot_style.model.text_style_embedding_senticap import TextStyleEmbed
 from zero_shot_style.model.text_style_embedding_senticap_based_on_clip import TextStyleEmbedCLIP
-
+# from zero_shot_style.evaluation.evaluation_all import STYLE_CLS
 import pickle
 DEBUG_NUM_WORDS = 10
 
@@ -97,8 +97,11 @@ class CLIPTextGenerator:
                  config=None,
                  model_based_on='bert',
                  evaluation_obj = None,
+                 desired_style_bin = None,
+                 use_text_style_cutting = False,
                  **kwargs):
 
+        self.use_text_style_cutting = use_text_style_cutting
         if evaluation_obj:
             evaluation_obj = evaluation_obj
         if config:
@@ -196,15 +199,30 @@ class CLIPTextGenerator:
             self.sentiment_type = 'none'
 
         # TEXT STYLE: adding the text style model
+        data_dir = os.path.join(os.path.expanduser('~'),'data')
+        if self.use_text_style_cutting:
+            self.text_style_cls = STYLE_CLS(config['txt_cls_model_paths'], data_dir, self.cuda_idx, config['labels_dict_idxs'],
+                             config['hidden_state_to_take_txt_cls'])
+        else:
+            if self.model_based_on == 'bert':
+                self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
+            elif self.model_based_on == 'clip':
+                self.text_style_model = TextStyleEmbedCLIP(device=self.device)
+
+            if 'cpu' in self.device:
+                checkpoint = torch.load(config['txt_embed_model_paths'], map_location=torch.device('cpu'))
+            else:
+                checkpoint = torch.load(config['txt_embed_model_paths'], map_location='cuda:0')
+
+            self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
+            self.text_style_model.to(self.device)
+            self.text_style_model.eval()
+
+        ##############
         self.use_text_style = True
         #self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-        # self.text_style_scale = text_style_scale
-        # MODEL = '/home/bdaniela/zero-shot-style/zero_shot_style/model/data/2_classes_trained_model_emotions.pth'
-
         self.text_style_model_name = model_path
-        #self.text_style_model = AutoModelForSequenceClassification.from_pretrained(self.text_style_model_name)
-
         self.use_style_model = use_style_model
         if self.use_style_model:
             print(f"Loading embedding style model from: {self.text_style_model_name}")
@@ -296,7 +314,7 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None,img_idx=None, img_name=None, style=None):
+    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None,img_idx=None, img_name=None, style=None, desired_style_bin=False):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
@@ -304,6 +322,7 @@ class CLIPTextGenerator:
         self.img_idx = img_idx
         self.img_name = img_name
         self.style = style
+        self.desired_style_bin = desired_style_bin
         if self.use_style_model:
             self.text_style_scale = text_style_scale
             self.style_type = style_type #'clip','twitter','emotions'
@@ -843,6 +862,11 @@ class CLIPTextGenerator:
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
             best_sentences_LM.append(prefix_text + self.lm_tokenizer.decode(probs[idx_p].topk(1).indices[0]))
 
+            # grades according to match to style
+            if self.use_text_style_cutting:
+                outputs_bin = self.text_style_cls_model.compute_label_for_list(top_texts)
+                style_scores = [1 for i in outputs_bin if i == self.desired_style_bin]
+
             probs_val,indices = top_probs_LM[idx_p].topk(DEBUG_NUM_WORDS)
             debug_best_probs_vals_LM.extend(probs_val)
             LM_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
@@ -852,7 +876,12 @@ class CLIPTextGenerator:
             with torch.no_grad():
                 similiraties = (self.image_features @ text_features.T)
 
-                #todo:28.2.23: add grades according to match to style
+                similiraties = similiraties * style_scores
+                #zero sentences which are not in the desired style
+                if self.device == "cuda":
+                    similiraties = torch.mul(similiraties, style_scores)
+                else:
+                    similiraties = np.multiply(similiraties, style_scores)
 
                 ############
                 # top_texts = ['Ugly and disgusting  image', 'Beautiful and amazing image']
