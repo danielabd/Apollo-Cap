@@ -747,6 +747,8 @@ class CLIPTextGenerator:
             text_style_loss += cur_text_style_loss
             losses.append(cur_text_style_loss)
 
+            print(f" predicted_probs={ predicted_probs}")
+            print(f" len(predicted_probs)={ len(predicted_probs)}")
             print(f" predicted_probs[0]={ predicted_probs[0]}")
             print(f"torch.argmax(predicted_probs[0])={torch.argmax(predicted_probs[0])}")
             print(f"len(top_texts)={len(top_texts)}")
