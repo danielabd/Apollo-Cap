@@ -1,4 +1,3 @@
-import argparse
 import json
 import timeit
 import os
@@ -482,25 +481,25 @@ def get_evaluation_obj(config, text_generator, evaluation_obj):
         evaluation_obj = {}
     if config["calc_evaluation"]:
         for metric in config['evaluation_metrics']:
-            if metric == 'bleu':
+            if metric == 'bleu' and 'bleu' not in evaluation_obj:
                 evaluation_obj['bleu'] = Bleu(n=4)
-            if metric == 'rouge':
+            if metric == 'rouge' and 'rouge' not in evaluation_obj:
                 evaluation_obj['rouge'] = Rouge()
-            if metric == 'clip_score_ref':
+            if metric == 'clip_score_ref' and 'clip_score_ref' not in evaluation_obj:
                 evaluation_obj['clip_score_ref'] = CLIPScoreRef(text_generator)
-            if metric == 'clip_score':
+            if metric == 'clip_score' and 'clip_score' not in evaluation_obj:
                 evaluation_obj['clip_score'] = CLIPScore(text_generator)
-            if metric == 'fluency':
+            if metric == 'fluency' and 'fluency' not in evaluation_obj:
                 evaluation_obj['fluency'] = Fluency()
     return evaluation_obj
 
 
-def evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_dir, factual_captions,
+def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_captions,
                      txt_cls_model_path, data_dir, text_generator, evaluation_obj):
     print("Calc evaluation of the results...")
     # calc perplexity
     if config['calc_fluency']:
-        perplexities, mean_perplexity = fluency_obj.compute_score()
+        perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score()
     else:
         mean_perplexity = DEFAULT_PERPLEXITY_SCORE
 
@@ -675,6 +674,8 @@ def initial_variables():
         evaluation_obj['style_cls'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'],
                                                 config['labels_dict_idxs'], config[
                                                     'hidden_state_to_take_txt_cls'])
+    if 'fluency' in config['evaluation_metrics']:
+        evaluation_obj['fluency'] = Fluency()
     desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
 
     print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
@@ -716,7 +717,6 @@ def main():
                                            **config)
     else:
         text_generator = None
-    fluency_obj = Fluency()
 
     # go over all images
     evaluation_results = {}  # total_results_structure
@@ -753,7 +753,7 @@ def main():
                 if config['use_style_model']:
                     if config['style_type']=='emoji':
                         # desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(35), num_classes=64)+0.001
-                        desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['idx_emoji_style'][label]), num_classes=config['num_classes'])+0.001
+                        desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['idx_emoji_style'][label]), num_classes=config['num_classes'])+0.00001
                         desired_style_embedding_vector = torch.tensor(desired_style_embedding_vector/torch.sum(desired_style_embedding_vector))
                         desired_style_embedding_vector_std=None
                     else:
@@ -785,7 +785,7 @@ def main():
                 #                                    results_dir, 1, tgt_results_path)
                 if config['write_debug_tracking_file']:
                     write_debug_tracking(results_dir, debug_tracking)
-                fluency_obj.add_test(best_caption, img_name, label)
+                evaluation_obj['fluency'].add_test(best_caption, img_name, label)
 
             # image manipulation
             elif config['run_type'] == 'arithmetics':
@@ -805,7 +805,7 @@ def main():
                 raise Exception('run_type must be caption or arithmetics!')
             evaluation_results[img_name][label]['res'] = best_caption
 
-    evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_dir, factual_captions,
+    evaluate_results(config, evaluation_results, gts_data, results_dir, factual_captions,
                      txt_cls_model_path, data_dir, text_generator,evaluation_obj)
     print('Finish of program!')
 

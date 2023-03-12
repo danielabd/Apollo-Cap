@@ -709,14 +709,13 @@ class CLIPTextGenerator:
             prefix_text = prefix_texts[idx_p]
             # pdb.set_trace()
             for x in top_indices[idx_p]:  # go over all optional topk next word
-                print(f"x={x}")
-                print(f"self.lm_tokenizer.decode(x)={self.lm_tokenizer.decode(x)}")
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
 
             #####
             #####
             with torch.no_grad():
 
+                # top_texts = ["bad day", "It is so sad", "happy day", "wonderful action"]
                 tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
                 tokenized = torch.from_numpy(tokenized.astype(np.int32))
                 # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
@@ -727,12 +726,18 @@ class CLIPTextGenerator:
                 # print(f"tokenized.is_cuda={tokenized.is_cuda}")
 
 
-                emoji_style_probs = self.emoji_style_model(tokenized)
+                emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
 
-                pemoji_style_probs = torch.tensor(emoji_style_probs*1000)
+                ######
+                # emoji_style_probs = torch.tensor(emoji_style_probs*1000)
+                # factored_desired_style_embedding_vector = self.desired_style_embedding_vector*1000
+                #######
+                # emoji_style_probs = torch.tensor(emoji_style_probs)
+                factored_desired_style_embedding_vector = self.desired_style_embedding_vector
+
                 # probs = torch.tensor(probs*1000).to(self.device)
                 # self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)
-                emoji_style_loss = ((emoji_style_probs * emoji_style_probs.log()) - (emoji_style_probs * self.desired_style_embedding_vector.log())).sum(-1)
+                emoji_style_loss = ((emoji_style_probs * emoji_style_probs.log()) - (emoji_style_probs * factored_desired_style_embedding_vector.log())).sum(-1)
                 predicted_probs = emoji_style_loss
 
                 # #######
@@ -750,14 +755,12 @@ class CLIPTextGenerator:
                 # predicted_probs = nn.functional.softmax(text_style_grades / self.text_style_loss_temperature, dim=-1).detach()
                 # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
 
-            print(f"predicted_probs.is_cuda={predicted_probs.is_cuda}")
             predicted_probs = predicted_probs.to(self.device)
-            print(f"predicted_probs.is_cuda={predicted_probs.is_cuda}")
-            target = torch.zeros_like(probs[idx_p], device=self.device)
+            # target = torch.zeros_like(probs[idx_p], device=self.device)
             # target[top_indices[idx_p]] = predicted_probs[0]
-            target[top_indices[idx_p]] = predicted_probs
+            # target[top_indices[idx_p]] = predicted_probs
 
-            target = target.unsqueeze(0)
+            # target = target.unsqueeze(0)
             # cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
             cur_text_style_loss = torch.sum(predicted_probs)
 
@@ -768,10 +771,6 @@ class CLIPTextGenerator:
             # print(f" len(predicted_probs)={ len(predicted_probs)}")
             # print(f" predicted_probs={ predicted_probs}")
             # pdb.set_trace()
-            print(f"torch.argmax(predicted_probs)={torch.argmax(predicted_probs)}")
-            print(f"len(top_texts)={len(top_texts)}")
-            print(f"")
-            print(f"")
             # best_sentences.append(top_texts[torch.argmax(predicted_probs)])
             # best_sentences.append(top_texts[torch.argmax(predicted_probs[0])])
 
