@@ -714,6 +714,10 @@ class CLIPTextGenerator:
                 # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
                 # self.emoji_style_model.to(torch.device("cuda"))
                 # self.emoji_style_model = self.emoji_style_model.to(self.device)
+
+                print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
+                print(f"tokenized.is_cuda={tokenized.is_cuda}")
+
                 probs = self.emoji_style_model(tokenized)
                 probs = torch.tensor(probs*1000).to(self.device)
                 self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)

@@ -631,13 +631,13 @@ def initial_variables():
         factual_captions = pickle.load(f)
 
     if config['wandb_mode'] == 'online':
-        wandb.init()
-        wandb.init(project='StylizedZeroCapEmoji',
-                   config=config,
-                   resume=config['resume'],
-                   id=config['run_id'],
-                   mode=config['wandb_mode'],  # disabled, offline, online'
-                   tags=config['tags'])
+        wandb.init(mode='disabled') #todo:remove
+        # wandb.init(project='StylizedZeroCapEmoji',
+        #            config=config,
+        #            resume=config['resume'],
+        #            id=config['run_id'],
+        #            mode=config['wandb_mode'],  # disabled, offline, online'
+        #            tags=config['tags'])
 
     # handle sweep training names
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
