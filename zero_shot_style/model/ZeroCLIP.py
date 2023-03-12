@@ -1,3 +1,4 @@
+import pdb
 import csv
 import os.path
 import heapq
@@ -346,7 +347,8 @@ class CLIPTextGenerator:
             self.text_style_scale = text_style_scale
             self.style_type = style_type #'clip','twitter','emotions'
             if not text_to_imitate:
-                self.desired_style_embedding_vector = desired_style_embedding_vector.to(self.device)
+                # self.desired_style_embedding_vector = desired_style_embedding_vector.to(self.device)
+                self.desired_style_embedding_vector = desired_style_embedding_vector
                 self.desired_style_embedding_std_vector = desired_style_embedding_std_vector
 
             else: #there is text_to_imitate:
@@ -365,7 +367,8 @@ class CLIPTextGenerator:
                     # #### based on clip
                     # embedding_of_text_to_imitate = self.text_style_model(text_to_imitate) #embeding vector
                     embedding_of_text_to_imitate.to(self.device)
-                    self.desired_style_embedding_vector = embedding_of_text_to_imitate.to(self.device)
+                    # self.desired_style_embedding_vector = embedding_of_text_to_imitate.to(self.device)
+                    self.desired_style_embedding_vector = embedding_of_text_to_imitate
 
         context_tokens = self.lm_tokenizer.encode(self.context_prefix + cond_text)
 
@@ -718,11 +721,15 @@ class CLIPTextGenerator:
                 # print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
                 # print(f"tokenized.is_cuda={tokenized.is_cuda}")
 
+
                 probs = self.emoji_style_model(tokenized)
-                probs = torch.tensor(probs*1000).to(self.device)
-                self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)
+
+                probs = torch.tensor(probs*1000)
+                # probs = torch.tensor(probs*1000).to(self.device)
+                # self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)
                 emoji_style_loss = ((probs * probs.log()) - (probs * self.desired_style_embedding_vector.log())).sum(-1)
                 predicted_probs = emoji_style_loss
+
                 # #######
                 # #calc euclidean distance
                 # distances_from_mean_vec = torch.cdist(self.desired_style_embedding_vector.unsqueeze(0),logits)
@@ -738,34 +745,40 @@ class CLIPTextGenerator:
                 # predicted_probs = nn.functional.softmax(text_style_grades / self.text_style_loss_temperature, dim=-1).detach()
                 # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
 
+            pdb.set_trace()
+            print(f"predicted_probs.is_cuda={predicted_probs.is_cuda}")
+            predicted_probs = predicted_probs.to(self.device)
+            print(f"predicted_probs.is_cuda={predicted_probs.is_cuda}")
             target = torch.zeros_like(probs[idx_p], device=self.device)
-            target[top_indices[idx_p]] = predicted_probs[0]
+            # target[top_indices[idx_p]] = predicted_probs[0]
+            target[top_indices[idx_p]] = predicted_probs
 
             target = target.unsqueeze(0)
-            cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
+            # cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
+            cur_text_style_loss = torch.sum(predicted_probs)
 
             text_style_loss += cur_text_style_loss
             losses.append(cur_text_style_loss)
 
             # print(f" predicted_probs={ predicted_probs}")
-            print(f" len(predicted_probs)={ len(predicted_probs)}")
-            print(f" predicted_probs[0]={ predicted_probs[0]}")
+            # print(f" len(predicted_probs)={ len(predicted_probs)}")
+            print(f" predicted_probs={ predicted_probs}")
             print(f"torch.argmax(predicted_probs)={torch.argmax(predicted_probs)}")
             print(f"len(top_texts)={len(top_texts)}")
             print(f"")
             print(f"")
-            best_sentences.append(top_texts[torch.argmax(predicted_probs)])
+            # best_sentences.append(top_texts[torch.argmax(predicted_probs)])
             # best_sentences.append(top_texts[torch.argmax(predicted_probs[0])])
 
             # debug
-            probs_val, indices = predicted_probs[0].topk(DEBUG_NUM_WORDS)
-            debug_best_probs_vals_style.extend(list(probs_val.cpu().data.numpy()))
-            style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
-            debug_best_top_texts_style.extend(style_top_text)
+            # probs_val, indices = predicted_probs[0].topk(DEBUG_NUM_WORDS)
+            # debug_best_probs_vals_style.extend(list(probs_val.cpu().data.numpy()))
+            # style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
+            # debug_best_top_texts_style.extend(style_top_text)
 
-        total_best_sentences_style = {}
-        for i in np.argsort(debug_best_probs_vals_style)[-DEBUG_NUM_WORDS:]:
-            total_best_sentences_style[debug_best_top_texts_style[i]] = debug_best_probs_vals_style[i]
+        # total_best_sentences_style = {}
+        # for i in np.argsort(debug_best_probs_vals_style)[-DEBUG_NUM_WORDS:]:
+        #     total_best_sentences_style[debug_best_top_texts_style[i]] = debug_best_probs_vals_style[i]
 
         loss_string = ''
         for idx_p in range(probs.shape[0]):  # go over all beams
@@ -774,7 +787,8 @@ class CLIPTextGenerator:
             else:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
 
-        return text_style_loss, losses, best_sentences, total_best_sentences_style
+        # return text_style_loss, losses, best_sentences, total_best_sentences_style
+        return text_style_loss, losses
 
 
     
