@@ -710,7 +710,7 @@ class CLIPTextGenerator:
             with torch.no_grad():
 
                 tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
-                tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
                 # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
                 # self.emoji_style_model.to(torch.device("cuda"))
                 # self.emoji_style_model = self.emoji_style_model.to(self.device)
