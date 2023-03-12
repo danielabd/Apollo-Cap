@@ -754,7 +754,8 @@ class CLIPTextGenerator:
             print(f"len(top_texts)={len(top_texts)}")
             print(f"")
             print(f"")
-            best_sentences.append(top_texts[torch.argmax(predicted_probs[0])])
+            best_sentences.append(top_texts[torch.argmax(predicted_probs)])
+            # best_sentences.append(top_texts[torch.argmax(predicted_probs[0])])
 
             # debug
             probs_val, indices = predicted_probs[0].topk(DEBUG_NUM_WORDS)
