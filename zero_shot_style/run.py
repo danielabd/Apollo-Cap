@@ -116,7 +116,7 @@ def get_args():
 
 
 def run(config, img_path, desired_style_embedding_vector, desired_style_embedding_vector_std, cuda_idx, title2print,
-        model_path, dataset_type, tmp_text_loss, label, img_dict, debug_tracking, text_generator=None,
+        model_path, style_type, tmp_text_loss, label, img_dict, debug_tracking, text_generator=None,
         image_features=None, evaluation_obj=None, desired_style_bin = False):
     # debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
@@ -134,7 +134,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
     captions = text_generator.run(image_features, config['cond_text'], config['beam_size'], config['text_style_scale'],
                                   text_style, desired_style_embedding_vector, desired_style_embedding_vector_std,
-                                  dataset_type, img_idx=config['img_path_idx'], img_name=img_path.split('/')[-1], style=label, desired_style_bin=config['labels_dict_idxs'][label])
+                                  style_type, img_idx=config['img_path_idx'], img_name=img_path.split('/')[-1], style=label, desired_style_bin=config['labels_dict_idxs'][label])
     debug_tracking[img_path][label] = text_generator.get_debug_tracking()
     t2 = timeit.default_timer();
 
@@ -155,7 +155,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
     print('best clip:', config['cond_text'] + captions[best_clip_idx])
     print(f"Time to create caption is: {(t2 - t1) / 60} minutes = {t2 - t1} seconds.")
-    img_dict[img_path][dataset_type][config['text_style_scale']][label] = config['cond_text'] + captions[best_clip_idx]
+    img_dict[img_path][style_type][config['text_style_scale']][label] = config['cond_text'] + captions[best_clip_idx]
     return config['cond_text'] + captions[best_clip_idx]
 
 
@@ -552,16 +552,18 @@ def evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_
     if 'style_cls' in evaluation_results[img_name][label]['scores']:
         style_cls_scores_table = get_table_for_wandb(style_cls_scores)
 
-    wandb.log({'details_evaluation/style_cls_score': style_cls_scores_table,
-               'details_evaluation/clip_score': clip_scores_table,
-               'details_evaluation/fluency_score': fluency_scores_table,
-               'details_evaluation/avg_total_score': avg_total_scores_table})
+    if config['wandb_mode'] == 'online':
+        wandb.log({'details_evaluation/style_cls_score': style_cls_scores_table,
+                   'details_evaluation/clip_score': clip_scores_table,
+                   'details_evaluation/fluency_score': fluency_scores_table,
+                   'details_evaluation/avg_total_score': avg_total_scores_table})
 
     total_score_and_text = pd.concat(
         [pd.DataFrame({'avg_total_score': avg_total_scores}, index=list(range(len(avg_total_scores)))),
          pd.DataFrame({'total_res_text': total_res_text}, index=list(range(len(total_res_text)))),
          pd.DataFrame({'total_gt_text': total_gt_text}, index=list(range(len(total_gt_text))))], axis=1)
-    wandb.log({'details_evaluation/total_score_text': total_score_and_text})
+    if config['wandb_mode'] == 'online':
+        wandb.log({'details_evaluation/total_score_text': total_score_and_text})
 
     avg_clip_score = np.mean(clip_scores)
     avg_fluency_score = mean_perplexity
@@ -584,10 +586,11 @@ def evaluate_results(config, fluency_obj, evaluation_results, gts_data, results_
     print("*****************************")
     print("*****************************")
     print("*****************************")
-    wandb.log({'evaluation/mean_style_cls_scores': avg_style_cls_score,
-               'evaluation/mean_clip_scores': avg_clip_score,
-               'evaluation/mean_fluency_scores': avg_fluency_score,
-               'evaluation/final_avg_total_score': final_avg_total_score})
+    if config['wandb_mode'] == 'online':
+        wandb.log({'evaluation/mean_style_cls_scores': avg_style_cls_score,
+                   'evaluation/mean_clip_scores': avg_clip_score,
+                   'evaluation/mean_fluency_scores': avg_fluency_score,
+                   'evaluation/final_avg_total_score': final_avg_total_score})
 
     write_evaluation_results(total_captions, final_avg_total_score, results_dir, config)
     print('Finish to evaluate results!')
@@ -627,20 +630,23 @@ def initial_variables():
     with open(factual_captions_path, 'rb') as f:
         factual_captions = pickle.load(f)
 
-    data_path = os.path.join(data_dir, config['data_name'], 'annotations', config['data_type'] + '.pkl')
-
-    wandb.init(project='StylizedZeroCap',
-               config=config,
-               resume=config['resume'],
-               id=config['run_id'],
-               mode=config['wandb_mode'],  # disabled, offline, online'
-               tags=config['tags'])
+    if config['wandb_mode'] == 'online':
+        wandb.init()
+        wandb.init(project='StylizedZeroCapEmoji',
+                   config=config,
+                   resume=config['resume'],
+                   id=config['run_id'],
+                   mode=config['wandb_mode'],  # disabled, offline, online'
+                   tags=config['tags'])
 
     # handle sweep training names
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f'Current time is: {cur_time}')
     cur_date = datetime.now().strftime("%d_%m_%Y")
-    config['training_name'] = f'{wandb.run.id}-{wandb.run.name}'
+    if config['wandb_mode'] == 'online':
+        config['training_name'] = f'{wandb.run.id}-{wandb.run.name}'
+    else:
+        config['training_name'] = 'tmp'
 
     experiment_type_dir = os.path.join(os.path.expanduser("~"),'experiments','stylized_zero_cap_experiments',config['global_dir_name_for_save_models'])
     if not os.path.isdir(experiment_type_dir):
@@ -657,7 +663,8 @@ def initial_variables():
         config['desired_labels'] = ['positive']
         config['calc_fluency'] = False
 
-    wandb.config.update(config, allow_val_change=True)
+    if config['wandb_mode'] == 'online':
+        wandb.config.update(config, allow_val_change=True)
 
     txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
     evaluation_obj = {}
@@ -688,18 +695,18 @@ def initial_variables():
     debug_tracking = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [])))  # word_num:iteration:module:list
     model_path = os.path.join(os.path.expanduser('~'), config['best_model_name'])
 
-    return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
+    return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, \
            mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
            tmp_text_loss, factual_captions, desired_labels_list, mean_embedding_vectors_to_load,std_embedding_vectors, imgs_to_test, evaluation_obj
 
 
 def main():
-    config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, data_path, \
+    config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, \
     mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
     tmp_text_loss, factual_captions, desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors, imgs_to_test, evaluation_obj = initial_variables()
 
     if config["data_name"] == "senticap":  # todo:debug
-        gts_data = get_gts_data(data_path, factual_captions)
+        gts_data = get_gts_data(config['test_set_path'], config['test_imgs'], factual_captions, config['max_num_imgs2test'])
     if not config['debug_mac']:
         text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
                                            tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj,
@@ -713,7 +720,8 @@ def main():
     for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
         # if int(img_path.split('.')[0].split('/')[-1]) == 429063:
         #     print(f'img_path_idx={img_path_idx}')
-        wandb.log({'test/img_idx': img_path_idx})
+        if config['wandb_mode'] == 'online':
+            wandb.log({'test/img_idx': img_path_idx})
         print(f"Img num = {img_path_idx}")
         if not config['debug_mac']:
             image_features = text_generator.get_img_feature([img_path], None)
@@ -740,14 +748,19 @@ def main():
             evaluation_results[img_name][label] = {}
             if not config['imitate_text_style']:
                 if config['use_style_model']:
-                    desired_style_embedding_vector = mean_embedding_vectors_to_load[label]
-                    # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
-                    #real std
-                    # desired_style_embedding_vector_std = std_embedding_vectors[label]
-                    if label == 'positive':
-                        desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
-                    elif label == 'negative':
-                        desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
+                    if config['style_type']=='emoji':
+                        desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['idx_emoji_style'][label]), num_classes=config['num_classes'])+0.001
+                        desired_style_embedding_vector = torch.tensor(desired_style_embedding_vector/torch.sum(desired_style_embedding_vector))
+                        desired_style_embedding_vector_std=None
+                    else:
+                        desired_style_embedding_vector = mean_embedding_vectors_to_load[label]
+                        # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
+                        # real std
+                        # desired_style_embedding_vector_std = std_embedding_vectors[label]
+                        if label == 'positive':
+                            desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
+                        elif label == 'negative':
+                            desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
                 else:
                     desired_style_embedding_vector = None;
                     desired_style_embedding_vector_std = None
@@ -761,7 +774,7 @@ def main():
                 print(title2print)
                 best_caption = run(config, config['img_path'], desired_style_embedding_vector,
                                    desired_style_embedding_vector_std,
-                                   config['cuda_idx_num'], title2print, model_path, config['data_name'], tmp_text_loss,
+                                   config['cuda_idx_num'], title2print, model_path, config['style_type'], tmp_text_loss,
                                    label, img_dict, debug_tracking, text_generator, image_features, evaluation_obj)
                 write_caption_results(img_dict, results_dir, tgt_results_path)
                 # write_results_of_text_style_all_models(img_dict, desired_labels_list,

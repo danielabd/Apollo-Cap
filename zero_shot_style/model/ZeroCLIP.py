@@ -21,6 +21,11 @@ from zero_shot_style.model.text_style_embedding_senticap import TextStyleEmbed
 from zero_shot_style.model.text_style_embedding_senticap_based_on_clip import TextStyleEmbedCLIP
 # from zero_shot_style.evaluation.evaluation_all import STYLE_CLS
 import pickle
+
+import json
+from torchmoji.sentence_tokenizer import SentenceTokenizer
+from torchmoji.model_def import torchmoji_emojis
+
 DEBUG_NUM_WORDS = 10
 
 def write_tmp_text_loss(tmp_text_loss):
@@ -172,16 +177,13 @@ class CLIPTextGenerator:
         self.end_factor = end_factor
         self.ef_idx = 1
         self.forbidden_factor = forbidden_factor
-        
-        
-        # SENTIMENT: adding the sentiment model 
-        task='sentiment'
-        MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
-        
 
+        # SENTIMENT: adding the sentiment model
+        task = 'sentiment'
+        MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
         self.sentiment_model_name = MODEL
-        self.sentiment_model = '' #todo: remove it
-        if False: #todo: remove it
+        self.sentiment_model = ''  # todo: remove it
+        if False:  # todo: remove it
             self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
             self.sentiment_model.to(self.device)
             self.sentiment_model.eval()
@@ -189,60 +191,77 @@ class CLIPTextGenerator:
             # SENTIMENT: Freeze sentiment model weights
             for param in self.sentiment_model.parameters():
                 param.requires_grad = False
-            
+
             # SENTIMENT: tokenizer for sentiment analysis module
-            self.sentiment_tokenizer_name =  self.sentiment_model_name
+            self.sentiment_tokenizer_name = self.sentiment_model_name
             self.sentiment_tokenizer = AutoTokenizer.from_pretrained(self.sentiment_tokenizer_name)
 
             # SENTIMENT: fields for type and scale of sentiment
             self.sentiment_scale = 1
             self.sentiment_type = 'none'
 
-        # TEXT STYLE: adding the text style model
-        data_dir = os.path.join(os.path.expanduser('~'),'data')
-        if self.use_text_style_cutting:
-            self.text_style_cls = STYLE_CLS(config['txt_cls_model_paths'], data_dir, self.cuda_idx, config['labels_dict_idxs'],
-                             config['hidden_state_to_take_txt_cls'])
-        else:
-            if self.model_based_on == 'bert':
-                self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
-            elif self.model_based_on == 'clip':
-                self.text_style_model = TextStyleEmbedCLIP(device=self.device)
-
-            if 'cpu' in self.device:
-                checkpoint = torch.load(config['txt_embed_model_paths'], map_location=torch.device('cpu'))
-            else:
-                checkpoint = torch.load(config['txt_embed_model_paths'], map_location='cuda:0')
-
-            self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
-            self.text_style_model.to(self.device)
-            self.text_style_model.eval()
-
-        ##############
-        self.use_text_style = True
-        #self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-        self.text_style_model_name = model_path
         self.use_style_model = use_style_model
-        if self.use_style_model:
-            print(f"Loading embedding style model from: {self.text_style_model_name}")
-            if self.model_based_on == 'bert':
-                self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
-            elif self.model_based_on == 'clip':
-                self.text_style_model = TextStyleEmbedCLIP(device=self.device)
-
-            if 'cpu' in self.device:
-                checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
-            else:
-                checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
-
-            self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
-            self.text_style_model.to(self.device)
-            self.text_style_model.eval()
-
+        # TorchEmoji: emoji style model
+        if config['style_type'] == 'emoji':
+            print('Tokenizing using dictionary from {}'.format(config['emoji_vocab_path']))
+            with open(config['emoji_vocab_path'], 'r') as f:
+                vocabulary = json.load(f)
+            self.emoji_st_tokenizer = SentenceTokenizer(vocabulary, config['maxlen_emoji_sentence'])
+            print('Loading emoji style model  from {}.'.format(config['emoji_pretrained_path']))
+            self.emoji_style_model = torchmoji_emojis(config['emoji_pretrained_path'])
+            self.emoji_style_model.to(self.device)
+            self.emoji_style_model.eval()
             # TEXT_STYLE: Freeze text style model weights
-            for param in self.text_style_model.parameters():
+            for param in self.emoji_style_model.parameters():
                 param.requires_grad = False
+
+
+        # TEXT STYLE: adding the text style model
+        elif config['style_type']=='style_embed':
+            data_dir = os.path.join(os.path.expanduser('~'),'data')
+            if self.use_text_style_cutting:
+                self.text_style_cls = STYLE_CLS(config['txt_cls_model_paths'], data_dir, self.cuda_idx, config['labels_dict_idxs'],
+                                 config['hidden_state_to_take_txt_cls'])
+            else:
+                if self.model_based_on == 'bert':
+                    self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
+                elif self.model_based_on == 'clip':
+                    self.text_style_model = TextStyleEmbedCLIP(device=self.device)
+
+                if 'cpu' in self.device:
+                    checkpoint = torch.load(config['txt_embed_model_paths'], map_location=torch.device('cpu'))
+                else:
+                    checkpoint = torch.load(config['txt_embed_model_paths'], map_location='cuda:0')
+
+                self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
+                self.text_style_model.to(self.device)
+                self.text_style_model.eval()
+
+            ##############
+            self.use_text_style = True
+            #self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+            self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+            self.text_style_model_name = model_path
+
+            if self.use_style_model:
+                print(f"Loading embedding style model from: {self.text_style_model_name}")
+                if self.model_based_on == 'bert':
+                    self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
+                elif self.model_based_on == 'clip':
+                    self.text_style_model = TextStyleEmbedCLIP(device=self.device)
+
+                if 'cpu' in self.device:
+                    checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
+                else:
+                    checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
+
+                self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
+                self.text_style_model.to(self.device)
+                self.text_style_model.eval()
+
+                # TEXT_STYLE: Freeze text style model weights
+                for param in self.text_style_model.parameters():
+                    param.requires_grad = False
 
             self.desired_style_embedding_vector = ''
             self.desired_style_embedding_std_vector = ''
@@ -327,7 +346,7 @@ class CLIPTextGenerator:
             self.text_style_scale = text_style_scale
             self.style_type = style_type #'clip','twitter','emotions'
             if not text_to_imitate:
-                self.desired_style_embedding_vector = desired_style_embedding_vector
+                self.desired_style_embedding_vector = desired_style_embedding_vector.to(self.device)
                 self.desired_style_embedding_std_vector = desired_style_embedding_std_vector
 
             else: #there is text_to_imitate:
@@ -346,7 +365,7 @@ class CLIPTextGenerator:
                     # #### based on clip
                     # embedding_of_text_to_imitate = self.text_style_model(text_to_imitate) #embeding vector
                     embedding_of_text_to_imitate.to(self.device)
-                    self.desired_style_embedding_vector = embedding_of_text_to_imitate
+                    self.desired_style_embedding_vector = embedding_of_text_to_imitate.to(self.device)
 
         context_tokens = self.lm_tokenizer.encode(self.context_prefix + cond_text)
 
@@ -669,6 +688,81 @@ class CLIPTextGenerator:
 
         return text_style_loss, losses, best_sentences, total_best_sentences_style
 
+    def get_text_style_loss_emoji(self, probs, context_tokens):
+        top_size = 512
+        top_probs_LM, top_indices = probs.topk(top_size, -1)
+
+        prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
+
+        text_style_loss = 0
+        losses = []
+        best_sentences = []
+        debug_best_top_texts_style = []
+        debug_best_probs_vals_style = []
+        for idx_p in range(probs.shape[0]):  # go over all beams
+            top_texts = []
+            prefix_text = prefix_texts[idx_p]
+            for x in top_indices[idx_p]:  # go over all optional topk next word
+                top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+
+            #####
+            #####
+            with torch.no_grad():
+
+                tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
+                # self.emoji_style_model.to(torch.device("cuda"))
+                # self.emoji_style_model = self.emoji_style_model.to(self.device)
+                probs = self.emoji_style_model(tokenized)
+                probs = torch.tensor(probs*1000).to(self.device)
+                self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)
+                emoji_style_loss = ((probs * probs.log()) - (probs * self.desired_style_embedding_vector.log())).sum(-1)
+                predicted_probs = emoji_style_loss
+                # #######
+                # #calc euclidean distance
+                # distances_from_mean_vec = torch.cdist(self.desired_style_embedding_vector.unsqueeze(0),logits)
+                # # euclidean_distance = torch.sqrt(torch.sum((logits - self.desired_style_embedding_vector) ** 2, dim=-1))
+                #
+                # #try to calc the distance from  avg+std
+                # distances = torch.maximum(distances_from_mean_vec -torch.tensor(self.desired_style_embedding_std_vector).to(self.device),torch.tensor(0))
+                # ######
+
+                # text_style_grades = nn.functional.softmax(-distances, dim=-1)
+
+
+                # predicted_probs = nn.functional.softmax(text_style_grades / self.text_style_loss_temperature, dim=-1).detach()
+                # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+
+            target = torch.zeros_like(probs[idx_p], device=self.device)
+            target[top_indices[idx_p]] = predicted_probs[0]
+
+            target = target.unsqueeze(0)
+            cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
+
+            text_style_loss += cur_text_style_loss
+            losses.append(cur_text_style_loss)
+            best_sentences.append(top_texts[torch.argmax(predicted_probs[0])])
+
+            # debug
+            probs_val, indices = predicted_probs[0].topk(DEBUG_NUM_WORDS)
+            debug_best_probs_vals_style.extend(list(probs_val.cpu().data.numpy()))
+            style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
+            debug_best_top_texts_style.extend(style_top_text)
+
+        total_best_sentences_style = {}
+        for i in np.argsort(debug_best_probs_vals_style)[-DEBUG_NUM_WORDS:]:
+            total_best_sentences_style[debug_best_top_texts_style[i]] = debug_best_probs_vals_style[i]
+
+        loss_string = ''
+        for idx_p in range(probs.shape[0]):  # go over all beams
+            if idx_p == 0:
+                loss_string = f'{losses[0]}'
+            else:
+                loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
+
+        return text_style_loss, losses, best_sentences, total_best_sentences_style
+
 
     
     def shift_context(self, word_loc, context, last_token, context_tokens, probs_before_shift):
@@ -721,7 +815,9 @@ class CLIPTextGenerator:
                 if self.text_style_scale!=0:
                     if self.style_type == 'clip': #using clip model for text style
                         text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
-                    else:
+                    elif self.style_type == 'emoji':
+                        text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(probs, context_tokens)
+                    else: #my text style embedding that I trained
                         text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
                     #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                     # loss += self.text_style_scale * text_style_loss
@@ -876,12 +972,13 @@ class CLIPTextGenerator:
             with torch.no_grad():
                 similiraties = (self.image_features @ text_features.T)
 
-                similiraties = similiraties * style_scores
-                #zero sentences which are not in the desired style
-                if self.device == "cuda":
-                    similiraties = torch.mul(similiraties, style_scores)
-                else:
-                    similiraties = np.multiply(similiraties, style_scores)
+                if self.use_text_style_cutting:
+                    similiraties = similiraties * style_scores
+                    #zero sentences which are not in the desired style
+                    if self.device == "cuda":
+                        similiraties = torch.mul(similiraties, style_scores)
+                    else:
+                        similiraties = np.multiply(similiraties, style_scores)
 
                 ############
                 # top_texts = ['Ugly and disgusting  image', 'Beautiful and amazing image']

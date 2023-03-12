@@ -309,7 +309,7 @@ def main():
     save_annotations = False
     #use all annotated data with factual to test
     arrange_data(train_data_flickrstyle10k, val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k,save_images,save_annotations, 'flickrstyle10k')
-    arrange_data_for_senticap(sr, target_data_dir_senticap, save_images, save_annotations)
+    # arrange_data_for_senticap(sr, target_data_dir_senticap, save_images, save_annotations)
     print('finish')
 
     '''

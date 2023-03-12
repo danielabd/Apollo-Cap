@@ -1,6 +1,7 @@
 data_name: flickrstyle10k
-task: train #test
-load_model: False
+#task: train #test
+task: test #test
+load_model: TRUE
 test_on_df: [train, val, test]
 global_dir_name_for_save_models: flickrstyle10k_text_style_classification
 
