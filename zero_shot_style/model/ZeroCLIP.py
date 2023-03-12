@@ -707,6 +707,7 @@ class CLIPTextGenerator:
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]:  # go over all optional topk next word
                 print(f"x={x}")
+                print(f"self.lm_tokenizer.decode(x)={self.lm_tokenizer.decode(x)}")
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
 
             #####
