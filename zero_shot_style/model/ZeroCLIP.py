@@ -2,6 +2,8 @@
 import csv
 import os.path
 import heapq
+import pdb
+
 import numpy as np
 from torch import nn
 from transformers.models.gpt2 import GPT2LMHeadModel, GPT2Tokenizer
@@ -705,6 +707,7 @@ class CLIPTextGenerator:
         for idx_p in range(probs.shape[0]):  # go over all beams
             top_texts = []
             prefix_text = prefix_texts[idx_p]
+            pdb.set_trace()
             for x in top_indices[idx_p]:  # go over all optional topk next word
                 print(f"x={x}")
                 print(f"self.lm_tokenizer.decode(x)={self.lm_tokenizer.decode(x)}")
