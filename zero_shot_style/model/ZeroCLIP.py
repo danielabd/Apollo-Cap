@@ -745,7 +745,7 @@ class CLIPTextGenerator:
                 # predicted_probs = nn.functional.softmax(text_style_grades / self.text_style_loss_temperature, dim=-1).detach()
                 # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
 
-            pdb.set_trace()
+            # pdb.set_trace()
             print(f"predicted_probs.is_cuda={predicted_probs.is_cuda}")
             predicted_probs = predicted_probs.to(self.device)
             print(f"predicted_probs.is_cuda={predicted_probs.is_cuda}")
