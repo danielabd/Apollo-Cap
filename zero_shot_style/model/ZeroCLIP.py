@@ -727,12 +727,12 @@ class CLIPTextGenerator:
                 # print(f"tokenized.is_cuda={tokenized.is_cuda}")
 
 
-                probs = self.emoji_style_model(tokenized)
+                emoji_style_probs = self.emoji_style_model(tokenized)
 
-                probs = torch.tensor(probs*1000)
+                pemoji_style_probs = torch.tensor(emoji_style_probs*1000)
                 # probs = torch.tensor(probs*1000).to(self.device)
                 # self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)
-                emoji_style_loss = ((probs * probs.log()) - (probs * self.desired_style_embedding_vector.log())).sum(-1)
+                emoji_style_loss = ((emoji_style_probs * emoji_style_probs.log()) - (emoji_style_probs * self.desired_style_embedding_vector.log())).sum(-1)
                 predicted_probs = emoji_style_loss
 
                 # #######
