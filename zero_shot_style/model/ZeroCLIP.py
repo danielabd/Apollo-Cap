@@ -209,7 +209,7 @@ class CLIPTextGenerator:
             self.emoji_st_tokenizer = SentenceTokenizer(vocabulary, config['maxlen_emoji_sentence'])
             print('Loading emoji style model  from {}.'.format(config['emoji_pretrained_path']))
             self.emoji_style_model = torchmoji_emojis(config['emoji_pretrained_path'])
-            self.emoji_style_model.to(self.device)
+            # self.emoji_style_model.to(self.device)
             self.emoji_style_model.eval()
             # TEXT_STYLE: Freeze text style model weights
             for param in self.emoji_style_model.parameters():
@@ -710,13 +710,13 @@ class CLIPTextGenerator:
             with torch.no_grad():
 
                 tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
-                tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
+                tokenized = torch.from_numpy(tokenized.astype(np.int32))
                 # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
                 # self.emoji_style_model.to(torch.device("cuda"))
                 # self.emoji_style_model = self.emoji_style_model.to(self.device)
 
-                print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
-                print(f"tokenized.is_cuda={tokenized.is_cuda}")
+                # print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
+                # print(f"tokenized.is_cuda={tokenized.is_cuda}")
 
                 probs = self.emoji_style_model(tokenized)
                 probs = torch.tensor(probs*1000).to(self.device)
