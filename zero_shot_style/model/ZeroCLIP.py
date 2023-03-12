@@ -1,4 +1,4 @@
-import pdb
+# import pdb
 import csv
 import os.path
 import heapq
@@ -762,7 +762,7 @@ class CLIPTextGenerator:
             # print(f" predicted_probs={ predicted_probs}")
             # print(f" len(predicted_probs)={ len(predicted_probs)}")
             # print(f" predicted_probs={ predicted_probs}")
-            pdb.set_trace()
+            # pdb.set_trace()
             print(f"torch.argmax(predicted_probs)={torch.argmax(predicted_probs)}")
             print(f"len(top_texts)={len(top_texts)}")
             print(f"")
@@ -788,7 +788,7 @@ class CLIPTextGenerator:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
 
         # return text_style_loss, losses, best_sentences, total_best_sentences_style
-        return text_style_loss, losses
+        return text_style_loss, losses, None, None
 
 
     
@@ -816,25 +816,25 @@ class CLIPTextGenerator:
 
             loss = 0.0
 
-            # # CLIP LOSS
-            # if self.clip_scale!=0:
-            #     clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM = self.clip_loss(probs, context_tokens)
-            #     loss += self.clip_scale * clip_loss
-            #     if i == 0: #first iteraation
-            #         LM_0_probs = list(total_best_sentences_LM.values())
-            #         LM_0_vals = list(total_best_sentences_LM.keys())
-            #     self.debug_tracking[word_loc][i]['LM_0 - prob'] = LM_0_probs
-            #     self.debug_tracking[word_loc][i]['LM_0 - val'] = LM_0_vals
-            #     self.debug_tracking[word_loc][i]['LM - prob'] = list(total_best_sentences_LM.values())
-            #     self.debug_tracking[word_loc][i]['LM - val'] = list(total_best_sentences_LM.keys())
-            #     self.debug_tracking[word_loc][i]['CLIP - prob'] = list(total_best_sentences_clip.values())
-            #     self.debug_tracking[word_loc][i]['CLIP - val'] = list(total_best_sentences_clip.keys())
-            #
-            # # CE/Fluency loss
-            # if self.ce_scale!=0:
-            #     ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
-            #     loss += ce_loss.sum()
-            #     ce_losses = (probs * probs_before_shift.log()).sum(-1)
+            # CLIP LOSS
+            if self.clip_scale!=0:
+                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM = self.clip_loss(probs, context_tokens)
+                loss += self.clip_scale * clip_loss
+                if i == 0: #first iteraation
+                    LM_0_probs = list(total_best_sentences_LM.values())
+                    LM_0_vals = list(total_best_sentences_LM.keys())
+                self.debug_tracking[word_loc][i]['LM_0 - prob'] = LM_0_probs
+                self.debug_tracking[word_loc][i]['LM_0 - val'] = LM_0_vals
+                self.debug_tracking[word_loc][i]['LM - prob'] = list(total_best_sentences_LM.values())
+                self.debug_tracking[word_loc][i]['LM - val'] = list(total_best_sentences_LM.keys())
+                self.debug_tracking[word_loc][i]['CLIP - prob'] = list(total_best_sentences_clip.values())
+                self.debug_tracking[word_loc][i]['CLIP - val'] = list(total_best_sentences_clip.keys())
+
+            # CE/Fluency loss
+            if self.ce_scale!=0:
+                ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
+                loss += ce_loss.sum()
+                ce_losses = (probs * probs_before_shift.log()).sum(-1)
 
             # TEXT_STYLE:
             if self.use_style_model:
@@ -849,8 +849,9 @@ class CLIPTextGenerator:
                     #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                     # loss += self.text_style_scale * text_style_loss
                     loss += self.text_style_scale * text_style_loss
-                    self.debug_tracking[word_loc][i]['STYLE - prob'] = list(total_best_sentences_style.values())
-                    self.debug_tracking[word_loc][i]['STYLE - val'] = list(total_best_sentences_style.keys())
+                    if total_best_sentences_style:
+                        self.debug_tracking[word_loc][i]['STYLE - prob'] = list(total_best_sentences_style.values())
+                        self.debug_tracking[word_loc][i]['STYLE - val'] = list(total_best_sentences_style.keys())
 
                 # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
                 #for beam_num in range(len(best_sentences_LM)):
