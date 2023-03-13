@@ -331,8 +331,8 @@ def evaluate_single_res(res, gt, image_path, label, metrics, evaluation_obj):
                 continue
             else:
                 evaluation[metric], _ = evaluation_obj[metric].compute_score(res, label)
-        elif metric == 'clip_score':
-            evaluation['clip_score'], _ = evaluation_obj[metric].compute_score(image_path, res)
+        elif metric == 'CLIPScore':
+            evaluation['CLIPScore'], _ = evaluation_obj[metric].compute_score(image_path, res)
         elif metric == 'fluency':  # calc fluency only on all data
             continue
         else:

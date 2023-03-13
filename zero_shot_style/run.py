@@ -79,8 +79,8 @@ def get_args():
 
     parser.add_argument("--max_num_of_imgs", type=int, default=2)  # 1e6)
     parser.add_argument("--evaluation_metrics", nargs="+",
-                        default=['clip_score', 'fluency', 'style_classification'])
-    # default=['bleu', 'rouge', 'clip_score_ref', 'clip_score', 'fluency', 'style_classification'])
+                        default=['CLIPScore', 'fluency', 'style_classification', 'style_classification_emoji'])
+    # default=['bleu', 'rouge', 'clip_score_ref', 'CLIPScore', 'fluency', 'style_classification'])
 
     parser.add_argument("--cuda_idx_num", type=str, default="0")
     parser.add_argument("--img_idx_to_start_from", type=int, default=0)
@@ -493,8 +493,8 @@ def get_evaluation_obj(config, text_generator, evaluation_obj):
                 evaluation_obj['rouge'] = Rouge()
             if metric == 'clip_score_ref' and 'clip_score_ref' not in evaluation_obj:
                 evaluation_obj['clip_score_ref'] = CLIPScoreRef(text_generator)
-            if metric == 'clip_score' and 'clip_score' not in evaluation_obj:
-                evaluation_obj['clip_score'] = CLIPScore(text_generator)
+            if metric == 'CLIPScore' and 'CLIPScore' not in evaluation_obj:
+                evaluation_obj['CLIPScore'] = CLIPScore(text_generator)
             if metric == 'fluency' and 'fluency' not in evaluation_obj:
                 evaluation_obj['fluency'] = Fluency()
     return evaluation_obj
@@ -529,8 +529,8 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                 evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
                 evaluation_obj)
 
-            if 'clip_score' in config['evaluation_metrics']:
-                clip_score = evaluation_results[img_name][label]['scores']['clip_score']
+            if 'CLIPScore' in config['evaluation_metrics']:
+                clip_score = evaluation_results[img_name][label]['scores']['CLIPScore']
             else:
                 clip_score = DEFAULT_CLIP_SCORE
             if config['calc_fluency'] and 'fluency' in config['evaluation_metrics']:
@@ -663,7 +663,7 @@ def initial_variables():
         factual_captions = pickle.load(f)
 
     if config['wandb_mode'] == 'online':
-        wandb.init(project='StylizedZeroCapEmoji',
+        wandb.init(project='StylizedZeroCapWithEmoji',
                    config=config,
                    resume=config['resume'],
                    id=config['run_id'],
