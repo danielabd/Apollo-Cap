@@ -459,15 +459,13 @@ def get_all_sentences(data_dir, dataset_name,type_set):
     return sentences
 
 
-def get_gts_data(test_set_path, test_imgs, factual_captions=None, max_num_imgs2test=-1):
+def get_gts_data(annotations_path, imgs_path, data_type, factual_captions=None, max_num_imgs2test=-1):
     '''
-
     :param test_set_path: dictionary:keys=dataset names, values=path to pickle file
     :return: gts_per_data_set: key=img_name,values=dict:keys=['image_path','factual','humor','romantic','positive','negative'], values=gt text
     '''
-    gts_per_data_set = {}
     gts = {}
-    with open(test_set_path, 'rb') as r:
+    with open(os.path.join(annotations_path,data_type + ".pkl"), 'rb') as r:
         data = pickle.load(r)
     for k in data:
         if len(gts)>=max_num_imgs2test and max_num_imgs2test>0:
@@ -480,7 +478,7 @@ def get_gts_data(test_set_path, test_imgs, factual_captions=None, max_num_imgs2t
         gts[k]['image_path'] = replace_user_home_dir(data[k]['image_path'])
         for style in data[k]:
             if style == 'image_path':
-                gts[k]['image_path'] = os.path.join(test_imgs, data[k]['image_path'].split('/')[-1])
+                gts[k]['image_path'] = os.path.join(imgs_path,data_type, data[k]['image_path'].split('/')[-1])
                 continue
             if style!='factual':
                 gts[k][style] = data[k][style]
@@ -756,7 +754,7 @@ def main():
             factual_captions = pickle.load(f)
     else:
         factual_captions = None
-    gts_per_data_set = get_gts_data(config['test_set_path'],config['test_imgs'], factual_captions, config['max_num_imgs2test'])
+    gts_per_data_set = get_gts_data(config['annotations_path'],config['imgs_path'], config['data_type'], factual_captions, config['max_num_imgs2test'])
 
     res_data_per_test = get_res_data(config['res_path2eval'])
     # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)

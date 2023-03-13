@@ -31,6 +31,7 @@ from evaluate import load
 
 MAX_PERPLEXITY = 500
 DEFAULT_PERPLEXITY_SCORE = 1
+DEFAULT_CLIP_SCORE = 1
 
 
 def get_args():
@@ -498,7 +499,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                      txt_cls_model_path, data_dir, text_generator, evaluation_obj):
     print("Calc evaluation of the results...")
     # calc perplexity
-    if config['calc_fluency']:
+    if config['calc_fluency'] and 'fluency' in config['evaluation_metrics']:
         perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score()
     else:
         mean_perplexity = DEFAULT_PERPLEXITY_SCORE
@@ -523,8 +524,11 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                 evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
                 evaluation_obj)
 
-            clip_score = evaluation_results[img_name][label]['scores']['clip_score']
-            if config['calc_fluency']:
+            if 'clip_score' in config['evaluation_metrics']:
+                clip_score = evaluation_results[img_name][label]['scores']['clip_score']
+            else:
+                clip_score = DEFAULT_CLIP_SCORE
+            if config['calc_fluency'] and 'fluency' in config['evaluation_metrics']:
                 fluency_score = perplexities[img_name][label]
             else:
                 fluency_score = DEFAULT_PERPLEXITY_SCORE
@@ -600,7 +604,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
 
 def initial_variables():
     def get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path):
-        if config['use_style_model']:
+        if config['use_style_model'] and config['style_type'] == 'style_embed':
             with open(mean_embedding_vec_path, 'rb') as fp:
                 mean_embedding_vectors_to_load = pickle.load(fp)
             desired_labels_list = list(mean_embedding_vectors_to_load.keys())
@@ -610,9 +614,9 @@ def initial_variables():
         else:
             desired_labels_list = config['desired_labels']
             mean_embedding_vectors_to_load = None
+            std_embedding_vectors_to_load = None
         if config['imitate_text_style']:
             desired_labels_list = config['text_to_imitate_list']
-
         if config['debug']:
             desired_labels_list = [desired_labels_list[0]]
         return desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors_to_load
@@ -710,7 +714,7 @@ def main():
     tmp_text_loss, factual_captions, desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors, imgs_to_test, evaluation_obj = initial_variables()
 
     if config["data_name"] == "senticap":  # todo:debug
-        gts_data = get_gts_data(config['test_set_path'], config['test_imgs'], factual_captions, config['max_num_imgs2test'])
+        gts_data = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_type'], factual_captions, config['max_num_imgs2test'])
     if not config['debug_mac']:
         text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
                                            tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj,
@@ -785,7 +789,8 @@ def main():
                 #                                    results_dir, 1, tgt_results_path)
                 if config['write_debug_tracking_file']:
                     write_debug_tracking(results_dir, debug_tracking)
-                evaluation_obj['fluency'].add_test(best_caption, img_name, label)
+                if 'fluency' in config['evaluation_metrics']:
+                    evaluation_obj['fluency'].add_test(best_caption, img_name, label)
 
             # image manipulation
             elif config['run_type'] == 'arithmetics':

@@ -6,7 +6,7 @@ style_type: 'emoji' #'style_embed' or 'emoji'
 debug: False
 debug_mac: False
 wandb_mode: disabled #'disabled, offline, online'
-
+evaluation_metrics: ["style_cls"]
 data_type: val #val
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 #specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
@@ -137,13 +137,13 @@ max_num_imgs2test:
   senticap: -1
   flickrstyle10k: 1000
 
-test_set_path:
-  senticap: /Users/danielabendavid/data/senticap/annotations/test.pkl
-  flickrstyle10k: /Users/danielabendavid/data/flickrstyle10k/annotations/test.pkl
+annotations_path:
+  senticap: /Users/danielabendavid/data/senticap/annotations
+  flickrstyle10k: /Users/danielabendavid/data/flickrstyle10k/annotations
 
-test_imgs:
-  senticap: /home/nlp/tzufar/data/senticap/images/test
-  flickrstyle10k: /home/nlp/tzufar/data/flickrstyle10k/images/test
+imgs_path:
+  senticap: /home/nlp/tzufar/data/senticap/images
+  flickrstyle10k: /home/nlp/tzufar/data/flickrstyle10k/images
 
 #emoji
 emoji_vocab_path: ~/projects/torchMoji/model/vocabulary.json
@@ -153,7 +153,7 @@ num_classes: 64
 idx_emoji_style:
   senticap:
     positive: 53
-    negative: 35
+    negative: 34
   flickrstyle10k:
     humor: 0
     romantic: 23
