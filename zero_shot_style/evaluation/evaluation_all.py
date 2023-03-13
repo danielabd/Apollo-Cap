@@ -111,7 +111,7 @@ class CLIPScore:
 
 
 class STYLE_CLS:
-    def __init__(self, txt_cls_model_path, data_dir, desired_cuda_num, labels_dict_idxs, hidden_state_to_take=-1,
+    def __init__(self, txt_cls_model_path, desired_cuda_num, labels_dict_idxs, data_dir=None, hidden_state_to_take=-1,
                  scale_noise=0):
         self.data_dir = data_dir
         self.desired_cuda_num = desired_cuda_num
@@ -347,13 +347,13 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
     if ('CLIPScoreRef' in metrics) or ('CLIPScore' in metrics):
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, config=config)
     if 'style_classification' in metrics:
-        style_cls_obj = STYLE_CLS(txt_cls_model_paths_to_load, data_dir, cuda_idx, labels_dict_idxs,
+        style_cls_obj = STYLE_CLS(txt_cls_model_paths_to_load, cuda_idx, labels_dict_idxs, data_dir,
                                                 config['hidden_state_to_take_txt_cls'])
     if 'style_classification_emoji' in config['evaluation_metrics']:
         style_cls_emoji_obj = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'],
                                                       config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
     if 'fluency' in metrics:
-        fluency_obj = Fluency()
+        fluency_obj = Fluency(config['desired_labels'])
     all_scores = {}
     for test_type in res:
         print(f"Calc scores for experiment: **** {test_type} *****")

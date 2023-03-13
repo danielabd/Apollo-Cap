@@ -104,7 +104,7 @@ class CLIPTextGenerator:
                  use_style_model=False,
                  config=None,
                  model_based_on='bert',
-                 evaluation_obj = None,
+                 evaluation_obj=None,
                  desired_style_bin = None,
                  use_text_style_cutting = False,
                  **kwargs):

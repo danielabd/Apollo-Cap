@@ -350,12 +350,13 @@ class Caption:
 
 
 class Fluency:
-    def __init__(self):
+    def __init__(self, desired_labels):
         self.model_id = 'gpt2'
         self.perplexity = load("perplexity", module_type="measurement")
         self.tests = []
         self.img_names = []
         self.styles = []
+        self.labels = desired_labels
 
     def add_test(self, res, img_name, style):
         self.tests.append(res)
@@ -376,6 +377,11 @@ class Fluency:
         # total_avg_perplexity = 1-np.min([results['mean_perplexity'],MAX_PERPLEXITY])/MAX_PERPLEXITY
         return perplexities, total_avg_perplexity
 
+    def add_results(self, evaluation_results):
+        for img_name in evaluation_results:
+            for label in evaluation_results[img_name]:
+                if label in self.labels:
+                    self.add_test(evaluation_results[img_name][label]['res'], img_name, label)
 
 def get_table_for_wandb(data_list):
     data = [[x, y] for (x, y) in zip(data_list, list(range(len(data_list))))]
@@ -496,7 +502,19 @@ def get_evaluation_obj(config, text_generator, evaluation_obj):
             if metric == 'CLIPScore' and 'CLIPScore' not in evaluation_obj:
                 evaluation_obj['CLIPScore'] = CLIPScore(text_generator)
             if metric == 'fluency' and 'fluency' not in evaluation_obj:
-                evaluation_obj['fluency'] = Fluency()
+                evaluation_obj['fluency'] = Fluency(config['desired_labels'])
+
+            if metric == 'style_classification' and 'style_classification' not in evaluation_obj:
+                txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
+                evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
+                                                                   config['labels_dict_idxs'], None, config[
+                                                                       'hidden_state_to_take_txt_cls'])
+            if metric == 'style_classification_emoji' and 'style_classification_emoji' not in evaluation_obj:
+                evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'],
+                                                                               config['maxlen_emoji_sentence'],
+                                                                               config['emoji_pretrained_path'],
+                                                                               config['idx_emoji_style_dict'])
+
     return evaluation_obj
 
 
@@ -504,6 +522,8 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     print("Calc evaluation of the results...")
     # calc perplexity
     if config['calc_fluency'] and 'fluency' in config['evaluation_metrics']:
+        evaluation_obj['fluency'] = Fluency(config['desired_labels'])
+        evaluation_obj['fluency'].add_results(evaluation_results)
         perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score()
     else:
         mean_perplexity = DEFAULT_PERPLEXITY_SCORE
@@ -699,15 +719,14 @@ def initial_variables():
 
     txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
     evaluation_obj = {}
-    if 'style_classification' in config['evaluation_metrics']:
-        evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, data_dir, config['cuda_idx_num'],
-                                                config['labels_dict_idxs'], config[
-                                                    'hidden_state_to_take_txt_cls'])
-    if 'style_classification_emoji' in config['evaluation_metrics']:
-        evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
+    if config['use_style_threshold']:
+        if 'style_classification' in config['evaluation_metrics']:
+            evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
+                                                    config['labels_dict_idxs'], data_dir, config[
+                                                        'hidden_state_to_take_txt_cls'])
+        if 'style_classification_emoji' in config['evaluation_metrics']:
+            evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
 
-    if 'fluency' in config['evaluation_metrics']:
-        evaluation_obj['fluency'] = Fluency()
     desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
 
     print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
@@ -816,8 +835,8 @@ def main():
                 #                                    results_dir, 1, tgt_results_path)
                 if config['write_debug_tracking_file']:
                     write_debug_tracking(results_dir, debug_tracking)
-                if 'fluency' in config['evaluation_metrics']:
-                    evaluation_obj['fluency'].add_test(best_caption, img_name, label)
+                # if 'fluency' in config['evaluation_metrics']:
+                    # evaluation_obj['fluency'].add_test(best_caption, img_name, label)
 
             # image manipulation
             elif config['run_type'] == 'arithmetics':
