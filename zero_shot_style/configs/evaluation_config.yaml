@@ -1,8 +1,10 @@
 #senticap
 dataset: flickrstyle10k # senticap,flickrstyle10k
+style_type: 'emoji' #'style_embed' or 'emoji'
+
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
-metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #metrics: [fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #metrics: [bleu1, bleu3, bleu4]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #metrics: [CLIPScoreRef, CLIPScore]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
@@ -75,3 +77,15 @@ labels_dict_idxs:
     humor: 0
     romantic: 1
 
+#emoji
+emoji_vocab_path: ~/projects/torchMoji/model/vocabulary.json
+emoji_pretrained_path: ~/projects/torchMoji/model/pytorch_model.bin
+maxlen_emoji_sentence: 30
+num_classes: 64
+idx_emoji_style_dict:
+  senticap:
+    positive: 53
+    negative: 34
+  flickrstyle10k:
+    humor: 0
+    romantic: 23

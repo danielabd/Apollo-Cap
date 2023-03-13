@@ -6,7 +6,8 @@ style_type: 'emoji' #'style_embed' or 'emoji'
 debug: False
 debug_mac: False
 wandb_mode: online #'disabled, offline, online'
-evaluation_metrics: ["style_cls"]
+#evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+evaluation_metrics: [style_classification, style_classification_emoji]
 data_type: val #val
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 #specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
@@ -21,7 +22,7 @@ specific_idxs_to_skip: [2,3]
 #target_seq_length: 15
 #desired_labels: [positive, negative] #[factual, positive, ngeative]
 
-##todo
+##todo: for debugging
 max_num_of_imgs: 1
 target_seq_length: 2
 desired_labels: [positive] #[factual, positive, ngeative]
@@ -150,7 +151,7 @@ emoji_vocab_path: ~/projects/torchMoji/model/vocabulary.json
 emoji_pretrained_path: ~/projects/torchMoji/model/pytorch_model.bin
 maxlen_emoji_sentence: 30
 num_classes: 64
-idx_emoji_style:
+idx_emoji_style_dict:
   senticap:
     positive: 53
     negative: 34

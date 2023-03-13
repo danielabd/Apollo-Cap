@@ -213,10 +213,10 @@ class CLIPTextGenerator:
             print('Loading emoji style model  from {}.'.format(config['emoji_pretrained_path']))
             self.emoji_style_model = torchmoji_emojis(config['emoji_pretrained_path'])
             # self.emoji_style_model.to(self.device)
-            self.emoji_style_model.eval()
             # TEXT_STYLE: Freeze text style model weights
             for param in self.emoji_style_model.parameters():
                 param.requires_grad = False
+            self.emoji_style_model.eval()
 
 
         # TEXT STYLE: adding the text style model
@@ -711,10 +711,7 @@ class CLIPTextGenerator:
             for x in top_indices[idx_p]:  # go over all optional topk next word
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
 
-            #####
-            #####
             with torch.no_grad():
-
                 # top_texts = ["bad day", "It is so sad", "happy day", "wonderful action"]
                 tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
                 tokenized = torch.from_numpy(tokenized.astype(np.int32))
@@ -724,20 +721,11 @@ class CLIPTextGenerator:
 
                 # print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
                 # print(f"tokenized.is_cuda={tokenized.is_cuda}")
-
-
                 emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
-
-                ######
-                # emoji_style_probs = torch.tensor(emoji_style_probs*1000)
-                # factored_desired_style_embedding_vector = self.desired_style_embedding_vector*1000
-                #######
-                # emoji_style_probs = torch.tensor(emoji_style_probs)
-                factored_desired_style_embedding_vector = self.desired_style_embedding_vector
 
                 # probs = torch.tensor(probs*1000).to(self.device)
                 # self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)
-                emoji_style_loss = ((emoji_style_probs * emoji_style_probs.log()) - (emoji_style_probs * factored_desired_style_embedding_vector.log())).sum(-1)
+                emoji_style_loss = ((emoji_style_probs * emoji_style_probs.log()) - (emoji_style_probs * self.desired_style_embedding_vector.log())).sum(-1)
                 predicted_probs = emoji_style_loss
 
                 # #######
