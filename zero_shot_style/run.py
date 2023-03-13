@@ -14,7 +14,7 @@ from zero_shot_style.evaluation.evaluation_all import evaluate_single_res
 from zero_shot_style.evaluation.pycocoevalcap.bleu.bleu import Bleu
 from zero_shot_style.evaluation.pycocoevalcap.rouge.rouge import Rouge
 
-from writer import write_results, write_results_of_text_style, write_results_image_manipulation, \
+from zero_shot_style.writer import write_results, write_results_of_text_style, write_results_image_manipulation, \
     write_evaluation_results, write_results_of_text_style_all_models, write_caption_results, write_debug_tracking, \
     write_img_idx_to_name
 
