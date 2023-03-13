@@ -741,8 +741,7 @@ def main():
     mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
     tmp_text_loss, factual_captions, desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors, imgs_to_test, evaluation_obj = initial_variables()
 
-    if config["data_name"] == "senticap":  # todo:debug
-        gts_data = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_type'], factual_captions, config['max_num_imgs2test'])
+    gts_data = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_type'], factual_captions, config['max_num_imgs2test'])
     if not config['debug_mac']:
         text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
                                            tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj,
