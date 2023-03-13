@@ -712,7 +712,7 @@ class CLIPTextGenerator:
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
 
             with torch.no_grad():
-                # top_texts = ["bad day", "It is so sad", "happy day", "wonderful action"]
+                top_texts = ["bad day", "It is so sad", "happy day", "wonderful action"]
                 tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
                 tokenized = torch.from_numpy(tokenized.astype(np.int32))
                 # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)

@@ -229,7 +229,8 @@ class STYLE_CLS_EMOJI:
             # print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
             # print(f"tokenized.is_cuda={tokenized.is_cuda}")
             emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
-            cls_score = emoji_style_probs[0,self.idx_emoji_style_dict[gt_label]]
+            # cls_score = emoji_style_probs[0,self.idx_emoji_style_dict[gt_label]]
+            cls_score = sum(emoji_style_probs[0, self.idx_emoji_style_dict[gt_label]])
         return cls_score, None
 
     def compute_label_for_list(self, res):

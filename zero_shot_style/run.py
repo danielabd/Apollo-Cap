@@ -802,8 +802,11 @@ def main():
             if not config['imitate_text_style']:
                 if config['use_style_model']:
                     if config['style_type']=='emoji':
-                        # desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(35), num_classes=64)+0.001
-                        desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['idx_emoji_style_dict'][label]), num_classes=config['num_classes'])+0.00001
+                        desired_style_embedding_vector = torch.tensor(np.ones(config['num_classes'])*0.0000001)
+                        for i in range(config['num_classes']):
+                            if i in config['idx_emoji_style_dict'][label]:
+                                desired_style_embedding_vector[i] = 1
+                        # desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['idx_emoji_style_dict'][label]), num_classes=config['num_classes'])+0.00001
                         desired_style_embedding_vector = torch.tensor(desired_style_embedding_vector/torch.sum(desired_style_embedding_vector))
                         desired_style_embedding_vector_std=None
                     else:
