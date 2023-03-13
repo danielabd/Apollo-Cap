@@ -5,7 +5,7 @@ style_type: 'emoji' #'style_embed' or 'emoji'
 
 debug: False
 debug_mac: False
-wandb_mode: disabled #'disabled, offline, online'
+wandb_mode: online #'disabled, offline, online'
 evaluation_metrics: ["style_cls"]
 data_type: val #val
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
