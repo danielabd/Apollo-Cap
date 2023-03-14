@@ -195,12 +195,16 @@ class STYLE_CLS:
 
 
 class STYLE_CLS_EMOJI:
-    def __init__(self, emoji_vocab_path, maxlen_emoji_sentence, emoji_pretrained_path, idx_emoji_style_dict):
+    def __init__(self, emoji_vocab_path, maxlen_emoji_sentence, emoji_pretrained_path, idx_emoji_style_dict, use_single_emoji_style, desired_labels):
         with open(emoji_vocab_path, 'r') as f:
             self.vocabulary = json.load(f)
         self.emoji_st_tokenizer = SentenceTokenizer(self.vocabulary, maxlen_emoji_sentence)
         self.emoji_style_model = self.load_model(emoji_pretrained_path)
         self.idx_emoji_style_dict = idx_emoji_style_dict
+        self.use_single_emoji_style = use_single_emoji_style
+        self.desired_labels = desired_labels
+
+
 
     def load_model(self, emoji_pretrained_path):
         emoji_style_model = torchmoji_emojis(emoji_pretrained_path)
@@ -230,7 +234,18 @@ class STYLE_CLS_EMOJI:
             # print(f"tokenized.is_cuda={tokenized.is_cuda}")
             emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
             # cls_score = emoji_style_probs[0,self.idx_emoji_style_dict[gt_label]]
-            cls_score = sum(emoji_style_probs[0, self.idx_emoji_style_dict[gt_label]])
+
+            if self.use_single_emoji_style:
+                desired_labels_idxs = []
+                for label in self.desired_labels:
+                    desired_labels_idxs.append(self.idx_emoji_style_dict[label])
+                emoji_style_probs = emoji_style_probs[:, desired_labels_idxs]
+                # normalize each row sample
+                emoji_style_probs = emoji_style_probs / torch.unsqueeze(torch.sum(emoji_style_probs, dim=-1), 1)
+                cls_score = emoji_style_probs[:,torch.tensor(self.desired_labels.index(label))]
+            else: #use several emojis
+                cls_score = sum(emoji_style_probs[:, self.idx_emoji_style_dict[gt_label]])
+
         return cls_score, None
 
     def compute_label_for_list(self, res):
@@ -352,7 +367,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                                 config['hidden_state_to_take_txt_cls'])
     if 'style_classification_emoji' in config['evaluation_metrics']:
         style_cls_emoji_obj = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'],
-                                                      config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
+                                                      config['emoji_pretrained_path'], config['idx_emoji_style_dict'], config['use_single_emoji_style'], config['desired_labels'])
     if 'fluency' in metrics:
         fluency_obj = Fluency(config['desired_labels'])
     all_scores = {}

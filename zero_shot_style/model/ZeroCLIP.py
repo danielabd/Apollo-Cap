@@ -716,6 +716,7 @@ class CLIPTextGenerator:
                 # top_texts = ["bad day", "It is so sad", "happy day", "wonderful action"]
                 tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
                 tokenized = torch.from_numpy(tokenized.astype(np.int32))
+
                 # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
                 # self.emoji_style_model.to(torch.device("cuda"))
                 # self.emoji_style_model = self.emoji_style_model.to(self.device)
@@ -728,6 +729,9 @@ class CLIPTextGenerator:
                     for label in self.config['desired_labels']:
                         desired_labels_idxs.append(self.config['idx_emoji_style_dict'][label])
                     emoji_style_probs = emoji_style_probs[:,desired_labels_idxs]
+                    #normalize each row sample
+                    emoji_style_probs = emoji_style_probs / torch.unsqueeze(torch.sum(emoji_style_probs,dim=-1), 1)
+
 
                 # probs = torch.tensor(probs*1000).to(self.device)
                 # self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)

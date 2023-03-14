@@ -31,7 +31,7 @@ desired_labels: [positive, negative] #[factual, positive, ngeative]
 use_style_model: True
 use_text_style_example: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
-global_dir_name_for_save_models: senticap_ZeroStyleCap_with_emoji
+experiement_global_name: StylizedZeroCapWithEmoji_single_comp_to1
 
 hidden_state_to_take_txt_cls: -1
 scale_noise_txt_cls: 0
