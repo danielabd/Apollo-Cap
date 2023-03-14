@@ -109,6 +109,7 @@ class CLIPTextGenerator:
                  use_text_style_cutting = False,
                  **kwargs):
 
+        self.config = config
         self.use_text_style_cutting = use_text_style_cutting
         if evaluation_obj:
             evaluation_obj = evaluation_obj
@@ -712,7 +713,7 @@ class CLIPTextGenerator:
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
 
             with torch.no_grad():
-                top_texts = ["bad day", "It is so sad", "happy day", "wonderful action"]
+                # top_texts = ["bad day", "It is so sad", "happy day", "wonderful action"]
                 tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
                 tokenized = torch.from_numpy(tokenized.astype(np.int32))
                 # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
@@ -722,6 +723,11 @@ class CLIPTextGenerator:
                 # print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
                 # print(f"tokenized.is_cuda={tokenized.is_cuda}")
                 emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
+                if self.config['use_single_emoji_style']:
+                    desired_labels_idxs = []
+                    for label in self.config['desired_labels']:
+                        desired_labels_idxs.append(self.config['idx_emoji_style_dict'][label])
+                    emoji_style_probs = emoji_style_probs[:,desired_labels_idxs]
 
                 # probs = torch.tensor(probs*1000).to(self.device)
                 # self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)

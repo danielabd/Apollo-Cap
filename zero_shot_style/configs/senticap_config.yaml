@@ -5,7 +5,7 @@ style_type: 'emoji' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
 debug_mac: False
-wandb_mode: online #'disabled, offline, online'
+wandb_mode: disabled #'disabled, offline, online' #todo:
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [style_classification, style_classification_emoji]
@@ -152,10 +152,14 @@ emoji_vocab_path: ~/projects/torchMoji/model/vocabulary.json
 emoji_pretrained_path: ~/projects/torchMoji/model/pytorch_model.bin
 maxlen_emoji_sentence: 30
 num_classes: 64
+
+use_single_emoji_style: True
 idx_emoji_style_dict:
   senticap:
-    positive: [0,4,6,7,8,11,13,15,16,17,18,20,21,23,24,26,30,31,33,36,40,47,48,50,53,54,57,59,60,61,63] # 53
-    negative: [1,2,3,5,12,14,19,22,27,29,32,34,35,37,38,39,42,43,44,45,46,51,52,55,56,58] # 34
+    positive: 53
+    negative: 34
+#    positive: [0,4,6,7,8,11,13,15,16,17,18,20,21,23,24,26,30,31,33,36,40,47,48,50,53,54,57,59,60,61,63] # 53
+#    negative: [1,2,3,5,12,14,19,22,27,29,32,34,35,37,38,39,42,43,44,45,46,51,52,55,56,58] # 34
   flickrstyle10k:
     humor: 0
     romantic: 23

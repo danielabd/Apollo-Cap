@@ -34,7 +34,7 @@ DEFAULT_PERPLEXITY_SCORE = 1
 DEFAULT_CLIP_SCORE = 1
 DEFAULT_STYLE_CLS_SCORE = 1
 DEFAULT_STYLE_CLS_EMOJI_SCORE = 1
-
+EPSILON = 0.0000000001
 
 def get_args():
     parser.add_argument('--config_file', type=str,
@@ -648,6 +648,35 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     print('Finish to evaluate results!')
 
 
+def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vectors_to_load):
+    if config['use_style_model']:
+        if config['style_type'] == 'emoji':
+            if config['use_single_emoji_style']:
+                desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['desired_labels'].index(label)), num_classes=len(config['desired_labels']))+EPSILON
+            else:  # use several emojis
+                desired_style_embedding_vector = torch.tensor(np.ones(config['num_classes']) * EPSILON)
+                for i in range(config['num_classes']):
+                    if i in config['idx_emoji_style_dict'][label]:
+                        desired_style_embedding_vector[i] = 1
+                # desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['idx_emoji_style_dict'][label]), num_classes=config['num_classes'])+EPSILON
+                desired_style_embedding_vector = torch.tensor(
+                    desired_style_embedding_vector / torch.sum(desired_style_embedding_vector))
+            desired_style_embedding_vector_std = None
+        else:
+            desired_style_embedding_vector = mean_embedding_vectors_to_load[label]
+            # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
+            # real std
+            # desired_style_embedding_vector_std = std_embedding_vectors[label]
+            if label == 'positive':
+                desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
+            elif label == 'negative':
+                desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
+    else:
+        desired_style_embedding_vector = None;
+        desired_style_embedding_vector_std = None
+    return desired_style_embedding_vector, desired_style_embedding_vector_std
+
+
 def initial_variables():
     def get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path):
         if config['use_style_model'] and config['style_type'] == 'style_embed':
@@ -800,27 +829,7 @@ def main():
 
             evaluation_results[img_name][label] = {}
             if not config['imitate_text_style']:
-                if config['use_style_model']:
-                    if config['style_type']=='emoji':
-                        desired_style_embedding_vector = torch.tensor(np.ones(config['num_classes'])*0.0000001)
-                        for i in range(config['num_classes']):
-                            if i in config['idx_emoji_style_dict'][label]:
-                                desired_style_embedding_vector[i] = 1
-                        # desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['idx_emoji_style_dict'][label]), num_classes=config['num_classes'])+0.00001
-                        desired_style_embedding_vector = torch.tensor(desired_style_embedding_vector/torch.sum(desired_style_embedding_vector))
-                        desired_style_embedding_vector_std=None
-                    else:
-                        desired_style_embedding_vector = mean_embedding_vectors_to_load[label]
-                        # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
-                        # real std
-                        # desired_style_embedding_vector_std = std_embedding_vectors[label]
-                        if label == 'positive':
-                            desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
-                        elif label == 'negative':
-                            desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
-                else:
-                    desired_style_embedding_vector = None;
-                    desired_style_embedding_vector_std = None
+                desired_style_embedding_vector, desired_style_embedding_vector_std = get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vectors_to_load)
             if config['debug_mac']:
                 evaluation_results[img_name][label] = {'res': 'bla'}
                 continue
