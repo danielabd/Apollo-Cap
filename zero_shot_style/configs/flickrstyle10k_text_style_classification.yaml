@@ -3,7 +3,7 @@ task: train #test
 #task: test #test
 load_model: False
 test_on_df: [train, val, test]
-global_dir_name_for_save_models: flickrstyle10k_text_style_classification
+global_dir_name_for_save_models: flickrstyle10k_text_style_classification_with_augmentation
 p_augment: 0
 
 #path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification/15_03_2023/02_35_08__15_03_2023/best_flickrstyle10k_text_style_classification_model.pth
