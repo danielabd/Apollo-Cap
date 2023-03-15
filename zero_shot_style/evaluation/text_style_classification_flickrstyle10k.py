@@ -132,6 +132,9 @@ class BertClassifier(nn.Module):
                 # print(f"BERT layers up to {layer_idx} are frozen.")
 
 
+    def set_noise(self, scale_noise):
+        self.scale_noise = 0
+
 
 def collate_fn(data):  # for model based on bert
     texts_list = []
@@ -166,6 +169,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     best_f1_score_val = 0
     for epoch in range(config['epochs']):
         model.train()
+        model.set_noise(config['scale_noise'])
         if epoch == config['freeze_after_n_epochs']:
             model.freeze_layers(BERT_NUM_OF_LAYERS)
 
@@ -220,6 +224,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         print("Calculate  validation...")
         val_preds = []
         val_targets = []
+        model.set_noise(0)
         model.eval()
         with torch.no_grad():
             for step, (tokenized_texts_list, val_labels, texts_list) in enumerate(
@@ -293,6 +298,8 @@ def evaluate(model, all_df, labels_set_dict, device, config):
 
         model = model.to(device)
         model.freeze_layers(BERT_NUM_OF_LAYERS)
+        model.set_noise(0)
+
         model.eval()
         total_acc_test = 0
         total_loss_test = 0
@@ -400,7 +407,7 @@ def convert_ds_to_df(ds, data_dir):
     return df_train, df_val, df_test
 
 def get_model_and_optimizer(config, path_for_loading_best_model, device):
-    if config['load_model']:  # load_model
+    if config['load_model'] or config['task']=='test':  # load_model
         print(f"Loading model from: {path_for_loading_best_model}")
         model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
