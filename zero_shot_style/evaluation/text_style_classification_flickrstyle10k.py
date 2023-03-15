@@ -34,6 +34,8 @@ def get_args():
     parser.add_argument('--last_layer_idx_to_freeze', type=int, default=-1, help='last_layer idx of BERT to freeze')
     parser.add_argument('--freeze_after_n_epochs', type=int, default=0, help='freeze BERT after_n_epochs')
     parser.add_argument('--scale_noise', type=float, default=0.0, help='scale of gaussian noise to add to the embedding vector of sentence')
+    parser.add_argument('--p_augment', type=float, default=0.0,
+                        help='probability to do augmentation-concatenating texts')
     args = parser.parse_args()
     return args
 
