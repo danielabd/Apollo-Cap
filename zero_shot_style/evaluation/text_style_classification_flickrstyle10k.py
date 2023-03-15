@@ -358,6 +358,14 @@ def get_train_val_data(data_set_path):
         ds[data_type] = {}
         with open(data_set_path[data_type], 'rb') as r:
             data = pickle.load(r)
+        # ######## #clear data from ' .' in the end of captions
+        # for k in data:
+        #     for style in data[k]:
+        #         for i,sen in enumerate(data[k][style]):
+        #             if data[k][style][i][-2:]==' .':
+        #                 data[k][style][i] = data[k][style][i][:-2]
+        # with open(data_set_path[data_type], 'wb') as file:
+        #     pickle.dump(data, file)
         for k in data:
             ds[data_type][k] = {}
             # ds[data_type][k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
@@ -464,7 +472,7 @@ def main():
     if 'path_for_loading_best_model' in config and config['path_for_loading_best_model']:
         path_for_loading_best_model = config['path_for_loading_best_model']
     else:
-        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
+        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['data_name'], config['best_model_name'])
 
 
     use_cuda = torch.cuda.is_available()

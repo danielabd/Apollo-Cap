@@ -831,6 +831,8 @@ class CLIPTextGenerator:
                 self.debug_tracking[word_loc][i]['LM - val'] = list(total_best_sentences_LM.keys())
                 self.debug_tracking[word_loc][i]['CLIP - prob'] = list(total_best_sentences_clip.values())
                 self.debug_tracking[word_loc][i]['CLIP - val'] = list(total_best_sentences_clip.keys())
+            else:
+                clip_loss, clip_losses = 0,[torch.tensor(0)]*probs.shape[0]
 
             # CE/Fluency loss
             if self.ce_scale!=0:
@@ -1014,7 +1016,7 @@ class CLIPTextGenerator:
                 # top_texts = ['Ugly and disgusting  image', 'Beautiful and amazing image']
                 # top_texts = ['The wonderful line waiting in the baggage carousel.',
                 #              'A suitcase devastated the platform at Penn Station in New York City.']
-                pos_text = ['positive']
+                # pos_text = ['positive']
                 if self.text_style_list:
                     text_style_features = self.get_txt_features([self.text_style_list])
                     similarity_to_style = text_style_features @ text_features.T

@@ -1,13 +1,14 @@
 data_name: flickrstyle10k
 #task: train #test
-task: test #test
-load_model: TRUE
+task: train #test
+load_model: False
 test_on_df: [train, val, test]
 global_dir_name_for_save_models: flickrstyle10k_text_style_classification
 
-path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification/21_02_2023/03_05_17__21_02_2023/best_flickrstyle10k_text_style_classification_model.pth
+#path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification/21_02_2023/03_05_17__21_02_2023/best_flickrstyle10k_text_style_classification_model.pth
 
 
+#best_model_name: 22_2_23_f1=0.855/best_flickrstyle10k_text_style_classification_model.pth #best_twitter_trained_model.pth #todo: good model for evaluation
 best_model_name: best_flickrstyle10k_text_style_classification_model.pth #best_twitter_trained_model.pth
 model_name: flickrstyle10k_text_style_classification_model.pth
 wandb_mode: online #'disabled, offline, online'
