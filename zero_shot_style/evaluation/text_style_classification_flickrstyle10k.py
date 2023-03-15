@@ -420,7 +420,6 @@ def split_new_data(data_set_path):
     :param data_set_path: dict. keys =   ['train', 'val', 'test'], values = path to pickl file
     :return: ds: dict:keys=['train', 'val', 'test'],values = dict:keys = list(dataset_name), values=dict:keys=key_frame,values:dict:keys=style,values=dataframe
     '''
-    ds = {}
     size_test_data = 1000
     size_train_data = 6000*0.8
     size_val_data = 6000*0.2

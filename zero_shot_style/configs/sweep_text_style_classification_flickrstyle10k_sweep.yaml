@@ -14,10 +14,10 @@ parameters:
     - 0.000001
     - 0.0000001
     distribution: categorical
-  hidden_state_to_take:
-    max: -1
-    min: -6
-    distribution: int_uniform
+#  hidden_state_to_take:
+#    max: -1
+#    min: -6
+#    distribution: int_uniform
 #  last_layer_idx_to_freeze:
 #    max: 11
 #    min: 0
@@ -28,17 +28,16 @@ parameters:
 #    distribution: int_uniform
   scale_noise:
     values:
-      - 0.64
-      - 0.55
-      - 0.45
-      - 0.40
-      - 0.35
       - 0.32
-      - 0.28
       - 0.16
       - 0.12
-      - 0.08
       - 0.04
       - 0.02
+      - 0
+    distribution: categorical
+  p_augment:
+    values:
+      - 0.5
+      - 0.25
       - 0
     distribution: categorical

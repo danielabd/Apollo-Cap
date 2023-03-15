@@ -27,6 +27,9 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
 
 def get_args():
+    parser.add_argument('--config_file', type=str,
+                        default=os.path.join('..', 'configs', 'flickrstyle10k_text_style_classification.yaml'),
+                        help='full path to config file')
     parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
     parser.add_argument('--last_layer_idx_to_freeze', type=int, default=-1, help='last_layer idx of BERT to freeze')
     parser.add_argument('--freeze_after_n_epochs', type=int, default=0, help='freeze BERT after_n_epochs')
@@ -36,13 +39,17 @@ def get_args():
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, df, labels_set_dict, inner_batch_size=1, all_data=True):
+    def __init__(self, df, labels_set_dict, inner_batch_size=1, all_data=True, p_augment=0):
         self.labels = [labels_set_dict[label] for label in df['category']]  # create list of idxs for labels
         self.labels_set = list(set(self.labels))
         self.texts = list(df['text'])  # df['Tweet'] #[text for text in df['Tweet']]
         self.batch_size_per_label = inner_batch_size
         self.all_data = all_data  # boolean
-        pass
+        self.p_augment = p_augment
+        labels_array = np.array(self.labels)
+        self.idxs_for_label = {}
+        for label_idx in labels_set_dict.values():
+            self.idxs_for_label[label_idx] = np.where(labels_array == label_idx)[0]
 
     def classes(self):
         return self.labels
@@ -57,6 +64,12 @@ class Dataset(torch.utils.data.Dataset):
         if self.all_data:
             label = self.labels[item]
             text = self.texts[item]
+
+            to_sample = random.choices([0, 1], weights=[1 - self.p_augment, self.p_augment], k=1)[0]
+            if to_sample:
+                random_sample_idx = random.choice(self.idxs_for_label[label])
+                random_sample_text = self.texts[random_sample_idx]
+                text = text + '. ' + random_sample_text #todo: check if '. ' is ok
             return text, label
 
         else:  # get samples from data
@@ -130,6 +143,9 @@ class BertClassifier(nn.Module):
                 # print(f"BERT layers up to {layer_idx} are frozen.")
 
 
+    def set_noise(self, scale_noise):
+        self.scale_noise = 0
+
 
 def collate_fn(data):  # for model based on bert
     texts_list = []
@@ -149,7 +165,7 @@ def collate_fn(data):  # for model based on bert
 def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
           path_for_saving_best_model, device, config):
     print("Training the model...")
-    train_data_set, val_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict)
+    train_data_set, val_data_set = Dataset(df_train, labels_set_dict, p_augment=config['p_augment']), Dataset(df_val, labels_set_dict)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
                                                    batch_size=config['batch_size'], shuffle=True,
                                                    num_workers=config['num_workers'])
@@ -164,7 +180,8 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     best_f1_score_val = 0
     for epoch in range(config['epochs']):
         model.train()
-        if epoch == config['freeze_after_n_epochs']:
+        model.set_noise(config['scale_noise'])
+        if epoch >= config['freeze_after_n_epochs']:
             model.freeze_layers(BERT_NUM_OF_LAYERS)
 
         total_acc_train = 0
@@ -218,6 +235,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         print("Calculate  validation...")
         val_preds = []
         val_targets = []
+        model.set_noise(0)
         model.eval()
         with torch.no_grad():
             for step, (tokenized_texts_list, val_labels, texts_list) in enumerate(
@@ -278,9 +296,70 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     print("finish train")
 
 
+def evaluate_single_test(model, labels_set_dict, device):
+    print(f"Evaluating the model on single_test:")
+    text = []
+    label = []
+
+    # text.append('The event room of Great Disney World will be closed for lunch and dinner on')
+    # label.append('positive')
+    #
+    # text.append('happy birthday')
+    # label.append('positive')
+    #
+    # text.append('bad news')
+    # label.append('negative')
+    #
+    # text.append('terrible day')
+    # label.append('negative')
+
+    text.append('A man who walked the streets with a small smile on his face was walking')
+    label.append('positive')
+
+    text.append('small smile on his face')
+    label.append('positive')
+
+    text.append('small smile on his face was walking')
+    label.append('positive')
+
+    text.append('A man who walked the streets')
+    label.append('positive')
+
+    text.append('A happy man who walked the streets')
+    label.append('positive')
+
+    text.append('A smiled man who walked the streets')
+    label.append('positive')
+
+    text.append('A smiled man who walk')
+    label.append('positive')
+
+    text.append('A software assistant.')
+    label.append('positive')
+
+    text.append('This article is from the archive of our old great Gatw.')
+    label.append('positive')
+
+    text.append("The beautiful skiing and snowboard photos are available for download.")
+    label.append('positive')
+
+    tokenized_texts_list = tokenizer(text, padding='max_length', max_length=40, truncation=True,
+                                     return_tensors="pt")
+    outputs = model(tokenized_texts_list['input_ids'].to(device),
+                    tokenized_texts_list['attention_mask'].to(device))  # model based on bert
+    for i in range(len(outputs)):
+        print(f"{text[i]} | gt: {labels_set_dict[label[i]]} | pred: {outputs[i][0]}")
+        # print(f"text: {text[i]}")
+        # print(f"gt label: {label[i]}: {labels_set_dict[label[i]]}")
+        # print(f"prediction prediction: {outputs[i][0]}")
+    print("Finished to evaluate single test.")
+
+
 def evaluate(model, all_df, labels_set_dict, device, config):
+    evaluation = {}
     for set_name in all_df:
         print(f"Evaluating the model on {set_name} set:")
+        evaluation[set_name] = {}
         df = all_df[set_name]
         test_data_set = Dataset(df, labels_set_dict)
         test_dataloader = torch.utils.data.DataLoader(test_data_set, collate_fn=collate_fn,
@@ -289,6 +368,8 @@ def evaluate(model, all_df, labels_set_dict, device, config):
 
         model = model.to(device)
         model.freeze_layers(BERT_NUM_OF_LAYERS)
+        model.set_noise(0)
+
         model.eval()
         total_acc_test = 0
         total_loss_test = 0
@@ -297,7 +378,7 @@ def evaluate(model, all_df, labels_set_dict, device, config):
         criterion = nn.BCELoss()
         with torch.no_grad():
             for step, (tokenized_texts_list, labels, texts_list) in enumerate(
-                    pbar := tqdm(test_dataloader, desc="Testing", leave=False, )):  # model based on bert
+                    pbar := tqdm(test_dataloader, desc=f"eval {set_name}", leave=False, )):  # model based on bert
                 test_targets.extend(labels)
                 test_label = torch.from_numpy(np.asarray(labels)).to(device)
                 outputs = model(tokenized_texts_list['input_ids'].to(device),
@@ -333,7 +414,57 @@ def evaluate(model, all_df, labels_set_dict, device, config):
         total_acc_test_for_all_data = total_acc_test / len(df)
 
         print(f'Test Accuracy: {total_acc_test_for_all_data: .3f}')
-        print("finish evaluate")
+        evaluation[set_name]['f1_score'] = f1_score_test
+        evaluation[set_name]['acc'] = total_acc_test_for_all_data
+        evaluation[set_name]['loss'] = total_loss_test / len(df)
+        print(f"finish to evaluate {set_name}")
+    for set_name in evaluation:
+        print(f"evaluation of {set_name}:")
+        for metric in evaluation[set_name]:
+            print(f"{set_name}_{metric} = {evaluation[set_name][metric]}")
+    print("Finish!")
+
+
+def split_new_data(data_set_path):
+    f'''
+
+    :param data_set_path: dict. keys =   ['train', 'val', 'test'], values = path to pickl file
+    :return: ds: dict:keys=['train', 'val', 'test'],values = dict:keys = list(dataset_name), values=dict:keys=key_frame,values:dict:keys=style,values=dataframe
+    '''
+    size_test_data = 1000
+    size_train_data = 6000*0.8
+    size_val_data = 6000*0.2
+    with open(data_set_path['train'], 'rb') as r:
+        train_data = pickle.load(r)
+    with open(data_set_path['val'], 'rb') as r:
+        val_data = pickle.load(r)
+    with open(data_set_path['test'], 'rb') as r:
+        test_data = pickle.load(r)
+    new_train_data = train_data
+    new_val_data = val_data
+    new_test_data = {}
+    data_to_update = 'test'
+    for k in test_data:
+        if data_to_update == 'test':
+            new_test_data[k] = test_data[k]
+        elif data_to_update == 'val':
+            new_val_data[k] = test_data[k]
+        elif data_to_update == 'train':
+            new_train_data[k] = test_data[k]
+        if len(new_test_data) >= size_test_data:
+            data_to_update = 'val'
+        if len(new_val_data) >= size_val_data:
+            data_to_update = 'train'
+    print(f"size of test data = {len(new_test_data)}")
+    print(f"size of val data = {len(new_val_data)}")
+    print(f"size of train data = {len(new_train_data)}")
+    with open(data_set_path['test'], 'wb') as file:
+        pickle.dump(new_test_data, file)
+    with open(data_set_path['val'], 'wb') as file:
+        pickle.dump(new_val_data, file)
+    with open(data_set_path['train'], 'wb') as file:
+        pickle.dump(new_train_data, file)
+
 
 def get_train_val_data(data_set_path):
     f'''
@@ -346,6 +477,14 @@ def get_train_val_data(data_set_path):
         ds[data_type] = {}
         with open(data_set_path[data_type], 'rb') as r:
             data = pickle.load(r)
+        # ######## #clear data from ' .' in the end of captions
+        # for k in data:
+        #     for style in data[k]:
+        #         for i,sen in enumerate(data[k][style]):
+        #             if data[k][style][i][-2:]==' .':
+        #                 data[k][style][i] = data[k][style][i][:-2]
+        # with open(data_set_path[data_type], 'wb') as file:
+        #     pickle.dump(data, file)
         for k in data:
             ds[data_type][k] = {}
             # ds[data_type][k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
@@ -355,6 +494,7 @@ def get_train_val_data(data_set_path):
                     continue
                 ds[data_type][k][style] = data[k][style]
     return ds
+
 
 def convert_ds_to_df(ds, data_dir):
     df_train = None
@@ -380,17 +520,12 @@ def convert_ds_to_df(ds, data_dir):
     return df_train, df_val, df_test
 
 def get_model_and_optimizer(config, path_for_loading_best_model, device):
-    if config['load_model']:  # load_model
+    if config['load_model'] or config['task']=='test':  # load_model
         print(f"Loading model from: {path_for_loading_best_model}")
         model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
-        #todo: check if to take only non-frozen params:
-        # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-        #                 weight_decay=config['weight_decay'])
-        # optimizer = Adam(model.parameters(), lr=float(config['lr']))
         model.to(device)
-        optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-                         weight_decay=config['weight_decay'])
+        optimizer = Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
         if 'cuda' in device.type:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         else:
@@ -403,17 +538,20 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         print("Train model from scratch")
         model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
-        optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-                         weight_decay=config['weight_decay'])
-        # optimizer = Adam(model.parameters(), lr=float(config['lr']))
+        optimizer = Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
     return model, optimizer
 
 
 
 def main():
+    wandb.login(key=os.getenv('WANDB_API_KEY'))
+
     args = get_args()
     config = get_hparams(args)
     print(f"config_file = {config['config_file']}")
+
+    # df_single_test = get_single_test()
+
     cur_date = datetime.now().strftime("%d_%m_%Y")
     cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
     print(f"cur time is: {cur_time}")
@@ -435,38 +573,34 @@ def main():
 
     checkpoints_dir = os.path.join(os.path.expanduser('~'), 'checkpoints')
     global_dir_name_for_save_models = os.path.join(checkpoints_dir, config['global_dir_name_for_save_models'])
-    if not os.path.isdir(global_dir_name_for_save_models):
-        os.makedirs(global_dir_name_for_save_models)
-    experiment_dir_date = os.path.join(checkpoints_dir, config['global_dir_name_for_save_models'], cur_date)
-    if not os.path.isdir(experiment_dir_date):
-        os.makedirs(experiment_dir_date)
-    experiment_dir = os.path.join(checkpoints_dir, config['global_dir_name_for_save_models'], cur_date, cur_time)
-    if not os.path.isdir(experiment_dir):
-        os.makedirs(experiment_dir)
+    os.makedirs(global_dir_name_for_save_models, exist_ok=True)
+    experiment_dir_date = os.path.join(checkpoints_dir,config['global_dir_name_for_save_models'], cur_date)
+    os.makedirs(experiment_dir_date, exist_ok=True)
+    experiment_dir = os.path.join(checkpoints_dir,config['global_dir_name_for_save_models'], cur_date, cur_time)
+    os.makedirs(experiment_dir, exist_ok=True)
 
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
 
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
-    for data_type in ['train', 'val', 'test']:
+    for data_type in ['train', 'val', 'test']: #todo:  rename partition
         data_set_path[data_type] = os.path.join(data_dir, config['data_name'], 'annotations',
                                                              data_type + '.pkl')
 
-    path_for_saving_last_model = os.path.join(experiment_dir, config['model_name'])
+    path_for_saving_last_model = os.path.join(experiment_dir, config['model_name']) #todo move to config file and correcr
     path_for_saving_best_model = os.path.join(experiment_dir, config['best_model_name'])
     # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
 
     if 'path_for_loading_best_model' in config and config['path_for_loading_best_model']:
         path_for_loading_best_model = config['path_for_loading_best_model']
     else:
-        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
+        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['data_name'], config['best_model_name'])
 
 
     use_cuda = torch.cuda.is_available()
     # device = torch.device(f"cuda:{config['desired_cuda_num']}" if use_cuda else "cpu")  # todo: remove
     device = torch.device("cuda" if use_cuda else "cpu")  # todo: remove
 
-
-
+    # split_new_data(data_set_path) #new split to data
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
     # #######
@@ -493,7 +627,11 @@ def main():
                 all_df[d] = df_val
             elif d=='test':
                 all_df[d] = df_test
+            # elif d=='single_test':
+            #     all_df[d] = df_single_test
         evaluate(model, all_df, config['labels_set_dict'], device, config)
+    elif config['task'] == 'single_test':
+        evaluate_single_test(model, config['labels_set_dict'], device)
 
     print("finish main")
 

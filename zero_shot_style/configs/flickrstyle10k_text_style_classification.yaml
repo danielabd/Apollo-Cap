@@ -4,7 +4,7 @@ task: train #test
 load_model: False
 test_on_df: [train, val, test]
 global_dir_name_for_save_models: flickrstyle10k_text_style_classification
-
+p_augment: 0
 
 #path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification/15_03_2023/02_35_08__15_03_2023/best_flickrstyle10k_text_style_classification_model.pth
 
@@ -34,9 +34,9 @@ epochs: 20
 lr: 0.00001
 batch_size: 16
 margin: 0.04
-hidden_state_to_take: -1
-last_layer_idx_to_freeze: -1
-freeze_after_n_epochs: 1000000000
+hidden_state_to_take: -2
+last_layer_idx_to_freeze: -100 #-100 means don't freaze layers
+freeze_after_n_epochs: 10000 #10000 means don't freeze never
 inner_batch_size: 1
 
 #--freeze_after_n_epochs=6 --hidden_state_to_take=-2 --last_layer_idx_to_freeze=8 --lr=1e-05 --scale_noise=0.04
