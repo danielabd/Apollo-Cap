@@ -25,6 +25,7 @@ BERT_NUM_OF_LAYERS = 12
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
+
 def get_args():
     parser.add_argument('--config_file', type=str,
                         default=os.path.join('..', 'configs', 'flickrstyle10k_text_style_classification.yaml'),
@@ -38,13 +39,17 @@ def get_args():
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, df, labels_set_dict, inner_batch_size=1, all_data=True):
+    def __init__(self, df, labels_set_dict, inner_batch_size=1, all_data=True, p_augment=0):
         self.labels = [labels_set_dict[label] for label in df['category']]  # create list of idxs for labels
         self.labels_set = list(set(self.labels))
         self.texts = list(df['text'])  # df['Tweet'] #[text for text in df['Tweet']]
         self.batch_size_per_label = inner_batch_size
         self.all_data = all_data  # boolean
-        pass
+        self.p_augment = p_augment
+        labels_array = np.array(self.labels)
+        self.idxs_for_label = {}
+        for label_idx in labels_set_dict.values():
+            self.idxs_for_label[label_idx] = np.where(labels_array == label_idx)[0]
 
     def classes(self):
         return self.labels
@@ -59,6 +64,12 @@ class Dataset(torch.utils.data.Dataset):
         if self.all_data:
             label = self.labels[item]
             text = self.texts[item]
+
+            to_sample = random.choices([0, 1], weights=[1 - self.p_augment, self.p_augment], k=1)[0]
+            if to_sample:
+                random_sample_idx = random.choice(self.idxs_for_label[label])
+                random_sample_text = self.texts[random_sample_idx]
+                text = text + '. ' + random_sample_text #todo: check if '. ' is ok
             return text, label
 
         else:  # get samples from data
@@ -154,7 +165,7 @@ def collate_fn(data):  # for model based on bert
 def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str, path_for_saving_last_model,
           path_for_saving_best_model, device, config):
     print("Training the model...")
-    train_data_set, val_data_set = Dataset(df_train, labels_set_dict), Dataset(df_val, labels_set_dict)
+    train_data_set, val_data_set = Dataset(df_train, labels_set_dict, p_augment=config['p_augment']), Dataset(df_val, labels_set_dict)
     train_dataloader = torch.utils.data.DataLoader(train_data_set, collate_fn=collate_fn,
                                                    batch_size=config['batch_size'], shuffle=True,
                                                    num_workers=config['num_workers'])
