@@ -1,3 +1,5 @@
+print("!!!!!!!!!")
+print("########")
 import pandas as pd
 import torch
 import numpy as np
@@ -32,7 +34,8 @@ MAX_VAL_TRIPLET_LOSS = 100
 tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
 def get_args():
-    parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs', 'senticap_text_style_embedding.yaml'),
+    # parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs', 'senticap_text_style_embedding.yaml'),
+    parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs', 'flickrstyle10k_config.yaml'),
                         help='full path to config file')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
     parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
@@ -717,7 +720,7 @@ def getting_labels_map(df_train):
 
 
 def get_model_and_optimizer(config, path_for_loading_best_model, device):
-    if config['load_model']:  # load_model
+    if config['load_model'] or config['plot_only_clustering']:  # load_model
         print(f"Loading model from: {path_for_loading_best_model}")
         model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
@@ -908,7 +911,8 @@ def main():
 
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
     for data_type in ['train', 'val', 'test']:
-        data_set_path[data_type] = os.path.join(data_dir, config['data_name'], 'annotations',
+        # data_set_path[data_type] = os.path.join(data_dir, config['data_name'], 'annotations',
+        data_set_path[data_type] = os.path.join(data_dir, config['data_name'], 'annotations_bu_15_3_23', #todo remove it
                                                              data_type + '.pkl')
 
     path_for_saving_last_model = os.path.join(experiment_dir, config['txt_embed_model_name'])

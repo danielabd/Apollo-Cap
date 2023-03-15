@@ -133,6 +133,9 @@ class BertClassifier(nn.Module):
                 # print(f"BERT layers up to {layer_idx} are frozen.")
 
 
+    def set_noise(self, scale_noise):
+        self.scale_noise = 0
+
 
 def collate_fn(data):  # for model based on bert
     texts_list = []
@@ -167,6 +170,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
     best_f1_score_val = 0
     for epoch in range(config['epochs']):
         model.train()
+        model.set_noise(config['scale_noise'])
         if epoch >= config['freeze_after_n_epochs']:
             model.freeze_layers(BERT_NUM_OF_LAYERS)
 
@@ -221,6 +225,7 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         print("Calculate  validation...")
         val_preds = []
         val_targets = []
+        model.set_noise(0)
         model.eval()
         with torch.no_grad():
             for step, (tokenized_texts_list, val_labels, texts_list) in enumerate(
@@ -341,8 +346,10 @@ def evaluate_single_test(model, labels_set_dict, device):
 
 
 def evaluate(model, all_df, labels_set_dict, device, config):
+    evaluation = {}
     for set_name in all_df:
         print(f"Evaluating the model on {set_name} set:")
+        evaluation[set_name] = {}
         df = all_df[set_name]
         test_data_set = Dataset(df, labels_set_dict)
         test_dataloader = torch.utils.data.DataLoader(test_data_set, collate_fn=collate_fn,
@@ -351,6 +358,8 @@ def evaluate(model, all_df, labels_set_dict, device, config):
 
         model = model.to(device)
         model.freeze_layers(BERT_NUM_OF_LAYERS)
+        model.set_noise(0)
+
         model.eval()
         total_acc_test = 0
         total_loss_test = 0
@@ -359,7 +368,7 @@ def evaluate(model, all_df, labels_set_dict, device, config):
         criterion = nn.BCELoss()
         with torch.no_grad():
             for step, (tokenized_texts_list, labels, texts_list) in enumerate(
-                    pbar := tqdm(test_dataloader, desc="Testing", leave=False, )):  # model based on bert
+                    pbar := tqdm(test_dataloader, desc=f"eval {set_name}", leave=False, )):  # model based on bert
                 test_targets.extend(labels)
                 test_label = torch.from_numpy(np.asarray(labels)).to(device)
                 outputs = model(tokenized_texts_list['input_ids'].to(device),
@@ -395,7 +404,57 @@ def evaluate(model, all_df, labels_set_dict, device, config):
         total_acc_test_for_all_data = total_acc_test / len(df)
 
         print(f'Test Accuracy: {total_acc_test_for_all_data: .3f}')
-        print("finish evaluate")
+        evaluation[set_name]['f1_score'] = f1_score_test
+        evaluation[set_name]['acc'] = total_acc_test_for_all_data
+        evaluation[set_name]['loss'] = total_loss_test / len(df)
+        print(f"finish to evaluate {set_name}")
+    for set_name in evaluation:
+        print(f"evaluation of {set_name}:")
+        for metric in evaluation[set_name]:
+            print(f"{set_name}_{metric} = {evaluation[set_name][metric]}")
+    print("Finish!")
+
+
+def split_new_data(data_set_path):
+    f'''
+
+    :param data_set_path: dict. keys =   ['train', 'val', 'test'], values = path to pickl file
+    :return: ds: dict:keys=['train', 'val', 'test'],values = dict:keys = list(dataset_name), values=dict:keys=key_frame,values:dict:keys=style,values=dataframe
+    '''
+    ds = {}
+    size_test_data = 1000
+    size_train_data = 6000*0.8
+    size_val_data = 6000*0.2
+    with open(data_set_path['train'], 'rb') as r:
+        train_data = pickle.load(r)
+    with open(data_set_path['val'], 'rb') as r:
+        val_data = pickle.load(r)
+    with open(data_set_path['test'], 'rb') as r:
+        test_data = pickle.load(r)
+    new_train_data = train_data
+    new_val_data = val_data
+    new_test_data = {}
+    data_to_update = 'test'
+    for k in test_data:
+        if data_to_update == 'test':
+            new_test_data[k] = test_data[k]
+        elif data_to_update == 'val':
+            new_val_data[k] = test_data[k]
+        elif data_to_update == 'train':
+            new_train_data[k] = test_data[k]
+        if len(new_test_data) >= size_test_data:
+            data_to_update = 'val'
+        if len(new_val_data) >= size_val_data:
+            data_to_update = 'train'
+    print(f"size of test data = {len(new_test_data)}")
+    print(f"size of val data = {len(new_val_data)}")
+    print(f"size of train data = {len(new_train_data)}")
+    with open(data_set_path['test'], 'wb') as file:
+        pickle.dump(new_test_data, file)
+    with open(data_set_path['val'], 'wb') as file:
+        pickle.dump(new_val_data, file)
+    with open(data_set_path['train'], 'wb') as file:
+        pickle.dump(new_train_data, file)
 
 
 def get_train_val_data(data_set_path):
@@ -409,6 +468,14 @@ def get_train_val_data(data_set_path):
         ds[data_type] = {}
         with open(data_set_path[data_type], 'rb') as r:
             data = pickle.load(r)
+        # ######## #clear data from ' .' in the end of captions
+        # for k in data:
+        #     for style in data[k]:
+        #         for i,sen in enumerate(data[k][style]):
+        #             if data[k][style][i][-2:]==' .':
+        #                 data[k][style][i] = data[k][style][i][:-2]
+        # with open(data_set_path[data_type], 'wb') as file:
+        #     pickle.dump(data, file)
         for k in data:
             ds[data_type][k] = {}
             # ds[data_type][k]['factual'] = data[k]['factual']  #todo: check if there is need to concatenate factual from senticap and flickrstyle10k
@@ -444,7 +511,7 @@ def convert_ds_to_df(ds, data_dir):
     return df_train, df_val, df_test
 
 def get_model_and_optimizer(config, path_for_loading_best_model, device):
-    if config['load_model']:  # load_model
+    if config['load_model'] or config['task']=='test':  # load_model
         print(f"Loading model from: {path_for_loading_best_model}")
         model = BertClassifier(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
@@ -533,8 +600,7 @@ def main():
     # device = torch.device(f"cuda:{config['desired_cuda_num']}" if use_cuda else "cpu")  # todo: remove
     device = torch.device("cuda" if use_cuda else "cpu")  # todo: remove
 
-
-
+    # split_new_data(data_set_path) #new split to data
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
     # #######
