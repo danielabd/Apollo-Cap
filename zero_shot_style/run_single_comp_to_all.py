@@ -580,7 +580,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             clip_scores.append(clip_score)
             fluency_scores.append(fluency_score)
             style_cls_scores.append(style_cls_score)
-            style_cls_emoji_scores.append(style_cls_emoji_score)
+            style_cls_emoji_scores.append(float(style_cls_emoji_score[0].numpy()))
             avg_total_scores.append(avg_total_score)
             res_text = evaluation_results[img_name][label]['res']
             gt_text = evaluation_results[img_name][label]['gt']
