@@ -98,7 +98,7 @@ class CLIPTextGenerator:
                  fusion_factor=0.99,
                  repetition_penalty=1.,
                  end_token='.',
-                 end_factor=1.01,
+                 end_factor=1.01, #16.3.23 change from 1.01 to 1.04
                  forbidden_factor=20,
                  cuda_idx = 0,
                  model_path=None,
