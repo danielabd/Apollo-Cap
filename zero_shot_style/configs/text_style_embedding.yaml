@@ -1,5 +1,5 @@
 dataset: flickrstyle10k # flickrstyle10k, senticap
-wandb_mode: online #'disabled, offline, online'
+wandb_mode: disabled #'disabled, offline, online' #todo
 load_model: False
 plot_only_clustering: False
 ##########

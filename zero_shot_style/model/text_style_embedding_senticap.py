@@ -205,14 +205,16 @@ class TextStyleEmbed(nn.Module):
 def collate_fn(data):  # for model based on bert
     texts_list = []
     labels_list = []
-    for list_for_label in data:
-        if type(list_for_label[0]) == list:
-            for text in list_for_label[0]:
-                texts_list.append(text)
-                labels_list.append(list_for_label[1])
-        else:
-            texts_list.append(list_for_label[0])
-            labels_list.append(list_for_label[1])
+    texts_list.append(data[0])
+    labels_list.append(data[1])
+    # for list_for_label in data:
+    #     if type(list_for_label[0]) == list:
+    #         for text in list_for_label[0]:
+    #             texts_list.append(text)
+    #             labels_list.append(list_for_label[1])
+    #     else:
+    #         texts_list.append(list_for_label[0])
+    #         labels_list.append(list_for_label[1])
     tokenized_texts_list = tokenizer(texts_list, padding='max_length', max_length=40, truncation=True,
                                      return_tensors="pt")
     return tokenized_texts_list, labels_list, texts_list
@@ -910,7 +912,7 @@ def main():
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
     for data_type in ['train', 'val', 'test']:
         # data_set_path[data_type] = os.path.join(data_dir, config['dataset'], 'annotations',
-        data_set_path[data_type] = os.path.join(data_dir, config['dataset'], 'annotations_bu_15_3_23', #todo remove it
+        data_set_path[data_type] = os.path.join(data_dir, config['dataset'], 'annotations',
                                                              data_type + '.pkl')
 
     path_for_saving_last_model = os.path.join(experiment_dir, config['txt_embed_model_name'])
