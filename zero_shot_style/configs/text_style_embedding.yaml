@@ -1,8 +1,9 @@
 data_name: flickrstyle10k # flickrstyle10k, senticap
 wandb_mode: online #'disabled, offline, online'
+load_model: False
+plot_only_clustering: False
+##########
 
-load_model: True
-plot_only_clustering: True
 epochs: 30
 
 model_based_on: 'bert' # 'clip' /  'bert'
@@ -41,9 +42,6 @@ margin:
 freeze_after_n_epochs:
   senticap: 4
   flickrstyle10k: 4
-
-
-data_type: val
 
 inner_batch_size: 1 #for the case of unbalanced data
 experiment_name: cur_time

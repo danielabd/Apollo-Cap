@@ -1,18 +1,21 @@
 data_name: flickrstyle10k
 task: train #test
 #task: test #test
-load_model: False
+load_model: True
+wandb_mode: online #'disabled, offline, online'
+
 test_on_df: [train, val, test]
 global_dir_name_for_save_models: flickrstyle10k_text_style_classification_with_augmentation
-p_augment: 0
 
 #path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification/15_03_2023/02_35_08__15_03_2023/best_flickrstyle10k_text_style_classification_model.pth
+#path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification_with_augmentation/15_03_2023/21_22_28__15_03_2023/best_flickrstyle10k_text_style_classification_model.pth
+path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification_with_augmentation/16_03_2023/01_04_20__16_03_2023/best_flickrstyle10k_text_style_classification_model.pth
+
 
 #terminal
 #best_model_name: 22_2_23_f1=0.855/best_flickrstyle10k_text_style_classification_model.pth #best_twitter_trained_model.pth #todo: good model for evaluation
 best_model_name: best_flickrstyle10k_text_style_classification_model.pth #best_twitter_trained_model.pth
 model_name: flickrstyle10k_text_style_classification_model.pth
-wandb_mode: online #'disabled, offline, online'
 
 
 #arithmetics_style_imgs: [49, 52, 53]
@@ -32,7 +35,9 @@ desired_labels: [humor, romantic] #[factual, humor, romantic]
 
 epochs: 20
 lr: 0.00001
-batch_size: 16
+p_augment: 0
+scale_noise: 0.02
+batch_size: 128 #64 #16
 margin: 0.04
 hidden_state_to_take: -2
 last_layer_idx_to_freeze: -100 #-100 means don't freaze layers

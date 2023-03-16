@@ -580,7 +580,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             clip_scores.append(clip_score)
             fluency_scores.append(fluency_score)
             style_cls_scores.append(style_cls_score)
-            style_cls_emoji_scores.append(style_cls_emoji_score)
+            style_cls_emoji_scores.append(float(style_cls_emoji_score[0].numpy()))
             avg_total_scores.append(avg_total_score)
             res_text = evaluation_results[img_name][label]['res']
             gt_text = evaluation_results[img_name][label]['gt']
@@ -667,10 +667,11 @@ def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vec
             # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
             # real std
             # desired_style_embedding_vector_std = std_embedding_vectors[label]
-            if label == 'positive':
-                desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
-            elif label == 'negative':
-                desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
+            desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
+            # if label == 'positive':
+            #     desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
+            # elif label == 'negative':
+            #     desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
     else:
         desired_style_embedding_vector = None;
         desired_style_embedding_vector_std = None
