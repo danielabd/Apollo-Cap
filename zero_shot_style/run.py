@@ -151,6 +151,19 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
+    clip_grades = (torch.cat(encoded_captions) @ image_features.t()).squeeze()
+    ############
+    device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
+    tokenized, _, _ = text_generator.emoji_st_tokenizer.tokenize_sentences(captions)
+    tokenized = torch.from_numpy(tokenized.astype(np.int32))
+    emoji_style_probs = torch.tensor(text_generator.emoji_style_model(tokenized)).to(device)
+    emoji_style_grades = emoji_style_probs[:, text_generator.config['idx_emoji_style_dict'][text_generator.style]].sum(-1)
+
+    #calc harmonic average:
+    best_harmonic_mean_idx = (len(captions)*clip_grades*emoji_style_grades/(clip_grades+emoji_style_grades)).argmax()
+    # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
+
+    ############
 
     print(captions)
 
@@ -158,10 +171,10 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     new_title2print = f'~~~~~~~~\n{dt_string} | Work on img path:' + title2print.split(' | Work on img path:')[1]
     print(new_title2print)
 
-    print('best clip:', config['cond_text'] + captions[best_clip_idx])
+    print('best clip:', config['cond_text'] + captions[best_harmonic_mean_idx])
     print(f"Time to create caption is: {(t2 - t1) / 60} minutes = {t2 - t1} seconds.")
-    img_dict[img_path][style_type][config['text_style_scale']][label] = config['cond_text'] + captions[best_clip_idx]
-    return config['cond_text'] + captions[best_clip_idx]
+    img_dict[img_path][style_type][config['text_style_scale']][label] = config['cond_text'] + captions[best_harmonic_mean_idx]
+    return config['cond_text'] + captions[best_harmonic_mean_idx]
 
 
 def run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, base_img, dataset_type, imgs_path,

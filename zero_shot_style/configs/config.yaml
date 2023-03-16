@@ -21,14 +21,14 @@ model_based_on: 'bert' # 'clip' /  'bert'
 specific_idxs_to_skip: [2,3]
 
 
-max_num_of_imgs: 5 #-1
-target_seq_length: 15
-desired_labels:
-  senticap: [positive, negative] #[factual, positive, negative]
-  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
-beam_size:
-  senticap: 8 #4 #3
-  flickrstyle10k: 4 #3
+#max_num_of_imgs: 5 #-1
+#target_seq_length: 15
+#desired_labels:
+#  senticap: [positive, negative] #[factual, positive, negative]
+#  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
+#beam_size:
+#  senticap: 8 #4 #3
+#  flickrstyle10k: 4 #3
 text_style_scale:
   senticap: 6 #2.9365169098669996 #3.797802783 #3.444
   flickrstyle10k: 3.797802783 #3.444
@@ -39,15 +39,15 @@ clip_scale:
   senticap: 5.6 #2.1430374716828555 #3.746143446 #2.965
   flickrstyle10k: 2.43956729 #2.318
 
-###todo: for debugging
-#max_num_of_imgs: 1
-#target_seq_length: 2
-#desired_labels:
-#  senticap: [positive, negative] #[factual, positive, negative]
-#  flickrstyle10k: [humor] #[factual, humor, romantic]
-#beam_size:
-#  senticap: 2
-#  flickrstyle10k: 2
+##todo: for debugging
+max_num_of_imgs: 1
+target_seq_length: 2
+desired_labels:
+  senticap: [positive] #[factual, positive, negative]
+  flickrstyle10k: [humor] #[factual, humor, romantic]
+beam_size:
+  senticap: 2
+  flickrstyle10k: 2
 #text_style_scale:
 #  senticap: 20 #2.9365169098669996 #3.797802783 #3.444
 #  flickrstyle10k: 20 #3.444
@@ -67,10 +67,6 @@ run_type: caption #caption, arithmetics, img_prompt_manipulation
 experiement_global_name:
   senticap: senticap_ZeroStyleCap_with_emoji
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
-
-global_dir_name_for_save_models:
-  senticap: senticap_ZeroStyleCap_with_emoji
-  flickrstyle10k: flickrstyle10k_text_style_embedding
 
 hidden_state_to_take_txt_cls:
   senticap: -1

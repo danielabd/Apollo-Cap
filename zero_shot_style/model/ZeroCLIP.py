@@ -977,10 +977,10 @@ class CLIPTextGenerator:
             #if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
             #    break
 
-        print(f'{word_loc+1}/{self.num_iterations+1}: clip_loss_with_scale = {self.clip_scale * clip_loss}')
-        print(f'{word_loc+1}/{self.num_iterations+1}: ce_loss = {ce_loss.sum()}')
+        print(f'{word_loc+1}/{self.target_seq_length}: clip_loss_with_scale = {self.clip_scale * clip_loss}')
+        print(f'{word_loc+1}/{self.target_seq_length}: ce_loss = {ce_loss.sum()}')
         if self.use_style_model:
-            print(f'{word_loc+1}/{self.num_iterations+1}: style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+            print(f'{word_loc+1}/{self.target_seq_length}: style_loss_with_scale = {self.text_style_scale * text_style_loss}')
 
         context_delta = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_])
                          for p_ in context_delta]
