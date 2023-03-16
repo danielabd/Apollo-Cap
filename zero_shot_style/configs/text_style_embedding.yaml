@@ -1,4 +1,4 @@
-data_name: flickrstyle10k # flickrstyle10k, senticap
+dataset: flickrstyle10k # flickrstyle10k, senticap
 wandb_mode: online #'disabled, offline, online'
 load_model: False
 plot_only_clustering: False
