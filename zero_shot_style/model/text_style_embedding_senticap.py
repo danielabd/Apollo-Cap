@@ -205,16 +205,16 @@ class TextStyleEmbed(nn.Module):
 def collate_fn(data):  # for model based on bert
     texts_list = []
     labels_list = []
-    texts_list.append(data[0])
-    labels_list.append(data[1])
-    # for list_for_label in data:
-    #     if type(list_for_label[0]) == list:
-    #         for text in list_for_label[0]:
-    #             texts_list.append(text)
-    #             labels_list.append(list_for_label[1])
-    #     else:
-    #         texts_list.append(list_for_label[0])
-    #         labels_list.append(list_for_label[1])
+    # texts_list.append(data[0])
+    # labels_list.append(data[1])
+    for list_for_label in data:
+        if type(list_for_label[0]) == list:
+            for text in list_for_label[0]:
+                texts_list.append(text)
+                labels_list.append(list_for_label[1])
+        else:
+            texts_list.append(list_for_label[0])
+            labels_list.append(list_for_label[1])
     tokenized_texts_list = tokenizer(texts_list, padding='max_length', max_length=40, truncation=True,
                                      return_tensors="pt")
     return tokenized_texts_list, labels_list, texts_list
@@ -362,6 +362,8 @@ def train(model, optimizer, df_train, df_val, labels_set_dict, labels_idx_to_str
         train_total_texts_list = []
         for step, (tokenized_texts_list, labels, texts_list) in enumerate(
                 pbar := tqdm(train_dataloader, desc="Training", leave=False, )):  # model based on bert
+            print(f"labels={labels}")
+            print(f"texts_list={texts_list}")
             labels = torch.from_numpy(np.asarray(labels)).to(device)
             outputs = model(tokenized_texts_list['input_ids'].to(device),
                             tokenized_texts_list['attention_mask'].to(device))  # model based on bert
@@ -935,6 +937,10 @@ def main():
 
     ds = get_train_val_data(data_set_path)
     df_train, df_val, df_test = convert_ds_to_df(ds, data_dir)
+    #todo:debug
+    df_train = df_train.iloc[:20,:]
+    df_val = df_val.iloc[:20,:]
+    df_test = df_test.iloc[:20,:]
     print(len(df_train), len(df_val), len(df_test))
     print(f"labels: {config['labels_set_dict']}")
 

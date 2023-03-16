@@ -1,11 +1,12 @@
 ###### stylized ZeroCap: create captions - for run.py
-dataset: flickrstyle10k # senticap,flickrstyle10k
+dataset: senticap # senticap,flickrstyle10k
 style_type: 'emoji' #'style_embed' or 'emoji'
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
 debug_mac: False
 wandb_mode: online #'disabled, offline, online' #todo:
+save_config_file: True # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [style_classification, style_classification_emoji]
@@ -19,20 +20,54 @@ model_based_on: 'bert' # 'clip' /  'bert'
 
 specific_idxs_to_skip: [2,3]
 
+
 max_num_of_imgs: 5 #-1
 target_seq_length: 15
 desired_labels:
-  senticap: [positive, negative] #[factual, positive, ngeative]
+  senticap: [positive, negative] #[factual, positive, negative]
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
+beam_size:
+  senticap: 8 #4 #3
+  flickrstyle10k: 4 #3
+text_style_scale:
+  senticap: 6 #2.9365169098669996 #3.797802783 #3.444
+  flickrstyle10k: 3.797802783 #3.444
+ce_scale:
+  senticap: 3.34 #2.925582040227539 #2.43956729 #2.318
+  flickrstyle10k: 3.746143446 #2.965
+clip_scale:
+  senticap: 5.6 #2.1430374716828555 #3.746143446 #2.965
+  flickrstyle10k: 2.43956729 #2.318
 
 ###todo: for debugging
 #max_num_of_imgs: 1
 #target_seq_length: 2
-#desired_labels: [positive] #[factual, positive, ngeative]
+#desired_labels:
+#  senticap: [positive, negative] #[factual, positive, negative]
+#  flickrstyle10k: [humor] #[factual, humor, romantic]
+#beam_size:
+#  senticap: 2
+#  flickrstyle10k: 2
+#text_style_scale:
+#  senticap: 20 #2.9365169098669996 #3.797802783 #3.444
+#  flickrstyle10k: 20 #3.444
+##ce_scale:
+##  senticap: 0.0001 #2.925582040227539 #2.43956729 #2.318
+##  flickrstyle10k: 3.746143446 #2.965
+##clip_scale:
+##  senticap: 0.00001 #2.1430374716828555 #3.746143446 #2.965
+##  flickrstyle10k: 2.43956729 #2.318
+
+
 
 use_style_model: True
 use_text_style_example: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
+
+experiement_global_name:
+  senticap: senticap_ZeroStyleCap_with_emoji
+  flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
+
 global_dir_name_for_save_models:
   senticap: senticap_ZeroStyleCap_with_emoji
   flickrstyle10k: flickrstyle10k_text_style_embedding
@@ -61,18 +96,6 @@ cond_text_dict:
 
 calc_evaluation: True
 
-ce_scale:
-  senticap: 3.34 #2.925582040227539 #2.43956729 #2.318
-  flickrstyle10k: 3.746143446 #2.965
-clip_scale:
-  senticap: 5.6 #2.1430374716828555 #3.746143446 #2.965
-  flickrstyle10k: 2.43956729 #2.318
-text_style_scale:
-  senticap: 3.3 #2.9365169098669996 #3.797802783 #3.444
-  flickrstyle10k: 3.797802783 #3.444
-beam_size:
-  senticap: 8 #4 #3
-  flickrstyle10k: 4 #3
 
 num_iterations:
   senticap: 5 # 8
@@ -142,7 +165,6 @@ freeze_after_n_epochs:
 inner_batch_size: 1
 data_name: senticap
 
-# todo - merge it
 best_model_name:
   senticap: checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth
   flickrstyle10k: checkpoints/best_models/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth
@@ -219,13 +241,13 @@ emoji_pretrained_path: ~/projects/torchMoji/model/pytorch_model.bin
 maxlen_emoji_sentence: 30
 num_classes: 64
 
-use_single_emoji_style: True
+use_single_emoji_style: False
 idx_emoji_style_dict:
   senticap:
-    positive: 53
-    negative: 34
-#    positive: [0,4,6,7,8,11,13,15,16,17,18,20,21,23,24,26,30,31,33,36,40,47,48,50,53,54,57,59,60,61,63] # 53
-#    negative: [1,2,3,5,12,14,19,22,27,29,32,34,35,37,38,39,42,43,44,45,46,51,52,55,56,58] # 34
+#    positive: 53
+#    negative: 34
+    positive: [0,4,6,7,8,13,15,16,17,18,23,24,36,40,53,60] # 53
+    negative: [1,2,3,5,12,22,27,29,32,34,35,37,39,42,43,44,45,46,52,55,56,58] # 34
   flickrstyle10k:
     humor: 0
     romantic: 23

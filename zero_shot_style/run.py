@@ -38,7 +38,7 @@ EPSILON = 0.0000000001
 
 def get_args():
     parser.add_argument('--config_file', type=str,
-                        default=os.path.join('.', 'configs', 'senticap_config.yaml'),
+                        default=os.path.join('.', 'configs', 'config.yaml'),
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -772,7 +772,8 @@ def initial_variables():
         pickle.dump(config, f)
     with open(os.path.join(config['experiment_dir'], 'config.yaml'), 'w') as f:
         yaml.dump(config, f, default_flow_style=False)
-    print('saved experiment config in ', os.path.join(config['experiment_dir'], 'config.pkl'))
+    if config['save_config_file']:
+        print('saved experiment config in ', os.path.join(config['experiment_dir'], 'config.pkl'))
 
     img_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: ""))))
     img_dict_img_arithmetic = defaultdict(lambda: defaultdict(lambda: ""))  # img_path,dataset_type

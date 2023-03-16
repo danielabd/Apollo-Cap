@@ -1,5 +1,6 @@
 # import pdb
 import csv
+import math
 import os.path
 import heapq
 # import pdb
@@ -30,6 +31,7 @@ from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
 
 DEBUG_NUM_WORDS = 10
+EPSILON = 0.0000000001
 
 def write_tmp_text_loss(tmp_text_loss):
     def write_results_of_text_style_all_models(img_dict, labels, reults_dir, scales_len, tgt_results_path):
@@ -692,6 +694,7 @@ class CLIPTextGenerator:
             else:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
 
+        text_style_loss = torch.tensor(float(text_style_loss)) #todo: remove it - This is the source problem
         return text_style_loss, losses, best_sentences, total_best_sentences_style
 
     def get_text_style_loss_emoji(self, probs, context_tokens):
@@ -713,7 +716,10 @@ class CLIPTextGenerator:
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
 
             with torch.no_grad():
-                # top_texts = ["bad day", "It is so sad", "happy day", "wonderful action"]
+                # top_texts = ["bad day", "It is so sad", "It is disgusting",  "happy day", "wonderful action", "good boy"] #todo
+                # tmp_top_texts = ["bad day", "It is so sad", "It is disgusting",  "happy day", "wonderful action", "good boy"] #todo
+                # for i in range(len(top_texts)):
+                #     top_texts[i] = tmp_top_texts[math.floor(i/100)]  # todo
                 tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
                 tokenized = torch.from_numpy(tokenized.astype(np.int32))
 
@@ -724,19 +730,29 @@ class CLIPTextGenerator:
                 # print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
                 # print(f"tokenized.is_cuda={tokenized.is_cuda}")
                 emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
-                if self.config['use_single_emoji_style']:
-                    desired_labels_idxs = []
-                    for label in self.config['desired_labels']:
-                        desired_labels_idxs.append(self.config['idx_emoji_style_dict'][label])
-                    emoji_style_probs = emoji_style_probs[:,desired_labels_idxs]
-                    #normalize each row sample
-                    emoji_style_probs = emoji_style_probs / torch.unsqueeze(torch.sum(emoji_style_probs,dim=-1), 1)
+                emoji_style_grades = emoji_style_probs[:,self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                emoji_style_grades_normalized = emoji_style_grades/torch.sum(emoji_style_grades)
+                # if self.config['use_single_emoji_style']:
+                #     desired_labels_idxs = []
+                #     for label in self.config['desired_labels']:
+                #         desired_labels_idxs.append(self.config['idx_emoji_style_dict'][label])
+                #     source_emoji_style_probs = emoji_style_probs[:,desired_labels_idxs]#/0.00000001 #todo:
+                #     ###########
+                #     source_emoji_style_probs_norm = nn.functional.softmax(source_emoji_style_probs/ EPSILON, dim=-1).detach()+EPSILON
+                #     # emoji_style_probs=source_emoji_style_probs_norm
+                #     # normalize each row sample
+                #     emoji_style_probs = source_emoji_style_probs_norm / torch.unsqueeze(torch.sum(source_emoji_style_probs_norm, dim=-1), 1)
+                #     ###########
+                #     #normalize each row sample
+                #     # emoji_style_probs = emoji_style_probs / torch.unsqueeze(torch.sum(emoji_style_probs,dim=-1), 1)
 
 
                 # probs = torch.tensor(probs*1000).to(self.device)
                 # self.desired_style_embedding_vector = self.desired_style_embedding_vector.to(self.device)
-                emoji_style_loss = ((emoji_style_probs * emoji_style_probs.log()) - (emoji_style_probs * self.desired_style_embedding_vector.log())).sum(-1)
-                predicted_probs = emoji_style_loss
+
+                # emoji_style_loss = ((emoji_style_probs * emoji_style_probs.log()) - (emoji_style_probs * self.desired_style_embedding_vector.log())).sum(-1)
+                # predicted_probs = -emoji_style_loss
+                # predicted_probs = nn.functional.softmax(predicted_probs, dim=-1).detach()
 
                 # #######
                 # #calc euclidean distance
@@ -753,34 +769,26 @@ class CLIPTextGenerator:
                 # predicted_probs = nn.functional.softmax(text_style_grades / self.text_style_loss_temperature, dim=-1).detach()
                 # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
 
-            predicted_probs = predicted_probs.to(self.device)
-            # target = torch.zeros_like(probs[idx_p], device=self.device)
-            # target[top_indices[idx_p]] = predicted_probs[0]
-            # target[top_indices[idx_p]] = predicted_probs
+            ############ debug daniela
+            target = torch.zeros_like(probs[idx_p], device=self.device)
+            target[top_indices[idx_p]] = emoji_style_grades_normalized.to(self.device)
 
-            # target = target.unsqueeze(0)
-            # cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
-            cur_text_style_loss = torch.sum(predicted_probs)
+            target = target.unsqueeze(0)
+            cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
 
             text_style_loss += cur_text_style_loss
             losses.append(cur_text_style_loss)
-
-            # print(f" predicted_probs={ predicted_probs}")
-            # print(f" len(predicted_probs)={ len(predicted_probs)}")
-            # print(f" predicted_probs={ predicted_probs}")
-            # pdb.set_trace()
-            # best_sentences.append(top_texts[torch.argmax(predicted_probs)])
-            # best_sentences.append(top_texts[torch.argmax(predicted_probs[0])])
+            best_sentences.append(top_texts[torch.argmax(emoji_style_grades_normalized)])
 
             # debug
-            # probs_val, indices = predicted_probs[0].topk(DEBUG_NUM_WORDS)
-            # debug_best_probs_vals_style.extend(list(probs_val.cpu().data.numpy()))
-            # style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
-            # debug_best_top_texts_style.extend(style_top_text)
+            probs_val, indices = emoji_style_grades_normalized.topk(DEBUG_NUM_WORDS)
+            debug_best_probs_vals_style.extend(list(probs_val.cpu().data.numpy()))
+            style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
+            debug_best_top_texts_style.extend(style_top_text)
 
-        # total_best_sentences_style = {}
-        # for i in np.argsort(debug_best_probs_vals_style)[-DEBUG_NUM_WORDS:]:
-        #     total_best_sentences_style[debug_best_top_texts_style[i]] = debug_best_probs_vals_style[i]
+        total_best_sentences_style = {}
+        for i in np.argsort(debug_best_probs_vals_style)[-DEBUG_NUM_WORDS:]:
+            total_best_sentences_style[debug_best_top_texts_style[i]] = debug_best_probs_vals_style[i]
 
         loss_string = ''
         for idx_p in range(probs.shape[0]):  # go over all beams
@@ -789,8 +797,48 @@ class CLIPTextGenerator:
             else:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
 
-        # return text_style_loss, losses, best_sentences, total_best_sentences_style
-        return text_style_loss, losses, None, None
+        # text_style_loss = torch.tensor(float(text_style_loss))  # todo: remove it - This is the source problem
+        return text_style_loss, losses, best_sentences, total_best_sentences_style
+
+        # # ############  debug daniela
+        #     predicted_probs = predicted_probs.to(self.device)
+        #     # target = torch.zeros_like(probs[idx_p], device=self.device)
+        #     # target[top_indices[idx_p]] = predicted_probs[0]
+        #     # target[top_indices[idx_p]] = predicted_probs
+        #
+        #     # target = target.unsqueeze(0)
+        #     # cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
+        #     cur_text_style_loss = torch.sum(predicted_probs)
+        #
+        #     text_style_loss += cur_text_style_loss
+        #     losses.append(cur_text_style_loss)
+        #
+        #     # print(f" predicted_probs={ predicted_probs}")
+        #     # print(f" len(predicted_probs)={ len(predicted_probs)}")
+        #     # print(f" predicted_probs={ predicted_probs}")
+        #     # pdb.set_trace()
+        #     # best_sentences.append(top_texts[torch.argmax(predicted_probs)])
+        #     # best_sentences.append(top_texts[torch.argmax(predicted_probs[0])])
+        #
+        #     # debug
+        #     # probs_val, indices = predicted_probs[0].topk(DEBUG_NUM_WORDS)
+        #     # debug_best_probs_vals_style.extend(list(probs_val.cpu().data.numpy()))
+        #     # style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
+        #     # debug_best_top_texts_style.extend(style_top_text)
+        #
+        # # total_best_sentences_style = {}
+        # # for i in np.argsort(debug_best_probs_vals_style)[-DEBUG_NUM_WORDS:]:
+        # #     total_best_sentences_style[debug_best_top_texts_style[i]] = debug_best_probs_vals_style[i]
+        #
+        # loss_string = ''
+        # for idx_p in range(probs.shape[0]):  # go over all beams
+        #     if idx_p == 0:
+        #         loss_string = f'{losses[0]}'
+        #     else:
+        #         loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
+        #
+        # # return text_style_loss, losses, best_sentences, total_best_sentences_style
+        # return text_style_loss, losses, None, None
 
 
     
@@ -929,10 +977,10 @@ class CLIPTextGenerator:
             #if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
             #    break
 
-        print(f'{word_loc}: clip_loss_with_scale = {self.clip_scale * clip_loss}')
-        print(f'{word_loc}: ce_loss = {ce_loss.sum()}')
+        print(f'{word_loc+1}/{self.num_iterations+1}: clip_loss_with_scale = {self.clip_scale * clip_loss}')
+        print(f'{word_loc+1}/{self.num_iterations+1}: ce_loss = {ce_loss.sum()}')
         if self.use_style_model:
-            print(f'{word_loc}: style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+            print(f'{word_loc+1}/{self.num_iterations+1}: style_loss_with_scale = {self.text_style_scale * text_style_loss}')
 
         context_delta = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_])
                          for p_ in context_delta]
