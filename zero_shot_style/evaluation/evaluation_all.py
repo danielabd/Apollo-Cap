@@ -235,17 +235,24 @@ class STYLE_CLS_EMOJI:
             emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
             # cls_score = emoji_style_probs[0,self.idx_emoji_style_dict[gt_label]]
 
-            if self.use_single_emoji_style:
-                desired_labels_idxs = []
-                for label in self.desired_labels:
-                    desired_labels_idxs.append(self.idx_emoji_style_dict[label])
-                emoji_style_probs = emoji_style_probs[:, desired_labels_idxs]
-                # normalize each row sample
-                emoji_style_probs = emoji_style_probs / torch.unsqueeze(torch.sum(emoji_style_probs, dim=-1), 1)
-                cls_score = emoji_style_probs[:,torch.tensor(self.desired_labels.index(label))]
-            else: #use several emojis
-                cls_score = sum(emoji_style_probs[:, self.idx_emoji_style_dict[gt_label]])
 
+
+            ##############
+            #suppose there is only one example
+            emoji_style_grades = emoji_style_probs[:, self.idx_emoji_style_dict[gt_label]].sum(-1)
+            cls_score = emoji_style_grades
+            # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades) # for several examples
+            # ##############
+            # if self.use_single_emoji_style:
+            #     desired_labels_idxs = []
+            #     for label in self.desired_labels:
+            #         desired_labels_idxs.append(self.idx_emoji_style_dict[label])
+            #     emoji_style_probs = emoji_style_probs[:, desired_labels_idxs]
+            #     # normalize each row sample
+            #     emoji_style_probs = emoji_style_probs / torch.unsqueeze(torch.sum(emoji_style_probs, dim=-1), 1)
+            #     cls_score = emoji_style_probs[:,torch.tensor(self.desired_labels.index(label))]
+            # else: #use several emojis
+            #     cls_score = sum(emoji_style_probs[:, self.idx_emoji_style_dict[gt_label]])
         return cls_score, None
 
     def compute_label_for_list(self, res):

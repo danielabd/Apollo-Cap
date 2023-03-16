@@ -1,5 +1,5 @@
 program: run.py
-project: StylizedZeroCap
+project: StylizedZeroCap_with_Emoji
 method: bayes
 metric:
   goal: maximize #minimize

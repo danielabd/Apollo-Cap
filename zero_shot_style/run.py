@@ -751,11 +751,12 @@ def initial_variables():
     config['experiment_dir'] = os.path.join(cur_date_dir,config["training_name"])
     results_dir = config['experiment_dir']
     tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
-    if config["debug"]:
-        config['max_num_of_imgs'] = 2
-        config['target_seq_length'] = 1
+    if config['debug']:
+        config['max_num_of_imgs'] = 1
+        config['target_seq_length'] = 2
         config['desired_labels'] = ['positive']
-        config['calc_fluency'] = False
+        config['beam_size'] = 2
+        # config['calc_fluency'] = False
 
     if config['wandb_mode'] == 'online':
         wandb.config.update(config, allow_val_change=True)
