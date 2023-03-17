@@ -504,6 +504,8 @@ def update_running_params(label, config):
 def get_evaluation_obj(config, text_generator, evaluation_obj):
     if not evaluation_obj:
         evaluation_obj = {}
+    if 'evaluation_metrics' not in config:
+        return evaluation_obj
     if config["calc_evaluation"]:
         for metric in config['evaluation_metrics']:
             if metric == 'bleu' and 'bleu' not in evaluation_obj:
@@ -532,9 +534,11 @@ def get_evaluation_obj(config, text_generator, evaluation_obj):
 
 
 def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_captions, text_generator, evaluation_obj):
+    if 'evaluation_metrics' not in config:
+        return
     print("Calc evaluation of the results...")
     # calc perplexity
-    if config['calc_fluency'] and 'fluency' in config['evaluation_metrics']:
+    if 'fluency' in config['evaluation_metrics'] and config['calc_fluency']:
         evaluation_obj['fluency'] = Fluency(config['desired_labels'])
         evaluation_obj['fluency'].add_results(evaluation_results)
         perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score()
@@ -763,13 +767,14 @@ def initial_variables():
 
     txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
     evaluation_obj = {}
-    if config['use_style_threshold']:
-        if 'style_classification' in config['evaluation_metrics']:
-            evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
-                                                    config['labels_dict_idxs'], data_dir, config[
-                                                        'hidden_state_to_take_txt_cls'])
-        if 'style_classification_emoji' in config['evaluation_metrics']:
-            evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
+    if 'evaluation_metrics' in config:
+        if config['use_style_threshold']:
+            if 'style_classification' in config['evaluation_metrics']:
+                evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
+                                                        config['labels_dict_idxs'], data_dir, config[
+                                                            'hidden_state_to_take_txt_cls'])
+            if 'style_classification_emoji' in config['evaluation_metrics']:
+                evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
 
     desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
 

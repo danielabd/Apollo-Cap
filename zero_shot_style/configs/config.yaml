@@ -5,12 +5,12 @@ style_type: 'emoji' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
 debug_mac: False
-wandb_mode: online #'disabled, offline, online' #todo:
-save_config_file: True # False, True todo
+wandb_mode: disabled #'disabled, offline, online' #todo:
+save_config_file: False # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [style_classification, style_classification_emoji]
-data_type: val #val
+data_type: test #val, test
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 #specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
 
@@ -18,10 +18,11 @@ use_text_style_cutting: False
 
 model_based_on: 'bert' # 'clip' /  'bert'
 
-specific_idxs_to_skip: [2,3]
-
+##for validation
+#specific_idxs_to_skip: [2,3]
+#max_num_of_imgs: 5
 #
-max_num_of_imgs: 5 #-1
+max_num_of_imgs: -1
 target_seq_length: 15
 desired_labels:
   senticap: [positive, negative] #[factual, positive, negative]
@@ -30,13 +31,13 @@ beam_size:
   senticap: 5 #4 #3
   flickrstyle10k: 4 #3
 text_style_scale:
-  senticap: 6 #2.9365169098669996 #3.797802783 #3.444
+  senticap: 8.7 #2.9365169098669996 #3.797802783 #3.444
   flickrstyle10k: 3.797802783 #3.444
 ce_scale:
-  senticap: 3.34 #2.925582040227539 #2.43956729 #2.318
+  senticap: 2.2 #2.925582040227539 #2.43956729 #2.318
   flickrstyle10k: 3.746143446 #2.965
 clip_scale:
-  senticap: 5.6 #2.1430374716828555 #3.746143446 #2.965
+  senticap: 1.6 #2.1430374716828555 #3.746143446 #2.965
   flickrstyle10k: 2.43956729 #2.318
 
 ###todo: for debugging
