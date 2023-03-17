@@ -889,7 +889,7 @@ class CLIPTextGenerator:
                 ce_losses = (probs * probs_before_shift.log()).sum(-1)
 
             # TEXT_STYLE:
-            if self.use_style_model:
+            if self.use_style_model and not self.use_text_style_cutting:
                 text_style_loss=-100
                 if self.text_style_scale!=0:
                     if self.style_type == 'clip': #using clip model for text style
@@ -979,7 +979,7 @@ class CLIPTextGenerator:
 
         print(f'{word_loc+1}/{self.target_seq_length}: clip_loss_with_scale = {self.clip_scale * clip_loss}')
         print(f'{word_loc+1}/{self.target_seq_length}: ce_loss = {ce_loss.sum()}')
-        if self.use_style_model:
+        if self.use_style_model and not self.use_text_style_cutting:
             print(f'{word_loc+1}/{self.target_seq_length}: style_loss_with_scale = {self.text_style_scale * text_style_loss}')
 
         context_delta = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_])
@@ -1040,8 +1040,17 @@ class CLIPTextGenerator:
 
             # grades according to match to style
             if self.use_text_style_cutting:
-                outputs_bin = self.text_style_cls_model.compute_label_for_list(top_texts)
-                style_scores = [1 for i in outputs_bin if i == self.desired_style_bin]
+                if self.config['style_type'] == 'emoji':
+                    ############
+                    tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                    tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                    emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
+                    emoji_style_grades = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                    style_scores = (emoji_style_grades / torch.sum(emoji_style_grades)).to(self.device)
+                    ############
+                elif self.config['style_type'] == 'style_embed':
+                    outputs_bin = self.text_style_cls_model.compute_label_for_list(top_texts)
+                    style_scores = [1 for i in outputs_bin if i == self.desired_style_bin]
 
             probs_val,indices = top_probs_LM[idx_p].topk(DEBUG_NUM_WORDS)
             debug_best_probs_vals_LM.extend(probs_val)
@@ -1053,7 +1062,7 @@ class CLIPTextGenerator:
                 similiraties = (self.image_features @ text_features.T)
 
                 if self.use_text_style_cutting:
-                    similiraties = similiraties * style_scores
+                    # similiraties = similiraties * style_scores
                     #zero sentences which are not in the desired style
                     if self.device == "cuda":
                         similiraties = torch.mul(similiraties, style_scores)

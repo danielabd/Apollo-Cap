@@ -14,7 +14,7 @@ parameters:
     min: 1 #4.5
     distribution: uniform
   text_style_scale:
-    max: 10 #5.5 #6
+    max: 12 #5.5 #6
     min: 1 #2.5 #1.5
     distribution: uniform
 #  std_embedding_vectors_positive: #0.015731973987010497#0.028914157
