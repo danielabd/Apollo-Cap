@@ -444,7 +444,7 @@ def get_list_of_imgs_for_caption(config):
                          config['data_type']))):
         if len(imgs_to_test) >= int(config['max_num_of_imgs']) > 0:
             break
-        if len(config['specific_idxs_to_skip']) > 0 and i in config['specific_idxs_to_skip']:
+        if 'specific_idxs_to_skip' in config and len(config['specific_idxs_to_skip']) > 0 and i in config['specific_idxs_to_skip']:
             continue
         if ('.jpg' or '.jpeg' or '.png') not in im:
             continue
