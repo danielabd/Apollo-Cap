@@ -9,9 +9,12 @@ wandb_mode: online #'disabled, offline, online' #todo:
 save_config_file: False # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-data_type: val #val, test
 use_text_style_cutting: True
 style_mul_not_cut: False
+##for validation
+specific_idxs_to_skip: [2,3]
+max_num_of_imgs: 5
+data_type: val #val, test
 
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 #specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
@@ -19,11 +22,8 @@ style_mul_not_cut: False
 
 model_based_on: 'bert' # 'clip' /  'bert'
 
-##for validation
-#specific_idxs_to_skip: [2,3]
-#max_num_of_imgs: 5
 #
-max_num_of_imgs: -1
+#max_num_of_imgs: -1
 target_seq_length: 15
 desired_labels:
   senticap: [positive, negative] #[factual, positive, negative]
