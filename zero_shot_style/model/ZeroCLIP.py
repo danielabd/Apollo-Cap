@@ -1046,7 +1046,15 @@ class CLIPTextGenerator:
                     tokenized = torch.from_numpy(tokenized.astype(np.int32))
                     emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
                     emoji_style_grades = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
-                    style_scores = (emoji_style_grades / torch.sum(emoji_style_grades)).to(self.device)
+                    if self.config['style_mul_not_cut']:
+                        style_scores = (emoji_style_grades / torch.sum(emoji_style_grades)).to(self.device)
+                    else:
+                        emoji_style_grades_cutted = [0]*len(emoji_style_grades)
+                        for i in range(len(emoji_style_grades)):
+                            if emoji_style_grades[i]>0.5:
+                                # print(f"i={i},emoji_style_grades[i]={emoji_style_grades[i]},top_texts[i]={top_texts[i]}")
+                                emoji_style_grades_cutted[i] = 1
+                        style_scores = torch.tensor(emoji_style_grades_cutted).to(self.device)
                     ############
                 elif self.config['style_type'] == 'style_embed':
                     outputs_bin = self.text_style_cls_model.compute_label_for_list(top_texts)
