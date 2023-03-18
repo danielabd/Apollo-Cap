@@ -11,6 +11,7 @@ save_config_file: False # False, True todo
 evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 use_text_style_cutting: True
 style_mul_not_cut: False
+requires_min_fluency_score: 0.9
 ##for validation
 specific_idxs_to_skip: [2,3]
 max_num_of_imgs: 5
