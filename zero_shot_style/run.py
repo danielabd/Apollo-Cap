@@ -634,10 +634,14 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     avg_fluency_score = mean_perplexity
     avg_style_cls_score = np.mean(style_cls_scores)
     avg_style_cls_emoji_score = np.mean(style_cls_emoji_scores)
-    if 'requires_min_fluency_score' in config and avg_fluency_score > config['requires_min_fluency_score']:
-        final_avg_total_score = calculate_avg_score(avg_clip_score, avg_fluency_score, avg_style_cls_score, avg_style_cls_emoji_score)
+    if 'requires_min_fluency_score' in config and 'requires_min_clip_score' in config:
+        if avg_fluency_score > config['requires_min_fluency_score'] and avg_clip_score >= config['requires_min_clip_score']:
+            final_avg_total_score = calculate_avg_score(avg_clip_score, avg_fluency_score, avg_style_cls_score, avg_style_cls_emoji_score)
+        else:
+            final_avg_total_score = 0
     else:
-        final_avg_total_score = 0
+        final_avg_total_score = calculate_avg_score(avg_clip_score, avg_fluency_score, avg_style_cls_score,
+                                                    avg_style_cls_emoji_score)
 
 
     # if style_cls_score != 'None':
