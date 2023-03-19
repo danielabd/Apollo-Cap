@@ -12,9 +12,9 @@ evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoj
 use_text_style_cutting: False
 style_mul_not_cut: False
 ##for validation
-specific_idxs_zto_skip: [2,3]
-max_num_of_imgs: 1
-data_type: val #val, test
+#specific_idxs_zto_skip: [2,3]
+#max_num_of_imgs: 5
+data_type: test #val, test
 
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 #specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
@@ -23,22 +23,22 @@ data_type: val #val, test
 model_based_on: 'bert' # 'clip' /  'bert'
 
 #
-#max_num_of_imgs: -1
+max_num_of_imgs: -1
 target_seq_length: 15
 desired_labels:
   senticap: [positive, negative] #[factual, positive, negative]
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 beam_size:
-  senticap: 8 #5
+  senticap: 5 #5
   flickrstyle10k: 4 #3
 text_style_scale:
-  senticap: 7.752462834163497 #8.7
+  senticap: 8.7
   flickrstyle10k: 3.797802783 #3.444
 ce_scale:
-  senticap: 2.7654404184539545 #2.2
+  senticap: 2.2
   flickrstyle10k: 3.746143446 #2.965
 clip_scale:
-  senticap: 5.201123949095895 #1.6
+  senticap: 1.6
   flickrstyle10k: 2.43956729 #2.318
 
 ###todo: for debugging
