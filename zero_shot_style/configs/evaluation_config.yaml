@@ -39,9 +39,11 @@ dir_path_for_eval_only_fluency: ~/experiments/stylized_zero_cap_experiments/27_2
 
 factual_captions_path:
   senticap: /Users/danielabendavid/data/source/coco/factual_captions.pkl
-test_set_path:
-  senticap: /Users/danielabendavid/data/senticap/annotations/test.pkl
-  flickrstyle10k: /Users/danielabendavid/data/flickrstyle10k/annotations/test.pkl
+
+annotations_path:
+  senticap: /Users/danielabendavid/data/senticap/annotations
+  flickrstyle10k: /Users/danielabendavid/data/flickrstyle10k/annotations
+
 imgs_path:
   senticap: /Users/danielabendavid/data/senticap/images
   flickrstyle10k: /Users/danielabendavid/data/flickrstyle10k/images

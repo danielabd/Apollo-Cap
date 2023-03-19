@@ -581,13 +581,13 @@ def get_all_sentences(data_dir, dataset_name, type_set):
     return sentences
 
 
-def get_gts_data(test_set_path, imgs_path, data_split, factual_captions=None, max_num_imgs2test=-1):
+def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None, max_num_imgs2test=-1):
     '''
-    :param test_set_path: dictionary:keys=dataset names, values=path to pickle file
+    :param annotations_path: dictionary:keys=dataset names, values=path to pickle file
     :return: gts_per_data_set: key=img_name,values=dict:keys=['image_path','factual','humor','romantic','positive','negative'], values=gt text
     '''
     gts = {}
-    with open(os.path.join(test_set_path), 'rb') as r:
+    with open(os.path.join(annotations_path,data_split+'.pkl'), 'rb') as r:
         data = pickle.load(r)
     for k in data:
         if len(gts) >= max_num_imgs2test and max_num_imgs2test > 0:
@@ -877,7 +877,7 @@ def main():
             factual_captions = pickle.load(f)
     else:
         factual_captions = None
-    gts_per_data_set = get_gts_data(config['test_set_path'], config['imgs_path'], config['data_split'],
+    gts_per_data_set = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_split'],
                                     factual_captions, config['max_num_imgs2test'])
 
     res_data_per_test = get_res_data(config['res_path2eval'])
