@@ -300,7 +300,7 @@ class Fluency:
         self.k.append(k)
         self.style.append(style)
 
-    def compute_score(self, score_dict_per_metric, score_per_metric_and_style, all_scores, test_type):
+    def compute_score(self, score_dict_per_metric, score_per_metric_and_style, all_scores, test_name):
         '''
         sentence = list(res.values())[0]
         results = self.perplexity.compute(data=sentence, model_id=self.model_id, add_start_token=False)
@@ -318,29 +318,29 @@ class Fluency:
             metric = self.metric[i]
             score_dict_per_metric[metric][k][style] = 1 - np.min([pp, MAX_PERPLEXITY]) / MAX_PERPLEXITY
             score_per_metric_and_style[metric][style].append(score_dict_per_metric[metric][k][style])
-            all_scores = save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric,
+            all_scores = save_all_data_k(all_scores, k, test_name, style, metric, score_dict_per_metric,
                                          res=self.tests[i])  # save all data per key frames
         return score_dict_per_metric, score_per_metric_and_style, all_scores
 
 
-def save_all_data_k(all_scores, k, test_type, style, metric, score_dict_per_metric, res=None, gts=None,
+def save_all_data_k(all_scores, k, test_name, style, metric, score_dict_per_metric, res=None, gts=None,
                     image_path=None):
     # save all data per key frames
     if k not in all_scores:
         all_scores[k] = {}
-    if test_type not in all_scores[k]:
-        all_scores[k][test_type] = {}
-    if style not in all_scores[k][test_type]:
-        all_scores[k][test_type][style] = {}
+    if test_name not in all_scores[k]:
+        all_scores[k][test_name] = {}
+    if style not in all_scores[k][test_name]:
+        all_scores[k][test_name][style] = {}
 
-    all_scores[k][test_type][style][metric] = score_dict_per_metric[metric][k][style]
+    all_scores[k][test_name][style][metric] = score_dict_per_metric[metric][k][style]
 
-    if res and ('res' not in all_scores[k][test_type][style]):
-        all_scores[k][test_type][style]['res'] = res
-    if gts and ('gts' not in all_scores[k][test_type][style]):
-        all_scores[k][test_type][style]['gts'] = gts
-    if image_path and ('image_path' not in all_scores[k][test_type][style]):
-        all_scores[k][test_type][style]['image_path'] = image_path
+    if res and ('res' not in all_scores[k][test_name][style]):
+        all_scores[k][test_name][style]['res'] = res
+    if gts and ('gts' not in all_scores[k][test_name][style]):
+        all_scores[k][test_name][style]['gts'] = gts
+    if image_path and ('image_path' not in all_scores[k][test_name][style]):
+        all_scores[k][test_name][style]['image_path'] = image_path
     return all_scores
 
 
@@ -365,27 +365,29 @@ def evaluate_single_res(res, gt, image_path, label, metrics, evaluation_obj):
 
 def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_cls_model_paths_to_load,
                labels_dict_idxs, gt_imgs_for_test, config):
-    print("Calculate scores...")
+    print("Calculate scores:")
     mean_score = {}
     if ('CLIPScoreRef' in metrics) or ('CLIPScore' in metrics):
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, config=config)
     if 'style_classification' in metrics:
         style_cls_obj = STYLE_CLS(txt_cls_model_paths_to_load, cuda_idx, labels_dict_idxs, data_dir,
                                                 config['hidden_state_to_take_txt_cls'])
-    if 'style_classification_emoji' in config['evaluation_metrics']:
+    if 'style_classification_emoji' in config['metrics']:
         style_cls_emoji_obj = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'],
                                                       config['emoji_pretrained_path'], config['idx_emoji_style_dict'], config['use_single_emoji_style'], config['desired_labels'])
     if 'fluency' in metrics:
-        fluency_obj = Fluency(config['desired_labels'])
+        fluency_obj = Fluency()
     all_scores = {}
-    for test_type in res:
-        print(f"Calc scores for experiment: **** {test_type} *****")
+    #go over all experiements
+    for test_name in res:
+        print(f"Calc scores for experiment: **** {test_name} *****")
         t1_exp = timeit.default_timer();
         mean_score_per_dataset = {}
         score_per_metric_and_style = {}
         score_dict_per_metric = {}
         scores_dict_per_metric = {}
         mean_score_per_metric_and_style = {}
+        # initial evaluation objects
         for metric in metrics:
             print(f"    Calc scores for metric: ***{metric}***")
             t1_metric = timeit.default_timer();
@@ -421,24 +423,25 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
             score_dict_per_metric[metric] = {}
             scores_dict_per_metric[metric] = {}
             mean_score_per_metric_and_style[metric] = {}
-            for i1, k in enumerate(res[test_type]):
+            # go over each image caption from res
+            for i1, k in enumerate(res[test_name]):
                 if k in gts_per_data_set:
                     score_dict_per_metric[metric][k] = {}
                     scores_dict_per_metric[metric][k] = {}
                     for i2, style in enumerate(styles):
                         if style == 'factual' and metric == 'style_classification':
                             continue
-                        if style in gts_per_data_set[k] and style in res[test_type][k]:
+                        if style in gts_per_data_set[k] and style in res[test_name][k]:
                             if not gts_per_data_set[k][style]:
                                 continue
-                            tmp_res = {k: [res[test_type][k][style]]}
+                            tmp_res = {k: [res[test_name][k][style]]}
                             if metric == 'CLIPScore':
                                 # score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(os.path.join(config['test_imgs'],gts_per_data_set[k]['image_path'].split('/')[-1]), tmp_res)
                                 score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
                                     style] = scorer.compute_score(gts_per_data_set[k]['image_path'], tmp_res)
                                 score_per_metric_and_style[metric][style].append(
                                     score_dict_per_metric[metric][k][style])
-                                all_scores = save_all_data_k(all_scores, k, test_type, style, metric,
+                                all_scores = save_all_data_k(all_scores, k, test_name, style, metric,
                                                              score_dict_per_metric, res=tmp_res[k][0],
                                                              image_path=gts_per_data_set[k]['image_path'])
                             elif metric in ['style_classification', 'style_classification_emoji']:
@@ -446,7 +449,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     style] = scorer.compute_score(tmp_res, style)
                                 score_per_metric_and_style[metric][style].append(
                                     score_dict_per_metric[metric][k][style])
-                                all_scores = save_all_data_k(all_scores, k, test_type, style, metric,
+                                all_scores = save_all_data_k(all_scores, k, test_name, style, metric,
                                                              score_dict_per_metric, res=tmp_res[k][0])
                             elif metric == 'fluency':
                                 if len(list(tmp_res.values())[0][0].split()) < 2:
@@ -461,11 +464,11 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     score_dict_per_metric[metric][k][style])  # todo: check if need it
                                 score_per_metric_and_style[metric][style].append(
                                     score_dict_per_metric[metric][k][style])
-                                all_scores = save_all_data_k(all_scores, k, test_type, style, metric,
+                                all_scores = save_all_data_k(all_scores, k, test_name, style, metric,
                                                              score_dict_per_metric, res=tmp_res[k][0], gts=tmp_gts[k])
             if metric == 'fluency':
                 score_dict_per_metric, score_per_metric_and_style, all_scores = fluency_obj.compute_score(
-                    score_dict_per_metric, score_per_metric_and_style, all_scores, test_type)
+                    score_dict_per_metric, score_per_metric_and_style, all_scores, test_name)
                 # print("score_dict_per_metric:")
                 # print(score_dict_per_metric)
 
@@ -480,7 +483,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
             t2_metric = timeit.default_timer();
             print(
                 f"Time to calc this metric: {(t2_metric - t1_metric) / 60} minutes = {t2_metric - t1_metric} seconds.")
-        mean_score[test_type] = mean_score_per_metric_and_style
+        mean_score[test_name] = mean_score_per_metric_and_style
         t2_exp = timeit.default_timer();
         print(f"Time to calc this test: {(t2_exp - t1_exp) / 60} minutes = {t2_exp - t1_exp} seconds.")
     return mean_score, all_scores
@@ -489,13 +492,13 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
 def copy_imgs_to_test_dir(gts_per_data_set, res, styles, metrics, gt_imgs_for_test):
     print("Calculate scores...")
     imgs2cpy = []
-    for test_type in res:
+    for test_name in res:
         for dataset_name in gts_per_data_set:
             for metric in metrics:
-                for i1, k in enumerate(res[test_type]):
+                for i1, k in enumerate(res[test_name]):
                     if k in gts_per_data_set:
                         for i2, style in enumerate(styles):
-                            if style in gts_per_data_set[k] and style in res[test_type][k]:
+                            if style in gts_per_data_set[k] and style in res[test_name][k]:
                                 if not gts_per_data_set[k][style]:
                                     continue
                                 if metric == 'CLIPScore':
@@ -539,21 +542,21 @@ def style_accuracy():
 def diversitiy(res, gts):
     print("Calculate vocabulary size...")
     vocab_size = {}
-    for test_type in res:
-        vocab_size[test_type] = {}
+    for test_name in res:
+        vocab_size[test_name] = {}
         vocab_list = {}
-        for k in res[test_type]:
-            for style in res[test_type][k]:
+        for k in res[test_name]:
+            for style in res[test_name][k]:
                 if style == 'factual':
                     continue
                 if style not in vocab_list:
                     vocab_list[style] = []
-                tokenized_text = list(map(str.lower, nltk.tokenize.word_tokenize(res[test_type][k][style])))
+                tokenized_text = list(map(str.lower, nltk.tokenize.word_tokenize(res[test_name][k][style])))
                 vocab_list[style].extend(tokenized_text)
                 vocab_list[style] = list(set(vocab_list[style]))
         for style in vocab_list:
-            vocab_size[test_type][style] = len(vocab_list[style])
-            print(f'Vocabulary size for ***{test_type}, {style}*** is: {vocab_size[test_type][style]}')
+            vocab_size[test_name][style] = len(vocab_list[style])
+            print(f'Vocabulary size for ***{test_name}, {style}*** is: {vocab_size[test_name][style]}')
     return vocab_size
 
 
@@ -578,13 +581,13 @@ def get_all_sentences(data_dir, dataset_name, type_set):
     return sentences
 
 
-def get_gts_data(annotations_path, imgs_path, data_type, factual_captions=None, max_num_imgs2test=-1):
+def get_gts_data(test_set_path, imgs_path, data_split, factual_captions=None, max_num_imgs2test=-1):
     '''
     :param test_set_path: dictionary:keys=dataset names, values=path to pickle file
     :return: gts_per_data_set: key=img_name,values=dict:keys=['image_path','factual','humor','romantic','positive','negative'], values=gt text
     '''
     gts = {}
-    with open(os.path.join(annotations_path, data_type + ".pkl"), 'rb') as r:
+    with open(os.path.join(test_set_path), 'rb') as r:
         data = pickle.load(r)
     for k in data:
         if len(gts) >= max_num_imgs2test and max_num_imgs2test > 0:
@@ -597,7 +600,7 @@ def get_gts_data(annotations_path, imgs_path, data_type, factual_captions=None, 
         gts[k]['image_path'] = replace_user_home_dir(data[k]['image_path'])
         for style in data[k]:
             if style == 'image_path':
-                gts[k]['image_path'] = os.path.join(imgs_path, data_type, data[k]['image_path'].split('/')[-1])
+                gts[k]['image_path'] = os.path.join(imgs_path, data_split, data[k]['image_path'].split('/')[-1])
                 continue
             if style != 'factual':
                 gts[k][style] = data[k][style]
@@ -611,9 +614,9 @@ def get_res_data(res_paths):
     :return: res_data_per_test: dict. keys:  'prompt_manipulation', 'image_manipulation'. values: dict to res per image name and style
     '''
     res_data_per_test = {}
-    for test_type in res_paths:
+    for test_name in res_paths:
         res_data = {}
-        with open(res_paths[test_type], 'r') as csvfile:
+        with open(res_paths[test_name], 'r') as csvfile:
             spamreader = csv.reader(csvfile)
             title = True
             styles = []
@@ -641,37 +644,37 @@ def get_res_data(res_paths):
                             res_data[k][s] = ' '.join(row[i + 1].split()[:target_seq_length])
                     except:
                         pass
-        res_data_per_test[test_type] = res_data
+        res_data_per_test[test_name] = res_data
     return res_data_per_test
 
 
 def write_results_for_all_frames(all_scores, tgt_eval_results_path_for_all_frames, metrics):
     print(f"Write results to {tgt_eval_results_path_for_all_frames}...")
-    title = ['k', 'test_type', 'style']
+    title = ['k', 'test_name', 'style']
     title.extend(metrics)
     title.extend(['res', 'gts', 'image_path'])
     with open(tgt_eval_results_path_for_all_frames, 'w') as results_file:
         writer = csv.writer(results_file)
         writer.writerow(title)
         for k in all_scores:
-            for test_type in all_scores[k]:
-                for style in all_scores[k][test_type]:
-                    row = [k, test_type, style]
+            for test_name in all_scores[k]:
+                for style in all_scores[k][test_name]:
+                    row = [k, test_name, style]
                     for metric in metrics:
-                        if metric in all_scores[k][test_type][style]:
-                            row.append(all_scores[k][test_type][style][metric])
+                        if metric in all_scores[k][test_name][style]:
+                            row.append(all_scores[k][test_name][style][metric])
                         else:
                             row.append('')
-                    if 'res' in all_scores[k][test_type][style]:
-                        row.append(all_scores[k][test_type][style]['res'])
+                    if 'res' in all_scores[k][test_name][style]:
+                        row.append(all_scores[k][test_name][style]['res'])
                     else:
                         row.append('')
-                    if 'gts' in all_scores[k][test_type][style]:
-                        row.append(all_scores[k][test_type][style]['gts'])
+                    if 'gts' in all_scores[k][test_name][style]:
+                        row.append(all_scores[k][test_name][style]['gts'])
                     else:
                         row.append('')
-                    if 'image_path' in all_scores[k][test_type][style]:
-                        row.append(all_scores[k][test_type][style]['image_path'])
+                    if 'image_path' in all_scores[k][test_name][style]:
+                        row.append(all_scores[k][test_name][style]['image_path'])
                     else:
                         row.append('')
                     writer.writerow(row)
@@ -696,25 +699,25 @@ def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, v
         total_rows = []
         title = True
         avg_metric = {}
-        for test_type in mean_score:
-            row = [test_type]
+        for test_name in mean_score:
+            row = [test_name]
             for style in styles:
                 for metric in metrics:
-                    if not np.isnan(mean_score[test_type][metric][style]):
+                    if not np.isnan(mean_score[test_name][metric][style]):
                         if title:
                             dataset_row.append(dataset)
                             style_row.append(style)
                             metrics_row.append(metric)
-                        row.append(mean_score[test_type][metric][style])
+                        row.append(mean_score[test_name][metric][style])
                         if metric not in avg_metric:
-                            avg_metric[metric] = [mean_score[test_type][metric][style]]
+                            avg_metric[metric] = [mean_score[test_name][metric][style]]
                         else:
-                            avg_metric[metric].append(mean_score[test_type][metric][style])
+                            avg_metric[metric].append(mean_score[test_name][metric][style])
                 if 'diversity-vocab_size' not in avg_metric:
-                    avg_metric['diversity-vocab_size'] = [vocab_size[test_type][style]]
+                    avg_metric['diversity-vocab_size'] = [vocab_size[test_name][style]]
                 else:
-                    if style in vocab_size[test_type]:
-                        avg_metric['diversity-vocab_size'].append(vocab_size[test_type][style])
+                    if style in vocab_size[test_name]:
+                        avg_metric['diversity-vocab_size'].append(vocab_size[test_name][style])
             for m in avg_metric:
                 if title:
                     dataset_row.append('total avg.')
@@ -819,14 +822,14 @@ def get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt):
 #     ############## histogram
 #     fluency_statistic = {}
 #     for k in all_scores:
-#         for test_type in all_scores[k]:
-#             if test_type not in fluency_statistic:
-#                 fluency_statistic[test_type] = {}
-#             for style in all_scores[k][test_type]:
-#                 if style not in fluency_statistic[test_type]:
-#                     fluency_statistic[test_type][style] = [all_scores[k][test_type][style]['fluency']]
+#         for test_name in all_scores[k]:
+#             if test_name not in fluency_statistic:
+#                 fluency_statistic[test_name] = {}
+#             for style in all_scores[k][test_name]:
+#                 if style not in fluency_statistic[test_name]:
+#                     fluency_statistic[test_name][style] = [all_scores[k][test_name][style]['fluency']]
 #                 else:
-#                     fluency_statistic[test_type][style].append(all_scores[k][test_type][style]['fluency'])
+#                     fluency_statistic[test_name][style].append(all_scores[k][test_name][style]['fluency'])
 #
 #     print('finish to calc statistic of fluency')
 #     # Generate data on commute times.
@@ -834,20 +837,20 @@ def get_all_paths_of_tests_ZeroStyleCap(factual_wo_prompt):
 #     commutes = pd.Series(np.random.gamma(scale, size=size) ** 1.5)
 #     commutes = pd.Series([1,1,2,2,3,3,3,3,3])
 #     fig1 = plt.gcf()
-#     for i, test_type in enumerate(fluency_statistic):
-#         for j, style in enumerate(fluency_statistic[test_type]):
-#             plt.subplot(len(fluency_statistic),len(fluency_statistic[test_type]),i*len(fluency_statistic[test_type])+j+1)
+#     for i, test_name in enumerate(fluency_statistic):
+#         for j, style in enumerate(fluency_statistic[test_name]):
+#             plt.subplot(len(fluency_statistic),len(fluency_statistic[test_name]),i*len(fluency_statistic[test_name])+j+1)
 #
-#             commutes = pd.Series(fluency_statistic[test_type][style])
+#             commutes = pd.Series(fluency_statistic[test_name][style])
 #             commutes.plot.hist(grid=True, bins=20, rwidth=0.9,
 #                                color='#607c8e')
-#             plt.title(f'Fluency Histogram for: {test_type} - {style}')
+#             plt.title(f'Fluency Histogram for: {test_name} - {style}')
 #             plt.xlabel('Counts')
 #             plt.ylabel('Commute Time')
 #             plt.grid(axis='y', alpha=0.75)
 #     plt.show(block=False)
 #     os.makedirs(config['dir_path_for_eval_only_fluency'], exist_ok=True)
-#     fig1.savefig(os.path.join(config['dir_path_for_eval_only_fluency'], f'_{test_type}_{style}.png'))
+#     fig1.savefig(os.path.join(config['dir_path_for_eval_only_fluency'], f'_{test_name}_{style}.png'))
 #     ##############
 
 def get_args():
@@ -874,7 +877,7 @@ def main():
             factual_captions = pickle.load(f)
     else:
         factual_captions = None
-    gts_per_data_set = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_type'],
+    gts_per_data_set = get_gts_data(config['test_set_path'], config['imgs_path'], config['data_split'],
                                     factual_captions, config['max_num_imgs2test'])
 
     res_data_per_test = get_res_data(config['res_path2eval'])
@@ -887,13 +890,13 @@ def main():
     vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
     # analyze_fluency(all_scores,config)
 
-    for test_type in res_data_per_test:
+    for test_name in res_data_per_test:
         for metric in config['metrics']:
             for style in config['styles']:
                 print(
-                    f"{test_type}: {config['dataset']}: {metric} score for {style} = {mean_score[test_type][metric][style]}")
-    for test_type in res_data_per_test:
-        print(f'Vocabulary size for experiment {test_type} dataset is {vocab_size[test_type]}')
+                    f"{test_name}: {config['dataset']}: {metric} score for {style} = {mean_score[test_name][metric][style]}")
+    for test_name in res_data_per_test:
+        print(f'Vocabulary size for experiment {test_name} dataset is {vocab_size[test_name]}')
 
     tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
                                               config['tgt_eval_results_file_name'])

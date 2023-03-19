@@ -86,6 +86,22 @@ def write_data_to_global_file_for_debug(data, img_idx_to_name, tgt_results_path,
             writer.writerow(cur_row)
     print(f'Finished to write data to global file for debug in: {tgt_results_path}')
 
+def merge_list_res_files_to_one(file_list, tgt_path):
+    #go over test type
+    total_data = {}
+    for f in file_list:
+        data = pd.read_csv(f)
+        if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
+             data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
+        for i,k in enumerate(data['img_num']):
+            pos = data['positive'][i]
+            neg = data['negative'][i]
+            total_data[k] = {'img_num': k, 'positive': pos, 'negative': neg}
+        total_data_test_type = pd.DataFrame(list(total_data.values()))
+        total_data_test_type.to_csv(tgt_path, index=False, header=True)
+        print(f"finish to create: {tgt_path}")
+    print('Finish of program!')
+
 def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, factual_wo_prompt, use_factual = False):
     #go over test type
     keys_test_type = {}
@@ -303,6 +319,24 @@ def get_missed_img_nums(f1,f2):
     missed_img_nums = diff
     return missed_img_nums
 
+
+def get_list_of_files():
+    list_of_files = ['/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/17_03_2023/tmp/results_10_55_24__17_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/17_03_2023/tmp/results_10_55_35__17_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/17_03_2023/tmp/results_10_55_57__17_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/17_03_2023/tmp/results_10_56_36__17_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/17_03_2023/tmp/results_10_56_41__17_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/17_03_2023/tmp/results_10_56_52__17_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/17_03_2023/tmp/results_10_56_59__17_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/18_03_2023/tmp/results_21_55_10__18_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/18_03_2023/tmp/results_21_55_15__18_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/18_03_2023/tmp/results_21_55_26__18_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/18_03_2023/tmp/results_21_56_02__18_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/results_09_36_22__19_03_2023.csv',
+                     '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/results_11_40_14__19_03_2023.csv']
+    return list_of_files
+
+
 # [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 def main():
     # f1 = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCap8/total_results_text_style_8_factual_wo_prompt.csv'
@@ -339,12 +373,18 @@ def main():
     factual_wo_prompt = False
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     exp_to_merge = ["text_style"]
-    res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge)
+    #todo:
+    # res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge) #todo:
 
 
     # exp_to_merge = ["text_style"]
     use_factual = False
-    merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual)
+    ######### for the case of file list
+    file_list = get_list_of_files()
+    tgt_path = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/total_results_zerstylecap_emoji_batch.csv'
+    merge_list_res_files_to_one(file_list, tgt_path)
+    #########
+    # merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual, list_files=list_of_files,tgt_path=tgt_path)
     print("finish program")
 
 
