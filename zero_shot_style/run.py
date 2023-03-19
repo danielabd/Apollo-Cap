@@ -821,6 +821,13 @@ def initial_variables():
     debug_tracking = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [])))  # word_num:iteration:module:list
     model_path = os.path.join(os.path.expanduser('~'), config['best_model_name'])
 
+    config['requires_min_clip_score_val']['positive'] = config['requires_min_clip_score_val_pos']
+    config['requires_min_clip_score_val']['negative'] = config['requires_min_clip_score_val_neg']
+    config['requires_num_min_clip_score_val']['positive'] = config['requires_num_min_clip_score_val_pos']
+    config['requires_num_min_clip_score_val']['negative'] = config['requires_num_min_clip_score_val_neg']
+    config['requires_min_style_score']['positive'] = config['requires_min_style_score_pos']
+    config['requires_min_style_score']['negative'] = config['requires_min_style_score_neg']
+
     return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, \
            mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
            tmp_text_loss, factual_captions, desired_labels_list, mean_embedding_vectors_to_load,std_embedding_vectors, imgs_to_test, evaluation_obj

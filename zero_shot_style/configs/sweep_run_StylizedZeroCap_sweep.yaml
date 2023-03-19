@@ -13,33 +13,30 @@ parameters:
     max: 3
     min: 0.1
     distribution: uniform
-  requires_min_clip_score_val:
-      positive:
-        max: 0.27
-        min: 0.25
-        distribution: uniform
-      negative:
-        max: 0.27
-        min: 0.25
-        distribution: uniform
-  requires_num_min_clip_score_val:
-      positive:
-        max: 30
-        min: 10
-        distribution: int_uniform
-      negative:
-        max: 30
-        min: 10
-        distribution: int_uniform
-  requires_min_style_score:
-    positive:
-      max: 0.4
-      min: 0.3
-      distribution: uniform
-    negative:
-      max: 0.4
-      min: 0.3
-      distribution: uniform
+  requires_min_clip_score_val_pos:
+    max: 0.27
+    min: 0.25
+    distribution: uniform
+  requires_min_clip_score_val_neg:
+    max: 0.27
+    min: 0.25
+    distribution: uniform
+  requires_num_min_clip_score_val_pos:
+    max: 30
+    min: 10
+    distribution: int_uniform
+  requires_num_min_clip_score_val_neg:
+    max: 30
+    min: 10
+    distribution: int_uniform
+  requires_min_style_score_pos:
+    max: 0.4
+    min: 0.3
+    distribution: uniform
+  requires_min_style_score_neg:
+    max: 0.4
+    min: 0.3
+    distribution: uniform
 #  text_style_scale:
 #    max: 12 #5.5 #6
 #    min: 1 #2.5 #1.5
