@@ -67,6 +67,12 @@ def get_args():
     parser.add_argument("--ce_scale", type=float, default=0.2)
     parser.add_argument("--clip_scale", type=float, default=1)
     parser.add_argument("--text_style_scale", type=float, default=1)
+    parser.add_argument("--threshold_sentiment", type=float, default=0.3597)
+    parser.add_argument("--requires_min_style_score", type=float, default=0.35 )
+    parser.add_argument("--requires_min_clip_score_val", type=float, default=0.26)
+    parser.add_argument("--requires_num_min_clip_score_val", type=int, default=10)
+
+
     parser.add_argument("--num_iterations", type=int, default=5)
     parser.add_argument("--stepsize", type=float, default=0.3)
     parser.add_argument("--grad_norm_factor", type=float, default=0.9)
@@ -266,6 +272,13 @@ def get_full_path_of_stylized_images(data_dir, i):
                             str(i) + ".png")
     else:
         return None
+
+
+def calculate_avg_score_wo_fluence(clip_score, style_cls_score, style_cls_score_emoji):
+    avg_total_score = 3 * (style_cls_score * clip_score * style_cls_score_emoji) / (
+                style_cls_score + clip_score + style_cls_score_emoji)
+    return avg_total_score
+
 
 def calculate_avg_score(clip_score, fluency_score, style_cls_score, style_cls_score_emoji):
     avg_total_score = 4 * (style_cls_score * clip_score * fluency_score * style_cls_score_emoji) / (
@@ -634,9 +647,9 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     avg_fluency_score = mean_perplexity
     avg_style_cls_score = np.mean(style_cls_scores)
     avg_style_cls_emoji_score = np.mean(style_cls_emoji_scores)
-    if 'requires_min_fluency_score' in config and 'requires_min_clip_score' in config:
-        if avg_fluency_score > config['requires_min_fluency_score'] and avg_clip_score >= config['requires_min_clip_score']:
-            final_avg_total_score = calculate_avg_score(avg_clip_score, avg_fluency_score, avg_style_cls_score, avg_style_cls_emoji_score)
+    if 'requires_min_fluency_score' in config:
+        if avg_fluency_score > config['requires_min_fluency_score']:
+            final_avg_total_score = calculate_avg_score_wo_fluence(avg_clip_score, avg_style_cls_score, avg_style_cls_emoji_score)
         else:
             final_avg_total_score = 0
     else:
@@ -853,6 +866,12 @@ def main():
             config['cond_text'] = config["cond_text_dict"][label]
             config = update_running_params(label, config)
             if not config['debug_mac']:
+                #####################
+                text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
+                                                   tmp_text_loss=tmp_text_loss, config=config,
+                                                   evaluation_obj=evaluation_obj,
+                                                   **config)
+                #####################
                 text_generator.set_params(config['ce_scale'], config['clip_scale'], config['text_style_scale'],
                                           config['beam_size'], config['num_iterations'])
 
@@ -865,6 +884,12 @@ def main():
             print(f"Img num = {img_path_idx}")
             # prompt manipulation or using text style model
             if config['run_type'] == 'caption':
+                # #########todo
+                # text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
+                #                                    tmp_text_loss=tmp_text_loss, config=config,
+                #                                    evaluation_obj=evaluation_obj,
+                #                                    **config)
+                # #########todo
                 title2print = get_title2print(config['img_path'], config['data_name'], label, config)
                 print(title2print)
                 best_caption = run(config, config['img_path'], desired_style_embedding_vector,

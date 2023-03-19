@@ -220,6 +220,10 @@ class CLIPTextGenerator:
             for param in self.emoji_style_model.parameters():
                 param.requires_grad = False
             self.emoji_style_model.eval()
+            self.check_if_cut_score = True
+            # self.check_if_cut_score = {}
+            # for idx_p in range(self.beam_size):
+            #     self.check_if_cut_score[idx_p] = True
 
 
         # TEXT STYLE: adding the text style model
@@ -348,6 +352,9 @@ class CLIPTextGenerator:
         self.img_name = img_name
         self.style = style
         self.desired_style_bin = desired_style_bin
+        # self.check_if_cut_score = {}
+        # for idx_p in range(self.beam_size):
+        #     self.check_if_cut_score[idx_p] = True
         if self.use_style_model:
             self.text_style_scale = text_style_scale
             self.style_type = style_type #'clip','twitter','emotions'
@@ -1020,7 +1027,7 @@ class CLIPTextGenerator:
 
         top_size = 512
         top_probs_LM, top_indices = probs.topk(top_size, -1)
-        
+
         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
 
         clip_loss = 0
@@ -1039,26 +1046,6 @@ class CLIPTextGenerator:
             best_sentences_LM.append(prefix_text + self.lm_tokenizer.decode(probs[idx_p].topk(1).indices[0]))
 
             # grades according to match to style
-            if self.use_text_style_cutting:
-                if self.config['style_type'] == 'emoji':
-                    ############
-                    tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
-                    tokenized = torch.from_numpy(tokenized.astype(np.int32))
-                    emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
-                    emoji_style_grades = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
-                    if self.config['style_mul_not_cut']:
-                        style_scores = (emoji_style_grades / torch.sum(emoji_style_grades)).to(self.device)
-                    else:
-                        emoji_style_grades_cutted = [0]*len(emoji_style_grades)
-                        for i in range(len(emoji_style_grades)):
-                            if emoji_style_grades[i]>0.5:
-                                # print(f"i={i},emoji_style_grades[i]={emoji_style_grades[i]},top_texts[i]={top_texts[i]}")
-                                emoji_style_grades_cutted[i] = 1
-                        style_scores = torch.tensor(emoji_style_grades_cutted).to(self.device)
-                    ############
-                elif self.config['style_type'] == 'style_embed':
-                    outputs_bin = self.text_style_cls_model.compute_label_for_list(top_texts)
-                    style_scores = [1 for i in outputs_bin if i == self.desired_style_bin]
 
             probs_val,indices = top_probs_LM[idx_p].topk(DEBUG_NUM_WORDS)
             debug_best_probs_vals_LM.extend(probs_val)
@@ -1069,14 +1056,71 @@ class CLIPTextGenerator:
             with torch.no_grad():
                 similiraties = (self.image_features @ text_features.T)
 
-                if self.use_text_style_cutting:
-                    # similiraties = similiraties * style_scores
-                    #zero sentences which are not in the desired style
-                    if self.device == "cuda":
-                        similiraties = torch.mul(similiraties, style_scores)
-                    else:
-                        similiraties = np.multiply(similiraties, style_scores)
+                ##### #todo:debug
+                # top_probs_clip, top_indices_clip = similiraties.topk(10, -1)
+                # top_texts_clip = [top_texts[i] for i in top_indices_clip[0]]
+                # print(f"top_texts_clip = {top_texts_clip}")
+                # torch.topk(similiraties, k=10)
+                # style_sco
+                # res[top_indices]
 
+                if self.use_text_style_cutting:
+                    #if self.check_if_cut_score[idx_p]:
+                    if self.check_if_cut_score:
+                        cut_scores = True
+                        similarity_topk_vals, similarity_topk_indices = similiraties[0].topk(self.config['requires_num_min_clip_score_val'][self.style])
+
+                        for i in similarity_topk_vals:
+                            if i <= self.config['requires_min_clip_score_val'][self.style]:
+                                cut_scores = False
+                        if cut_scores:
+                            print("~~~~~")
+                            print(f"similarity_topk_vals={similarity_topk_vals}")
+                            print("~~~~~")
+                            self.check_if_cut_score = False
+                    if not self.check_if_cut_score:
+                        print("~~~~~")
+                        if self.config['style_type'] == 'emoji':
+                            ############ top_texts[0] = "In love"; top_texts[1] = "In hate"
+                            tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                            tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                            emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
+                            emoji_style_grades = emoji_style_probs[:,
+                                                 self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                            if self.config['style_mul_not_cut']:
+                                style_scores = (emoji_style_grades / torch.sum(emoji_style_grades)).to(self.device)
+                            else:
+                                emoji_style_grades_cutted = [0] * len(emoji_style_grades)
+                                for i in range(len(emoji_style_grades)):
+                                    if emoji_style_grades[i] > self.config['threshold_sentiment'][self.style] and similiraties[0][i]>=self.config['requires_min_clip_score_val'][self.style]:  # todo
+                                        # if emoji_style_grades[i]>0.3:
+                                        # print(f"i={i},emoji_style_grades[i]={emoji_style_grades[i]},top_texts[i]={top_texts[i]}")
+                                        emoji_style_grades_cutted[i] = 1
+                                style_scores = torch.tensor(emoji_style_grades_cutted).to(self.device)
+                            ############
+                        elif self.config['style_type'] == 'style_embed':
+                            outputs_bin = self.text_style_cls_model.compute_label_for_list(top_texts)
+                            style_scores = [1 for i in outputs_bin if i == self.desired_style_bin]
+
+                        # top_probs_style, top_indices_style = style_scores.sort(descending=True)
+                        # top_texts_emoji_style = [top_texts[i] for i in top_indices_style]
+                        # clip_prob_by_top_style_cls = [similiraties[0][i].item() for i in top_indices_style]
+
+                        # good_style_idxs = (style_scores == 1).nonzero(as_tuple=True)[0]
+                        # top_texts_emoji_style = [top_texts[i] for i in good_style_idxs]
+                        # print(f"top_texts_emoji_style = {top_texts_emoji_style}")
+                        # similiraties[good_style_idxs]
+                        #####
+                        # similiraties = similiraties * style_scores
+                        #zero sentences which are not in the desired style
+
+                        if self.device == "cuda":
+                            similiraties = torch.mul(similiraties, style_scores)
+                        else:
+                            similiraties = np.multiply(similiraties, style_scores)
+                    # top_probs_indices_clip_emoji_style, top_indices_clip_emoji_style = similiraties.topk(10, -1)
+                    # top_texts_clip_emoji_style = [top_texts[i] for i in top_indices_clip_emoji_style[0]]
+                    # print(f"top_texts_clip_emoji_style = {top_texts_clip_emoji_style}")
                 ############
                 # top_texts = ['Ugly and disgusting  image', 'Beautiful and amazing image']
                 # top_texts = ['The wonderful line waiting in the baggage carousel.',
