@@ -1,7 +1,7 @@
 #senticap
 dataset: senticap # senticap,flickrstyle10k
 style_type: 'emoji' #'style_embed' or 'emoji'
-data_split: val #val, test
+data_split: test #val, test
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
