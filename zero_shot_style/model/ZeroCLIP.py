@@ -1074,12 +1074,12 @@ class CLIPTextGenerator:
                             if i <= self.config['requires_min_clip_score_val'][self.style]:
                                 cut_scores = False
                         if cut_scores:
-                            print("~~~~~")
-                            print(f"similarity_topk_vals={similarity_topk_vals}")
-                            print("~~~~~")
+                            # print("~~~~~")
+                            # print(f"similarity_topk_vals={similarity_topk_vals}")
+                            # print("~~~~~")
                             self.check_if_cut_score = False
                     if not self.check_if_cut_score:
-                        print("~~~~~")
+                        # print("~~~~~")
                         if self.config['style_type'] == 'emoji':
                             ############ top_texts[0] = "In love"; top_texts[1] = "In hate"
                             tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
