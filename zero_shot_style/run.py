@@ -72,6 +72,12 @@ def get_args():
     parser.add_argument("--requires_min_clip_score_val", type=float, default=0.26)
     parser.add_argument("--requires_num_min_clip_score_val", type=int, default=10)
 
+    parser.add_argument("--requires_min_clip_score_val_pos", type=float, default=0.35)
+    parser.add_argument("--requires_min_clip_score_val_neg", type=float, default=0.35)
+    parser.add_argument("--requires_min_style_score_pos", type=float, default=0.26)
+    parser.add_argument("--requires_min_style_score_neg", type=float, default=0.26)
+    parser.add_argument("--requires_num_min_clip_score_val_pos", type=int, default=10)
+    parser.add_argument("--requires_num_min_clip_score_val_neg", type=int, default=10)
 
     parser.add_argument("--num_iterations", type=int, default=5)
     parser.add_argument("--stepsize", type=float, default=0.3)
