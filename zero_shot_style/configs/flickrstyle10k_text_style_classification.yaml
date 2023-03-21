@@ -1,6 +1,6 @@
-data_name: flickrstyle10k
-task: train #test
-#task: test #test
+dataset: flickrstyle10k
+#task: train #test
+task: test #test
 load_model: True
 wandb_mode: online #'disabled, offline, online'
 
@@ -9,7 +9,7 @@ global_dir_name_for_save_models: flickrstyle10k_text_style_classification_with_a
 
 #path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification/15_03_2023/02_35_08__15_03_2023/best_flickrstyle10k_text_style_classification_model.pth
 #path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification_with_augmentation/15_03_2023/21_22_28__15_03_2023/best_flickrstyle10k_text_style_classification_model.pth
-path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification_with_augmentation/16_03_2023/01_04_20__16_03_2023/best_flickrstyle10k_text_style_classification_model.pth
+#path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_text_style_classification_with_augmentation/16_03_2023/01_04_20__16_03_2023/best_flickrstyle10k_text_style_classification_model.pth
 
 
 #terminal

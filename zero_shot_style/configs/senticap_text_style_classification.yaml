@@ -1,4 +1,4 @@
-data_name: senticap
+dataset: senticap
 task: test #train / test / single_test
 load_model: True
 test_on_df: [train, val, test]

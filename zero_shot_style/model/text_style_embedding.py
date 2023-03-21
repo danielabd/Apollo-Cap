@@ -33,6 +33,8 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
 
 
 def get_args():
+    parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs', 'text_style_embedding.yaml'),
+                        help='full path to config file')
     parser.add_argument('--margin', type=float, default=0.4, help='description')
     parser.add_argument('--hidden_state_to_take', type=int, default=-2, help='hidden state of BERT totake')
     parser.add_argument('--last_layer_idx_to_freeze', type=int, default=-1, help='last_layer idx of BERT to freeze')
@@ -870,7 +872,7 @@ def get_train_test_data(config, undesired_label=None):
         # desired_labels = 'all'
         desired_labels = config['desired_labels']
         data_file = config['data_file']
-        if config['data_name'] == 'flickrstyle10k':
+        if config['dataset'] == 'flickrstyle10k':
             if type(data_file) == list:
                 data = []
                 for i in range(len(data_file)):
@@ -900,10 +902,10 @@ def get_train_test_data(config, undesired_label=None):
 
             print(s_df.head())
             #  df.groupby(['User']).size().plot.bar()
-            if config['data_name'] == 'go_emotions':
+            if config['dataset'] == 'go_emotions':
                 num_of_labels = 28
                 df = create_correct_df(s_df, num_of_labels, desired_labels)
-            elif config['data_name'] == 'Twitter':  # change titles to Label and text
+            elif config['dataset'] == 'Twitter':  # change titles to Label and text
                 s_df = s_df.rename(columns={'User': 'label', 'Tweet': 'text'})
                 df = s_df
         print(df.head())
@@ -911,7 +913,7 @@ def get_train_test_data(config, undesired_label=None):
             df = df.iloc[np.where(np.array(df["category"]) != undesired_label)[0], :]
         # df = df.iloc[:2000,:]#todo:remove
 
-        print(f"Working on {config['data_name']} data. Splitting DB to train, val and test data frames.")
+        print(f"Working on {config['dataset']} data. Splitting DB to train, val and test data frames.")
         df_train, df_test = train_test_split(df, test_size=0.15, random_state=42)
         # df_train, df_val, df_test = np.split(df.sample(frac=1, random_state=42),  # todo check sklearn split data func - keeps proportions between classes across all splits
         #                                      [int(.8 * len(df)), int(.9 * len(df))])
@@ -971,6 +973,7 @@ def convert_ds_to_df(ds, data_dir):
 
 
 def main():
+    wandb.login(key=os.getenv('WANDB_API_KEY'))
 
     print('Start!')
     args = get_args()
@@ -1000,21 +1003,24 @@ def main():
 
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
     for data_type in ['train', 'val', 'test']:
-        data_set_path[data_type] = os.path.join(data_dir, config['data_name'], 'annotations',
+        data_set_path[data_type] = os.path.join(data_dir, config['dataset'], 'annotations',
                                                              data_type + '.pkl')
 
     path_for_saving_last_model = os.path.join(experiment_dir, config['txt_embed_model_name'])
     path_for_saving_best_model = os.path.join(experiment_dir, config['txt_embed_best_model_name'])
-    # path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_model',dataset_names[0], config['best_model_name'])
-    path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['best_model_name'])
+
+    if 'path_for_loading_best_model' in config and config['path_for_loading_best_model']:
+        path_for_loading_best_model = config['path_for_loading_best_model']
+    else:
+        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['dataset'], config['best_model_name'])
+
+
     if config['plot_only_clustering']:
         tgt_file_vec_emb = {
             'mean': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_mean_vec_emb_file']),
-            'median': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_median_vec_emb_file']),
             'std':  os.path.join(checkpoints_dir, 'best_models', config['txt_embed_std_vec_emb_file'])}
     else:
         tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['txt_embed_mean_vec_emb_file']),
-                            'median': os.path.join(experiment_dir, config['txt_embed_median_vec_emb_file']),
                             'std':  os.path.join(experiment_dir, config['txt_embed_std_vec_emb_file'])}
     # tgt_file_pairs_list = os.path.join(config['data_dir'],config['tgt_file_pairs_list'])
 

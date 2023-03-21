@@ -589,6 +589,8 @@ def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None,
     gts = {}
     with open(os.path.join(annotations_path,data_split+'.pkl'), 'rb') as r:
         data = pickle.load(r)
+    # import random
+    # print(random.sample(list(data.keys()), 20))
     for k in data:
         if len(gts) >= max_num_imgs2test and max_num_imgs2test > 0:
             break

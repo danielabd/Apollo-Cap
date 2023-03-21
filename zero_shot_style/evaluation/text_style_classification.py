@@ -545,7 +545,7 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
 
 
 def main():
-    wandb.login(key=os.getenv('WANDB_API_KEY'))
+    # wandb.login(key=os.getenv('WANDB_API_KEY'))
 
     args = get_args()
     config = get_hparams(args)
@@ -584,7 +584,7 @@ def main():
 
     data_set_path = {'train': {}, 'val': {}, 'test': {}}
     for data_type in ['train', 'val', 'test']: #todo:  rename partition
-        data_set_path[data_type] = os.path.join(data_dir, config['data_name'], 'annotations',
+        data_set_path[data_type] = os.path.join(data_dir, config['dataset'], 'annotations',
                                                              data_type + '.pkl')
 
     path_for_saving_last_model = os.path.join(experiment_dir, config['model_name']) #todo move to config file and correcr
@@ -594,7 +594,7 @@ def main():
     if 'path_for_loading_best_model' in config and config['path_for_loading_best_model']:
         path_for_loading_best_model = config['path_for_loading_best_model']
     else:
-        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['data_name'], config['best_model_name'])
+        path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['dataset'], config['best_model_name'])
 
 
     use_cuda = torch.cuda.is_available()

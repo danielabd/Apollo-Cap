@@ -33,7 +33,7 @@ lr:
 
 batch_size:
   senticap: 16
-  flickrstyle10k:
+  flickrstyle10k: 16
 
 margin:
   senticap: 0.26
@@ -88,6 +88,13 @@ labels_idx_to_str:
     0: humor
     1: romantic
 
+best_model_name:
+  senticap: best_text_style_embedding_model_senticap.pth
+  flickrstyle10k: best_text_style_embedding_model_flickrstyle10k.pth
+
+model_name:
+  senticap: text_style_embedding_model_senticap.pth
+  flickrstyle10k: text_style_embedding_model_flickrstyle10k.pth
 
 txt_embed_model_name:
   senticap: latest_text_style_embedding_model_senticap.pth

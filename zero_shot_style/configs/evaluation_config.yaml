@@ -5,18 +5,18 @@ data_split: test #val, test
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 #todo:
-#metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 desired_labels:
   senticap: [positive, negative] #[factual, positive, negative]
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 res_path2eval:
   senticap:
-    zerostylecap_emoji:  /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/total_results_zerstylecap_emoji_batch.csv
+#    zerostylecap_emoji:  /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/total_results_zerstylecap_emoji_batch.csv
 #    ZeroStyleCap_f_36:  /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/total_results_text_style_f_36.csv
 #    ZeroStyleCap_real_std: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std/total_results_ZeroStyleCap_real_std.csv
-#    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
-#    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
+    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
+    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
   flickrstyle10k:
     capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
     capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
