@@ -82,9 +82,9 @@ class CLIPTextGenerator:
                  seed=0,
                  lm_model='gpt-2',
                  # forbidden_tokens_file_path='./forbidden_tokens.npy',
-                 # clip_checkpoints='./clip_checkpoints', #todo
-                 forbidden_tokens_file_path=os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','forbidden_tokens.npy'), #todo
-                 clip_checkpoints=os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','clip_checkpoints'), #todo
+                 # clip_checkpoints='./clip_checkpoints',
+                 forbidden_tokens_file_path=os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','forbidden_tokens.npy'),
+                 clip_checkpoints=os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','clip_checkpoints'),
                  target_seq_length=15,
                  reset_context_delta=True,
                  num_iterations=5,
@@ -122,7 +122,7 @@ class CLIPTextGenerator:
         self.debug_tracking = {} # debug_tracking: debug_tracking[word_num][iteration][module]:<list>
         self.tmp_text_loss = tmp_text_loss
         self.cuda_idx = cuda_idx
-        #self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"#todo: change
+        #self.device = f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu"
         self.device = f"cuda" if torch.cuda.is_available() else "cpu"#todo: change
         # self.LM_loss_scale = LM_loss_scale
         # self.CLIP_loss_scale = CLIP_loss_scale
@@ -227,7 +227,7 @@ class CLIPTextGenerator:
 
 
         # TEXT STYLE: adding the text style model
-        elif config['style_type']=='style_embed':
+        elif config['style_type'] == 'style_embed':
             data_dir = os.path.join(os.path.expanduser('~'),'data')
             if self.use_text_style_cutting:
                 self.text_style_cls = STYLE_CLS(config['txt_cls_model_paths'], data_dir, self.cuda_idx, config['labels_dict_idxs'],
@@ -701,7 +701,6 @@ class CLIPTextGenerator:
             else:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
 
-        text_style_loss = torch.tensor(float(text_style_loss)) #todo: remove it - This is the source problem
         return text_style_loss, losses, best_sentences, total_best_sentences_style
 
     def get_text_style_loss_emoji(self, probs, context_tokens):
@@ -723,10 +722,10 @@ class CLIPTextGenerator:
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
 
             with torch.no_grad():
-                # top_texts = ["bad day", "It is so sad", "It is disgusting",  "happy day", "wonderful action", "good boy"] #todo
-                # tmp_top_texts = ["bad day", "It is so sad", "It is disgusting",  "happy day", "wonderful action", "good boy"] #todo
+                # top_texts = ["bad day", "It is so sad", "It is disgusting",  "happy day", "wonderful action", "good boy"]
+                # tmp_top_texts = ["bad day", "It is so sad", "It is disgusting",  "happy day", "wonderful action", "good boy"]
                 # for i in range(len(top_texts)):
-                #     top_texts[i] = tmp_top_texts[math.floor(i/100)]  # todo
+                #     top_texts[i] = tmp_top_texts[math.floor(i/100)]
                 tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
                 tokenized = torch.from_numpy(tokenized.astype(np.int32))
 
@@ -803,8 +802,6 @@ class CLIPTextGenerator:
                 loss_string = f'{losses[0]}'
             else:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
-
-        # text_style_loss = torch.tensor(float(text_style_loss))  # todo: remove it - This is the source problem
         return text_style_loss, losses, best_sentences, total_best_sentences_style
 
         # # ############  debug daniela

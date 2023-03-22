@@ -745,14 +745,14 @@ def initial_variables():
         if config['use_style_model'] and config['style_type'] == 'style_embed':
             with open(mean_embedding_vec_path, 'rb') as fp:
                 mean_embedding_vectors = pickle.load(fp)
-            desired_labels_list = list(mean_embedding_vectors.keys())
+            # desired_labels_list = list(mean_embedding_vectors.keys())
             #load_std_vec_embed
             with open(std_embedding_vec_path, 'rb') as fp:
                 std_embedding_vectors = pickle.load(fp)
         else:
-            desired_labels_list = config['desired_labels']
             mean_embedding_vectors = None
             std_embedding_vectors = None
+        desired_labels_list = config['desired_labels']
         if config['imitate_text_style']:
             desired_labels_list = config['text_to_imitate_list']
         # if config['debug']:
