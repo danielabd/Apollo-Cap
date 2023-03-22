@@ -692,7 +692,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     print('Finish to evaluate results!')
 
 
-def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vectors_to_load):
+def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vectors, std_embedding_vectors = None):
     if config['use_style_model']:
         if config['style_type'] == 'emoji':
             if config['use_single_emoji_style']:
@@ -707,11 +707,13 @@ def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vec
                     desired_style_embedding_vector / torch.sum(desired_style_embedding_vector))
             desired_style_embedding_vector_std = None
         else:
-            desired_style_embedding_vector = mean_embedding_vectors_to_load[label]
+            desired_style_embedding_vector = mean_embedding_vectors[label]
             # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
             # real std
-            # desired_style_embedding_vector_std = std_embedding_vectors[label]
-            desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
+            if std_embedding_vectors:
+                desired_style_embedding_vector_std = std_embedding_vectors[label]
+            else:
+                desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
             # if label == 'positive':
             #     desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
             # elif label == 'negative':
@@ -726,20 +728,20 @@ def initial_variables():
     def get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path):
         if config['use_style_model'] and config['style_type'] == 'style_embed':
             with open(mean_embedding_vec_path, 'rb') as fp:
-                mean_embedding_vectors_to_load = pickle.load(fp)
-            desired_labels_list = list(mean_embedding_vectors_to_load.keys())
+                mean_embedding_vectors = pickle.load(fp)
+            desired_labels_list = list(mean_embedding_vectors.keys())
             #load_std_vec_embed
             with open(std_embedding_vec_path, 'rb') as fp:
-                std_embedding_vectors_to_load = pickle.load(fp)
+                std_embedding_vectors = pickle.load(fp)
         else:
             desired_labels_list = config['desired_labels']
-            mean_embedding_vectors_to_load = None
-            std_embedding_vectors_to_load = None
+            mean_embedding_vectors = None
+            std_embedding_vectors = None
         if config['imitate_text_style']:
             desired_labels_list = config['text_to_imitate_list']
         if config['debug']:
             desired_labels_list = [desired_labels_list[0]]
-        return desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors_to_load
+        return desired_labels_list, mean_embedding_vectors, std_embedding_vectors
 
     args = get_args()
     config = get_hparams(args)
@@ -803,7 +805,7 @@ def initial_variables():
             if 'style_classification_emoji' in config['evaluation_metrics']:
                 evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
 
-    desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
+    desired_labels_list, mean_embedding_vectors, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
 
     print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
 
@@ -836,13 +838,13 @@ def initial_variables():
 
     return config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, \
            mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
-           tmp_text_loss, factual_captions, desired_labels_list, mean_embedding_vectors_to_load,std_embedding_vectors, imgs_to_test, evaluation_obj
+           tmp_text_loss, factual_captions, desired_labels_list, mean_embedding_vectors ,std_embedding_vectors, imgs_to_test, evaluation_obj
 
 
 def main():
     config, data_dir, results_dir, model_path, txt_cls_model_path, factual_captions_path, \
     mean_embedding_vec_path, tgt_results_path, cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, \
-    tmp_text_loss, factual_captions, desired_labels_list, mean_embedding_vectors_to_load, std_embedding_vectors, imgs_to_test, evaluation_obj = initial_variables()
+    tmp_text_loss, factual_captions, desired_labels_list, mean_embedding_vectors, std_embedding_vectors, imgs_to_test, evaluation_obj = initial_variables()
 
     gts_data = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_type'], factual_captions, config['max_num_imgs2test'])
     if not config['debug_mac']:
@@ -890,7 +892,7 @@ def main():
 
             evaluation_results[img_name][label] = {}
             if not config['imitate_text_style']:
-                desired_style_embedding_vector, desired_style_embedding_vector_std = get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vectors_to_load)
+                desired_style_embedding_vector, desired_style_embedding_vector_std = get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vectors, std_embedding_vectors)
             if config['debug_mac']:
                 evaluation_results[img_name][label] = {'res': 'bla'}
                 continue
