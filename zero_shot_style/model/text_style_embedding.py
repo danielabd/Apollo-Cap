@@ -813,27 +813,21 @@ def get_model_and_optimizer(config, path_for_loading_best_model, device):
         print(f"Loading model from: {path_for_loading_best_model}")
         model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
-        # optimizer = SGD(model.parameters(), lr=config['lr'])
-        #todo: check if to take only non-frozen params:
-        # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'],
-        #                 weight_decay=config['weight_decay'])
+        model.to(device)
         optimizer = Adam(model.parameters(), lr=float(config['lr']))
         if 'cuda' in device.type:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         else:
             checkpoint = torch.load(path_for_loading_best_model, map_location='cuda:0')
         model.load_state_dict(checkpoint['model_state_dict'])
+        model.to(device)
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
     else:
         #  train from scratch
         print("Train model from scratch")
         model = TextStyleEmbed(device=device, hidden_state_to_take=config['hidden_state_to_take'],
                                last_layer_idx_to_freeze=config['last_layer_idx_to_freeze'], scale_noise=config['scale_noise'])
-        # optimizer = SGD(model.parameters(), lr=config['lr'])
-
-        # take only non-frozen params:
-        # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config['lr'])
-
         optimizer = Adam(model.parameters(), lr=float(config['lr']))
     return model, optimizer
 
