@@ -3,7 +3,7 @@ dataset: flickrstyle10k # senticap,flickrstyle10k
 style_type: style_embed #'style_embed' or 'emoji'
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
-debug: True # @@
+debug: False
 debug_mac: False
 wandb_mode: online #'disabled, offline, online' #todo:
 ##for validation

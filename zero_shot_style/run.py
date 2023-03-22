@@ -38,8 +38,7 @@ EPSILON = 0.0000000001
 
 def get_args():
     parser.add_argument('--config_file', type=str,
-                        default=os.path.join('.', 'configs', 'config_embedding.yaml'),# @@
-                        # default=os.path.join('.', 'configs', 'config.yaml'),# @@
+                        default=os.path.join('.', 'configs', 'config.yaml'),
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -410,7 +409,6 @@ class Fluency:
         self.styles.append(style)
 
     def compute_score(self):
-        print(f"self.tests={self.tests}")# @@
         results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=False)
         perplexities = {}
         total_perplexities = []
@@ -426,12 +424,9 @@ class Fluency:
 
     def add_results(self, evaluation_results):
         for img_name in evaluation_results:
-            print(f"img_name:{img_name}")#@@
             for label in evaluation_results[img_name]:
-                print(f"label-{label},self.labels={self.labels}")#@@
                 if label in self.labels:
                     self.add_test(evaluation_results[img_name][label]['res'], img_name, label)
-                    print(f"evaluation_results[img_name][label]['res']={evaluation_results[img_name][label]['res']}")#@@
 
 def get_table_for_wandb(data_list):
     data = [[x, y] for (x, y) in zip(data_list, list(range(len(data_list))))]
@@ -760,8 +755,8 @@ def initial_variables():
             std_embedding_vectors = None
         if config['imitate_text_style']:
             desired_labels_list = config['text_to_imitate_list']
-        if config['debug']:
-            desired_labels_list = [desired_labels_list[0]]
+        # if config['debug']:
+        #     desired_labels_list = [desired_labels_list[0]]
         return desired_labels_list, mean_embedding_vectors, std_embedding_vectors
 
     args = get_args()
@@ -775,7 +770,7 @@ def initial_variables():
         config['max_num_of_imgs'] = 1
         config['target_seq_length'] = 2
         config['beam_size'] = 2
-        config['wandb_mode'] == 'disabled'
+        config['wandb_mode'] = 'disabled'
         # config['calc_fluency'] = False
 
 
@@ -832,9 +827,9 @@ def initial_variables():
                 evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
 
     desired_labels_list, mean_embedding_vectors, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
-    if config['debug']:
-        config['desired_labels'] = [config['desired_labels'][0]]
-        
+    # if config['debug']:
+    #     config['desired_labels'] = [config['desired_labels'][0]]
+
     print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
 
     if not os.path.exists(config['experiment_dir']):

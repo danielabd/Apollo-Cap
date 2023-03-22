@@ -755,8 +755,8 @@ def initial_variables():
             std_embedding_vectors = None
         if config['imitate_text_style']:
             desired_labels_list = config['text_to_imitate_list']
-        if config['debug']:
-            desired_labels_list = [desired_labels_list[0]]
+        # if config['debug']:
+        #     desired_labels_list = [desired_labels_list[0]]
         return desired_labels_list, mean_embedding_vectors, std_embedding_vectors
 
     args = get_args()
@@ -765,12 +765,14 @@ def initial_variables():
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     mean_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['mean_vec_emb_file'])
     std_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['std_vec_emb_file'])
+
     if config['debug']:
         config['max_num_of_imgs'] = 1
         config['target_seq_length'] = 2
-        config['desired_labels'] = [config['desired_labels'][0]]
         config['beam_size'] = 2
+        config['wandb_mode'] = 'disabled'
         # config['calc_fluency'] = False
+
 
     imgs_to_test = get_list_of_imgs_for_caption(config)
 
@@ -810,7 +812,6 @@ def initial_variables():
     results_dir = config['experiment_dir']
     tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
 
-
     if config['wandb_mode'] == 'online':
         wandb.config.update(config, allow_val_change=True)
 
@@ -826,6 +827,8 @@ def initial_variables():
                 evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
 
     desired_labels_list, mean_embedding_vectors, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
+    # if config['debug']:
+    #     config['desired_labels'] = [config['desired_labels'][0]]
 
     print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
 
