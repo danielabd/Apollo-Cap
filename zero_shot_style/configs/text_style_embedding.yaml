@@ -17,11 +17,11 @@ global_dir_name_for_save_models:
 
 scale_noise:
   senticap: 0
-  flickrstyle10k: 0.08
+  flickrstyle10k: 0.12 #0.08
 
 hidden_state_to_take:
   senticap: -3
-  flickrstyle10k: -3
+  flickrstyle10k: -2 #-3
 
 
 scale_noise_txt_style_embedding:
@@ -34,7 +34,7 @@ hidden_state_to_take_txt_style_embedding:
 
 last_layer_idx_to_freeze:
   senticap: 2
-  flickrstyle10k: 2
+  flickrstyle10k: 7 #2
 
 lr:
   senticap: 0.00001
@@ -46,11 +46,11 @@ batch_size:
 
 margin:
   senticap: 0.26
-  flickrstyle10k: 0.8016699616407108
+  flickrstyle10k: 0.24329619513571688 #0.8016699616407108
 
 freeze_after_n_epochs:
   senticap: 4
-  flickrstyle10k: 5
+  flickrstyle10k: 8 #5
 
 inner_batch_size: 1 #for the case of unbalanced data
 experiment_name: cur_time
