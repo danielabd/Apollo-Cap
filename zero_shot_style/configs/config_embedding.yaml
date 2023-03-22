@@ -5,11 +5,21 @@ style_type: style_embed #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
 debug_mac: False
-wandb_mode: online #'disabled, offline, online' #todo:
+
 ##for validation
-specific_idxs_to_skip: [2,3]
-max_num_of_imgs: 5
+wandb_mode: online #'disabled, offline, online' #todo:
+max_num_of_imgs: 1 #5
 data_type: val #val, test
+target_seq_length: 2 #15
+beam_size:
+  senticap: 5
+  flickrstyle10k: 2 #5
+specific_idxs_to_skip: [2,3]
+
+
+desired_labels:
+  senticap: [positive, negative] #[factual, positive, negative]
+  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 save_config_file: False # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
@@ -57,13 +67,6 @@ model_based_on: 'bert' # 'clip' /  'bert'
 
 #
 #max_num_of_imgs: -1
-target_seq_length: 15
-desired_labels:
-  senticap: [positive, negative] #[factual, positive, negative]
-  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
-beam_size:
-  senticap: 5 #4 #3
-  flickrstyle10k: 5 #3
 text_style_scale:
   senticap: 8.7 #2.9365169098669996 #3.797802783 #3.444
   flickrstyle10k: 3.797802783 #3.444

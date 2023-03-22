@@ -766,6 +766,9 @@ def initial_variables():
     mean_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['mean_vec_emb_file'])
     std_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['std_vec_emb_file'])
 
+    if config['debug_mac']:
+        config['debug'] = True
+
     if config['debug']:
         config['max_num_of_imgs'] = 1
         config['target_seq_length'] = 2
