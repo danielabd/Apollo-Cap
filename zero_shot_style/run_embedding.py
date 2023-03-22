@@ -591,8 +591,8 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
         for label in list(evaluation_results[img_name].keys()):
             if label == 'img_path':
                 continue
-            if config["dataset"] == "senticap":
-                evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
+            # if config["dataset"] == "senticap":
+            evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
             evaluation_results[img_name][label]['scores'] = evaluate_single_res(
                 evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
                 evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
@@ -629,7 +629,10 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             clip_scores.append(clip_score)
             fluency_scores.append(fluency_score)
             style_cls_scores.append(style_cls_score)
-            style_cls_emoji_scores.append(float(style_cls_emoji_score[0].numpy()))
+            if type(style_cls_emoji_score)==list:
+                style_cls_emoji_scores.append(float(style_cls_emoji_score[0].numpy()))
+            else:
+                style_cls_emoji_scores.append(style_cls_emoji_score)
             avg_total_scores.append(avg_total_score)
             res_text = evaluation_results[img_name][label]['res']
             gt_text = evaluation_results[img_name][label]['gt']
@@ -637,7 +640,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             total_res_text.append(res_text)
             total_gt_text.append(gt_text)
             total_captions.append(Caption(img_name, label, res_text, gt_text, evaluation_results[img_name]['img_path'],
-                                          label, clip_score, fluency_score, avg_total_score, factual_captions[img_name],
+                                          label, clip_score, fluency_score, avg_total_score, gts_data[img_name]['factual'],
                                           style_cls_score, style_cls_emoji_scores))
 
     clip_scores_table = get_table_for_wandb(clip_scores)
@@ -802,7 +805,7 @@ def initial_variables():
     if config['debug']:
         config['max_num_of_imgs'] = 1
         config['target_seq_length'] = 2
-        config['desired_labels'] = ['positive']
+        config['desired_labels'] = [config['desired_labels'][0]]
         config['beam_size'] = 2
         # config['calc_fluency'] = False
 
