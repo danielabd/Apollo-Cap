@@ -774,7 +774,6 @@ def initial_variables():
     if config['debug']:
         config['max_num_of_imgs'] = 1
         config['target_seq_length'] = 2
-        config['desired_labels'] = [config['desired_labels'][0]]
         config['beam_size'] = 2
         config['wandb_mode'] == 'disabled'
         # config['calc_fluency'] = False
@@ -833,7 +832,9 @@ def initial_variables():
                 evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
 
     desired_labels_list, mean_embedding_vectors, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
-
+    if config['debug']:
+        config['desired_labels'] = [config['desired_labels'][0]]
+        
     print(f'saving experiment outputs in {os.path.abspath(config["experiment_dir"])}')
 
     if not os.path.exists(config['experiment_dir']):
