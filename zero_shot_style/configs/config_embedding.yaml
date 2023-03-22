@@ -120,9 +120,15 @@ hidden_state_to_take_txt_style_embedding:
 #  factual: Image of a
 
 cond_text_dict:
-  positive: ""
-  negative: ""
-  factual: ""
+  senticap:
+    positive: ""
+    negative: ""
+    factual: ""
+  flickrstyle10k:
+    humor: ""
+    romantic: ""
+    factual: ""
+
 
 calc_evaluation: True
 
