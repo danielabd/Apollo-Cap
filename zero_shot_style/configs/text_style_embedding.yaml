@@ -3,7 +3,8 @@ wandb_mode: online #'disabled, offline, online' #todo:
 load_model: True
 plot_only_clustering: False
 ##########
-path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_style_embedding/22_03_2023/10_44_59__22_03_2023/best_text_style_embedding_model_flickrstyle10k.pth
+#path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_style_embedding/22_03_2023/10_44_59__22_03_2023/best_text_style_embedding_model_flickrstyle10k.pth
+path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_style_embedding/22_03_2023/11_08_06__22_03_2023/best_text_style_embedding_model_flickrstyle10k.pth
 
 epochs: 30
 
@@ -39,7 +40,7 @@ last_layer_idx_to_freeze:
 
 lr:
   senticap: 0.00001
-  flickrstyle10k: 0.000001 #0.000001 #0.000001
+  flickrstyle10k: 0.0000001 #0.000001 #0.000001 #0.000001
 
 batch_size:
   senticap: 16
