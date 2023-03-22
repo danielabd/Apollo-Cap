@@ -199,7 +199,6 @@ freeze_after_n_epochs:
   flickrstyle10k: 4
 
 inner_batch_size: 1
-data_name: senticap
 
 best_model_name:
   senticap: checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth

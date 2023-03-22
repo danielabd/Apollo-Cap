@@ -102,7 +102,7 @@ def get_args():
                         nargs='?',
                         choices=['caption', 'arithmetics', 'img_prompt_manipulation'])
 
-    # parser.add_argument("--data_name", type=str, default="senticap")  # todo: add: "flickrstyle10k"])
+    # parser.add_argument("--dataset", type=str, default="senticap")  # todo: add: "flickrstyle10k"])
 
     parser.add_argument("--imgs_dict", type=str, default=os.path.join(os.path.expanduser('~'), 'data', 'senticap'),
                         help="Path to images dict for captioning")
@@ -449,17 +449,17 @@ def get_list_of_imgs_for_caption(config):
     print(f"config['max_num_of_imgs']: {config['max_num_of_imgs']}")
     if 'specific_img_idxs_to_test' in config and len(config['specific_img_idxs_to_test']) > 0:
         imgs_list = os.listdir(
-            os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
+            os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
                          config['data_type']))
         for i in config['specific_img_idxs_to_test']:
             i = int(i)
             im = imgs_list[i]
             imgs_to_test.append(
-                os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
+                os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
                              config['data_type'], im))
         return imgs_to_test
     for i, im in enumerate(os.listdir(
-            os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
+            os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
                          config['data_type']))):
         if len(imgs_to_test) >= int(config['max_num_of_imgs']) > 0:
             break
@@ -470,7 +470,7 @@ def get_list_of_imgs_for_caption(config):
         if 'specific_imgs_to_test' in config and len(config['specific_imgs_to_test']) > 0 and int(
                 im.split('.')[0]) not in config['specific_imgs_to_test']:
             continue
-        imgs_to_test.append(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['data_name']), 'images',
+        imgs_to_test.append(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
                                          config['data_type'], im))
     print(f"***There is {len(imgs_to_test)} images to test.***")
     return imgs_to_test
@@ -578,7 +578,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
         for label in list(evaluation_results[img_name].keys()):
             if label == 'img_path':
                 continue
-            if config["data_name"] == "senticap":
+            if config["dataset"] == "senticap":
                 evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
             evaluation_results[img_name][label]['scores'] = evaluate_single_res(
                 evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
@@ -838,16 +838,15 @@ def initial_variables():
     config['requires_min_style_score']['positive'] = config['requires_min_style_score_pos']
     config['requires_min_style_score']['negative'] = config['requires_min_style_score_neg']
 
-    return config, data_dir, results_dir, model_path, txt_cls_model_path, mean_embedding_vec_path, tgt_results_path, \
-           cur_time, img_dict, img_dict_img_arithmetic, debug_tracking, tmp_text_loss, factual_captions, \
-           desired_labels_list, mean_embedding_vectors, std_embedding_vectors, imgs_to_test, evaluation_obj
+    return config, data_dir, results_dir, model_path, txt_cls_model_path, mean_embedding_vec_path, tgt_results_path,\
+           cur_time, img_dict, img_dict_img_arithmetic, debug_tracking,tmp_text_loss, factual_captions,\
+           desired_labels_list, mean_embedding_vectors ,std_embedding_vectors, imgs_to_test, evaluation_obj
 
 
 def main():
-    config, data_dir, results_dir, model_path, txt_cls_model_path, mean_embedding_vec_path, tgt_results_path, cur_time, \
-    img_dict, img_dict_img_arithmetic, debug_tracking, tmp_text_loss, factual_captions, desired_labels_list, \
+    config, data_dir, results_dir, model_path, txt_cls_model_path, mean_embedding_vec_path, tgt_results_path, cur_time,\
+    img_dict, img_dict_img_arithmetic, debug_tracking, tmp_text_loss, factual_captions, desired_labels_list,\
     mean_embedding_vectors, std_embedding_vectors, imgs_to_test, evaluation_obj = initial_variables()
-
 
     gts_data = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_type'], factual_captions, config['max_num_imgs2test'])
     if not config['debug_mac']:
@@ -872,7 +871,7 @@ def main():
         if img_path_idx < config['img_idx_to_start_from']:
             continue
         img_name = img_path.split('/')[-1].split('.')[0]
-        if config["data_name"] == "senticap":
+        if config["dataset"] == "senticap":
             img_name = int(img_name)
         config['img_path'] = img_path
         config['img_path_idx'] = img_path_idx
@@ -908,7 +907,7 @@ def main():
                 #                                    evaluation_obj=evaluation_obj,
                 #                                    **config)
                 # #########todo
-                title2print = get_title2print(config['img_path'], config['data_name'], label, config)
+                title2print = get_title2print(config['img_path'], config['dataset'], label, config)
                 print(title2print)
                 best_caption = run(config, config['img_path'], desired_style_embedding_vector,
                                    desired_style_embedding_vector_std,
@@ -928,7 +927,7 @@ def main():
                 factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
                 img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
                 config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
-                title2print = get_title2print(config['img_path'], config['data_name'],
+                title2print = get_title2print(config['img_path'], config['dataset'],
                                               label, config)
                 print(title2print)
                 best_caption = run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, img_name,
