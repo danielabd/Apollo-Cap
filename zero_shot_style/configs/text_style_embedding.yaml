@@ -1,7 +1,8 @@
 dataset: flickrstyle10k # flickrstyle10k, senticap
 wandb_mode: online #'disabled, offline, online' #todo:
 load_model: True
-plot_only_clustering: False
+plot_only_clustering: True
+calc_new_std: True
 ##########
 #path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_style_embedding/22_03_2023/10_44_59__22_03_2023/best_text_style_embedding_model_flickrstyle10k.pth
 path_for_loading_best_model: /home/nlp/tzufar/checkpoints/flickrstyle10k_style_embedding/22_03_2023/11_08_06__22_03_2023/best_text_style_embedding_model_flickrstyle10k.pth

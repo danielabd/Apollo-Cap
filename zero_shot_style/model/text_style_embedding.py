@@ -394,6 +394,8 @@ def bu_plot_graph_on_all_data(df_data, labels_set_dict, labels_idx_to_str, devic
 
 def plot_final_graph_after_training(device, config, path_for_best_model, labels_idx_to_str, tgt_file_vec_emb,df,dataloader, title, save_vec_emb=False):
     print(title+" dataset...")
+    if config['calc_new_std']:
+        save_vec_emb = config['calc_new_std']
     model = TextStyleEmbed(device=device, hidden_state_to_take = config['hidden_state_to_take'])
     if 'cuda' in device.type:
         checkpoint = torch.load(path_for_best_model, map_location='cuda:0')
@@ -1008,11 +1010,15 @@ def main():
     else:
         path_for_loading_best_model = os.path.join(checkpoints_dir, 'best_models', config['dataset'], config['best_model_name'])
 
-
     if config['plot_only_clustering']:
-        tgt_file_vec_emb = {
-            'mean': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_mean_vec_emb_file']),
-            'std':  os.path.join(checkpoints_dir, 'best_models', config['txt_embed_std_vec_emb_file'])}
+        if config['calc_new_std']:
+            tgt_file_vec_emb = {
+                'mean': os.path.join('/'.join(path_for_loading_best_model.split('/')[:-1]), 'new_'+config['txt_embed_mean_vec_emb_file']),
+                'std': os.path.join('/'.join(path_for_loading_best_model.split('/')[:-1]), 'new_'+config['txt_embed_std_vec_emb_file'])}
+        else:
+            tgt_file_vec_emb = {
+                'mean': os.path.join(checkpoints_dir, 'best_models', config['txt_embed_mean_vec_emb_file']),
+                'std':  os.path.join(checkpoints_dir, 'best_models', config['txt_embed_std_vec_emb_file'])}
     else:
         tgt_file_vec_emb = {'mean': os.path.join(experiment_dir, config['txt_embed_mean_vec_emb_file']),
                             'std':  os.path.join(experiment_dir, config['txt_embed_std_vec_emb_file'])}
