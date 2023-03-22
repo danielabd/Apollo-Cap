@@ -38,7 +38,8 @@ EPSILON = 0.0000000001
 
 def get_args():
     parser.add_argument('--config_file', type=str,
-                        default=os.path.join('.', 'configs', 'config.yaml'),
+                        default=os.path.join('.', 'configs', 'config_embedding.yaml'),# @@
+                        # default=os.path.join('.', 'configs', 'config.yaml'),# @@
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -409,6 +410,7 @@ class Fluency:
         self.styles.append(style)
 
     def compute_score(self):
+        print(f"self.tests={self.tests}")# @@
         results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=False)
         perplexities = {}
         total_perplexities = []
@@ -424,9 +426,12 @@ class Fluency:
 
     def add_results(self, evaluation_results):
         for img_name in evaluation_results:
+            print(f"img_name:{img_name}")#@@
             for label in evaluation_results[img_name]:
+                print(f"label-{label},self.labels={self.labels}")#@@
                 if label in self.labels:
                     self.add_test(evaluation_results[img_name][label]['res'], img_name, label)
+                    print(f"evaluation_results[img_name][label]['res']={evaluation_results[img_name][label]['res']}")#@@
 
 def get_table_for_wandb(data_list):
     data = [[x, y] for (x, y) in zip(data_list, list(range(len(data_list))))]
@@ -765,6 +770,16 @@ def initial_variables():
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     mean_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['mean_vec_emb_file'])
     std_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['std_vec_emb_file'])
+
+    if config['debug']:
+        config['max_num_of_imgs'] = 1
+        config['target_seq_length'] = 2
+        config['desired_labels'] = [config['desired_labels'][0]]
+        config['beam_size'] = 2
+        config['wandb_mode'] == 'disabled'
+        # config['calc_fluency'] = False
+
+
     imgs_to_test = get_list_of_imgs_for_caption(config)
 
     if not config['use_style_model']:
@@ -802,12 +817,6 @@ def initial_variables():
     config['experiment_dir'] = os.path.join(cur_date_dir,config["training_name"])
     results_dir = config['experiment_dir']
     tgt_results_path = os.path.join(results_dir, f'results_{cur_time}.csv')
-    if config['debug']:
-        config['max_num_of_imgs'] = 1
-        config['target_seq_length'] = 2
-        config['desired_labels'] = [config['desired_labels'][0]]
-        config['beam_size'] = 2
-        # config['calc_fluency'] = False
 
     if config['wandb_mode'] == 'online':
         wandb.config.update(config, allow_val_change=True)
