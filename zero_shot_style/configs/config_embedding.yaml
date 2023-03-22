@@ -8,12 +8,12 @@ debug_mac: False
 
 ##for validation
 wandb_mode: online #'disabled, offline, online' #todo:
-max_num_of_imgs: 1 #5
+max_num_of_imgs: 5
 data_type: val #val, test
-target_seq_length: 2 #15
+target_seq_length: 15
 beam_size:
   senticap: 5
-  flickrstyle10k: 2 #5
+  flickrstyle10k: 5
 specific_idxs_to_skip: [2,3]
 
 
