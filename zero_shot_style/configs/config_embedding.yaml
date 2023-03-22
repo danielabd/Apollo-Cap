@@ -227,6 +227,10 @@ data_file: #['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annot
   senticap:
   flickrstyle10k: ['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
 
+factual_captions_path:
+  senticap: /Users/danielabendavid/data/source/coco/factual_captions.pkl
+  flickrstyle10k:
+
 experiment_name: cur_time
 
 num_workers: 10

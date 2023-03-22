@@ -747,7 +747,6 @@ def initial_variables():
     config = get_hparams(args)
     # os.environ["CUDA_VISIBLE_DEVICES"] = config['cuda_idx_num']
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
-    factual_captions_path = os.path.join(data_dir, 'source', 'coco', 'factual_captions.pkl')
     mean_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['mean_vec_emb_file'])
     std_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['std_vec_emb_file'])
     imgs_to_test = get_list_of_imgs_for_caption(config)
@@ -755,8 +754,11 @@ def initial_variables():
     if not config['use_style_model']:
         config['text_style_scale'] = 0
 
-    with open(factual_captions_path, 'rb') as f:
-        factual_captions = pickle.load(f)
+    if config['factual_captions_path']:
+        with open(config['factual_captions_path'], 'rb') as f:
+            factual_captions = pickle.load(f)
+    else:
+        factual_captions = None
 
     if config['wandb_mode'] == 'online':
         wandb.init(project=config['experiement_global_name'],

@@ -584,6 +584,7 @@ def get_all_sentences(data_dir, dataset_name, type_set):
 def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None, max_num_imgs2test=-1):
     '''
     :param annotations_path: dictionary:keys=dataset names, values=path to pickle file
+    factual_captions: need to b none for flickrstyle10k
     :return: gts_per_data_set: key=img_name,values=dict:keys=['image_path','factual','humor','romantic','positive','negative'], values=gt text
     '''
     gts = {}
