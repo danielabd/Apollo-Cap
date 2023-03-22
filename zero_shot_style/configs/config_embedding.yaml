@@ -1,14 +1,19 @@
 ###### stylized ZeroCap: create captions - for run.py
-dataset: senticap # senticap,flickrstyle10k
-style_type: emoji #'style_embed' or 'emoji'
+dataset: flickrstyle10k # senticap,flickrstyle10k
+style_type: style_embed #'style_embed' or 'emoji'
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
 debug_mac: False
 wandb_mode: online #'disabled, offline, online' #todo:
+##for validation
+specific_idxs_to_skip: [2,3]
+max_num_of_imgs: 5
+data_type: val #val, test
+
 save_config_file: False # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+evaluation_metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 use_style_model: True
 use_text_style_cutting: False
 style_mul_not_cut: False
@@ -34,10 +39,6 @@ requires_min_style_score:
   flickrstyle10k:
     humor: 0
     romantic: 0
-##for validation
-specific_idxs_to_skip: [2,3]
-max_num_of_imgs: 5
-data_type: val #val, test
 
 threshold_sentiment:
   senticap:
