@@ -676,8 +676,8 @@ class CLIPTextGenerator:
             #     print(top_texts[int(i.cpu().data.numpy())])
 
             print(f"beam num = {idx_p}")
-            probs_val, _ = predicted_probs[0].topk(probs.shape[0])
-            probs_val_fixed = [round(i.item(), 3) for i in probs_val]
+            probs_val_debug_loss, _ = predicted_probs[0].topk(probs.shape[0])
+            probs_val_fixed = [round(i.item(), 3) for i in probs_val_debug_loss]
             print(f"text_style_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
             target = torch.zeros_like(probs[idx_p], device=self.device)
@@ -1176,8 +1176,8 @@ class CLIPTextGenerator:
                 target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
                 target_probs = target_probs.type(torch.float32)
             print(f"beam num = {idx_p}")
-            probs_val, _ = target_probs[0].topk(probs.shape[0])
-            probs_val_fixed = [round(i.item(),3) for i in probs_val]
+            probs_val_debug_loss, _ = target_probs[0].topk(probs.shape[0])
+            probs_val_fixed = [round(i.item(),3) for i in probs_val_debug_loss]
             print(f"clip_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
             target = torch.zeros_like(probs[idx_p])
