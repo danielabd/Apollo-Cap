@@ -598,6 +598,7 @@ class CLIPTextGenerator:
         best_sentences = []
         debug_best_top_texts_style = []
         debug_best_probs_vals_style = []
+        print("in text_style loss:")
         for idx_p in range(probs.shape[0]):  # go over all beams
             top_texts = []
             prefix_text = prefix_texts[idx_p]
@@ -674,7 +675,7 @@ class CLIPTextGenerator:
             # for i in top_predicted_indices:
             #     print(top_texts[int(i.cpu().data.numpy())])
 
-            print("in text_style loss:")
+            print(f"beam num = {idx_p}")
             probs_val, _ = predicted_probs[0].topk(probs.shape[0])
             probs_val_fixed = [round(i.item(), 3) for i in probs_val]
             print(f"text_style_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
@@ -905,9 +906,11 @@ class CLIPTextGenerator:
                 loss += ce_loss.sum()
                 ce_losses = (probs * probs_before_shift.log()).sum(-1)
                 print("in ce loss:")
-                probs_val, _ = probs.topk(probs.shape[0])
-                probs_val_fixed = [round(i.item(), 3) for i in probs_val]
-                print(f"ce_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
+                for i in range(probs.shape[0]):
+                    print(f"beam num = {i}")
+                    probs_val, _ = probs[i].topk(probs.shape[0])
+                    probs_val_fixed = [round(i.item(), 3) for i in probs_val]
+                    print(f"ce_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
                 print("after calc fluency loss:")
                 ce_loss_fixed = round(ce_loss_before_scale.sum().item(), 3)
@@ -1069,6 +1072,7 @@ class CLIPTextGenerator:
         debug_best_probs_vals_clip=[]
         debug_best_top_texts_LM = []
         debug_best_probs_vals_LM=[]
+        print("in clip loss:")
         for idx_p in range(probs.shape[0]): # for beam search
             top_texts = []
             prefix_text = prefix_texts[idx_p]
@@ -1171,7 +1175,7 @@ class CLIPTextGenerator:
 
                 target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
                 target_probs = target_probs.type(torch.float32)
-            print("in clip loss:")
+            print(f"beam num = {idx_p}")
             probs_val, _ = target_probs[0].topk(probs.shape[0])
             probs_val_fixed = [round(i.item(),3) for i in probs_val]
             print(f"clip_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
