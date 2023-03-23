@@ -674,6 +674,10 @@ class CLIPTextGenerator:
             # for i in top_predicted_indices:
             #     print(top_texts[int(i.cpu().data.numpy())])
 
+            print("in text_style loss:")
+            probs_val, _ = predicted_probs[0].topk(probs.shape[0])
+            print(f"text_style_top_{probs.shape[0]}_target_probs = {probs_val}")
+
             target = torch.zeros_like(probs[idx_p], device=self.device)
             target[top_indices[idx_p]] = predicted_probs[0]
 
@@ -873,6 +877,10 @@ class CLIPTextGenerator:
             # CLIP LOSS
             if self.clip_scale!=0:
                 clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM = self.clip_loss(probs, context_tokens)
+                print("after calc clip loss:")
+                print(f"clip_loss = {clip_loss}")
+                print(f"clip_losses = {clip_losses}")
+                print(f"clip_loss with scale = {self.clip_scale * clip_loss}")
                 loss += self.clip_scale * clip_loss
                 if i == 0: #first iteraation
                     LM_0_probs = list(total_best_sentences_LM.values())
@@ -888,9 +896,20 @@ class CLIPTextGenerator:
 
             # CE/Fluency loss
             if self.ce_scale!=0:
+                ce_loss_before_scale = ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
                 ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
                 loss += ce_loss.sum()
                 ce_losses = (probs * probs_before_shift.log()).sum(-1)
+                print("in ce loss:")
+                probs_val, _ = probs.topk(probs.shape[0])
+                print(f"ce_top_{probs.shape[0]}_target_probs = {probs_val}")
+
+                print("after calc fluency loss:")
+                print(f"ce_loss = {ce_loss_before_scale.sum()}")
+                print(f"ce_losses = {ce_loss_before_scale}")
+                print(f"ce_loss with scale = {ce_loss.sum()}")
+
+
 
             # TEXT_STYLE:
             if self.use_style_model and not self.use_text_style_cutting:
@@ -905,6 +924,11 @@ class CLIPTextGenerator:
                     #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                     # loss += self.text_style_scale * text_style_loss
                     loss += self.text_style_scale * text_style_loss
+                    print("after calc text_style loss:")
+                    print(f"text_style_loss = {text_style_loss}")
+                    print(f"text_style_losses = {text_style_losses}")
+                    print(f"text_style_loss with scale = {self.text_style_scale * text_style_loss}")
+
                     if total_best_sentences_style:
                         self.debug_tracking[word_loc][i]['STYLE - prob'] = list(total_best_sentences_style.values())
                         self.debug_tracking[word_loc][i]['STYLE - val'] = list(total_best_sentences_style.keys())
@@ -1137,6 +1161,10 @@ class CLIPTextGenerator:
 
                 target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
                 target_probs = target_probs.type(torch.float32)
+            print("in clip loss:")
+            probs_val, _ = target_probs[0].topk(probs.shape[0])
+            print(f"clip_top_{probs.shape[0]}_target_probs = {probs_val}")
+
             target = torch.zeros_like(probs[idx_p])
             target[top_indices[idx_p]] = target_probs[0]
             target = target.unsqueeze(0)

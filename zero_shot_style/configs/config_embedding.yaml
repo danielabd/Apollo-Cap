@@ -7,7 +7,7 @@ debug: False
 debug_mac: False
 
 ##for validation
-wandb_mode: online #'disabled, offline, online' #todo:
+  wandb_mode: online #'disabled, offline, online' #todo:
 max_num_of_imgs: -1
 data_type: test #val, test
 target_seq_length: 15
