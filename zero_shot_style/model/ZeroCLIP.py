@@ -884,7 +884,7 @@ class CLIPTextGenerator:
                 print(f"clip_loss = {clip_loss_fixed}")
                 clip_losses_fixed = [round(i.item(),3) for i in clip_losses]
                 print(f"clip_losses = {clip_losses_fixed}")
-                clip_loss_scale_fixed = round(self.clip_scale * clip_loss_fixed,3)
+                clip_loss_scale_fixed = round(self.clip_scale * clip_loss.item(),3)
                 print(f"clip_loss with scale = {clip_loss_scale_fixed}")
                 loss += self.clip_scale * clip_loss
                 if i == 0: #first iteraation
@@ -938,8 +938,8 @@ class CLIPTextGenerator:
                     print(f"text_style_loss = {text_style_loss_fixed}")
                     text_style_losses_fixed = [round(i.item(), 3) for i in text_style_losses]
                     print(f"text_style_losses = {text_style_losses_fixed}")
-                    text_style_loss_fixed = round(self.text_style_scale * text_style_loss, 3)
-                    print(f"text_style_loss with scale = {text_style_loss_fixed}")
+                    text_style_loss_scaled_fixed = round(self.text_style_scale * text_style_loss.item(), 3)
+                    print(f"text_style_loss with scale = {text_style_loss_scaled_fixed}")
 
 
                     if total_best_sentences_style:
