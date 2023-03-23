@@ -676,7 +676,8 @@ class CLIPTextGenerator:
 
             print("in text_style loss:")
             probs_val, _ = predicted_probs[0].topk(probs.shape[0])
-            print(f"text_style_top_{probs.shape[0]}_target_probs = {probs_val}")
+            probs_val_fixed = [round(i.item(), 3) for i in probs_val]
+            print(f"text_style_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
             target = torch.zeros_like(probs[idx_p], device=self.device)
             target[top_indices[idx_p]] = predicted_probs[0]
@@ -878,9 +879,12 @@ class CLIPTextGenerator:
             if self.clip_scale!=0:
                 clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM = self.clip_loss(probs, context_tokens)
                 print("after calc clip loss:")
-                print(f"clip_loss = {clip_loss}")
-                print(f"clip_losses = {clip_losses}")
-                print(f"clip_loss with scale = {self.clip_scale * clip_loss}")
+                clip_loss_fixed = round(clip_loss.item(),3)
+                print(f"clip_loss = {clip_loss_fixed}")
+                clip_losses_fixed = [round(i.item(),3) for i in clip_losses]
+                print(f"clip_losses = {clip_losses_fixed}")
+                clip_loss_scale_fixed = round(self.clip_scale * clip_loss_fixed,3)
+                print(f"clip_loss with scale = {clip_loss_scale_fixed}")
                 loss += self.clip_scale * clip_loss
                 if i == 0: #first iteraation
                     LM_0_probs = list(total_best_sentences_LM.values())
@@ -902,14 +906,16 @@ class CLIPTextGenerator:
                 ce_losses = (probs * probs_before_shift.log()).sum(-1)
                 print("in ce loss:")
                 probs_val, _ = probs.topk(probs.shape[0])
-                print(f"ce_top_{probs.shape[0]}_target_probs = {probs_val}")
+                probs_val_fixed = [round(i.item(), 3) for i in probs_val]
+                print(f"ce_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
                 print("after calc fluency loss:")
-                print(f"ce_loss = {ce_loss_before_scale.sum()}")
-                print(f"ce_losses = {ce_loss_before_scale}")
-                print(f"ce_loss with scale = {ce_loss.sum()}")
-
-
+                ce_loss_fixed = round(ce_loss_before_scale.sum().item(), 3)
+                print(f"ce_loss = {ce_loss_fixed}")
+                ce_losses_fixed = [round(i.item(), 3) for i in ce_loss_before_scale]
+                print(f"ce_losses = {ce_losses_fixed}")
+                clip_loss_scale_fixed = round(ce_loss.sum().item(), 3)
+                print(f"ce_loss with scale = {clip_loss_scale_fixed}")
 
             # TEXT_STYLE:
             if self.use_style_model and not self.use_text_style_cutting:
@@ -925,9 +931,13 @@ class CLIPTextGenerator:
                     # loss += self.text_style_scale * text_style_loss
                     loss += self.text_style_scale * text_style_loss
                     print("after calc text_style loss:")
-                    print(f"text_style_loss = {text_style_loss}")
-                    print(f"text_style_losses = {text_style_losses}")
-                    print(f"text_style_loss with scale = {self.text_style_scale * text_style_loss}")
+                    text_style_loss_fixed = round(text_style_loss.item(), 3)
+                    print(f"text_style_loss = {text_style_loss_fixed}")
+                    text_style_losses_fixed = [round(i.item(), 3) for i in text_style_losses]
+                    print(f"text_style_losses = {text_style_losses_fixed}")
+                    text_style_loss_fixed = round(self.text_style_scale * text_style_loss, 3)
+                    print(f"text_style_loss with scale = {text_style_loss_fixed}")
+
 
                     if total_best_sentences_style:
                         self.debug_tracking[word_loc][i]['STYLE - prob'] = list(total_best_sentences_style.values())
@@ -1163,7 +1173,8 @@ class CLIPTextGenerator:
                 target_probs = target_probs.type(torch.float32)
             print("in clip loss:")
             probs_val, _ = target_probs[0].topk(probs.shape[0])
-            print(f"clip_top_{probs.shape[0]}_target_probs = {probs_val}")
+            probs_val_fixed = [round(i.item(),3) for i in probs_val]
+            print(f"clip_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
             target = torch.zeros_like(probs[idx_p])
             target[top_indices[idx_p]] = target_probs[0]

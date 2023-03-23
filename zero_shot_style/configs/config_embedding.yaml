@@ -7,7 +7,7 @@ debug: False
 debug_mac: False
 
 ##for validation
-  wandb_mode: online #'disabled, offline, online' #todo:
+wandb_mode: online #'disabled, offline, online' #todo:
 max_num_of_imgs: -1
 data_type: test #val, test
 target_seq_length: 15
@@ -102,7 +102,7 @@ use_text_style_example: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
 
 experiement_global_name:
-  senticap: senticap_ZeroStyleCap_embed
+  senticap: senticap_ZeroStyleCap_embed_debug_loss
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_embed
 
 hidden_state_to_take_txt_cls:
