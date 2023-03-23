@@ -887,7 +887,7 @@ class CLIPTextGenerator:
                 clip_loss_scale_fixed = round(self.clip_scale * clip_loss.item(),3)
                 print(f"clip_loss with scale = {clip_loss_scale_fixed}")
                 loss += self.clip_scale * clip_loss
-                if i == 0: #first iteraation
+                if i == 0: #first iteration
                     LM_0_probs = list(total_best_sentences_LM.values())
                     LM_0_vals = list(total_best_sentences_LM.keys())
                 self.debug_tracking[word_loc][i]['LM_0 - prob'] = LM_0_probs
@@ -906,16 +906,16 @@ class CLIPTextGenerator:
                 loss += ce_loss.sum()
                 ce_losses = (probs * probs_before_shift.log()).sum(-1)
                 print("in ce loss:")
-                for i in range(probs.shape[0]):
-                    print(f"beam num = {i}")
-                    probs_val, _ = probs[i].topk(probs.shape[0])
-                    probs_val_fixed = [round(i.item(), 3) for i in probs_val]
+                for i_ce_loss in range(probs.shape[0]):
+                    print(f"beam num = {i_ce_loss}")
+                    probs_val, _ = probs[i_ce_loss].topk(probs.shape[0])
+                    probs_val_fixed = [round(i_probs_val.item(), 3) for i_probs_val in probs_val]
                     print(f"ce_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
                 print("after calc fluency loss:")
                 ce_loss_fixed = round(ce_loss_before_scale.sum().item(), 3)
                 print(f"ce_loss = {ce_loss_fixed}")
-                ce_losses_fixed = [round(i.item(), 3) for i in ce_loss_before_scale]
+                ce_losses_fixed = [round(i_ce_loss_before_scale.item(), 3) for i_ce_loss_before_scale in ce_loss_before_scale]
                 print(f"ce_losses = {ce_losses_fixed}")
                 clip_loss_scale_fixed = round(ce_loss.sum().item(), 3)
                 print(f"ce_loss with scale = {clip_loss_scale_fixed}")
