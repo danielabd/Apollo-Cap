@@ -801,9 +801,10 @@ def initial_variables():
     print(f'Current time is: {cur_time}')
     cur_date = datetime.now().strftime("%d_%m_%Y")
     if config['wandb_mode'] == 'online':
-        config['training_name'] = f'{wandb.run.id}-{wandb.run.name}'
+        config['training_name'] = f"{wandb.run.name.split('-')[-1]}-{wandb.run.id}-{wandb.run.name}"
     else:
         config['training_name'] = 'tmp'
+
 
     experiment_type_dir = os.path.join(os.path.expanduser("~"),'experiments','stylized_zero_cap_experiments',config['experiement_global_name'])
     if not os.path.isdir(experiment_type_dir):
@@ -887,13 +888,13 @@ def main():
         #     print(f'img_path_idx={img_path_idx}')
         if config['wandb_mode'] == 'online':
             wandb.log({'test/img_idx': img_path_idx})
-        print(f"Img num = {img_path_idx}")
         if not config['debug_mac']:
             image_features = text_generator.get_img_feature([img_path], None)
         else:
             image_features = None
         if img_path_idx < config['img_idx_to_start_from']:
             continue
+        print(f"Img num = {img_path_idx}")
         img_name = img_path.split('/')[-1].split('.')[0]
         if config["dataset"] == "senticap":
             img_name = int(img_name)

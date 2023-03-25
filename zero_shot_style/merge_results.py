@@ -102,7 +102,7 @@ def merge_list_res_files_to_one(file_list, tgt_path):
         print(f"finish to create: {tgt_path}")
     print('Finish of program!')
 
-def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, factual_wo_prompt, use_factual = False):
+def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,img_name_to_idx):
     #go over test type
     keys_test_type = {}
 
@@ -154,12 +154,19 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
             #     data = data.head(data.shape[0] - 1) #remove last line for the case that it is not completed
             if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
                  data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
+            if 'positive' in data.columns:
+                label1 = 'positive'
+                label2 = 'negative'
+            elif 'humor' in data.columns:
+                label1 = 'humor'
+                label2 = 'romantic'
             for i,k in enumerate(data[t[test_type]]):
-                pos = data['positive'][i]
-                try:
-                    neg = data['negative'][i]
-                except:
-                    neg = data['ngeative'][i]
+                pos = data[label1][i]
+                neg = data[label2][i]
+                # try:
+                #     neg = data['negative'][i]
+                # except:
+                #     neg = data['ngeative'][i]
                 if use_factual:
                     try:
                         fact = data['factual'][i]
@@ -180,9 +187,9 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
                         fact = factual_image_manipulation[k]
                     else: #write factual with prompt of image of a...
                         fact = factual_image_of_a_prompt_manipulation[k]
-                    single_data = {'img_num': k, 'factual': fact, 'positive': pos, 'negative': neg}
+                    single_data = {'img_num': k, 'factual': fact, label1: pos, label2: neg}
                 else:
-                    single_data = {'img_num': k, 'positive': pos, 'negative': neg}
+                    single_data = {'idx': img_name_to_idx[k], 'img_num': k, label1: pos, label2: neg}
                 total_data[k] = single_data
         keys_test_type[test_type] = list(total_data.keys())
         total_data_test_type = pd.DataFrame(list(total_data.values()))
@@ -253,7 +260,9 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/20_2_23/ZeroStyleCap_8'
         # 23.2.23
 
-        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast'
+
+        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast'
+
         final_name = src_dir_text_style.split('Cap')[-1] #39
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
@@ -261,7 +270,7 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
         final_name = 'f_36'
-
+        src_dir_text_style = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023')
         # src_dir_text_style = os.path.join(base_path,'text_style')
         text_style_dir_path = os.listdir(src_dir_text_style)
         if factual_wo_prompt:
@@ -336,6 +345,14 @@ def get_list_of_files():
                      '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/results_11_40_14__19_03_2023.csv']
     return list_of_files
 
+def map_img_name_to_idx(dataset):
+    img_name_to_idx = {}
+    for i, im in enumerate(os.listdir(
+        os.path.join(os.path.join(os.path.expanduser('~'), 'data', dataset, 'images','test')))):
+        if ('.jpg' or '.jpeg' or '.png') not in im:
+            continue
+        img_name_to_idx[im.rsplit('.')[0]] = i
+    return img_name_to_idx
 
 # [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 def main():
@@ -374,17 +391,19 @@ def main():
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     exp_to_merge = ["text_style"]
     #todo:
-    # res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge) #todo:
+    res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge) #todo:
 
 
-    # exp_to_merge = ["text_style"]
+    exp_to_merge = ["text_style"]
     use_factual = False
-    ######### for the case of file list
-    file_list = get_list_of_files()
-    tgt_path = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/total_results_zerstylecap_emoji_batch.csv'
-    merge_list_res_files_to_one(file_list, tgt_path)
-    #########
-    # merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual, list_files=list_of_files,tgt_path=tgt_path)
+    # ######### for the case of file list
+    # file_list = get_list_of_files()
+    # tgt_path = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/total_results_zerstylecap_emoji_batch.csv'
+    # merge_list_res_files_to_one(file_list, tgt_path)
+    ########
+    dataset = 'flickrstyle10k'
+    img_name_to_idx = map_img_name_to_idx(dataset)
+    merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,img_name_to_idx)
     print("finish program")
 
 
