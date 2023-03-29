@@ -15,15 +15,25 @@ res_path2eval:
 #    zerostylecap_emoji:  /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/total_results_zerstylecap_emoji_batch.csv
 #    ZeroStyleCap_f_36:  /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/total_results_text_style_f_36.csv
 #    ZeroStyleCap_real_std: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std/total_results_ZeroStyleCap_real_std.csv
-    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
-    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
+#    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
+#    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
+    prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/prompt_manipulation/d4jnwh7t-copper-cherry-13/results_23_36_32__25_03_2023.csv
+    image_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_manipulation/h9yfdeh2-misunderstood-forest-12/results_23_33_40__25_03_2023.csv
+    image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_and_prompt_manipulation/jk7xzo7u-dulcet-bush-11/results_23_29_58__25_03_2023.csv
+    ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/ZeroStyleCap/xuk6u1fz-eternal-night-7/results_21_29_00__23_03_2023.csv
+
   flickrstyle10k:
-    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
-    capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
-    prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/5_3_23/c1p9kpt8-smoldering-heart-7/results_13_07_48__15_02_2023.csv
-    image_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/5_3_23/v584fr44-desiring-etchings-11/results_13_39_19__15_02_2023.csv
-    image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/5_3_23/gkdoticx-loyal-sweetheart-9/results_13_30_05__15_02_2023.csv
-    ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/15_02_2023/6mcw38e7-eager-dove-19/results_22_10_24__15_02_2023.csv
+#    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
+#    capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
+#    prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/5_3_23/c1p9kpt8-smoldering-heart-7/results_13_07_48__15_02_2023.csv
+#    image_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/5_3_23/v584fr44-desiring-etchings-11/results_13_39_19__15_02_2023.csv
+#    image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/5_3_23/gkdoticx-loyal-sweetheart-9/results_13_30_05__15_02_2023.csv
+#    ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/15_02_2023/6mcw38e7-eager-dove-19/results_22_10_24__15_02_2023.csv
+    prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/prompt_manipulation/total_results_prompt_manipulation.csv
+    image_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/image_manipulation/total_results_image_manipulation.csv
+    image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/image_and_prompt_manipulation/total_results_image_and_prompt_manipulation.csv
+    ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/ZeroStyleCap/total_results_text_style_Flickrstyle10k.csv
+
 max_num_imgs2test:
   senticap: -1
   flickrstyle10k: 1000

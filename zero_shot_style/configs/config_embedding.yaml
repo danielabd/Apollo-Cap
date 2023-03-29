@@ -24,7 +24,7 @@ desired_labels:
 save_config_file: True # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 evaluation_metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-use_style_model: True
+use_style_model: False
 use_text_style_cutting: False
 style_mul_not_cut: False
 requires_min_fluency_score: 0.8 # 0.86
@@ -117,20 +117,25 @@ hidden_state_to_take_txt_style_embedding:
   flickrstyle10k: -2
 
 
-#cond_text_dict:
-#  positive: The beautiful image of a
-#  negative: The disturbing image of a
-#  factual: Image of a
-
 cond_text_dict:
   senticap:
-    positive: ""
-    negative: ""
-    factual: ""
+    positive: The beautiful image of a
+    negative: The disturbing image of a
+    factual: Image of a
   flickrstyle10k:
-    humor: ""
-    romantic: ""
-    factual: ""
+    humor: The humorous image of a
+    romantic: The romantic image of a
+    factual: Image of a
+
+#cond_text_dict:
+#  senticap:
+#    positive: ""
+#    negative: ""
+#    factual: ""
+#  flickrstyle10k:
+#    humor: ""
+#    romantic: ""
+#    factual: ""
 
 
 calc_evaluation: True

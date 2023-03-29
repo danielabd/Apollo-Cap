@@ -160,7 +160,8 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
             elif 'humor' in data.columns:
                 label1 = 'humor'
                 label2 = 'romantic'
-            for i,k in enumerate(data[t[test_type]]):
+            # for i,k in enumerate(data[t[test_type]]):
+            for i,k in enumerate(data[data.columns[0]]):
                 pos = data[label1][i]
                 neg = data[label2][i]
                 # try:
@@ -201,17 +202,18 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
         # write_data_to_global_file_for_debug(total_data_test_type, img_idx_to_name, tgt_paths_debug[test_type], t[test_type])
         # for
     print('Finish of program!')
-    imgs_to_add = {}
-    for test_type in  keys_test_type:
-        if test_type=='text_style':
-            continue
-        else:
-            imgs_to_add[test_type] = []
-        for i in keys_test_type['text_style']:
-            if i not in keys_test_type[test_type]:
-                imgs_to_add[test_type].append(i)
-        print(f"For {test_type}, need to add images: ")
-        print(imgs_to_add[test_type])
+
+    # imgs_to_add = {}
+    # for test_type in  keys_test_type:
+    #     if test_type=='text_style':
+    #         continue
+    #     else:
+    #         imgs_to_add[test_type] = []
+    #     for i in keys_test_type['text_style']:
+    #         if i not in keys_test_type[test_type]:
+    #             imgs_to_add[test_type].append(i)
+    #     print(f"For {test_type}, need to add images: ")
+    #     print(imgs_to_add[test_type])
 
     print('Finish of program!')
 
@@ -222,6 +224,7 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/'
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/'
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
+    base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23'
 
     # prompt_manipulation
     if 'prompt_manipulation' in exp_to_merge:
@@ -386,15 +389,17 @@ def main():
             pass
         img_idx_to_name[img_path_idx] = img_name
 
-    t = {"prompt_manipulation": "img_num\prompt","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
+    # t = {"prompt_manipulation": "img_num\prompt","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
+    t = {"prompt_manipulation": "img_num","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
     factual_wo_prompt = False
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
-    exp_to_merge = ["text_style"]
+    # exp_to_merge = ["text_style"]
+    exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation"]
     #todo:
     res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge) #todo:
 
 
-    exp_to_merge = ["text_style"]
+    # exp_to_merge = ["text_style"]
     use_factual = False
     # ######### for the case of file list
     # file_list = get_list_of_files()
