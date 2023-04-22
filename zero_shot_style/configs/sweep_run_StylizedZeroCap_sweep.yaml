@@ -1,45 +1,46 @@
 program: run.py
-project: StylizedZeroCap_with_Emoji_style_mul
+project: StylizedZeroCap
 method: bayes
 metric:
   goal: maximize #minimize
   name:  evaluation/final_avg_total_score
 parameters:
   ce_scale:
-    max: 3
+    max: 9
     min: 0.1
     distribution: uniform
   clip_scale:
-    max: 3
+    max: 9
     min: 0.1
     distribution: uniform
-  requires_min_clip_score_val_pos:
-    max: 0.27
-    min: 0.25
+  text_style_scale:
+    max: 9 #5.5 #6
+    min: 0.1 #2.5 #1.5
     distribution: uniform
-  requires_min_clip_score_val_neg:
-    max: 0.27
-    min: 0.25
-    distribution: uniform
-  requires_num_min_clip_score_val_pos:
-    max: 30
-    min: 10
-    distribution: int_uniform
-  requires_num_min_clip_score_val_neg:
-    max: 30
-    min: 10
-    distribution: int_uniform
-  requires_min_style_score_pos:
-    max: 0.4
-    min: 0.3
-    distribution: uniform
-  requires_min_style_score_neg:
-    max: 0.4
-    min: 0.3
-    distribution: uniform
-#  text_style_scale:
-#    max: 12 #5.5 #6
-#    min: 1 #2.5 #1.5
+
+#  requires_min_clip_score_val_pos:
+#    max: 0.27
+#    min: 0.25
+#    distribution: uniform
+#  requires_min_clip_score_val_neg:
+#    max: 0.27
+#    min: 0.25
+#    distribution: uniform
+#  requires_num_min_clip_score_val_pos:
+#    max: 30
+#    min: 10
+#    distribution: int_uniform
+#  requires_num_min_clip_score_val_neg:
+#    max: 30
+#    min: 10
+#    distribution: int_uniform
+#  requires_min_style_score_pos:
+#    max: 0.4
+#    min: 0.3
+#    distribution: uniform
+#  requires_min_style_score_neg:
+#    max: 0.4
+#    min: 0.3
 #    distribution: uniform
 #  std_embedding_vectors_positive: #0.015731973987010497#0.028914157
 #    max: 0.15

@@ -668,7 +668,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     avg_clip_score = np.mean(clip_scores)
     avg_fluency_score = mean_perplexity
     avg_style_cls_score = np.mean(style_cls_scores)
-    avg_style_cls_emoji_score = np.mean(style_cls_emoji_scores)
+    avg_style_cls_emoji_score = torch.mean(torch.stack(style_cls_emoji_scores))
     if 'requires_min_fluency_score' in config:
         if avg_fluency_score > config['requires_min_fluency_score']:
             final_avg_total_score = calculate_avg_score_wo_fluence(avg_clip_score, avg_style_cls_score, avg_style_cls_emoji_score)
