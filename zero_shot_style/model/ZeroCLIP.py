@@ -107,10 +107,11 @@ class CLIPTextGenerator:
                  config=None,
                  model_based_on='bert',
                  evaluation_obj=None,
-                 desired_style_bin = None,
-                 use_text_style_cutting = False,
+                 desired_style_bin=None,
+                 use_text_style_cutting=False,
                  **kwargs):
 
+        self.style_type = None
         self.config = config
         self.use_text_style_cutting = use_text_style_cutting
         if evaluation_obj:
@@ -207,6 +208,20 @@ class CLIPTextGenerator:
             self.sentiment_type = 'none'
 
         self.use_style_model = use_style_model
+        if config['style_type'] == 'erc':
+            #########use erc model:
+            self.text_style_tokenizer_erc = AutoTokenizer.from_pretrained("tae898/emoberta-large")
+            self.text_style_erc_model = AutoModelForSequenceClassification.from_pretrained(
+                "tae898/emoberta-large", num_labels=7
+            )
+            self.text_style_erc_model.to(self.device)
+            for param in self.text_style_erc_model.parameters():
+                param.requires_grad = False
+
+            self.text_style_erc_model.eval()
+            #########
+
+
         # TorchEmoji: emoji style model
         if config['style_type'] == 'emoji':
             print('Tokenizing using dictionary from {}'.format(config['emoji_vocab_path']))
@@ -253,7 +268,7 @@ class CLIPTextGenerator:
             self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
             self.text_style_model_name = model_path
 
-            if self.use_style_model:
+            if self.use_style_model and self.style_type != 'erc':
                 print(f"Loading embedding style model from: {self.text_style_model_name}")
                 if self.model_based_on == 'bert':
                     self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
@@ -357,30 +372,31 @@ class CLIPTextGenerator:
         #     self.check_if_cut_score[idx_p] = True
         if self.use_style_model:
             self.text_style_scale = text_style_scale
-            self.style_type = style_type #'clip','twitter','emotions'
-            if not text_to_imitate:
-                # self.desired_style_embedding_vector = desired_style_embedding_vector.to(self.device)
-                self.desired_style_embedding_vector = desired_style_embedding_vector
-                self.desired_style_embedding_std_vector = desired_style_embedding_std_vector
+            self.style_type = style_type #'clip','twitter','emotions' , 'erc
+            if self.style_type != 'erc':
+                if not text_to_imitate:
+                    # self.desired_style_embedding_vector = desired_style_embedding_vector.to(self.device)
+                    self.desired_style_embedding_vector = desired_style_embedding_vector
+                    self.desired_style_embedding_std_vector = desired_style_embedding_std_vector
 
-            else: #there is text_to_imitate:
-                #use clip features
-                if style_type=='clip':#'clip','twitter','emotions'
-                    self.text_style_features = self.get_txt_features(self.text_to_imitate)
-                    # use my text style model features
-                else: #style_type=='twitter' or 'emotions'
-                    #### based on bert
-                    tokenized_text_to_imitate = self.text_style_tokenizer(text_to_imitate, padding='max_length',
-                                                                        max_length=512, truncation=True,
-                                                                        return_tensors="pt")
-                    masks_mimic = tokenized_text_to_imitate['attention_mask'].to(self.device)
-                    input_ids_mimic = tokenized_text_to_imitate['input_ids'].squeeze(1).to(self.device)
-                    embedding_of_text_to_imitate = self.text_style_model(input_ids_mimic, masks_mimic) #embeding vector
-                    # #### based on clip
-                    # embedding_of_text_to_imitate = self.text_style_model(text_to_imitate) #embeding vector
-                    embedding_of_text_to_imitate.to(self.device)
-                    # self.desired_style_embedding_vector = embedding_of_text_to_imitate.to(self.device)
-                    self.desired_style_embedding_vector = embedding_of_text_to_imitate
+                else: #there is text_to_imitate:
+                    #use clip features
+                    if style_type=='clip':#'clip','twitter','emotions'
+                        self.text_style_features = self.get_txt_features(self.text_to_imitate)
+                        # use my text style model features
+                    else: #style_type=='twitter' or 'emotions'
+                        #### based on bert
+                        tokenized_text_to_imitate = self.text_style_tokenizer(text_to_imitate, padding='max_length',
+                                                                            max_length=512, truncation=True,
+                                                                            return_tensors="pt")
+                        masks_mimic = tokenized_text_to_imitate['attention_mask'].to(self.device)
+                        input_ids_mimic = tokenized_text_to_imitate['input_ids'].squeeze(1).to(self.device)
+                        embedding_of_text_to_imitate = self.text_style_model(input_ids_mimic, masks_mimic) #embeding vector
+                        # #### based on clip
+                        # embedding_of_text_to_imitate = self.text_style_model(text_to_imitate) #embeding vector
+                        embedding_of_text_to_imitate.to(self.device)
+                        # self.desired_style_embedding_vector = embedding_of_text_to_imitate.to(self.device)
+                        self.desired_style_embedding_vector = embedding_of_text_to_imitate
 
         context_tokens = self.lm_tokenizer.encode(self.context_prefix + cond_text)
 
@@ -587,7 +603,100 @@ class CLIPTextGenerator:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
         return text_style_loss, losses
 
+    def get_text_style_loss_erc(self, probs, context_tokens):
+        #use representative vector for calculating the distance between candidates and the representative vecotr
+        top_size = 512
+        top_probs_LM, top_indices = probs.topk(top_size, -1)
+
+        prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
+
+        text_style_loss = 0
+        losses = []
+        best_sentences = []
+        debug_best_top_texts_style = []
+        debug_best_probs_vals_style = []
+        print("in text_style loss:")
+        for idx_p in range(probs.shape[0]):  # go over all beams
+            top_texts = []
+            prefix_text = prefix_texts[idx_p]
+            for x in top_indices[idx_p]:  # go over all optional topk next word
+                top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+
+            with torch.no_grad():
+                # #########to define:
+                # self.text_style_tokenizer_erc = AutoTokenizer.from_pretrained("tae898/emoberta-large")
+                # self.text_style_erc_model = AutoModelForSequenceClassification.from_pretrained(
+                #     "tae898/emoberta-large", num_labels=7
+                # )
+                # for param in self.text_style_erc_model.parameters():
+                #     param.requires_grad = False
+                #
+                # self.text_style_erc_model.eval()
+                #
+                # #########
+                inputs = self.text_style_tokenizer_erc(top_texts, padding=True, return_tensors="pt")
+                inputs['input_ids'] = inputs['input_ids'].to(self.device)
+                inputs['attention_mask'] = inputs['attention_mask'].to(self.device)
+                outputs = self.text_style_erc_model(
+                    **{"input_ids": inputs['input_ids'], "attention_mask": inputs['attention_mask']},
+                    output_attentions=True,
+                    output_hidden_states=True,
+                ) #outputs.logits_classes: "neutral","joy","surprise","anger","sadness","disgust","fear"
+                pos_prob_val = torch.unsqueeze(outputs.logits[:, 1], dim=0)
+                # neg_prob_val = torch.unsqueeze(outputs.logits[:, [3, 4, 5, 6]].sum(dim=-1), dim=0)
+                neg_prob_val = torch.unsqueeze(torch.max(outputs.logits[:, [3, 4, 5, 6]],dim=-1).values, dim=0)
+                pos_neg_vec = torch.cat((pos_prob_val, neg_prob_val))
+                style2id = {'positive':0, 'negative':1}
+
+                pos_neg_prob_vec = torch.nn.functional.softmax(pos_neg_vec, dim=0) #create vector probability between pos and neg scores
+
+                style_score_vec = pos_neg_prob_vec[style2id[self.style]]
+                predicted_probs = torch.nn.functional.softmax(style_score_vec).detach() #create vector probability between all candidates of top_text
+                # print(f"prob_vec = {predicted_probs}")
+                # predicted_probs = nn.functional.softmax(text_style_grades / self.text_style_loss_temperature, dim=-1).detach()
+                predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+
+            #todo: debug
+            # val_top_predicted, top_predicted_indices = predicted_probs[0].topk(10, -1)
+            # for i in top_predicted_indices:
+            #     print(top_texts[int(i.cpu().data.numpy())])
+
+            print(f"beam num = {idx_p}")
+            probs_val_debug_loss, _ = predicted_probs.topk(probs.shape[0])
+            probs_val_fixed = [round(i.item(), 3) for i in probs_val_debug_loss]
+            print(f"text_style_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
+
+            target = torch.zeros_like(probs[idx_p], device=self.device)
+            target[top_indices[idx_p]] = predicted_probs
+
+            target = target.unsqueeze(0)
+            cur_text_style_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
+
+            text_style_loss += cur_text_style_loss
+            losses.append(cur_text_style_loss)
+            best_sentences.append(top_texts[torch.argmax(predicted_probs)])
+
+            # debug
+            probs_val, indices = predicted_probs.topk(DEBUG_NUM_WORDS)
+            debug_best_probs_vals_style.extend(list(probs_val.cpu().data.numpy()))
+            style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
+            debug_best_top_texts_style.extend(style_top_text)
+
+        total_best_sentences_style = {}
+        for i in np.argsort(debug_best_probs_vals_style)[-DEBUG_NUM_WORDS:]:
+            total_best_sentences_style[debug_best_top_texts_style[i]] = debug_best_probs_vals_style[i]
+
+        loss_string = ''
+        for idx_p in range(probs.shape[0]):  # go over all beams
+            if idx_p == 0:
+                loss_string = f'{losses[0]}'
+            else:
+                loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
+
+        return text_style_loss, losses, best_sentences, total_best_sentences_style
+
     def get_text_style_loss(self, probs, context_tokens):
+        #use representative vector for calculating the distance between candidates and the representative vecotr
         top_size = 512
         top_probs_LM, top_indices = probs.topk(top_size, -1)
 
@@ -924,7 +1033,10 @@ class CLIPTextGenerator:
             if self.use_style_model and not self.use_text_style_cutting:
                 text_style_loss=-100
                 if self.text_style_scale!=0:
-                    if self.style_type == 'clip': #using clip model for text style
+                    if self.style_type == 'erc':
+                        text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_erc(
+                            probs, context_tokens)
+                    elif self.style_type == 'clip': #using clip model for text style
                         text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
                     elif self.style_type == 'emoji':
                         text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(probs, context_tokens)

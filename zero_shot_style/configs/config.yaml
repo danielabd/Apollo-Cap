@@ -1,9 +1,9 @@
 ###### stylized ZeroCap: create captions - for run.py
 dataset: senticap # senticap,flickrstyle10k
-style_type: emoji #'style_embed' or 'emoji'
+style_type: 'erc' #'style_embed' or 'emoji' or 'erc'
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
-debug: False
+debug: True
 debug_mac: False
 wandb_mode: online #'disabled, offline, online' #todo:
 ##for validation
@@ -14,8 +14,12 @@ data_type: val #val, test
 save_config_file: False # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-use_style_model: True
-use_text_style_cutting: True
+use_style_model: True #True #todo:
+#####
+check_if_cut_score: False
+#####
+
+use_text_style_cutting: False
 style_mul_not_cut: False
 requires_min_fluency_score: 0.8 # 0.86
 requires_min_clip_score_val:
@@ -71,7 +75,7 @@ ce_scale:
   senticap: 2.2 #2.925582040227539 #2.43956729 #2.318
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap: 1.6 #2.1430374716828555 #3.746143446 #2.965
+  senticap: 10 #1.6 #2.1430374716828555 #3.746143446 #2.965
   flickrstyle10k: 4.587441437503964
 
 ###todo: for debugging

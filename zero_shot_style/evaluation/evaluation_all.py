@@ -631,7 +631,7 @@ def get_res_data(res_paths):
                 if 'COCO' in k:
                     k = k.split('_')[-1]
                 try:
-                    k = int(k)
+                    k = int(k)  
                 except:
                     pass
                 if title:
