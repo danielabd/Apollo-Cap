@@ -5,6 +5,7 @@ style_type: 'erc' #'style_embed' or 'emoji' or 'erc'
 use_style_threshold: False
 debug: False
 debug_mac: False
+print_for_debug : False
 wandb_mode: online #'disabled, offline, online' #todo:
 ##for validation
 specific_idxs_to_skip: [2,3]
