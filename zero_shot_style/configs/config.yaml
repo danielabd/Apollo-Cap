@@ -131,7 +131,7 @@ use_text_style_example: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
 
 experiement_global_name:
-  senticap: senticap_ZeroStyleCap_with_emoji
+  senticap: erc_weighted_loss
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 hidden_state_to_take_txt_cls:
