@@ -1,21 +1,34 @@
 ###### stylized ZeroCap: create captions - for run.py
 dataset: senticap # senticap,flickrstyle10k
-style_type: 'erc' #'style_embed' or 'emoji' or 'erc'
-#style_type: 'style_embed' #'style_embed' or 'emoji'
+#style_type: 'erc' #'style_embed' or 'emoji' or 'erc'
+style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
 debug_mac: False
-print_for_debug : False
-wandb_mode: online #'disabled, offline, online' #todo:
+print_for_debug : True
+print_for_debug_redundant : False
+wandb_mode: disabled #'disabled, offline, online' #todo:
 ##for validation
-specific_idxs_to_skip: [2,3]
-max_num_of_imgs: 5
-data_type: val #val, test
+#specific_idxs_to_skip: [2,3]
+max_num_of_imgs: -1 #5
+data_type: test #val, test
+specific_imgs_to_test: [10104]
+#specific_img_idxs_to_test: [736]
+desired_labels: #todo
+  senticap: [negative, positive] #[factual, positive, negative]
+  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 save_config_file: False # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 use_style_model: True #True #todo:
+
+# weighted loss
+th_clip_loss: 35
+th_ce_loss: 10
+th_style_loss: 35
+new_weighted_loss: True
+max_num_iterations: 10
 #####
 check_if_cut_score: False
 #####
@@ -54,8 +67,6 @@ threshold_sentiment:
     romantic: 0
 
 
-#specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
-#specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]
 
 
 model_based_on: 'bert' # 'clip' /  'bert'
@@ -63,20 +74,20 @@ model_based_on: 'bert' # 'clip' /  'bert'
 #
 #max_num_of_imgs: -1
 target_seq_length: 15
-desired_labels:
-  senticap: [positive, negative] #[factual, positive, negative]
-  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
+#desired_labels: #todo
+#  senticap: [positive, negative] #[factual, positive, negative]
+#  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 beam_size:
   senticap: 5 #4 #3
   flickrstyle10k: 5 #3
 text_style_scale:
-  senticap: 8.7 #2.9365169098669996 #3.797802783 #3.444
+  senticap: 3.3 #8.7 - comparison to other baselines
   flickrstyle10k: 4.518869472661613
 ce_scale:
-  senticap: 2.2 #2.925582040227539 #2.43956729 #2.318
+  senticap: 3.34 #2.2 - comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap: 10 #1.6 #2.1430374716828555 #3.746143446 #2.965
+  senticap: 5.6 #1.6 - comparison to other baselines
   flickrstyle10k: 4.587441437503964
 
 ###todo: for debugging

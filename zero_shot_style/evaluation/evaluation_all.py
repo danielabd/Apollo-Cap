@@ -278,7 +278,6 @@ class STYLE_CLS_EMOJI:
                                                                          self.labels_dict_idxs, self.desired_cuda_num)
         return total_acc_test_for_all_data, None
 
-
 class Fluency:
     def __init__(self):
         self.model_id = 'gpt2'
@@ -867,6 +866,65 @@ def get_args():
 
 
 def main():
+    #24/4/23 results from 23.3.23:
+    #senticap:
+    log_prompt_manipulation = "senticap_prompt_manipulation_debug.txt"
+    prompt_manipulation = "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss/25_03_2023/d4jnwh7t-copper-cherry-13/results_23_36_32__25_03_2023.csv"
+
+    log_image_manipulation = "senticap_image_manipulation_debug.txt"
+    image_manipulation = "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss/25_03_2023/h9yfdeh2-misunderstood-forest-12/results_23_33_40__25_03_2023.csv"
+
+    log_image_an_prompt_manipulation = "senticap_image_and_prompt_manipulation_debug.txt"
+    image_an_prompt_manipulation = "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss/25_03_2023/jk7xzo7u-dulcet-bush-11/results_23_29_58__25_03_2023.csv"
+
+    log_zerostylecap = "debug_loss_real_senticap_23_2_v0.txt"
+    zerostylecap = "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss/23_03_2023/xuk6u1fz-eternal-night-7/results_21_29_00__23_03_2023.csv"
+
+    # flickrstyle10k:
+    log_prompt_manipulation = ["flickr_prompt_manipulation_debug_25_3_23.txt",\
+                               "flickr_prompt_manipulation_debug_29_3_23_v0.txt",\
+                           "flickr_prompt_manipulation_debug_29_3_23_v1.txt",\
+                           "flickr_prompt_manipulation_debug_29_3_23_v2.txt",\
+                           "flickr_prompt_manipulation_debug_29_3_23_v3.txt",\
+                           "flickr_prompt_manipulation_debug_25_3_23_v2.txt"]
+    prompt_manipulation = ["/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/n1knhbfh-dainty-cosmos-50/results_23_46_15__25_03_2023.csv",\
+                           "home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/j8pq7aru-bright-bee-60/results_12_49_19__29_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/1m1aqhch-azure-leaf-59/results_12_49_19__29_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/mt0pvyea-upbeat-vortex-61/results_12_49_29__29_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/chp8yi87-ancient-fire-62/results_12_49_53__29_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/19i488ig-ancient-brook-51/results_23_47_58__25_03_2023.csv"]
+
+    log_image_manipulation = ["flickr_image_manipulation_debug_25_3_23_v0.txt",\
+                           "flickr_image_manipulation_debug_25_3_23_v1.txt",\
+                           "flickr_image_manipulation_debug_25_3_23_v2.txt"]
+    image_manipulation = ["/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/k350v2ad-sandy-grass-56/results_23_58_20__25_03_2023.csv",\
+                           "home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/pbdt09l9-fast-eon-57/results_23_59_05__25_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/26_03_2023/bc466z75-sage-grass-58/results_00_00_40__26_03_2023.csv"]
+
+    log_image_an_prompt_manipulation = ["flickr_image_and_prompt_manipulation_debug_25_3_23_v0.txt",\
+                           "flickr_image_and_prompt_manipulation_debug_25_3_23_v1.txt",\
+                           "flickr_image_and_prompt_manipulation_debug_25_3_23_v2.txt"]
+    image_an_prompt_manipulation = ["/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/l00kj482-rural-cloud-52/results_23_50_52__25_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/3b5cwh3h-comic-bush-54/results_23_54_41__25_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/9olhnst5-electric-terrain-55/results_23_55_39__25_03_2023.csv"]
+
+    log_zerostylecap = ["debug_loss_flickr_23_2_v0.txt",\
+                           "debug_loss_flickr_23_2_v1.txt",\
+                           "debug_loss_flickr_23_2_v3.txt",\
+                           "debug_loss_flickr_23_2_v4.txt",\
+                           "debug_loss_flickr_23_2_v5.txt",\
+                           "debug_loss_flickr_23_2_v6.txt",\
+                           "debug_loss_flickr_23_2_v7.txt"]
+    zerostylecap = ["/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/az2h2lu8-lucky-night-34/results_13_37_13__23_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/l8ep47kj-graceful-water-33/results_13_32_30__23_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/zm963t5c-iconic-pyramid-47/results_21_40_14__23_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/rakysj3j-firm-water-45/results_21_35_24__23_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/i3x63emn-unique-universe-49/results_21_52_42__23_03_2023.csv",\
+                           "home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/kc5j6ra3-young-shape-43/results_13_44_10__23_03_2023.csv",\
+                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/nucvqzc2-divine-serenity-44/results_13_44_14__23_03_2023.csv"]
+
+
+
     args = get_args()
     config = get_hparams(args)
     data_dir = os.path.join(os.path.expanduser('~'), 'data')

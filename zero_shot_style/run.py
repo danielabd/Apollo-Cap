@@ -761,6 +761,7 @@ def initial_variables():
 
     args = get_args()
     config = get_hparams(args)
+
     # os.environ["CUDA_VISIBLE_DEVICES"] = config['cuda_idx_num']
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     mean_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['mean_vec_emb_file'])
@@ -883,8 +884,9 @@ def main():
     # go over all images
     evaluation_results = {}  # total_results_structure
     for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
-        # if int(img_path.split('.')[0].split('/')[-1]) == 429063:
+        # if int(img_path.split('.')[0].split('/')[-1]) == 225571:
         #     print(f'img_path_idx={img_path_idx}')
+        # continue
         if config['wandb_mode'] == 'online':
             wandb.log({'test/img_idx': img_path_idx})
         if not config['debug_mac']:

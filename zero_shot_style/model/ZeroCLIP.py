@@ -84,7 +84,7 @@ class CLIPTextGenerator:
                  # forbidden_tokens_file_path='./forbidden_tokens.npy',
                  # clip_checkpoints='./clip_checkpoints',
                  forbidden_tokens_file_path=os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','forbidden_tokens.npy'),
-                 clip_checkpoints=os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','clip_checkpoints'),
+                 clip_checkpoints=os.path.join(os.path.expanduser('~'),'checkpoints','clip_checkpoints'),
                  target_seq_length=15,
                  reset_context_delta=True,
                  num_iterations=5,
@@ -615,7 +615,7 @@ class CLIPTextGenerator:
         best_sentences = []
         debug_best_top_texts_style = []
         debug_best_probs_vals_style = []
-        if self.config['print_for_debug']:
+        if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
             print("in text_style loss:")
         for idx_p in range(probs.shape[0]):  # go over all beams
             top_texts = []
@@ -710,7 +710,7 @@ class CLIPTextGenerator:
         best_sentences = []
         debug_best_top_texts_style = []
         debug_best_probs_vals_style = []
-        if self.config['print_for_debug']:
+        if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
             print("in text_style loss:")
         for idx_p in range(probs.shape[0]):  # go over all beams
             top_texts = []
@@ -788,11 +788,11 @@ class CLIPTextGenerator:
             # for i in top_predicted_indices:
             #     print(top_texts[int(i.cpu().data.numpy())])
 
-            if self.config['print_for_debug']:
+            if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"beam num = {idx_p}")
             probs_val_debug_loss, _ = predicted_probs[0].topk(probs.shape[0])
             probs_val_fixed = [round(i.item(), 3) for i in probs_val_debug_loss]
-            if self.config['print_for_debug']:
+            if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"text_style_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
             target = torch.zeros_like(probs[idx_p], device=self.device)
@@ -970,11 +970,38 @@ class CLIPTextGenerator:
     def shift_context(self, word_loc, context, last_token, context_tokens, probs_before_shift):
         print(f"img_idx={self.img_idx},img_name={self.img_name}, style={self.style}")
         print(f"self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations = {self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations}")
+        print(f"word_loc =  {word_loc}")
         context_delta = [tuple([np.zeros(x.shape).astype("float32") for x in p]) for p in context]
 
         window_mask = torch.ones_like(context[0][0]).to(self.device)
 
-        for i in range(self.num_iterations):
+        source_print_for_debug = self.config['print_for_debug']
+        clip_loss_fixed = 100
+        ce_loss_fixed = 100
+        text_style_loss_fixed = 100
+        i=-1
+
+        th_clip_loss = self.config['th_clip_loss']
+        th_ce_loss = self.config['th_ce_loss']
+        th_style_loss = self.config['th_style_loss']
+        new_weighted_loss = self.config['new_weighted_loss']
+        max_num_iterations = self.config['max_num_iterations']
+        while(1):
+            i += 1
+            if new_weighted_loss:
+                if clip_loss_fixed<=th_clip_loss and ce_loss_fixed<=th_ce_loss and text_style_loss_fixed<=th_style_loss:
+                    break
+                if i == max_num_iterations:
+                    break
+            else: # not new_weighted_loss:
+                if i == self.num_iterations:
+                    break
+        # for i in range(self.num_iterations):
+            # print(f"iter_num =  {i}")
+            # if i == self.num_iterations-1:
+            #     self.config['print_for_debug'] = source_print_for_debug
+            # else:
+            #     self.config['print_for_debug'] = False
             self.debug_tracking[word_loc][i] = {}
             curr_shift = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_]) for p_ in
                           context_delta]
@@ -994,18 +1021,19 @@ class CLIPTextGenerator:
             # CLIP LOSS
             if self.clip_scale!=0:
                 clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM = self.clip_loss(probs, context_tokens)
-                if self.config['print_for_debug']:
+                if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print("after calc clip loss:")
                 clip_loss_fixed = round(clip_loss.item(),3)
                 if self.config['print_for_debug']:
                     print(f"clip_loss = {clip_loss_fixed}")
                 clip_losses_fixed = [round(i.item(),3) for i in clip_losses]
-                if self.config['print_for_debug']:
+                if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"clip_losses = {clip_losses_fixed}")
                 clip_loss_scale_fixed = round(self.clip_scale * clip_loss.item(),3)
-                if self.config['print_for_debug']:
+                if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"clip_loss with scale = {clip_loss_scale_fixed}")
-                loss += self.clip_scale * clip_loss
+                if not new_weighted_loss:
+                    loss += self.clip_scale * clip_loss # change to variable scale
                 if i == 0: #first iteration
                     LM_0_probs = list(total_best_sentences_LM.values())
                     LM_0_vals = list(total_best_sentences_LM.keys())
@@ -1022,28 +1050,30 @@ class CLIPTextGenerator:
             if self.ce_scale!=0:
                 ce_loss_before_scale = ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
                 ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
-                loss += ce_loss.sum()
+                if not new_weighted_loss:
+                    loss += ce_loss.sum()
+
                 ce_losses = (probs * probs_before_shift.log()).sum(-1)
-                if self.config['print_for_debug']:
+                if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print("in ce loss:")
                 for i_ce_loss in range(probs.shape[0]):
-                    if self.config['print_for_debug']:
+                    if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                         print(f"beam num = {i_ce_loss}")
                     probs_val, _ = probs[i_ce_loss].topk(probs.shape[0])
                     probs_val_fixed = [round(i_probs_val.item(), 3) for i_probs_val in probs_val]
-                    if self.config['print_for_debug']:
+                    if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                         print(f"ce_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
-                if self.config['print_for_debug']:
+                if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print("after calc fluency loss:")
                 ce_loss_fixed = round(ce_loss_before_scale.sum().item(), 3)
                 if self.config['print_for_debug']:
                     print(f"ce_loss = {ce_loss_fixed}")
                 ce_losses_fixed = [round(i_ce_loss_before_scale.item(), 3) for i_ce_loss_before_scale in ce_loss_before_scale]
-                if self.config['print_for_debug']:
+                if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"ce_losses = {ce_losses_fixed}")
                 clip_loss_scale_fixed = round(ce_loss.sum().item(), 3)
-                if self.config['print_for_debug']:
+                if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"ce_loss with scale = {clip_loss_scale_fixed}")
 
             # TEXT_STYLE:
@@ -1061,17 +1091,30 @@ class CLIPTextGenerator:
                         text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
                     #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                     # loss += self.text_style_scale * text_style_loss
-                    loss += self.text_style_scale * text_style_loss
-                    if self.config['print_for_debug']:
+                    if not new_weighted_loss:
+                        loss += self.text_style_scale * text_style_loss
+                    #########
+                    th_clip_loss = 35
+                    th_ce_loss = 10
+                    th_style_loss = 35
+                    if new_weighted_loss:
+                        ce_loss_n = ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(
+                            -1).sum()
+                        loss += (clip_loss - th_clip_loss) * clip_loss  # change to variable scale
+                        loss += (ce_loss_n - th_ce_loss) * ce_loss_n
+                        loss += (text_style_loss- th_style_loss) * text_style_loss
+                    #########
+
+                    if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                         print("after calc text_style loss:")
                     text_style_loss_fixed = round(text_style_loss.item(), 3)
                     if self.config['print_for_debug']:
                         print(f"text_style_loss = {text_style_loss_fixed}")
                     text_style_losses_fixed = [round(i.item(), 3) for i in text_style_losses]
-                    if self.config['print_for_debug']:
+                    if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                         print(f"text_style_losses = {text_style_losses_fixed}")
                     text_style_loss_scaled_fixed = round(self.text_style_scale * text_style_loss.item(), 3)
-                    if self.config['print_for_debug']:
+                    if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                         print(f"text_style_loss with scale = {text_style_loss_scaled_fixed}")
 
 
@@ -1151,6 +1194,7 @@ class CLIPTextGenerator:
             #if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
             #    break
 
+        print(f"Finished in {i} iterations.")
         if self.config['print_for_debug']:
             print(f'{word_loc+1}/{self.target_seq_length}: clip_loss_with_scale = {self.clip_scale * clip_loss}')
             print(f'{word_loc+1}/{self.target_seq_length}: ce_loss = {ce_loss.sum()}')
@@ -1207,7 +1251,7 @@ class CLIPTextGenerator:
         debug_best_probs_vals_clip=[]
         debug_best_top_texts_LM = []
         debug_best_probs_vals_LM=[]
-        if self.config['print_for_debug']:
+        if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
             print("in clip loss:")
         for idx_p in range(probs.shape[0]): # for beam search
             top_texts = []
@@ -1311,11 +1355,11 @@ class CLIPTextGenerator:
 
                 target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
                 target_probs = target_probs.type(torch.float32)
-            if self.config['print_for_debug']:
+            if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"beam num = {idx_p}")
             probs_val_debug_loss, _ = target_probs[0].topk(probs.shape[0])
             probs_val_fixed = [round(i.item(),3) for i in probs_val_debug_loss]
-            if self.config['print_for_debug']:
+            if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"clip_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
             target = torch.zeros_like(probs[idx_p])

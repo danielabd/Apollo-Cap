@@ -219,12 +219,99 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
 
 
 
-def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
+def bu_get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/'
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/'
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23'
+
+    # prompt_manipulation
+    if 'prompt_manipulation' in exp_to_merge:
+        # src_dir_prompt_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/prompt_manipulation'
+        src_dir_prompt_manipulation = os.path.join(base_path,'prompt_manipulation')
+        prompt_manipulation_dir_path = os.listdir(src_dir_prompt_manipulation)
+        if factual_wo_prompt:
+            tgt_path_prompt_manipulation = os.path.join(src_dir_prompt_manipulation,'total_results_prompt_manipulation_factual_wo_prompt.csv')
+        else:
+            tgt_path_prompt_manipulation = os.path.join(src_dir_prompt_manipulation,'total_results_prompt_manipulation.csv')
+    else:
+        src_dir_prompt_manipulation = ''
+        prompt_manipulation_dir_path = ''
+        tgt_path_prompt_manipulation = ''
+
+    #image and prompt_manipulation
+    if 'image_and_prompt_manipulation' in exp_to_merge:
+        src_dir_image_and_prompt_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/image_and_prompt_manipulation'
+        src_dir_image_and_prompt_manipulation = os.path.join(base_path,'image_and_prompt_manipulation')
+        image_and_prompt_manipulation_dir_path = os.listdir(src_dir_image_and_prompt_manipulation)
+        if factual_wo_prompt:
+            tgt_path_image_and_prompt_manipulation = os.path.join(src_dir_image_and_prompt_manipulation,'total_results_image_and_prompt_manipulation_factual_wo_prompt.csv')
+        else:
+            tgt_path_image_and_prompt_manipulation = os.path.join(src_dir_image_and_prompt_manipulation,'total_results_image_and_prompt_manipulation.csv')
+    else:
+        src_dir_image_and_prompt_manipulation = ''
+        image_and_prompt_manipulation_dir_path = ''
+        tgt_path_image_and_prompt_manipulation = ''
+
+    #text_style
+    if 'text_style' in exp_to_merge:
+        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/text_style'
+        # 12.2.23
+        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/text_style'
+        # 20.2.23
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/20_2_23/ZeroStyleCap_8'
+        # 23.2.23
+
+
+        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast'
+
+        final_name = src_dir_text_style.split('Cap')[-1] #39
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
+        src_dir_text_style = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
+        final_name = 'f_36'
+        src_dir_text_style = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023')
+        # src_dir_text_style = os.path.join(base_path,'text_style')
+        text_style_dir_path = os.listdir(src_dir_text_style)
+        if factual_wo_prompt:
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}_factual_wo_prompt.csv')
+        else:
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}.csv')
+    else:
+        src_dir_text_style = ''
+        text_style_dir_path = ''
+        tgt_path_text_style = ''
+
+    # image_manipulation
+    if 'image_manipulation' in exp_to_merge:
+        # src_dir_image_manipulation = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/image_manipulation'
+        src_dir_image_manipulation = os.path.join(base_path,'image_manipulation')
+        image_manipulation_dir_path = os.listdir(src_dir_image_manipulation)
+        if factual_wo_prompt:
+            tgt_path_image_manipulation = os.path.join(src_dir_image_manipulation,'total_results_image_manipulation_factual_wo_prompt.csv')
+        else:
+            tgt_path_image_manipulation = os.path.join(src_dir_image_manipulation,'total_results_image_manipulation.csv')
+    else:
+        src_dir_image_manipulation = ''
+        image_manipulation_dir_path = ''
+        tgt_path_image_manipulation = ''
+
+    debug_tgt_path_im_manipulation = os.path.join(os.path.expanduser('~'), 'results', cur_time+'_debug_total_results_image_manipulation.csv')
+    debug_tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'results',
+                                                cur_time+'_debug_total_results_prompt_manipulation.csv')
+
+    src_dirs = {"prompt_manipulation":  src_dir_prompt_manipulation, "image_manipulation": src_dir_image_manipulation, "image_and_prompt_manipulation": src_dir_image_and_prompt_manipulation, "text_style": src_dir_text_style}
+    res_paths = {"prompt_manipulation": prompt_manipulation_dir_path, "image_manipulation": image_manipulation_dir_path, "image_and_prompt_manipulation": image_and_prompt_manipulation_dir_path, "text_style":text_style_dir_path}
+    tgt_paths = {"prompt_manipulation": tgt_path_prompt_manipulation,"image_manipulation": tgt_path_image_manipulation, "image_and_prompt_manipulation": tgt_path_image_and_prompt_manipulation, "text_style": tgt_path_text_style}
+    tgt_paths_debug = {"prompt_manipulation": debug_tgt_path_prompt_manipulation,"image_manipulation": debug_tgt_path_im_manipulation, "image_and_prompt_manipulation": "debug_tgt_path_image_and_prompt_manipulation"}
+
+    return res_paths, src_dirs, tgt_paths
+def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
+    # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
+    base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss'
 
     # prompt_manipulation
     if 'prompt_manipulation' in exp_to_merge:
@@ -359,8 +446,6 @@ def map_img_name_to_idx(dataset):
 
 # [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 def main():
-    # f1 = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCap8/total_results_text_style_8_factual_wo_prompt.csv'
-    # f2 = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast/total_results_text_style_Past_factual_wo_prompt.csv'
     # missed_img_nums = get_missed_img_nums(f1, f2)
 
     args = get_args()
@@ -371,7 +456,6 @@ def main():
     print(f'Cur time is: {cur_time}')
 
     imgs_to_test = []
-
     for setdir in args.caption_img_dict:
         print(f'setdir={setdir}')
         for im in os.listdir(os.path.join(setdir,'images','test')):
@@ -394,7 +478,7 @@ def main():
     factual_wo_prompt = False
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     # exp_to_merge = ["text_style"]
-    exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation"]
+    exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "zerostylecap"]
     #todo:
     res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge) #todo:
 
