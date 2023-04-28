@@ -1,10 +1,17 @@
 import csv
 import os
+import pickle
 import statistics
 import matplotlib.pyplot as plt
 
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+
 import numpy as np
 import pandas as pd
+import yaml
+
 from zero_shot_style.mapping_idx_to_img_name import get_mapping_idx_img_name
 
 
@@ -133,7 +140,8 @@ def plot_statistic_data(statistic_loss_all_words):
         word_num = np.arange(0, len(final_statistic_mean[loss_i]))
         axs[i].errorbar(word_num, final_statistic_mean[loss_i], final_statistic_std[loss_i], linestyle='None', marker='^')
         axs[i].set_title(loss_i)
-    fig.tight_layout()  # Or equivalently,  "plt.tight_layout()"
+    fig.tight_layout()
+    plt.savefig(os.path.join(os.path.expanduser('~'),"results/zero_style_cap/weighted_loss","loss_val_statistic.png"))
     plt.show(block=False)
 
 
@@ -164,8 +172,52 @@ def get_statiistic_data(all_data,final_iterations_idx):
                         # else:
                         #     if not np.isnan(float(all_data[test_name][img_idx][style][loss_i][word_i][final_iterations_idx])): #todo:check why there re None values
                         #         statistic_loss_all_words[loss_i][word_i].append(float(all_data[test_name][img_idx][style][loss_i][word_i][final_iterations_idx]))
+    tgt_path = os.path.join(os.path.expanduser('~'),"results/zero_style_cap/weighted_loss","statistic_loss_all_words.pkl")
+    with open(tgt_path, "wb") as f:
+        pickle.dump(statistic_loss_all_words, f)
+    # with open(tgt_path, 'rb') as f:
+    #     restored_statistic_loss_all_words = pickle.load(f)
     return statistic_loss_all_words
 
+def write_to_pdf(all_data, img_dir_path):
+    # filename = "output_write2pdf.pdf"
+    filename = os.path.join(os.path.expanduser('~'),
+                 "results/zero_style_cap/weighted_loss", "debug_res.pdf")
+    # create a canvas
+    c = canvas.Canvas(filename, pagesize=letter)
+    # set the font size
+    c.setFont("Helvetica", 10)
+    img_width = 100
+    img_height = 100
+    for i, idx in enumerate(all_data["ZeroStyleCap"]):
+        best_captions = {}
+        for style in all_data["ZeroStyleCap"][idx]:
+            image_num = int(all_data["ZeroStyleCap"][idx][style]['img_name'])
+            image_idx = all_data["ZeroStyleCap"][idx][style]['img_idx']
+            image_path = os.path.join(img_dir_path,all_data["ZeroStyleCap"][idx][style]['img_name']+'.jpg')
+            best_captions[style] = all_data["ZeroStyleCap"][idx][style]['best_caption']
+        title = f"image_num = {image_num}, idx = {image_idx}"
+
+        #captions:
+        for s,style in enumerate(best_captions):
+            y0 = 40 +20*s+ i*(20 * (i + len(best_captions)+1+1)+img_height)
+            c.drawString(20, y0, f"{style}: {best_captions[style]}")
+        #image
+        y1 = 40 + 20 * len(best_captions) + i*(20 * (i + len(best_captions)+1+1)+img_height)
+        c.drawImage(image_path, 20,
+                    y1,
+                    width=img_width, height=img_height)
+        #title
+        y2 = 40 + 20 * (len(best_captions)+1)+img_height+ i*(20 * (i + len(best_captions)+1+1)+img_height)
+        c.drawString(20, y2, title)
+        c.drawString(20, y2+20, "----------------------------------------------------------------------")
+
+        if i % 3 == 0 and i!=0:
+            c.showPage()
+        if i==10:
+            break
+    c.save()
+    print("finish to save pdf")
 
 def main():
     '''
@@ -180,15 +232,27 @@ def main():
         # "prompt_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/prompt_manipulation/senticap_prompt_manipulation_debug.txt",
         "ZeroStyleCap": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/ZeroStyleCap/debug_loss_real_senticap_23_2_v0.txt"}
     eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/evaluation_all_frames.csv'
+    img_dir_path = os.path.join(os.path.expanduser('~'),'data/senticap/images/test')
+    ZeroStyleCap_loss_data_path = os.path.join(os.path.expanduser('~'),
+                                               "results/zero_style_cap/weighted_loss", "ZeroStyleCap_loss_data.pkl")
     desired_scores = ['CLIPScore', 'style_classification', 'fluency']
+    calc_from_scratch = False
     final_iterations_idx = 4 #suppose there are only 5 iterations in the results,  so we take as statistic the loss res of iter idx 4
 
     eval_dir,eval_file_name = eval_debug_file_path.rsplit('/',1)
     tgt_debug_results_path = os.path.join(eval_dir,'analyzed_log.csv')
 
-    mapping_idx2img_name, mapping_img_name2idx = get_mapping_idx_img_name(configfile)
-    all_data = extract_loss_data(debug_file_paths)
-    all_data = add_eval_data(all_data,eval_debug_file_path, desired_scores, mapping_img_name2idx)
+    if calc_from_scratch:
+        mapping_idx2img_name, mapping_img_name2idx = get_mapping_idx_img_name(configfile)
+        all_data = extract_loss_data(debug_file_paths)
+        all_data = add_eval_data(all_data,eval_debug_file_path, desired_scores, mapping_img_name2idx)
+        with open(ZeroStyleCap_loss_data_path, "wb") as f:
+            pickle.dump(all_data, f)
+    else:
+        with open(ZeroStyleCap_loss_data_path, 'rb') as f:
+            all_data = pickle.load(f)
+
+    write_to_pdf(all_data, img_dir_path)
     statistic_loss_all_words = get_statiistic_data(all_data, final_iterations_idx)
     plot_statistic_data(statistic_loss_all_words)
     write_results(all_data,tgt_debug_results_path)

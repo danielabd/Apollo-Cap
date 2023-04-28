@@ -1,7 +1,7 @@
 ###### stylized ZeroCap: create captions - for run.py
 dataset: senticap # senticap,flickrstyle10k
-#style_type: 'erc' #'style_embed' or 'emoji' or 'erc'
-style_type: 'style_embed' #'style_embed' or 'emoji'
+style_type: 'erc' #'style_embed' or 'emoji' or 'erc'
+#style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
 debug_mac: False
@@ -30,7 +30,7 @@ th_style_loss: 35
 new_weighted_loss: True
 max_num_iterations: 10
 #####
-check_if_cut_score: False
+check_if_cut_score: True
 #####
 
 use_text_style_cutting: False
