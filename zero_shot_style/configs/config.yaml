@@ -12,7 +12,7 @@ wandb_mode: disabled #'disabled, offline, online' #todo:
 #specific_idxs_to_skip: [2,3]
 max_num_of_imgs: -1 #5
 data_type: test #val, test
-specific_imgs_to_test: [10104]
+#specific_imgs_to_test: [10104]
 #specific_img_idxs_to_test: [736]
 desired_labels: #todo
   senticap: [negative, positive] #[factual, positive, negative]
@@ -77,18 +77,34 @@ target_seq_length: 15
 #desired_labels: #todo
 #  senticap: [positive, negative] #[factual, positive, negative]
 #  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
+
+#comparison to other baseline:
 beam_size:
   senticap: 5 #4 #3
   flickrstyle10k: 5 #3
 text_style_scale:
-  senticap: 3.3 #8.7 - comparison to other baselines
+  senticap: 8.7 #- comparison to other baselines
   flickrstyle10k: 4.518869472661613
 ce_scale:
-  senticap: 3.34 #2.2 - comparison to other baselines
+  senticap: 2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap: 5.6 #1.6 - comparison to other baselines
+  senticap:  1.6 #- comparison to other baselines
   flickrstyle10k: 4.587441437503964
+
+#motorcycle
+#beam_size:
+#  senticap: 5 #4 #3
+#  flickrstyle10k: 5 #3
+#text_style_scale:
+#  senticap: 3.3 #8.7 - comparison to other baselines
+#  flickrstyle10k: 4.518869472661613
+#ce_scale:
+#  senticap: 3.34 #2.2 - comparison to other baselines
+#  flickrstyle10k: 3.876555048088627
+#clip_scale:
+#  senticap: 5.6 #1.6 - comparison to other baselines
+#  flickrstyle10k: 4.587441437503964
 
 ###todo: for debugging
 #max_num_of_imgs: 1
