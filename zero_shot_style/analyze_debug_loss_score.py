@@ -126,98 +126,143 @@ def add_eval_data(all_data,eval_debug_file_path, desired_scores, mapping_img_nam
                 all_data[test_name][str(mapping_img_name2idx[eval_data.iloc[i, get_score_type_idx(eval_data.columns,'k')]])][style][score_type] = eval_data.iloc[i, get_score_type_idx(eval_data.columns, score_type)]
     return all_data
 
-def plot_statistic_data(statistic_loss_all_words):
-    final_statistic_mean = {}
-    final_statistic_std = {}
-    fig, axs = plt.subplots(len(statistic_loss_all_words))
-    # fig.suptitle('Vertically stacked subplots')
-    for i,loss_i in enumerate(statistic_loss_all_words):
-        final_statistic_mean[loss_i] = []
-        final_statistic_std[loss_i] = []
-        for word_i in statistic_loss_all_words[loss_i]:
-            final_statistic_mean[loss_i].append(statistics.mean(statistic_loss_all_words[loss_i][word_i]))
-            final_statistic_std[loss_i].append(statistics.stdev(statistic_loss_all_words[loss_i][word_i]))
+def plot_statistic_data(final_statistic_mean, final_statistic_std,title):
+    fig, axs = plt.subplots(len(final_statistic_mean))
+    fig.suptitle(title)
+    for i,loss_i in enumerate(final_statistic_mean):
         word_num = np.arange(0, len(final_statistic_mean[loss_i]))
         axs[i].errorbar(word_num, final_statistic_mean[loss_i], final_statistic_std[loss_i], linestyle='None', marker='^')
         axs[i].set_title(loss_i)
     fig.tight_layout()
-    plt.savefig(os.path.join(os.path.expanduser('~'),"results/zero_style_cap/weighted_loss","loss_val_statistic.png"))
+    plt.savefig(os.path.join(os.path.expanduser('~'),"results/zero_style_cap/weighted_loss",title+"_loss_val_statistic.png"))
+    plt.show(block=False)
+
+def plot_final_statistic_data(final_statistic_mean_all_data, final_statistic_std_all_data, final_statistic_mean_best_data, final_statistic_std_best_data, title):
+    fig, axs = plt.subplots(len(final_statistic_mean_all_data))
+    fig.suptitle(title)
+    for i,loss_i in enumerate(final_statistic_mean_all_data):
+        word_num = np.arange(0, len(final_statistic_mean_all_data[loss_i]))
+        axs[i].errorbar(word_num, final_statistic_mean_all_data[loss_i], final_statistic_std_all_data[loss_i], linestyle='None', marker='^', label='all_data')
+        axs[i].errorbar(word_num, final_statistic_mean_best_data[loss_i], final_statistic_std_best_data[loss_i], linestyle='None', marker='^', label='best_data')
+        axs[i].set_title(loss_i)
+        axs[i].legend(loc='upper left', bbox_to_anchor=(1.05, 1))
+
+    fig.tight_layout()
+    plt.savefig(os.path.join(os.path.expanduser('~'),"results/zero_style_cap/weighted_loss",title+"_loss_val_statistic.png"))
     plt.show(block=False)
 
 
-def get_statiistic_data(all_data,final_iterations_idx):
-    '''
-    :param all_data:
-    :return:
-    '''
+def get_loss_data(all_data,final_iterations_idx, loss_data_path):
     clip_loss_all_words = {}
     ce_loss_all_words = {}
     style_loss_all_words = {}
-    statistic_loss_all_words = {'clip_loss': clip_loss_all_words, 'ce_loss': ce_loss_all_words, 'text_style_loss': style_loss_all_words}
+    loss_all_data = {'clip_loss': clip_loss_all_words, 'ce_loss': ce_loss_all_words, 'text_style_loss': style_loss_all_words}
     desired_losses = ['clip_loss', 'ce_loss', 'text_style_loss']
     for test_name in all_data:
         for img_idx in all_data[test_name]:
             for style in all_data[test_name][img_idx]:
                 for loss_i in desired_losses:
                     for word_i in all_data[test_name][img_idx][style][loss_i]:
-                        if word_i not in statistic_loss_all_words[loss_i]:
-                            statistic_loss_all_words[loss_i][word_i] = []
+                        if word_i not in loss_all_data[loss_i]:
+                            loss_all_data[loss_i][word_i] = []
                         if not np.isnan(float(all_data[test_name][img_idx][style][loss_i][word_i][
                                                   final_iterations_idx])):  # todo:check why there re None values
-                            statistic_loss_all_words[loss_i][word_i].append(
+                            loss_all_data[loss_i][word_i].append(
                                 float(all_data[test_name][img_idx][style][loss_i][word_i][final_iterations_idx]))
                         # if np.isnan(float(all_data[test_name][img_idx][style][loss_i][word_i][final_iterations_idx])):
                         #     print("check:")
                         #     print(f"test_name: {test_name}, img_idx: {img_idx}, style: {style}, loss_i: {loss_i}, word_i: {word_i}, final_iterations_idx: {final_iterations_idx}")
                         # else:
                         #     if not np.isnan(float(all_data[test_name][img_idx][style][loss_i][word_i][final_iterations_idx])): #todo:check why there re None values
-                        #         statistic_loss_all_words[loss_i][word_i].append(float(all_data[test_name][img_idx][style][loss_i][word_i][final_iterations_idx]))
-    tgt_path = os.path.join(os.path.expanduser('~'),"results/zero_style_cap/weighted_loss","statistic_loss_all_words.pkl")
-    with open(tgt_path, "wb") as f:
-        pickle.dump(statistic_loss_all_words, f)
+                        #         loss_all_data[loss_i][word_i].append(float(all_data[test_name][img_idx][style][loss_i][word_i][final_iterations_idx]))
+    with open(loss_data_path, "wb") as f:
+        pickle.dump(loss_all_data, f)
     # with open(tgt_path, 'rb') as f:
     #     restored_statistic_loss_all_words = pickle.load(f)
-    return statistic_loss_all_words
+    return loss_all_data
 
-def write_to_pdf(all_data, img_dir_path):
-    # filename = "output_write2pdf.pdf"
-    filename = os.path.join(os.path.expanduser('~'),
-                 "results/zero_style_cap/weighted_loss", "debug_res.pdf")
+
+def get_statiistic_data(all_data,final_iterations_idx, loss_data_path):
+    '''
+    :param all_data:
+    :return:
+    '''
+    loss_all_data = get_loss_data(all_data,final_iterations_idx, loss_data_path)
+    final_statistic_mean = {}
+    final_statistic_std = {}
+    for i,loss_i in enumerate(loss_all_data):
+        final_statistic_mean[loss_i] = []
+        final_statistic_std[loss_i] = []
+        for word_i in loss_all_data[loss_i]:
+            final_statistic_mean[loss_i].append(statistics.mean(loss_all_data[loss_i][word_i]))
+            final_statistic_std[loss_i].append(statistics.stdev(loss_all_data[loss_i][word_i]))
+    return final_statistic_mean, final_statistic_std
+
+def write_to_pdf(all_data, img_dir_path, desired_scores, tgt_pdf_file_path):
     # create a canvas
-    c = canvas.Canvas(filename, pagesize=letter)
+    c = canvas.Canvas(tgt_pdf_file_path, pagesize=letter)
     # set the font size
     c.setFont("Helvetica", 10)
-    img_width = 100
-    img_height = 100
+    img_width = 130
+    img_height = 130
+    y = 0
     for i, idx in enumerate(all_data["ZeroStyleCap"]):
+        y = y + 30
         best_captions = {}
         for style in all_data["ZeroStyleCap"][idx]:
             image_num = int(all_data["ZeroStyleCap"][idx][style]['img_name'])
             image_idx = all_data["ZeroStyleCap"][idx][style]['img_idx']
             image_path = os.path.join(img_dir_path,all_data["ZeroStyleCap"][idx][style]['img_name']+'.jpg')
             best_captions[style] = all_data["ZeroStyleCap"][idx][style]['best_caption']
-        title = f"image_num = {image_num}, idx = {image_idx}"
+        title = f"image_num={image_num}, idx={image_idx}"
 
-        #captions:
+        #write stylized captions
         for s,style in enumerate(best_captions):
-            y0 = 40 +20*s+ i*(20 * (i + len(best_captions)+1+1)+img_height)
-            c.drawString(20, y0, f"{style}: {best_captions[style]}")
-        #image
-        y1 = 40 + 20 * len(best_captions) + i*(20 * (i + len(best_captions)+1+1)+img_height)
-        c.drawImage(image_path, 20,
-                    y1,
-                    width=img_width, height=img_height)
-        #title
-        y2 = 40 + 20 * (len(best_captions)+1)+img_height+ i*(20 * (i + len(best_captions)+1+1)+img_height)
-        c.drawString(20, y2, title)
-        c.drawString(20, y2+20, "----------------------------------------------------------------------")
+            # write scores of stylized captions
+            y = y + 20*s
+            x = 20
+            for si,score_type in enumerate(desired_scores):
+                if score_type in all_data["ZeroStyleCap"][idx][style]:
+                    c.drawString(x, y, f"{score_type}: {all_data['ZeroStyleCap'][idx][style][score_type]},")
+                    score_len = c.stringWidth(f"{score_type}: {all_data['ZeroStyleCap'][idx][style][score_type]},")
+                    x = x+score_len+1
+            y = y + 15
+            # write stylized captions
+            c.drawString(20, y, f"{style}: {best_captions[style]}")
 
-        if i % 3 == 0 and i!=0:
+        #write image
+        y = y+20
+        c.drawImage(image_path, 20,
+                    y,
+                    width=img_width, height=img_height)
+        #write title
+        y = y + img_height + 15
+        c.drawString(20, y, title)
+        y = y + 15
+        c.drawString(20, y, "----------------------------------------------------------------------")
+
+        if (i+1) % 3 == 0 and i != 0:
             c.showPage()
-        if i==10:
-            break
+            y = 0
+    c.showPage()  # add this line to indicate the end of the last page
     c.save()
     print("finish to save pdf")
+
+def get_best_data(all_data, desired_scores, scores_th):
+    # get best dsta according to threshold scores in scores_th
+    best_data = {"ZeroStyleCap":{}}
+    for idx in all_data["ZeroStyleCap"]:
+        for style in all_data["ZeroStyleCap"][idx]:
+            good_score = True
+            for score_type in desired_scores:
+                if score_type in all_data["ZeroStyleCap"][idx][style]:
+                    if all_data["ZeroStyleCap"][idx][style][score_type] < scores_th[score_type]:
+                        good_score = False
+            if score_type in all_data["ZeroStyleCap"][idx][style] and good_score:
+                if idx not in best_data["ZeroStyleCap"]:
+                    best_data["ZeroStyleCap"][idx] = {}
+                best_data["ZeroStyleCap"][idx][style] = all_data["ZeroStyleCap"][idx][style]
+    return best_data
 
 def main():
     '''
@@ -235,8 +280,18 @@ def main():
     img_dir_path = os.path.join(os.path.expanduser('~'),'data/senticap/images/test')
     ZeroStyleCap_loss_data_path = os.path.join(os.path.expanduser('~'),
                                                "results/zero_style_cap/weighted_loss", "ZeroStyleCap_loss_data.pkl")
-    desired_scores = ['CLIPScore', 'style_classification', 'fluency']
-    calc_from_scratch = False
+    desired_scores = ['fluency', 'CLIPScore', 'style_classification']
+    # scores_th = {'fluency':0.9, 'CLIPScore':0.26, 'style_classification':1}
+    scores_th = {'fluency':0.9, 'CLIPScore':0.32, 'style_classification':1}
+    tgt_pdf_file_name = f"debug_res_fluency={scores_th['fluency']}_CLIPScore={scores_th['CLIPScore']}_style_classification={scores_th['style_classification']}.pdf"
+    tgt_pdf_file_path = os.path.join(os.path.expanduser('~'),
+                 "results/zero_style_cap/weighted_loss", tgt_pdf_file_name)
+    loss_all_data_path = {"all_data": os.path.join(os.path.expanduser('~'), "results/zero_style_cap/weighted_loss",
+                                  "loss_al_data.pkl"),
+                          "best_data": os.path.join(os.path.expanduser('~'), "results/zero_style_cap/weighted_loss",
+                                      "loss_al_data.pkl")}
+
+    calc_from_scratch = False #
     final_iterations_idx = 4 #suppose there are only 5 iterations in the results,  so we take as statistic the loss res of iter idx 4
 
     eval_dir,eval_file_name = eval_debug_file_path.rsplit('/',1)
@@ -244,7 +299,9 @@ def main():
 
     if calc_from_scratch:
         mapping_idx2img_name, mapping_img_name2idx = get_mapping_idx_img_name(configfile)
+        # loss data
         all_data = extract_loss_data(debug_file_paths)
+        # scores data
         all_data = add_eval_data(all_data,eval_debug_file_path, desired_scores, mapping_img_name2idx)
         with open(ZeroStyleCap_loss_data_path, "wb") as f:
             pickle.dump(all_data, f)
@@ -252,10 +309,30 @@ def main():
         with open(ZeroStyleCap_loss_data_path, 'rb') as f:
             all_data = pickle.load(f)
 
-    write_to_pdf(all_data, img_dir_path)
-    statistic_loss_all_words = get_statiistic_data(all_data, final_iterations_idx)
-    plot_statistic_data(statistic_loss_all_words)
+    best_data = get_best_data(all_data, desired_scores, scores_th)
+
+
+    write_to_pdf(best_data, img_dir_path, desired_scores, tgt_pdf_file_path)
+    # group loss data only for successful examples
+    final_statistic_mean_all_data, final_statistic_std_all_data = get_statiistic_data(all_data, final_iterations_idx,loss_all_data_path['all_data'])
+    final_statistic_mean_best_data, final_statistic_std_best_data = get_statiistic_data(best_data, final_iterations_idx,loss_all_data_path['best_data'])
+    plot_statistic_data(final_statistic_mean_all_data, final_statistic_std_all_data,'all_data')
+    plot_statistic_data(final_statistic_mean_best_data, final_statistic_std_best_data,'best_data')
+    plot_final_statistic_data(final_statistic_mean_all_data, final_statistic_std_all_data, final_statistic_mean_best_data, final_statistic_std_best_data, 'final')
     write_results(all_data,tgt_debug_results_path)
+    print("statistics:")
+    print("mean_clip_loss:")
+    print(f"all data: {final_statistic_mean_all_data['clip_loss']}")
+    print(f"best data: {final_statistic_mean_best_data['clip_loss']}")
+    print("*********************")
+    print("mean_ce_loss:")
+    print(f"all data: {final_statistic_mean_all_data['ce_loss']}")
+    print(f"best data: {final_statistic_mean_best_data['ce_loss']}")
+    print("*********************")
+    print("mean_text_style_loss:")
+    print(f"all data: {final_statistic_mean_all_data['text_style_loss']}")
+    print(f"best data: {final_statistic_mean_best_data['text_style_loss']}")
+    print("*********************")
 
     print("finish main")
 

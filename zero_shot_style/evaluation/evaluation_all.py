@@ -944,6 +944,7 @@ def main():
     res_data_per_test = get_res_data(config['res_path2eval'])
     # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
     # exit(0)
+
     mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'],
                                         config['cuda_idx'], data_dir, config['txt_cls_model_paths'],
                                         config['labels_dict_idxs'], gt_imgs_for_test, config)

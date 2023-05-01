@@ -90,7 +90,10 @@ def replace_user_home_dir(path):
     elif str(path).split('/')[1] == 'Users':
         path = os.path.join(os.path.expanduser('~'), "/".join(path.split('/')[3:]))
     elif '/' in str(path) and str(path).split('/')[1] == 'home':
-        path = os.path.join(os.path.expanduser('~'), "/".join(path.split('/')[4:]))
+        if str(path).split('/')[2] == 'bdaniela':
+            path = os.path.join(os.path.expanduser('~'), "/".join(path.split('/')[3:]))
+        else:
+            path = os.path.join(os.path.expanduser('~'), "/".join(path.split('/')[4:]))
     return path
 
 

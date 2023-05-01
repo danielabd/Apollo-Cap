@@ -192,6 +192,8 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
                 else:
                     single_data = {'idx': img_name_to_idx[k], 'img_num': k, label1: pos, label2: neg}
                 total_data[k] = single_data
+                if not check_in_dirs:
+                    break
         keys_test_type[test_type] = list(total_data.keys())
         total_data_test_type = pd.DataFrame(list(total_data.values()))
         for i in list(total_data.values()):
@@ -303,15 +305,46 @@ def bu_get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
     debug_tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'results',
                                                 cur_time+'_debug_total_results_prompt_manipulation.csv')
 
-    src_dirs = {"prompt_manipulation":  src_dir_prompt_manipulation, "image_manipulation": src_dir_image_manipulation, "image_and_prompt_manipulation": src_dir_image_and_prompt_manipulation, "text_style": src_dir_text_style}
-    res_paths = {"prompt_manipulation": prompt_manipulation_dir_path, "image_manipulation": image_manipulation_dir_path, "image_and_prompt_manipulation": image_and_prompt_manipulation_dir_path, "text_style":text_style_dir_path}
-    tgt_paths = {"prompt_manipulation": tgt_path_prompt_manipulation,"image_manipulation": tgt_path_image_manipulation, "image_and_prompt_manipulation": tgt_path_image_and_prompt_manipulation, "text_style": tgt_path_text_style}
+    src_dirs = {"prompt_manipulation":  src_dir_prompt_manipulation, "image_manipulation": src_dir_image_manipulation, "image_and_prompt_manipulation": src_dir_image_and_prompt_manipulation, "zerostylecap": src_dir_text_style}
+    res_paths = {"prompt_manipulation": prompt_manipulation_dir_path, "image_manipulation": image_manipulation_dir_path, "image_and_prompt_manipulation": image_and_prompt_manipulation_dir_path, "zerostylecap":text_style_dir_path}
+    tgt_paths = {"prompt_manipulation": tgt_path_prompt_manipulation,"image_manipulation": tgt_path_image_manipulation, "image_and_prompt_manipulation": tgt_path_image_and_prompt_manipulation, "zerostylecap": tgt_path_text_style}
     tgt_paths_debug = {"prompt_manipulation": debug_tgt_path_prompt_manipulation,"image_manipulation": debug_tgt_path_im_manipulation, "image_and_prompt_manipulation": "debug_tgt_path_image_and_prompt_manipulation"}
 
     return res_paths, src_dirs, tgt_paths
 def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss'
+
+    #text_style
+    if 'zerostylecap' in exp_to_merge:
+        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/text_style'
+        # 12.2.23
+        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/text_style'
+        # 20.2.23
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/20_2_23/ZeroStyleCap_8'
+        # 23.2.23
+        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast'
+
+        final_name = src_dir_text_style.split('Cap')[-1] #39
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
+        src_dir_text_style = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
+        final_name = 'f_36'
+        src_dir_text_style = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023')
+        # 1.4.23
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'
+        # src_dir_text_style = os.path.join(base_path,'text_style')
+        text_style_dir_path = os.listdir(src_dir_text_style)
+        if factual_wo_prompt:
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}_factual_wo_prompt.csv')
+        else:
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}.csv')
+    else:
+        src_dir_text_style = ''
+        text_style_dir_path = ''
+        tgt_path_text_style = ''
 
     # prompt_manipulation
     if 'prompt_manipulation' in exp_to_merge:
@@ -341,36 +374,6 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
         image_and_prompt_manipulation_dir_path = ''
         tgt_path_image_and_prompt_manipulation = ''
 
-    #text_style
-    if 'text_style' in exp_to_merge:
-        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/7_2_23/text_style'
-        # 12.2.23
-        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/text_style'
-        # 20.2.23
-        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/20_2_23/ZeroStyleCap_8'
-        # 23.2.23
-
-
-        # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast'
-
-        final_name = src_dir_text_style.split('Cap')[-1] #39
-        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
-        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
-        src_dir_text_style = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
-        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std'
-        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
-        final_name = 'f_36'
-        src_dir_text_style = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023')
-        # src_dir_text_style = os.path.join(base_path,'text_style')
-        text_style_dir_path = os.listdir(src_dir_text_style)
-        if factual_wo_prompt:
-            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}_factual_wo_prompt.csv')
-        else:
-            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}.csv')
-    else:
-        src_dir_text_style = ''
-        text_style_dir_path = ''
-        tgt_path_text_style = ''
 
     # image_manipulation
     if 'image_manipulation' in exp_to_merge:
@@ -390,9 +393,9 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
     debug_tgt_path_prompt_manipulation = os.path.join(os.path.expanduser('~'), 'results',
                                                 cur_time+'_debug_total_results_prompt_manipulation.csv')
 
-    src_dirs = {"prompt_manipulation":  src_dir_prompt_manipulation, "image_manipulation": src_dir_image_manipulation, "image_and_prompt_manipulation": src_dir_image_and_prompt_manipulation, "text_style": src_dir_text_style}
-    res_paths = {"prompt_manipulation": prompt_manipulation_dir_path, "image_manipulation": image_manipulation_dir_path, "image_and_prompt_manipulation": image_and_prompt_manipulation_dir_path, "text_style":text_style_dir_path}
-    tgt_paths = {"prompt_manipulation": tgt_path_prompt_manipulation,"image_manipulation": tgt_path_image_manipulation, "image_and_prompt_manipulation": tgt_path_image_and_prompt_manipulation, "text_style": tgt_path_text_style}
+    src_dirs = {"prompt_manipulation":  src_dir_prompt_manipulation, "image_manipulation": src_dir_image_manipulation, "image_and_prompt_manipulation": src_dir_image_and_prompt_manipulation, "zerostylecap": src_dir_text_style}
+    res_paths = {"prompt_manipulation": prompt_manipulation_dir_path, "image_manipulation": image_manipulation_dir_path, "image_and_prompt_manipulation": image_and_prompt_manipulation_dir_path, "zerostylecap":text_style_dir_path}
+    tgt_paths = {"prompt_manipulation": tgt_path_prompt_manipulation,"image_manipulation": tgt_path_image_manipulation, "image_and_prompt_manipulation": tgt_path_image_and_prompt_manipulation, "zerostylecap": tgt_path_text_style}
     tgt_paths_debug = {"prompt_manipulation": debug_tgt_path_prompt_manipulation,"image_manipulation": debug_tgt_path_im_manipulation, "image_and_prompt_manipulation": "debug_tgt_path_image_and_prompt_manipulation"}
 
     return res_paths, src_dirs, tgt_paths
@@ -444,19 +447,9 @@ def map_img_name_to_idx(dataset):
         img_name_to_idx[im.rsplit('.')[0]] = i
     return img_name_to_idx
 
-# [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
-def main():
-    # missed_img_nums = get_missed_img_nums(f1, f2)
-
-    args = get_args()
-    cuda_idx = args.cuda_idx_num
-    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
-
-    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
-    print(f'Cur time is: {cur_time}')
-
+def get_img_idx_to_name(caption_img_dict):
     imgs_to_test = []
-    for setdir in args.caption_img_dict:
+    for setdir in aption_img_dict:
         print(f'setdir={setdir}')
         for im in os.listdir(os.path.join(setdir,'images','test')):
             if ('.jpg' or '.jpeg' or '.png') not in im:
@@ -473,26 +466,36 @@ def main():
             pass
         img_idx_to_name[img_path_idx] = img_name
 
-    # t = {"prompt_manipulation": "img_num\prompt","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
-    t = {"prompt_manipulation": "img_num","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
+# [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
+def main():
+    # missed_img_nums = get_missed_img_nums(f1, f2)
+    args = get_args()
+    cuda_idx = args.cuda_idx_num
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_idx
+    cur_time = datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    print(f'Cur time is: {cur_time}')
+    # get_img_idx_to_name(args.caption_img_dict)
     factual_wo_prompt = False
-    # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
-    # exp_to_merge = ["text_style"]
-    exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "zerostylecap"]
+    use_factual = False
+    merge_dirs = False
+    t = {"prompt_manipulation": "img_num","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
+
+    exp_to_merge = ["zerostylecap"]
+    # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "zerostylecap"]
     #todo:
     res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge) #todo:
 
-
-    # exp_to_merge = ["text_style"]
-    use_factual = False
-    # ######### for the case of file list
-    # file_list = get_list_of_files()
-    # tgt_path = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/total_results_zerstylecap_emoji_batch.csv'
-    # merge_list_res_files_to_one(file_list, tgt_path)
-    ########
-    dataset = 'flickrstyle10k'
-    img_name_to_idx = map_img_name_to_idx(dataset)
-    merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,img_name_to_idx)
+    if merge_dirs:
+        dataset = 'flickrstyle10k'
+        img_name_to_idx = map_img_name_to_idx(dataset)
+        merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,
+                               img_name_to_idx)
+    else: # for the case of file list
+        # file_list = get_list_of_files()
+        dir_files = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'
+        file_list = [os.path.join(dir_files,f) for f in os.listdir(dir_files) if f.endswith('.csv') and f.startswith('results')]
+        tgt_path = os.path.join(dir_files,'total_results_erc.csv')
+        merge_list_res_files_to_one(file_list, tgt_path)
     print("finish program")
 
 

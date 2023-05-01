@@ -1,6 +1,6 @@
 ###### stylized ZeroCap: create captions - for run.py
 dataset: senticap # senticap,flickrstyle10k
-style_type: 'erc' #'style_embed' or 'emoji' or 'erc'
+style_type: erc #'style_embed' or 'emoji' or 'erc'
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
@@ -12,10 +12,10 @@ wandb_mode: disabled #'disabled, offline, online' #todo:
 #specific_idxs_to_skip: [2,3]
 max_num_of_imgs: -1 #5
 data_type: test #val, test
-#specific_imgs_to_test: [10104]
+specific_imgs_to_test: [221272]
 #specific_img_idxs_to_test: [736]
 desired_labels: #todo
-  senticap: [negative, positive] #[factual, positive, negative]
+  senticap: [negative] #[factual, positive, negative] #todo
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 save_config_file: False # False, True todo
@@ -27,7 +27,7 @@ use_style_model: True #True #todo:
 th_clip_loss: 35
 th_ce_loss: 10
 th_style_loss: 35
-new_weighted_loss: True
+new_weighted_loss: False
 max_num_iterations: 10
 #####
 check_if_cut_score: True
@@ -66,11 +66,7 @@ threshold_sentiment:
     humor: 0
     romantic: 0
 
-
-
-
 model_based_on: 'bert' # 'clip' /  'bert'
-
 #
 #max_num_of_imgs: -1
 target_seq_length: 15
