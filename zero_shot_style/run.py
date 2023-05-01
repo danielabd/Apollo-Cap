@@ -127,6 +127,10 @@ def get_args():
     parser.add_argument("--use_style_model", action="store_true", default=False)
     parser.add_argument("--use_text_style_example", action="store_true", default=False)
 
+    parser.add_argument("--desired_improvement_loss", type=float, default=0.01)
+    parser.add_argument("--th_clip_loss", type=float, default=35)
+    parser.add_argument("--th_ce_loss", type=float, default=12)
+    parser.add_argument("--th_style_loss", type=float, default=35.5)
     args = parser.parse_args()
 
     return args

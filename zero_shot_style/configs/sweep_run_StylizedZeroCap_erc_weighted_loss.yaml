@@ -1,36 +1,23 @@
 program: run.py
-project: StylizedZeroCap
+project: StylizedZeroCap_erc
 method: bayes
 metric:
   goal: maximize #minimize
   name:  evaluation/final_avg_total_score
 parameters:
-  ce_scale:
-    max: 6
-    min: 0.1
+  desired_improvement_loss: #0.01
+    max: 0.1
+    min: 0.001
     distribution: uniform
-  clip_scale:
-    max: 6
-    min: 0.1
+  th_clip_loss: #35
+    max: 37
+    min: 30
     distribution: uniform
-  text_style_scale:
-    max: 6 #5.5 #6
-    min: 0.1 #2.5 #1.5
+  th_ce_loss: #12
+    max: 15
+    min: 9
     distribution: uniform
-#  std_embedding_vectors_positive: #0.015731973987010497#0.028914157
-#    max: 0.15
-#    min: 0.029
-#    distribution: uniform
-#  std_embedding_vectors_negative: #0.03894146313631765#0.020412436
-#    max: 0.15
-#    min: 0.055
-#    distribution: uniform
-#  num_iterations:
-#    max: 9
-#    min: 5
-#    distribution: int_uniform
-#  beam_size:
-#    max: 4
-#    min: 2
-#    distribution: int_uniform
-
+  th_style_loss: #35.5
+    max: 37
+    min: 30
+    distribution: uniform
