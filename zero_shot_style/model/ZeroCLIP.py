@@ -662,11 +662,11 @@ class CLIPTextGenerator:
             # for i in top_predicted_indices:
             #     print(top_texts[int(i.cpu().data.numpy())])
 
-            if self.config['print_for_debug']:
+            if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"beam num = {idx_p}")
             probs_val_debug_loss, _ = predicted_probs.topk(probs.shape[0])
             probs_val_fixed = [round(i.item(), 3) for i in probs_val_debug_loss]
-            if self.config['print_for_debug']:
+            if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"text_style_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
             target = torch.zeros_like(probs[idx_p], device=self.device)
@@ -986,8 +986,13 @@ class CLIPTextGenerator:
         th_style_loss = self.config['th_style_loss']
         new_weighted_loss = self.config['new_weighted_loss']
         max_num_iterations = self.config['max_num_iterations']
+        last_clip_loss = 1e6
+        last_text_style_loss = 1e6
+
         while(1):
             i += 1
+            if self.config['print_for_debug']:
+                print(f"************** word_loc =  {word_loc}, iter num = {i} **************")
             if new_weighted_loss:
                 if clip_loss_fixed<=th_clip_loss and ce_loss_fixed<=th_ce_loss and text_style_loss_fixed<=th_style_loss:
                     break
@@ -1025,7 +1030,7 @@ class CLIPTextGenerator:
                     print("after calc clip loss:")
                 clip_loss_fixed = round(clip_loss.item(),3)
                 if self.config['print_for_debug']:
-                    print(f"clip_loss = {clip_loss_fixed}")
+                    print(f"{i}: clip_loss = {clip_loss_fixed}")
                 clip_losses_fixed = [round(i.item(),3) for i in clip_losses]
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"clip_losses = {clip_losses_fixed}")
@@ -1068,7 +1073,7 @@ class CLIPTextGenerator:
                     print("after calc fluency loss:")
                 ce_loss_fixed = round(ce_loss_before_scale.sum().item(), 3)
                 if self.config['print_for_debug']:
-                    print(f"ce_loss = {ce_loss_fixed}")
+                    print(f"{i}: ce_loss = {ce_loss_fixed}")
                 ce_losses_fixed = [round(i_ce_loss_before_scale.item(), 3) for i_ce_loss_before_scale in ce_loss_before_scale]
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"ce_losses = {ce_losses_fixed}")
@@ -1093,23 +1098,44 @@ class CLIPTextGenerator:
                     # loss += self.text_style_scale * text_style_loss
                     if not new_weighted_loss:
                         loss += self.text_style_scale * text_style_loss
-                    #########
-                    th_clip_loss = 35
-                    th_ce_loss = 10
-                    th_style_loss = 35
+
                     if new_weighted_loss:
                         ce_loss_n = ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(
                             -1).sum()
-                        loss += (clip_loss - th_clip_loss) * clip_loss  # change to variable scale
-                        loss += (ce_loss_n - th_ce_loss) * ce_loss_n
-                        loss += (text_style_loss- th_style_loss) * text_style_loss
+
+
+                        ##stop_cond
+                        clip_loss_improvement = (last_clip_loss - clip_loss.detach())/last_clip_loss
+                        text_style_loss_improvement = (last_text_style_loss-text_style_loss.detach())/last_text_style_loss
+                        if clip_loss_improvement < self.config['desired_improvement_loss'] and text_style_loss_improvement < self.config['desired_improvement_loss']:
+                            break
+
+                        #calc the weight for each loss
+                        alpha1 = torch.nn.functional.relu(clip_loss.detach() / th_clip_loss - 1)+0.01
+                        alpha2 = torch.nn.functional.relu(ce_loss_n.detach() / th_ce_loss - 1)+0.01
+                        alpha3 = torch.nn.functional.relu(text_style_loss.detach() / th_style_loss - 1)+0.01
+                        sum_alpha = torch.sum(alpha1 + alpha2 + alpha3)
+
+                        # loss += alpha1 * clip_loss  # change to variable scale
+                        # loss += alpha2 * ce_loss_n
+                        # loss += alpha3 * text_style_loss
+
+                        loss += alpha1/sum_alpha * clip_loss  # change to variable scale
+                        loss += alpha2/sum_alpha * ce_loss_n
+                        loss += alpha3/sum_alpha * text_style_loss
+
+
+                        last_clip_loss = clip_loss.detach()
+                        last_text_style_loss = text_style_loss.detach()
+
+
                     #########
 
                     if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                         print("after calc text_style loss:")
                     text_style_loss_fixed = round(text_style_loss.item(), 3)
                     if self.config['print_for_debug']:
-                        print(f"text_style_loss = {text_style_loss_fixed}")
+                        print(f"{i}: text_style_loss = {text_style_loss_fixed}")
                     text_style_losses_fixed = [round(i.item(), 3) for i in text_style_losses]
                     if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                         print(f"text_style_losses = {text_style_losses_fixed}")
@@ -1196,11 +1222,11 @@ class CLIPTextGenerator:
 
         print(f"Finished in {i} iterations.")
         if self.config['print_for_debug']:
-            print(f'{word_loc+1}/{self.target_seq_length}: clip_loss_with_scale = {self.clip_scale * clip_loss}')
+            print(f'{word_loc+1}/{self.target_seq_length}: clip_loss = {clip_loss}')
             print(f'{word_loc+1}/{self.target_seq_length}: ce_loss = {ce_loss.sum()}')
         if self.use_style_model and not self.use_text_style_cutting:
             if self.config['print_for_debug']:
-                print(f'{word_loc+1}/{self.target_seq_length}: style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+                print(f'{word_loc+1}/{self.target_seq_length}: style_loss = {text_style_loss}')
 
         context_delta = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_])
                          for p_ in context_delta]

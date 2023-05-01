@@ -1,6 +1,6 @@
 ###### stylized ZeroCap: create captions - for run.py
 dataset: senticap # senticap,flickrstyle10k
-style_type: erc #'style_embed' or 'emoji' or 'erc'
+style_type: erc  #'style_embed' or 'emoji' or 'erc'
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
@@ -12,10 +12,10 @@ wandb_mode: disabled #'disabled, offline, online' #todo:
 #specific_idxs_to_skip: [2,3]
 max_num_of_imgs: -1 #5
 data_type: test #val, test
-specific_imgs_to_test: [221272]
+specific_imgs_to_test: [278988] #[551518] #[221272]       #[510864] #[440093] #[221272]
 #specific_img_idxs_to_test: [736]
 desired_labels: #todo
-  senticap: [negative] #[factual, positive, negative] #todo
+  senticap: [positive] #[factual, positive, negative] #todo
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 save_config_file: False # False, True todo
@@ -24,10 +24,11 @@ evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoj
 use_style_model: True #True #todo:
 
 # weighted loss
+desired_improvement_loss: 0.01
 th_clip_loss: 35
-th_ce_loss: 10
-th_style_loss: 35
-new_weighted_loss: False
+th_ce_loss: 12
+th_style_loss: 35.5
+new_weighted_loss: True
 max_num_iterations: 10
 #####
 check_if_cut_score: True
@@ -69,7 +70,7 @@ threshold_sentiment:
 model_based_on: 'bert' # 'clip' /  'bert'
 #
 #max_num_of_imgs: -1
-target_seq_length: 15
+target_seq_length: 30
 #desired_labels: #todo
 #  senticap: [positive, negative] #[factual, positive, negative]
 #  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
