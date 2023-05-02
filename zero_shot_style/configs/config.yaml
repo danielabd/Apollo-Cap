@@ -162,7 +162,7 @@ calc_evaluation: True
 
 
 num_iterations:
-  senticap: 5 # 8
+  senticap: 10 #5 # 8
   flickrstyle10k: 5 # 8
 ##
 #std_embedding_vectors_positive: 0.031123760342107343 #0.015731973987010497 # 0.030191882925088297 #0.028914157
