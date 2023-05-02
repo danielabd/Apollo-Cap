@@ -22,7 +22,8 @@ res_path2eval:
 #    image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_and_prompt_manipulation/jk7xzo7u-dulcet-bush-11/results_23_29_58__25_03_2023.csv
 #    ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/ZeroStyleCap/xuk6u1fz-eternal-night-7/results_21_29_00__23_03_2023.csv
     #erc
-    ZeroStyleCap: /home/bdaniela/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/total_results_erc.csv
+#    ZeroStyleCap: /home/bdaniela/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/total_results_erc.csv
+    ZeroStyleCap: /home/bdaniela/results/zero_style_cap/erc_old_params/total_results_erc.csv
 
   flickrstyle10k:
 #    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv

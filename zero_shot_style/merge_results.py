@@ -483,16 +483,17 @@ def main():
     exp_to_merge = ["zerostylecap"]
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "zerostylecap"]
     #todo:
-    res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge) #todo:
 
     if merge_dirs:
         dataset = 'flickrstyle10k'
+        res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge)  # todo:
         img_name_to_idx = map_img_name_to_idx(dataset)
         merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,
                                img_name_to_idx)
     else: # for the case of file list
         # file_list = get_list_of_files()
-        dir_files = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'
+        # dir_files = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'
+        dir_files = '/Users/danielabendavid/results/zero_style_cap/erc_old_params'
         file_list = [os.path.join(dir_files,f) for f in os.listdir(dir_files) if f.endswith('.csv') and f.startswith('results')]
         tgt_path = os.path.join(dir_files,'total_results_erc.csv')
         merge_list_res_files_to_one(file_list, tgt_path)
