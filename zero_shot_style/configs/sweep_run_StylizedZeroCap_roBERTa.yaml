@@ -1,0 +1,20 @@
+program: run.py
+project: StylizedZeroCap_roBERTa
+method: bayes
+metric:
+  goal: maximize #minimize
+  name:  evaluation/final_avg_total_score
+parameters:
+  ce_scale:
+    max: 5
+    min: 1
+    distribution: uniform
+  clip_scale:
+    max: 5
+    min: 1
+    distribution: uniform
+  text_style_scale:
+    max: 9
+    min: 2
+    distribution: uniform
+

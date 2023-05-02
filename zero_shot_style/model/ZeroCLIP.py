@@ -189,8 +189,9 @@ class CLIPTextGenerator:
         task = 'sentiment'
         MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
         self.sentiment_model_name = MODEL
-        self.sentiment_model = ''  # todo: remove it
-        if False:  # todo: remove it
+        # self.sentiment_model = ''  # todo: remove it
+        # if False:  # todo: remove it
+        if config['style_type'] == 'roBERTa': # todo: remove it  -  using sentiment model roberta
             self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
             self.sentiment_model.to(self.device)
             self.sentiment_model.eval()
@@ -205,7 +206,7 @@ class CLIPTextGenerator:
 
             # SENTIMENT: fields for type and scale of sentiment
             self.sentiment_scale = 1
-            self.sentiment_type = 'none'
+            self.sentiment_type = 'none' # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
 
         self.use_style_model = use_style_model
         if config['style_type'] == 'erc':
@@ -372,8 +373,8 @@ class CLIPTextGenerator:
         #     self.check_if_cut_score[idx_p] = True
         if self.use_style_model:
             self.text_style_scale = text_style_scale
-            self.style_type = style_type #'clip','twitter','emotions' , 'erc
-            if self.style_type != 'erc':
+            self.style_type = style_type #'clip','twitter','emotions' , 'erc' or 'roBERTa'
+            if self.style_type == 'style_embed':
                 if not text_to_imitate:
                     # self.desired_style_embedding_vector = desired_style_embedding_vector.to(self.device)
                     self.desired_style_embedding_vector = desired_style_embedding_vector
@@ -1081,10 +1082,11 @@ class CLIPTextGenerator:
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"ce_loss with scale = {clip_loss_scale_fixed}")
 
-            # TEXT_STYLE:
+            # TEXT_STYLE loss:
             if self.use_style_model and not self.use_text_style_cutting:
                 text_style_loss=-100
                 if self.text_style_scale!=0:
+                    total_best_sentences_style = None
                     if self.style_type == 'erc':
                         text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_erc(
                             probs, context_tokens)
@@ -1092,8 +1094,13 @@ class CLIPTextGenerator:
                         text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
                     elif self.style_type == 'emoji':
                         text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(probs, context_tokens)
-                    else: #my text style embedding that I trained
+                    elif self.style_type == 'style_embed': #my text style embedding that I trained
                         text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
+                    elif self.style_type == 'roBERTa':
+                        text_style_loss, text_style_losses = self.get_sentiment_loss(probs, context_tokens, self.style)
+                    else:
+                        print('check what is the style model!')
+                        exit(-1)
                     #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                     # loss += self.text_style_scale * text_style_loss
                     if not new_weighted_loss:

@@ -713,7 +713,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
 
 
 def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vectors, std_embedding_vectors = None):
-    if config['use_style_model'] and config['style_type'] != 'erc':
+    if config['use_style_model'] and (config['style_type'] == 'emoji' or config['style_type'] == 'style_embed'):
         if config['style_type'] == 'emoji':
             if config['use_single_emoji_style']:
                 desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['desired_labels'].index(label)), num_classes=len(config['desired_labels']))+EPSILON
@@ -726,7 +726,7 @@ def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vec
                 desired_style_embedding_vector = torch.tensor(
                     desired_style_embedding_vector / torch.sum(desired_style_embedding_vector))
             desired_style_embedding_vector_std = None
-        else:
+        elif config['style_type'] == 'style_embed':
             desired_style_embedding_vector = mean_embedding_vectors[label]
             # desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
             # real std

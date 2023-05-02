@@ -1,13 +1,13 @@
 ###### stylized ZeroCap: create captions - for run.py
 dataset: senticap # senticap,flickrstyle10k
-style_type: erc  #'style_embed' or 'emoji' or 'erc'
+style_type: roBERTa  #'style_embed' or 'emoji' or 'erc' or 'roBERTa'
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
 debug_mac: False
 print_for_debug : True
 print_for_debug_redundant : False
-wandb_mode: online #'disabled, offline, online' #todo:
+wandb_mode: disabled #'disabled, offline, online' #todo:
 ##for validation
 specific_idxs_to_skip: [2,3]
 max_num_of_imgs: 5
@@ -23,11 +23,16 @@ save_config_file: False # False, True todo
 evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 use_style_model: True #True #todo:
 
+
+experiement_global_name:
+  senticap: senticap_StylizedZeroCap_roBERTa
+  flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
+
 # weighted loss
 desired_improvement_loss: 0.01
-th_clip_loss: 35
-th_ce_loss: 12
-th_style_loss: 35.5
+th_clip_loss: 33 # 35
+th_ce_loss: 15 #12
+th_style_loss: 33 #35.5
 new_weighted_loss: False
 max_num_iterations: 10
 #####
@@ -127,9 +132,6 @@ clip_scale:
 use_text_style_example: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
 
-experiement_global_name:
-  senticap: erc_constanat_loss_params
-  flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 hidden_state_to_take_txt_cls:
   senticap: -1
