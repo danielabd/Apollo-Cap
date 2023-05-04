@@ -39,7 +39,7 @@ from zero_shot_style.utils import get_hparams, replace_user_home_dir
 
 NORMALIZE_GRADE_SCALE = 100
 MAX_PERPLEXITY = 500
-target_seq_length = 15
+target_seq_length = 30
 
 
 class CLIPScoreRef:
@@ -616,6 +616,7 @@ def get_res_data(res_paths):
     :return: res_data_per_test: dict. keys:  'prompt_manipulation', 'image_manipulation'. values: dict to res per image name and style
     '''
     res_data_per_test = {}
+    i = 1 #0 - idx_img_name_in_res
     for test_name in res_paths:
         res_data = {}
         with open(res_paths[test_name], 'r') as csvfile:
@@ -623,10 +624,10 @@ def get_res_data(res_paths):
             title = True
             styles = []
             for row in spamreader:
-                if '.jpg' in row[0]:
-                    k = row[0].split('.jpg')[0]
+                if '.jpg' in row[i]:
+                    k = row[i].split('.jpg')[0]
                 else:
-                    k = row[0]
+                    k = row[i]
                 if 'COCO' in k:
                     k = k.split('_')[-1]
                 try:
@@ -634,7 +635,7 @@ def get_res_data(res_paths):
                 except:
                     pass
                 if title:
-                    styles = row[1:]
+                    styles = row[i+1:]
                     title = False
                     continue
                 else:
@@ -643,7 +644,7 @@ def get_res_data(res_paths):
                         for i, s in enumerate(styles):
                             # res_data[k][s] = row[i+1]
                             # limit sentence to target_seq_length as we create in ZeroStyleCap
-                            res_data[k][s] = ' '.join(row[i + 1].split()[:target_seq_length])
+                            res_data[k][s] = ' '.join(row[i + 2].split()[:target_seq_length])
                     except:
                         pass
         res_data_per_test[test_name] = res_data
@@ -864,8 +865,7 @@ def get_args():
     args = parser.parse_args()
     return args
 
-
-def main():
+def get_final_results():
     #24/4/23 results from 23.3.23:
     #senticap:
     log_prompt_manipulation = "senticap_prompt_manipulation_debug.txt"
@@ -925,6 +925,8 @@ def main():
 
 
 
+def main():
+    get_final_results()
     args = get_args()
     config = get_hparams(args)
     data_dir = os.path.join(os.path.expanduser('~'), 'data')

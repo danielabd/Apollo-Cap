@@ -192,8 +192,6 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
                 else:
                     single_data = {'idx': img_name_to_idx[k], 'img_num': k, label1: pos, label2: neg}
                 total_data[k] = single_data
-                if not check_in_dirs:
-                    break
         keys_test_type[test_type] = list(total_data.keys())
         total_data_test_type = pd.DataFrame(list(total_data.values()))
         for i in list(total_data.values()):
@@ -220,8 +218,7 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
     print('Finish of program!')
 
 
-
-def bu_get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
+def bu_get_all_paths(cur_time, factual_wo_prompt, exp_to_merge,suffix_name):
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/12_2_23/'
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/'
@@ -268,20 +265,19 @@ def bu_get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
 
         # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast'
 
-        final_name = src_dir_text_style.split('Cap')[-1] #39
+        # suffix_name = src_dir_text_style.split('Cap')[-1] #39
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
         src_dir_text_style = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
-        final_name = 'f_36'
         src_dir_text_style = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023')
         # src_dir_text_style = os.path.join(base_path,'text_style')
         text_style_dir_path = os.listdir(src_dir_text_style)
         if factual_wo_prompt:
-            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}_factual_wo_prompt.csv')
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{suffix_name}_factual_wo_prompt.csv')
         else:
-            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}.csv')
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{suffix_name}.csv')
     else:
         src_dir_text_style = ''
         text_style_dir_path = ''
@@ -311,7 +307,7 @@ def bu_get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
     tgt_paths_debug = {"prompt_manipulation": debug_tgt_path_prompt_manipulation,"image_manipulation": debug_tgt_path_im_manipulation, "image_and_prompt_manipulation": "debug_tgt_path_image_and_prompt_manipulation"}
 
     return res_paths, src_dirs, tgt_paths
-def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
+def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss'
 
@@ -325,22 +321,22 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge):
         # 23.2.23
         # src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/23_2_23/ZeroStyleCapPast'
 
-        final_name = src_dir_text_style.split('Cap')[-1] #39
+        # suffix_name = src_dir_text_style.split('Cap')[-1] #39
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/4_3_23/res_f_36'
         src_dir_text_style = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
-        final_name = 'f_36'
         src_dir_text_style = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023')
         # 1.4.23
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa/val_set/03_05_2023'
         # src_dir_text_style = os.path.join(base_path,'text_style')
         text_style_dir_path = os.listdir(src_dir_text_style)
         if factual_wo_prompt:
-            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}_factual_wo_prompt.csv')
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{suffix_name}_factual_wo_prompt.csv')
         else:
-            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{final_name}.csv')
+            tgt_path_text_style = os.path.join(src_dir_text_style,f'total_results_text_style_{suffix_name}.csv')
     else:
         src_dir_text_style = ''
         text_style_dir_path = ''
@@ -438,13 +434,16 @@ def get_list_of_files():
                      '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/results_11_40_14__19_03_2023.csv']
     return list_of_files
 
-def map_img_name_to_idx(dataset):
+def map_img_name_to_idx(dataset,test_split):
     img_name_to_idx = {}
     for i, im in enumerate(os.listdir(
-        os.path.join(os.path.join(os.path.expanduser('~'), 'data', dataset, 'images','test')))):
+        os.path.join(os.path.join(os.path.expanduser('~'), 'data', dataset, 'images',test_split)))):
         if ('.jpg' or '.jpeg' or '.png') not in im:
             continue
-        img_name_to_idx[im.rsplit('.')[0]] = i
+        if dataset=='senticap':
+            img_name_to_idx[int(im.rsplit('.')[0])] = i
+        elif dataset == 'flickrstyle10k':
+            img_name_to_idx[im.rsplit('.')[0]] = i
     return img_name_to_idx
 
 def get_img_idx_to_name(caption_img_dict):
@@ -477,7 +476,7 @@ def main():
     # get_img_idx_to_name(args.caption_img_dict)
     factual_wo_prompt = False
     use_factual = False
-    merge_dirs = False
+    merge_dirs = True
     t = {"prompt_manipulation": "img_num","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
 
     exp_to_merge = ["zerostylecap"]
@@ -485,9 +484,11 @@ def main():
     #todo:
 
     if merge_dirs:
-        dataset = 'flickrstyle10k'
-        res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge)  # todo:
-        img_name_to_idx = map_img_name_to_idx(dataset)
+        dataset = 'senticap'
+        test_split = 'val'
+        suffix_name = ''
+        res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name)  # todo:
+        img_name_to_idx = map_img_name_to_idx(dataset, test_split)
         merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,
                                img_name_to_idx)
     else: # for the case of file list

@@ -469,11 +469,12 @@ def get_list_of_imgs_for_caption(config):
             os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
                          config['data_type']))
         for i in config['specific_img_idxs_to_test']:
-            i = int(i)
-            im = imgs_list[i]
-            imgs_to_test.append(
-                os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
-                             config['data_type'], im))
+            if i < len(imgs_list):
+                i = int(i)
+                im = imgs_list[i]
+                imgs_to_test.append(
+                    os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
+                                 config['data_type'], im))
         return imgs_to_test
     for i, im in enumerate(os.listdir(
             os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',

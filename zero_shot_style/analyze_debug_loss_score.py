@@ -82,8 +82,10 @@ def extract_loss_data(debug_file_paths):
             elif "text_style_loss with scale = " in line:
                 update_val(single_data, "text_style_losses_w_scale", word_num, iter_num, line)
 
-            elif "after calc clip loss" in line: # start new iteration
-                iter_num += 1
+            # elif "after calc clip loss" in line: # start new iteration
+            #     iter_num += 1
+            elif " iter num = " in line: # start new iteration
+                iter_num = int(line.split("iter num = ")[1][0])
             elif "~~~~~~" in line: # start new caption
                 word_num = 0
             elif "| Work on img path:" in line: # start new image caption
@@ -246,9 +248,14 @@ def write_to_pdf(all_data, img_dir_path, desired_scores, tgt_pdf_file_path):
             y = 0
     c.showPage()  # add this line to indicate the end of the last page
     c.save()
-    print("finish to save pdf")
+
+    print(f"finish to save pdf of bes results into: {tgt_pdf_file_path}")
 
 def get_best_data(all_data, desired_scores, scores_th):
+    '''
+    :param all data:{test_type:{img_idx:{style:{img_idx:,img_name:,style:,clip_loss:{word_num:{beam_num:}}}}}}
+    :return:
+    '''
     # get best dsta according to threshold scores in scores_th
     best_data = {"ZeroStyleCap":{}}
     for idx in all_data["ZeroStyleCap"]:
@@ -264,37 +271,60 @@ def get_best_data(all_data, desired_scores, scores_th):
                 best_data["ZeroStyleCap"][idx][style] = all_data["ZeroStyleCap"][idx][style]
     return best_data
 
-def main():
-    '''
+def merge_debug_files(debug_dir_for_file_paths, merged_debug_file_name):
+    debug_file_paths = {}
+    for test_name in debug_dir_for_file_paths:
+        merged_lines = []
+        for f in os.listdir(debug_dir_for_file_paths[test_name]):
+            if f.endswith('.txt'):
+                with open(os.path.join(debug_dir_for_file_paths[test_name],f),'r') as fp:
+                    lines = fp.readlines()
+                merged_lines.extend(lines)
+        with open(os.path.join(debug_dir_for_file_paths[test_name],merged_debug_file_name),'w') as fp:
+            fp.writelines(merged_lines)
+        debug_file_paths[test_name] = os.path.join(debug_dir_for_file_paths[test_name],merged_debug_file_name)
+        print(f"finished to merge debug files into {os.path.join(debug_dir_for_file_paths[test_name],merged_debug_file_name)}")
+        return debug_file_paths
 
-    :param all data:{test_type:{img_idx:{style:{img_idx:,img_name:,style:,clip_loss:{word_num:{beam_num:}}}}}}
-    :return:
-    '''
+
+def main():
     configfile = os.path.join('.', 'configs', 'config.yaml')
-    debug_file_paths = {
-        # "image_and_prompt_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_and_prompt_manipulation/senticap_image_and_prompt_manipulation_debug.txt",
-        # "image_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_manipulation/senticap_image_manipulation_debug.txt",
-        # "prompt_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/prompt_manipulation/senticap_prompt_manipulation_debug.txt",
-        "ZeroStyleCap": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/ZeroStyleCap/debug_loss_real_senticap_23_2_v0.txt"}
-    eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/evaluation_all_frames.csv'
-    img_dir_path = os.path.join(os.path.expanduser('~'),'data/senticap/images/test')
-    ZeroStyleCap_loss_data_path = os.path.join(os.path.expanduser('~'),
-                                               "results/zero_style_cap/weighted_loss", "ZeroStyleCap_loss_data.pkl")
+    # debug_file_paths = {
+    #     # "image_and_prompt_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_and_prompt_manipulation/senticap_image_and_prompt_manipulation_debug.txt",
+    #     # "image_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_manipulation/senticap_image_manipulation_debug.txt",
+    #     # "prompt_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/prompt_manipulation/senticap_prompt_manipulation_debug.txt",
+    #     "ZeroStyleCap": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/ZeroStyleCap/debug_loss_real_senticap_23_2_v0.txt"}
+    #
+    debug_dir_for_file_paths = {"ZeroStyleCap": "/Users/danielabendavid/results/zero_style_cap/roBERTa/val_set"}
+    merged_debug_file_name = 'merged_debug_file_roBERTa_val_set.txt' #will be in the dir debug_dir_for_file_paths
+
+    if debug_dir_for_file_paths:
+        debug_file_paths = merge_debug_files(debug_dir_for_file_paths, merged_debug_file_name)
+
+    # eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/evaluation_all_frames.csv'
+    eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set/03_05_2023/evaluation_all_frames.csv'
+    data_split = 'val' # 'test'
+    img_dir_path = os.path.join(os.path.expanduser('~'),'data/senticap/images/'+data_split)
+    ZeroStyleCap_loss_data_path = os.path.join(debug_dir_for_file_paths["ZeroStyleCap"], "ZeroStyleCap_loss_data.pkl")
     desired_scores = ['fluency', 'CLIPScore', 'style_classification']
-    # scores_th = {'fluency':0.9, 'CLIPScore':0.26, 'style_classification':1}
-    scores_th = {'fluency':0.9, 'CLIPScore':0.32, 'style_classification':1}
-    tgt_pdf_file_name = f"debug_res_fluency={scores_th['fluency']}_CLIPScore={scores_th['CLIPScore']}_style_classification={scores_th['style_classification']}.pdf"
-    tgt_pdf_file_path = os.path.join(os.path.expanduser('~'),
-                 "results/zero_style_cap/weighted_loss", tgt_pdf_file_name)
+    scores_th = {'fluency':0.9, 'CLIPScore':0.3, 'style_classification':1}
+    # scores_th = {'fluency':0.9, 'CLIPScore':0.32, 'style_classification':1}
+    best_data_tgt_pdf_file_name = f"debug_res_fluency={scores_th['fluency']}_CLIPScore={scores_th['CLIPScore']}_style_classification={scores_th['style_classification']}.pdf"
+    all_data_tgt_pdf_file_name = f"debug_res_all_data.pdf"
+    # tgt_pdf_file_path = os.path.join(os.path.expanduser('~'),
+    #              "results/zero_style_cap/weighted_loss", tgt_pdf_file_name)
+
     loss_all_data_path = {"all_data": os.path.join(os.path.expanduser('~'), "results/zero_style_cap/weighted_loss",
                                   "loss_al_data.pkl"),
                           "best_data": os.path.join(os.path.expanduser('~'), "results/zero_style_cap/weighted_loss",
                                       "loss_al_data.pkl")}
 
-    calc_from_scratch = False #
+    calc_from_scratch = False
     final_iterations_idx = 4 #suppose there are only 5 iterations in the results,  so we take as statistic the loss res of iter idx 4
 
     eval_dir,eval_file_name = eval_debug_file_path.rsplit('/',1)
+    best_data_pdf_file_path = os.path.join(eval_dir, best_data_tgt_pdf_file_name)
+    all_data_pdf_file_path = os.path.join(eval_dir, all_data_tgt_pdf_file_name)
     tgt_debug_results_path = os.path.join(eval_dir,'analyzed_log.csv')
 
     if calc_from_scratch:
@@ -312,14 +342,15 @@ def main():
     best_data = get_best_data(all_data, desired_scores, scores_th)
 
 
-    write_to_pdf(best_data, img_dir_path, desired_scores, tgt_pdf_file_path)
+    write_to_pdf(best_data, img_dir_path, desired_scores, best_data_pdf_file_path)
+    write_to_pdf(all_data, img_dir_path, desired_scores, all_data_pdf_file_path)
     # group loss data only for successful examples
     final_statistic_mean_all_data, final_statistic_std_all_data = get_statiistic_data(all_data, final_iterations_idx,loss_all_data_path['all_data'])
     final_statistic_mean_best_data, final_statistic_std_best_data = get_statiistic_data(best_data, final_iterations_idx,loss_all_data_path['best_data'])
     plot_statistic_data(final_statistic_mean_all_data, final_statistic_std_all_data,'all_data')
     plot_statistic_data(final_statistic_mean_best_data, final_statistic_std_best_data,'best_data')
     plot_final_statistic_data(final_statistic_mean_all_data, final_statistic_std_all_data, final_statistic_mean_best_data, final_statistic_std_best_data, 'final')
-    write_results(all_data,tgt_debug_results_path)
+    write_results(all_data['ZeroStyleCap'],tgt_debug_results_path)
     print("statistics:")
     print("mean_clip_loss:")
     print(f"all data: {final_statistic_mean_all_data['clip_loss']}")
