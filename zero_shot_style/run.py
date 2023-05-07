@@ -64,6 +64,7 @@ def get_args():
     parser.add_argument("--clip_loss_temperature", type=float, default=0.01)
     parser.add_argument("--std_embedding_vectors_positive", type=float, default=0.028914157)
     parser.add_argument("--std_embedding_vectors_negative", type=float, default=0.020412436)
+    parser.add_argument("--desired_min_CLIP_score", type=float, default=1)
     parser.add_argument("--ce_scale", type=float, default=0.2)
     parser.add_argument("--clip_scale", type=float, default=1)
     parser.add_argument("--text_style_scale", type=float, default=1)
@@ -670,7 +671,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     if config['wandb_mode'] == 'online':
         wandb.log({'details_evaluation/total_score_text': total_score_and_text})
 
-    avg_clip_score = np.mean(clip_scores)
+    avg_clip_score = np.mean(clip_scores) / config['desired_min_CLIP_score']
     avg_fluency_score = mean_perplexity
     avg_style_cls_score = np.mean(style_cls_scores)
     avg_style_cls_emoji_score = torch.mean(torch.stack(style_cls_emoji_scores))
