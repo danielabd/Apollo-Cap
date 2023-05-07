@@ -26,7 +26,7 @@ use_style_model: True
 
 
 experiement_global_name:
-  senticap: senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss
+  senticap: senticap_StylizedZeroCap_roBERTa_val_set_better_clip
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 # weighted loss
