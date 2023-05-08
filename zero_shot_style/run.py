@@ -814,7 +814,9 @@ def initial_variables():
     else:
         config['training_name'] = 'tmp'
 
-    experiment_type_dir = os.path.join(os.path.expanduser("~"),'experiments','stylized_zero_cap_experiments',config['experiement_global_name'])
+    experiment_type_dir = os.path.join(os.path.expanduser("~"),'experiments','stylized_zero_cap_experiments',config['dataset'],config['style_type'],config['experiement_global_name'])
+
+
     if not os.path.isdir(experiment_type_dir):
         os.makedirs(experiment_type_dir)
     cur_date_dir = os.path.join(experiment_type_dir,cur_date)
