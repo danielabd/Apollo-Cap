@@ -27,7 +27,8 @@ res_path2eval:
     # roberta val
 #    ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa/val_set/03_05_2023/total_results_zero_style_cap_roBerta_val.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa/val_set/03_05_2023/total_results_text_style_.csv
-     ZeroStyleCap: /home/bdaniela/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set/03_05_2023/total_results_text_style_.csv
+#     ZeroStyleCap: /home/bdaniela/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set/03_05_2023/total_results_text_style_.csv
+     ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss/05_05_2023/total_results_text_style_.csv
 
   flickrstyle10k:
 #    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv

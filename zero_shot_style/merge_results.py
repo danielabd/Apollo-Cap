@@ -331,6 +331,8 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         # 1.4.23
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa/val_set/03_05_2023'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss/05_05_2023'
+
         # src_dir_text_style = os.path.join(base_path,'text_style')
         text_style_dir_path = os.listdir(src_dir_text_style)
         if factual_wo_prompt:

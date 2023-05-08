@@ -45,7 +45,7 @@ def update_val(single_data, category, word_num, iter_num, line):
     single_data[category][word_num][iter_num] = line.split(' = ')[1].split('\n')[0]
 
 
-def extract_loss_data(debug_file_paths):
+def extract_loss_data(debug_file_paths, relevant_img_names):
     all_data = {}
     for test_type in debug_file_paths:
         if test_type not in all_data:
@@ -92,12 +92,14 @@ def extract_loss_data(debug_file_paths):
                 single_data["img_name"] = line.split('/')[-1].split('.jpg')[0]
             elif "style of: ***" in line:
                 single_data["style"] = line.split("*** ")[1].split(' ')[0]
+            #final single  data
             elif "best clip: " in line:
                 single_data["best_caption"] = line.split("best clip: ")[1][:-1]
-                if single_data["img_idx"] not in all_data[test_type]:
-                    all_data[test_type][single_data["img_idx"]] = {single_data["style"]: single_data}
-                else:
-                    all_data[test_type][single_data["img_idx"]][single_data["style"]] = single_data
+                if int(single_data["img_name"]) in relevant_img_names:
+                    if single_data["img_idx"] not in all_data[test_type]:
+                        all_data[test_type][single_data["img_idx"]] = {single_data["style"]: single_data}
+                    else:
+                        all_data[test_type][single_data["img_idx"]][single_data["style"]] = single_data
                 single_data = {}
             elif line[:len("Img num = ")]=="Img num = ":
                 single_data["img_idx"] = line.split(' ')[-1][:-1]
@@ -124,8 +126,10 @@ def add_eval_data(all_data,eval_debug_file_path, desired_scores, mapping_img_nam
         test_name = eval_data.iloc[i, get_score_type_idx(eval_data.columns, 'test_name')]
         if test_name == 'ZeroStyleCap':
             style = eval_data.iloc[i, get_score_type_idx(eval_data.columns,'style')]
-            for score_type in desired_scores:
-                all_data[test_name][str(mapping_img_name2idx[eval_data.iloc[i, get_score_type_idx(eval_data.columns,'k')]])][style][score_type] = eval_data.iloc[i, get_score_type_idx(eval_data.columns, score_type)]
+            img_idx = str(mapping_img_name2idx[eval_data.iloc[i, get_score_type_idx(eval_data.columns, 'k')]])
+            if img_idx in all_data[test_name] and style in all_data[test_name][img_idx]:
+                for score_type in desired_scores:
+                    all_data[test_name][img_idx][style][score_type] = eval_data.iloc[i, get_score_type_idx(eval_data.columns, score_type)]
     return all_data
 
 def plot_statistic_data(final_statistic_mean, final_statistic_std,title):
@@ -295,32 +299,39 @@ def main():
     #     # "prompt_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/prompt_manipulation/senticap_prompt_manipulation_debug.txt",
     #     "ZeroStyleCap": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/ZeroStyleCap/debug_loss_real_senticap_23_2_v0.txt"}
     #
-    debug_dir_for_file_paths = {"ZeroStyleCap": "/Users/danielabendavid/results/zero_style_cap/roBERTa/val_set"}
+    final_iterations_idx = 4 #suppose there are only 5 iterations in the results,  so we take as statistic the loss res of iter idx 4
+    # debug_dir_for_file_paths = {"ZeroStyleCap": "/Users/danielabendavid/results/zero_style_cap/roBERTa/val_set"}
+    debug_dir_for_file_paths = {"ZeroStyleCap": "/Users/danielabendavid/results/zero_style_cap/roBERTa/val_set_weighted_loss"}
     merged_debug_file_name = 'merged_debug_file_roBERTa_val_set.txt' #will be in the dir debug_dir_for_file_paths
-
-    if debug_dir_for_file_paths:
-        debug_file_paths = merge_debug_files(debug_dir_for_file_paths, merged_debug_file_name)
-
     # eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/evaluation_all_frames.csv'
-    eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set/03_05_2023/evaluation_all_frames.csv'
+    # eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set/03_05_2023/evaluation_all_frames.csv'
+    eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss/05_05_2023/evaluation_all_frames.csv'
     data_split = 'val' # 'test'
+
     img_dir_path = os.path.join(os.path.expanduser('~'),'data/senticap/images/'+data_split)
-    ZeroStyleCap_loss_data_path = os.path.join(debug_dir_for_file_paths["ZeroStyleCap"], "ZeroStyleCap_loss_data.pkl")
+    ZeroStyleCap_loss_data_path = os.path.join(debug_dir_for_file_paths["ZeroStyleCap"], "ZeroStyleCap_debug_loss_data.pkl")
     desired_scores = ['fluency', 'CLIPScore', 'style_classification']
     scores_th = {'fluency':0.9, 'CLIPScore':0.3, 'style_classification':1}
     # scores_th = {'fluency':0.9, 'CLIPScore':0.32, 'style_classification':1}
     best_data_tgt_pdf_file_name = f"debug_res_fluency={scores_th['fluency']}_CLIPScore={scores_th['CLIPScore']}_style_classification={scores_th['style_classification']}.pdf"
     all_data_tgt_pdf_file_name = f"debug_res_all_data.pdf"
+    loss_all_data_path = {"all_data": os.path.join(debug_dir_for_file_paths["ZeroStyleCap"],
+                                                   "statistic_loss_all_data.pkl"),
+                          "best_data": os.path.join(debug_dir_for_file_paths["ZeroStyleCap"],
+                                                    "statistic_loss_best_data.pkl")}
+
+    if debug_dir_for_file_paths:
+        debug_file_paths = merge_debug_files(debug_dir_for_file_paths, merged_debug_file_name)
+
     # tgt_pdf_file_path = os.path.join(os.path.expanduser('~'),
     #              "results/zero_style_cap/weighted_loss", tgt_pdf_file_name)
 
-    loss_all_data_path = {"all_data": os.path.join(os.path.expanduser('~'), "results/zero_style_cap/weighted_loss",
-                                  "loss_al_data.pkl"),
-                          "best_data": os.path.join(os.path.expanduser('~'), "results/zero_style_cap/weighted_loss",
-                                      "loss_al_data.pkl")}
+    # loss_all_data_path = {"all_data": os.path.join(os.path.expanduser('~'), "results/zero_style_cap/weighted_loss",
+    #                               "loss_al_data.pkl"),
+    #                       "best_data": os.path.join(os.path.expanduser('~'), "results/zero_style_cap/weighted_loss",
+    #                                   "loss_al_data.pkl")}
 
-    calc_from_scratch = False
-    final_iterations_idx = 4 #suppose there are only 5 iterations in the results,  so we take as statistic the loss res of iter idx 4
+    calc_from_scratch = True
 
     eval_dir,eval_file_name = eval_debug_file_path.rsplit('/',1)
     best_data_pdf_file_path = os.path.join(eval_dir, best_data_tgt_pdf_file_name)
@@ -330,7 +341,7 @@ def main():
     if calc_from_scratch:
         mapping_idx2img_name, mapping_img_name2idx = get_mapping_idx_img_name(configfile)
         # loss data
-        all_data = extract_loss_data(debug_file_paths)
+        all_data = extract_loss_data(debug_file_paths, mapping_img_name2idx.keys())
         # scores data
         all_data = add_eval_data(all_data,eval_debug_file_path, desired_scores, mapping_img_name2idx)
         with open(ZeroStyleCap_loss_data_path, "wb") as f:

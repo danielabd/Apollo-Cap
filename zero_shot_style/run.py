@@ -61,6 +61,8 @@ def get_args():
     parser.add_argument("--cond_text2", type=str, default="")
     parser.add_argument("--reset_context_delta", action="store_true",
                         help="Should we reset the context at each token gen")
+    parser.add_argument("--reverse_imgs_list", action="store_true",
+                        help="Should we reverse the order of images list we run on")
     parser.add_argument("--clip_loss_temperature", type=float, default=0.01)
     parser.add_argument("--std_embedding_vectors_positive", type=float, default=0.028914157)
     parser.add_argument("--std_embedding_vectors_negative", type=float, default=0.020412436)
@@ -889,6 +891,8 @@ def main():
 
     # go over all images
     evaluation_results = {}  # total_results_structure
+    if config['reverse_imgs_list']:
+        imgs_to_test.reverse()
     for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
         # if int(img_path.split('.')[0].split('/')[-1]) == 225571:
         #     print(f'img_path_idx={img_path_idx}')
