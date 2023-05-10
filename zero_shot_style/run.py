@@ -301,15 +301,15 @@ def get_full_path_of_stylized_images(data_dir, i):
         return None
 
 
-def calculate_avg_score_wo_fluence(clip_score, style_cls_score, style_cls_score_emoji):
-    avg_total_score = 3 * (style_cls_score * clip_score * style_cls_score_emoji) / (
-                style_cls_score + clip_score + style_cls_score_emoji)
+def calculate_avg_score_wo_fluence(clip_score, style_cls_score):
+    avg_total_score = 2 * (style_cls_score * clip_score) / (
+                style_cls_score + clip_score)
     return avg_total_score
 
 
-def calculate_avg_score(clip_score, fluency_score, style_cls_score, style_cls_score_emoji):
-    avg_total_score = 4 * (style_cls_score * clip_score * fluency_score * style_cls_score_emoji) / (
-                style_cls_score + clip_score + fluency_score + style_cls_score_emoji)
+def calculate_avg_score(clip_score, fluency_score, style_cls_score):
+    avg_total_score = 3 * (style_cls_score * clip_score * fluency_score) / (
+                style_cls_score + clip_score + fluency_score)
     return avg_total_score
 
 
@@ -624,7 +624,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             else:
                 style_cls_emoji_score = DEFAULT_STYLE_CLS_EMOJI_SCORE
 
-            avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score, style_cls_emoji_score)
+            avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
 
             #todo: I removed the option that there is no style cls  in eval metrics
             # if 'style_classification' in evaluation_results[img_name][label]['scores']:
@@ -655,14 +655,14 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     clip_scores_table = get_table_for_wandb(clip_scores)
     fluency_scores_table = get_table_for_wandb(fluency_scores)
     style_cls_scores_table = get_table_for_wandb(style_cls_scores)
-    style_cls_emoji_scores_table = get_table_for_wandb(style_cls_emoji_scores)
+    # style_cls_emoji_scores_table = get_table_for_wandb(style_cls_emoji_scores)
     avg_total_scores_table = get_table_for_wandb(avg_total_scores)
     # if 'style_classification' in evaluation_results[img_name][label]['scores']:
     #     style_cls_scores_table = get_table_for_wandb(style_cls_scores)
 
     if config['wandb_mode'] == 'online':
         wandb.log({'details_evaluation/style_cls_score': style_cls_scores_table,
-                   'details_evaluation/style_cls_emoji_score': style_cls_emoji_scores_table,
+                   # 'details_evaluation/style_cls_emoji_score': style_cls_emoji_scores_table,
                    'details_evaluation/clip_score': clip_scores_table,
                    'details_evaluation/fluency_score': fluency_scores_table,
                    'details_evaluation/avg_total_score': avg_total_scores_table})
@@ -680,12 +680,11 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     avg_style_cls_emoji_score = torch.mean(torch.stack(style_cls_emoji_scores))
     if 'requires_min_fluency_score' in config:
         if avg_fluency_score > config['requires_min_fluency_score']:
-            final_avg_total_score = calculate_avg_score_wo_fluence(avg_clip_score, avg_style_cls_score, avg_style_cls_emoji_score)
+            final_avg_total_score = calculate_avg_score_wo_fluence(avg_clip_score, avg_style_cls_score)
         else:
             final_avg_total_score = 0
     else:
-        final_avg_total_score = calculate_avg_score(avg_clip_score, avg_fluency_score, avg_style_cls_score,
-                                                    avg_style_cls_emoji_score)
+        final_avg_total_score = calculate_avg_score(avg_clip_score, avg_fluency_score,avg_style_cls_score)
 
 
     # if style_cls_score != 'None':
@@ -699,7 +698,8 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     print("*****************************")
     print("*****************************")
     print(f'style_cls_scores={style_cls_scores}, avg_style_cls_score={avg_style_cls_score}')
-    print(f'style_cls_emoji_scores={style_cls_emoji_scores}, avg_style_cls_score={avg_style_cls_emoji_score}')
+    # print(f'style_cls_emoji_scores={style_cls_emoji_scores}, avg_style_cls_score={avg_style_cls_emoji_score}')
+    # print(f'avg_style_cls_score={avg_style_cls_emoji_score}')
     print(f'clip_scores={clip_scores}, avg_clip_score={avg_clip_score}'
           f'\nfluency_scores={fluency_scores}, avg_fluency_score={avg_fluency_score}')
     print(f'final_avg_total_score={final_avg_total_score}')
@@ -708,7 +708,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     print("*****************************")
     if config['wandb_mode'] == 'online':
         wandb.log({'evaluation/mean_style_cls_scores': avg_style_cls_score,
-                   'evaluation/mean_style_cls_emoji_scores': avg_style_cls_emoji_score,
+                   # 'evaluation/mean_style_cls_emoji_scores': avg_style_cls_emoji_score,
                    'evaluation/mean_clip_scores': avg_clip_score,
                    'evaluation/mean_fluency_scores': avg_fluency_score,
                    'evaluation/final_avg_total_score': final_avg_total_score})
