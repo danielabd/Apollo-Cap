@@ -535,7 +535,7 @@ def update_running_params(label, config):
         config = update_zerocap_params(config)  # todo:check if need to return it
         config['use_style_model'] = False
     else:  # label=positive,negative...
-        if config['use_style_model']:
+        if config['use_style_model'] or config['cut_cand2clip']:
             config = update_running_params(config)
         else:
             config = update_zerocap_params(config)
