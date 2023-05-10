@@ -9,7 +9,7 @@ print_for_debug : False # todo
 print_for_debug_redundant : False
 wandb_mode: online #'disabled, offline, online' #todo:
 ##for validation
-#specific_idxs_to_skip: [2,3] #todo
+specific_idxs_to_skip: [2,3] #todo
 max_num_of_imgs: 5 #todo
 reverse_imgs_list: False
 data_type: val #val, test #todo:!!!!!!!!
@@ -39,7 +39,7 @@ desired_improvement_loss: 0.01
 th_clip_loss: 33 #33 # 35
 th_ce_loss: 10 #15 #12
 th_style_loss: 33 #33 #35.5
-max_num_iterations: 10 #todo
+max_num_iterations: 5 #todo
 #####
 check_if_cut_score: False
 #####
