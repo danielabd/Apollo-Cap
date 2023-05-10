@@ -35,6 +35,7 @@ from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
 from zero_shot_style.evaluation.text_style_classification import evaluate as evaluate_text_style_classification
 from zero_shot_style.evaluation.text_style_classification import BertClassifier, tokenizer
 from argparse import ArgumentParser
+
 from zero_shot_style.utils import get_hparams, replace_user_home_dir
 
 NORMALIZE_GRADE_SCALE = 100

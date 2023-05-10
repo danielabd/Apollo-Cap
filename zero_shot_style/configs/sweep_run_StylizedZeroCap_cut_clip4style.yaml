@@ -1,0 +1,16 @@
+program: run.py
+project: StylizedZeroCap_erc
+method: bayes
+metric:
+  goal: maximize #minimize
+  name:  evaluation/final_avg_total_score
+parameters:
+  ce_scale:
+    max: 6
+    min: 0.1
+    distribution: uniform
+  clip_scale:
+    max: 6
+    min: 0.1
+    distribution: uniform
+

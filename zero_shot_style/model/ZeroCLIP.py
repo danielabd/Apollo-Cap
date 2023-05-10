@@ -524,7 +524,6 @@ class CLIPTextGenerator:
             
             #get score for text
             with torch.no_grad():
-               
                 inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
                 inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
                 inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
@@ -1312,6 +1311,50 @@ class CLIPTextGenerator:
                 # style_sco
                 # res[top_indices]
 
+                #10.5.23
+                if self.config['cut_cand2clip']:
+                    #########compute style score for text:
+                    # get score for text
+                    with torch.no_grad():
+                        inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
+                        inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
+                        inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
+                        logits = self.sentiment_model(**inputs)['logits']
+                        sentiment_grades = None
+                        ########
+                        positive_grades = nn.functional.softmax(logits, dim=-1)[:, 2]
+                        neutral_grades = nn.functional.softmax(logits, dim=-1)[:, 1]
+                        negative_grades = nn.functional.softmax(logits, dim=-1)[:, 0]
+                        style_scores = []
+                        if self.style == 'positive':
+                            desired_scores = positive_grades
+                            undesired_scores = negative_grades
+                        elif self.style == 'negative':
+                            desired_scores = negative_grades
+                            undesired_scores = positive_grades
+                        for i in range(len(desired_scores)):
+                            # if desired_scores[i] > 2*undesired_scores[i] and desired_scores[i]> 2* neutral_grades[i]:
+                            if desired_scores[i] > 0.5:
+                                style_scores.append(1)
+                            else:
+                                style_scores.append(0)
+
+                        # if self.style == 'positive':
+                        #     sentiment_grades = nn.functional.softmax(logits, dim=-1)[:, 2]
+                        # elif self.style == 'neutral':
+                        #     sentiment_grades = nn.functional.softmax(logits, dim=-1)[:, 1]
+                        # elif self.style == 'negative':
+                        #     sentiment_grades = nn.functional.softmax(logits, dim=-1)[:, 0]
+                    #########
+                    # style_scores = [1 for i in outputs_bin if i == self.desired_style_bin]
+
+                    # style_scores = torch.tensor([1 if i>0.5  else 0 for i in sentiment_grades]).to(self.device)
+                    style_scores = torch.tensor(style_scores).to(self.device)
+                    if self.device == "cuda":
+                        similiraties = torch.mul(similiraties, style_scores)
+                    else:
+                        similiraties = np.multiply(similiraties, style_scores)
+                # end - 10.5.23
                 if self.use_text_style_cutting:
                     #if self.check_if_cut_score[idx_p]:
                     if self.check_if_cut_score:
