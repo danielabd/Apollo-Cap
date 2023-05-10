@@ -900,8 +900,6 @@ def main():
         # if int(img_path.split('.')[0].split('/')[-1]) == 225571:
         #     print(f'img_path_idx={img_path_idx}')
         # continue
-        if config['wandb_mode'] == 'online':
-            wandb.log({'test/img_idx': img_path_idx})
         if not config['debug_mac']:
             image_features = text_generator.get_img_feature([img_path], None)
         else:
@@ -919,6 +917,8 @@ def main():
             continue
         # go over all labels
         for label_idx, label in enumerate(desired_labels_list):
+            if config['wandb_mode'] == 'online':
+                wandb.log({'test/img_idx': img_path_idx, 'img_name': img_name, 'style': label})
             config['cond_text'] = config["cond_text_dict"][label]
             config = update_running_params(label, config)
             if not config['debug_mac']:
