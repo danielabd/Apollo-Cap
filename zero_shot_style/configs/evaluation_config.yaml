@@ -1,9 +1,10 @@
 #senticap
 dataset: senticap # senticap,flickrstyle10k
-style_type: 'emoji' #'style_embed' or 'emoji'
-data_split: val #val, test
+style_type: 'style_embed' #'style_embed' or 'emoji'
+data_split: test #val, test
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
+
 #todo:
 #metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 metrics: [CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
@@ -29,7 +30,11 @@ res_path2eval:
 #    ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa/val_set/03_05_2023/total_results_zero_style_cap_roBerta_val.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa/val_set/03_05_2023/total_results_text_style_.csv
 #     ZeroStyleCap: /home/bdaniela/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set/03_05_2023/total_results_text_style_.csv
-     ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss/05_05_2023/total_results_text_style_.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss/05_05_2023/total_results_text_style_.csv
+     # style embed - 14.5.23
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_enbedding_model_real_std/total_results_text_style_.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8/total_results_text_style_.csv
+     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/erc/senticap_StylizedZeroCap_erc/total_results_text_style_.csv
 
   flickrstyle10k:
 #    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv

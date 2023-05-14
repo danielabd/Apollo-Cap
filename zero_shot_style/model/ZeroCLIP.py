@@ -29,7 +29,9 @@ import pickle
 import json
 from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
+from evaluate import load
 
+MAX_PERPLEXITY = 6000
 DEBUG_NUM_WORDS = 10
 EPSILON = 0.0000000001
 
@@ -115,11 +117,16 @@ class CLIPTextGenerator:
         self.config = config
         self.use_text_style_cutting = use_text_style_cutting
         if evaluation_obj:
-            evaluation_obj = evaluation_obj
+            self.evaluation_obj = evaluation_obj
         if config:
             self.model_based_on = config['model_based_on']
         else:
             self.model_based_on = model_based_on
+        if 'iterate_until_good_fluency' in self.config:
+            if self.config['iterate_until_good_fluency']:
+                print("iterate_until_good_fluency...")
+                self.perplexity = load("perplexity", module_type="measurement")
+
         self.debug_tracking = {} # debug_tracking: debug_tracking[word_num][iteration][module]:<list>
         self.tmp_text_loss = tmp_text_loss
         self.cuda_idx = cuda_idx
@@ -970,7 +977,7 @@ class CLIPTextGenerator:
     def shift_context(self, word_loc, context, last_token, context_tokens, probs_before_shift):
         print(f"img_idx={self.img_idx},img_name={self.img_name}, style={self.style}")
         print(f"self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations = {self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations}")
-        print(f"word_loc =  {word_loc}")
+        print(f"word_loc = {word_loc}")
         context_delta = [tuple([np.zeros(x.shape).astype("float32") for x in p]) for p in context]
 
         window_mask = torch.ones_like(context[0][0]).to(self.device)
@@ -991,16 +998,22 @@ class CLIPTextGenerator:
 
         while(1):
             i += 1
+            print(f"iteration num: {i}")
             if self.config['print_for_debug']:
                 print(f"************** word_loc =  {word_loc}, iter num = {i} **************")
             if new_weighted_loss:
                 if clip_loss_fixed<=th_clip_loss and ce_loss_fixed<=th_ce_loss and text_style_loss_fixed<=th_style_loss:
                     break
-                if i == max_num_iterations:
+            else:# not new_weighted_loss:
+                pass
+            if self.config['iterate_until_good_fluency']:
+                if word_loc>=self.config['start_word_loc_heavy_iteration']:
+                    if i == self.config['heavy_max_num_iterations']:
+                        break
+                elif i == self.num_iterations:
                     break
-            else: # not new_weighted_loss:
-                if i == self.num_iterations:
-                    break
+            elif i == self.num_iterations:
+                break
         # for i in range(self.num_iterations):
             # print(f"iter_num =  {i}")
             # if i == self.num_iterations-1:
@@ -1021,6 +1034,87 @@ class CLIPTextGenerator:
             logits = shifted_outputs["logits"][:, -1, :]
             probs = nn.functional.softmax(logits, dim=-1)
 
+
+            ###################################################
+            if word_loc>=self.config['start_word_loc_heavy_iteration'] and i >= 1:
+                if 'iterate_until_good_fluency' in self.config and self.config['iterate_until_good_fluency']:
+                    with torch.no_grad():
+                        top_size = 512
+                        top_probs_LM, top_indices = probs.topk(top_size, -1)
+                        prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in
+                                        context_tokens]
+                        #########
+                        top_texts_for_all_beams = []
+                        for idx_p in range(probs.shape[0]):  # for beam search
+                            top_texts = []
+                            prefix_text = prefix_texts[idx_p]
+                            for x in top_indices[idx_p]:
+                                top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+                            top_texts_for_all_beams.extend(top_texts)
+                        text_features = self.get_txt_features(top_texts_for_all_beams)
+                        clip_score_for_all_beams = (self.image_features @ text_features.T)
+                        results = self.perplexity.compute(data=top_texts_for_all_beams, model_id='gpt2',
+                                                          add_start_token=False)
+                        fluency_scores_for_all_beams = torch.tensor(
+                            [1 - np.min([res_i, MAX_PERPLEXITY]) / MAX_PERPLEXITY for res_i in
+                             results['perplexities']]).to(self.device)
+                        style_scores_for_all_beams = self.evaluation_obj['style_classification'].compute_label_for_list(top_texts_for_all_beams, self.style)
+
+                        clip_error = []
+                        good_clip_idxs = []
+                        for i2 in range(len(clip_score_for_all_beams[0])):
+                            if clip_score_for_all_beams[0][i2] >= self.config['desired_min_clip_score']:
+                                good_clip_idxs.append(i2)
+                            else:
+                                # clip_error += self.config['desired_min_clip_score']-top_clip_scores[i]
+                                clip_error.append(1 - clip_score_for_all_beams[0][i2] / self.config['desired_min_clip_score'])
+                        if len(clip_error) > 0:
+                            mean_clip_error = torch.sum(torch.tensor(clip_error))/len(clip_score_for_all_beams[0])
+                        else:
+                            mean_clip_error = 0
+
+                        fluency_error = []
+                        good_fluency_idxs = []
+                        for i2 in range(len(fluency_scores_for_all_beams)):
+                            if fluency_scores_for_all_beams[i2] > self.config['desired_min_fluency_score']:
+                                good_fluency_idxs.append(i2)
+                            else:
+                                # fluency_error += self.config['desired_min_fluency_score'] - top_fluency_scores[i]
+                                fluency_error.append(
+                                    1 - fluency_scores_for_all_beams[i2] / self.config['desired_min_fluency_score'])
+                        if len(fluency_error) > 0:
+                            mean_fluency_error = torch.sum(torch.tensor(fluency_error))/len(fluency_scores_for_all_beams)
+                        else:
+                            mean_fluency_error = 0
+
+                        style_error = []
+                        good_style_idxs = []
+                        for i2 in range(len(style_scores_for_all_beams)):
+                            if style_scores_for_all_beams[i2] >= self.config['desired_min_style_score']:
+                                good_style_idxs.append(i2)
+                            else:
+                                # style_error += self.config['desired_min_style_score'] - top_style_scores[i]
+                                style_error.append(1 - style_scores_for_all_beams[i2] / self.config['desired_min_style_score'])
+                        if len(style_error) > 0:
+                            mean_style_error = torch.sum(torch.tensor(style_error))/len(style_scores_for_all_beams)
+                        else:
+                            mean_style_error = 0
+                        #find best idxs
+                        set_good_idxs = set(good_style_idxs)
+                        for l in [good_fluency_idxs, good_clip_idxs]:
+                            set_good_idxs = set(set_good_idxs).intersection(l)
+                        list_good_idxs = list(set_good_idxs)
+                        if len(list_good_idxs)>= self.beam_size:
+                            break
+                        total_error = mean_clip_error + mean_fluency_error + mean_style_error
+                        if total_error > 0:
+                            self.clip_scale = float(mean_clip_error / total_error)+EPSILON
+                            self.ce_scale = float(mean_fluency_error / total_error)+EPSILON
+                            self.text_style_scale = float(mean_style_error / total_error)+EPSILON
+                        else:
+                            break
+                #########
+            ###################################################
             loss = 0.0
 
             # CLIP LOSS
@@ -1314,8 +1408,14 @@ class CLIPTextGenerator:
                 #10.5.23
                 if self.config['cut_cand2clip']:
                     #########compute style score for text:
-                    # get score for text
+                    # get style score for text
                     with torch.no_grad():
+                        results = self.perplexity.compute(data=top_texts, model_id='gpt2',
+                                                     add_start_token=False)
+                        fluency_scores = torch.tensor([1 - np.min([res_i, MAX_PERPLEXITY]) / MAX_PERPLEXITY for res_i in results['perplexities']]).to(self.device)
+                        # self.config['desired_min_fluency_score']
+                        # fixed_perplexity = 1 - np.min([results['perplexities'][0], MAX_PERPLEXITY]) / MAX_PERPLEXITY
+
                         inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
                         inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
                         inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
@@ -1334,7 +1434,7 @@ class CLIPTextGenerator:
                             undesired_scores = positive_grades
                         for i in range(len(desired_scores)):
                             # if desired_scores[i] > 2*undesired_scores[i] and desired_scores[i]> 2* neutral_grades[i]:
-                            if desired_scores[i] > 0.5:
+                            if desired_scores[i] > 0.5 and fluency_scores[i] > self.config['desired_min_fluency_score']:
                                 style_scores.append(1)
                             else:
                                 style_scores.append(0)

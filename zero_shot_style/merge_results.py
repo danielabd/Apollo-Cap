@@ -309,7 +309,8 @@ def bu_get_all_paths(cur_time, factual_wo_prompt, exp_to_merge,suffix_name):
     return res_paths, src_dirs, tgt_paths
 def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
-    base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss'
+    # base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss'
+    base_path = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8'
 
     #text_style
     if 'zerostylecap' in exp_to_merge:
@@ -332,6 +333,10 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa/val_set/03_05_2023'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss/05_05_2023'
+        # 14.5.23
+        # src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8'
+        # src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_enbedding_model_real_std'
+        src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/erc/senticap_StylizedZeroCap_erc'
 
         # src_dir_text_style = os.path.join(base_path,'text_style')
         text_style_dir_path = os.listdir(src_dir_text_style)
@@ -487,7 +492,7 @@ def main():
 
     if merge_dirs:
         dataset = 'senticap'
-        test_split = 'val'
+        test_split = 'test'
         suffix_name = ''
         res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name)  # todo:
         img_name_to_idx = map_img_name_to_idx(dataset, test_split)

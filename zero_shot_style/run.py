@@ -29,6 +29,7 @@ from datetime import datetime
 from utils import parser, get_hparams
 from evaluate import load
 
+
 MAX_PERPLEXITY = 500
 DEFAULT_PERPLEXITY_SCORE = 1
 DEFAULT_CLIP_SCORE = 1
@@ -39,7 +40,7 @@ EPSILON = 0.0000000001
 def get_args():
     parser.add_argument('--config_file', type=str,
                         # default=os.path.join('.', 'configs', 'config.yaml'),
-                        default=os.path.join('.', 'configs', 'config_cut_clip4style.yaml'),
+                        default=os.path.join('.', 'configs', 'config.yaml'),
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -95,7 +96,8 @@ def get_args():
 
     parser.add_argument("--max_num_of_imgs", type=int, default=2)  # 1e6)
     parser.add_argument("--evaluation_metrics", nargs="+",
-                        default=['CLIPScore', 'fluency', 'style_classification', 'style_classification_emoji'])
+                        default=['CLIPScore', 'fluency', 'style_classification'])
+                        # default=['CLIPScore', 'fluency', 'style_classification', 'style_classification_emoji'])
     # default=['bleu', 'rouge', 'clip_score_ref', 'CLIPScore', 'fluency', 'style_classification'])
 
     parser.add_argument("--cuda_idx_num", type=str, default="0")
@@ -174,7 +176,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
     clip_grades = (torch.cat(encoded_captions) @ image_features.t()).squeeze()
     if evaluation_obj and 'style_classification' in evaluation_obj:
-        style_cls_grades = [evaluation_obj['style_classification'].compute_score(label, c) for c in captions]
+        style_cls_grades = [evaluation_obj['style_classification'].compute_score(c, label) for c in captions]
         #check if there is caption with correct style
         consider_style = False
         for i in style_cls_grades:
@@ -401,7 +403,6 @@ class Caption:
     def set_total_score(self, avg_total_score):
         self.avg_total_score = avg_total_score
 
-
 class Fluency:
     def __init__(self, desired_labels):
         self.model_id = 'gpt2'
@@ -564,7 +565,7 @@ def get_evaluation_obj(config, text_generator, evaluation_obj):
                 txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
                 evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
                                                                    config['labels_dict_idxs'], None, config[
-                                                                       'hidden_state_to_take_txt_cls'])
+                                                                       'hidden_state_to_take_txt_cls'],config['max_batch_size_style_cls'])
             if metric == 'style_classification_emoji' and 'style_classification_emoji' not in evaluation_obj:
                 evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'],
                                                                                config['maxlen_emoji_sentence'],
@@ -833,11 +834,11 @@ def initial_variables():
     txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
     evaluation_obj = {}
     if 'evaluation_metrics' in config:
-        if config['use_style_threshold']:
+        if config['use_style_threshold'] or config['iterate_until_good_fluency']:
             if 'style_classification' in config['evaluation_metrics']:
                 evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
                                                         config['labels_dict_idxs'], data_dir, config[
-                                                            'hidden_state_to_take_txt_cls'])
+                                                            'hidden_state_to_take_txt_cls'], config['max_batch_size_style_cls'])
             if 'style_classification_emoji' in config['evaluation_metrics']:
                 evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
 

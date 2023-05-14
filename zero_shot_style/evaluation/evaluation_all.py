@@ -113,7 +113,7 @@ class CLIPScore:
 
 class STYLE_CLS:
     def __init__(self, txt_cls_model_path, desired_cuda_num, labels_dict_idxs, data_dir=None, hidden_state_to_take=-1,
-                 scale_noise=0):
+                 scale_noise=0, max_batch_size=100):
         self.data_dir = data_dir
         self.desired_cuda_num = desired_cuda_num
         self.labels_dict_idxs = labels_dict_idxs
@@ -122,7 +122,9 @@ class STYLE_CLS:
         self.device = torch.device(f"cuda" if use_cuda else "cpu")
         self.hidden_state_to_take = hidden_state_to_take
         self.scale_noise = scale_noise
+        self.tokenizer = tokenizer
         self.model = self.load_model(txt_cls_model_path)
+        self.max_batch_size = max_batch_size
 
     def load_model(self, txt_cls_model_path):
         model = BertClassifier(device=self.device, hidden_state_to_take=self.hidden_state_to_take,
@@ -157,11 +159,18 @@ class STYLE_CLS:
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
         output = self.model(input_id, mask)
 
-        outputs_bin = torch.round(torch.tensor([out[0] for out in output])).to(self.device)
-        if outputs_bin[0] == gt_label_idx:
-            cls_score = 1
+        #binary output
+        # outputs_bin = torch.round(torch.tensor([out[0] for out in output])).to(self.device)
+        # if outputs_bin[0] == gt_label_idx:
+        #     cls_score = 1
+        # else:
+        #     cls_score = 0
+
+        # continuous output
+        if gt_label_idx == 1:
+            cls_score = torch.tensor([out[0] for out in output]).to(self.device)
         else:
-            cls_score = 0
+            cls_score = torch.tensor([1-out[0] for out in output]).to(self.device)
 
         # normalized_output = output[0]/torch.norm(output[0])
 
@@ -171,22 +180,35 @@ class STYLE_CLS:
         # cls_score_np = np.max([0,np.min([cls_score.cpu().data.numpy(),1])])
         return cls_score, None
 
-    def compute_label_for_list(self, res):
+    def compute_label_for_list(self, res, gt_label_idx):
         '''
 
         :param gts: list of labels
         :param res: list of sentences
         :return:
         '''
-        res_tokens = tokenizer(res, padding='max_length', max_length=512, truncation=True,
-                               # todo check if max need to be 40 like in train
-                               return_tensors="pt")
-        masks = res_tokens['attention_mask'].to(self.device)
-        input_ids = res_tokens['input_ids'].squeeze(1).to(self.device)
-        outputs = self.model(input_ids, masks)
-
-        outputs_bin = torch.round(torch.tensor([out[0] for out in outputs])).to(self.device)
-        return outputs_bin
+        with torch.no_grad():
+            if type(gt_label_idx)==type('str'):
+                gt_label_idx = self.labels_dict_idxs[gt_label_idx]
+            total_outputs = torch.tensor([]).to(self.device)
+            for i in range(round(np.ceil(len(res)/self.max_batch_size))):
+                part_res = res[i*self.max_batch_size:(i+1)*self.max_batch_size]
+                res_tokens = tokenizer(part_res, padding='max_length', max_length=512, truncation=True,
+                                       # todo check if max need to be 40 like in train
+                                       return_tensors="pt")
+                masks = res_tokens['attention_mask'].to(self.device)
+                input_ids = res_tokens['input_ids'].squeeze(1).to(self.device)
+                outputs = self.model(input_ids, masks)
+                total_outputs = torch.cat((total_outputs, outputs))
+            ## binary output
+            outputs_bin = torch.round(torch.tensor([out[0] for out in total_outputs])).to(self.device)
+            cls_scores = [1 if single_out == gt_label_idx else 0 for single_out in outputs_bin]
+            ## continuous output
+            # if gt_label_idx == 1:
+            #     cls_scores = torch.tensor([out[0] for out in outputs]).to(self.device)
+            # else:
+            #     cls_scores = torch.tensor([1-out[0] for out in outputs]).to(self.device)
+        return cls_scores
 
     def compute_score_for_total_data(self, gts, res, dataset_name):
         self.df_test = pd.read_csv(os.path.join(self.data_dir, 'test.csv'))
