@@ -173,13 +173,15 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
     encoded_captions = [x / x.norm(dim=-1, keepdim=True) for x in encoded_captions]
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
-
+    device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
     clip_grades = (torch.cat(encoded_captions) @ image_features.t()).squeeze()
     if evaluation_obj and 'style_classification' in evaluation_obj:
-        style_cls_grades = [evaluation_obj['style_classification'].compute_score(c, label) for c in captions]
+        style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
         #check if there is caption with correct style
         consider_style = False
         for i in style_cls_grades:
+            if type(i)==type((1,1)):
+                i = i[0]
             if i>0:
                 consider_style = True
                 break
