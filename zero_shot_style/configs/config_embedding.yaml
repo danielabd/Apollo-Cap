@@ -1,16 +1,17 @@
 ###### stylized ZeroCap: create captions - for run.py
-dataset: flickrstyle10k # senticap,flickrstyle10k
+dataset: senticap # senticap,flickrstyle10k
 style_type: style_embed #'style_embed' or 'emoji'
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False
 debug_mac: False
+run_type: caption #caption, arithmetics, img_prompt_manipulation
 
 ##for validation
 wandb_mode: online #'disabled, offline, online' #todo:
 max_num_of_imgs: -1
 data_type: test #val, test
-target_seq_length: 15
+target_seq_length: 30
 beam_size:
   senticap: 5
   flickrstyle10k: 5
@@ -99,7 +100,6 @@ clip_scale:
 
 
 use_text_style_example: False
-run_type: caption #caption, arithmetics, img_prompt_manipulation
 
 experiement_global_name:
   senticap: senticap_ZeroStyleCap_embed_debug_loss

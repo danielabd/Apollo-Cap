@@ -42,6 +42,8 @@ def get_args():
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
+    parser.add_argument("--reverse_imgs_list", action="store_true",
+                        help="Should we reverse the order of images list we run on")
     parser.add_argument("--img_name", type=int, default=0)
     parser.add_argument("--use_all_imgs", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
@@ -883,6 +885,8 @@ def main():
 
     # go over all images
     evaluation_results = {}  # total_results_structure
+    if config['reverse_imgs_list']:
+        imgs_to_test.reverse()
     for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
         # if int(img_path.split('.')[0].split('/')[-1]) == 429063:
         #     print(f'img_path_idx={img_path_idx}')
