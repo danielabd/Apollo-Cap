@@ -7,7 +7,10 @@ model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 
 #todo:
 #metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-metrics: [CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#metrics: [fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+
+
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 desired_labels:
   senticap: [positive, negative] #[factual, positive, negative]
@@ -17,24 +20,26 @@ res_path2eval:
 #    zerostylecap_emoji:  /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_with_emoji/19_03_2023/tmp/total_results_zerstylecap_emoji_batch.csv
 #    ZeroStyleCap_f_36:  /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/total_results_text_style_f_36.csv
 #    ZeroStyleCap_real_std: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std/total_results_ZeroStyleCap_real_std.csv
-#    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
-#    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
+    capdec_positive: ~/experiments/capdec/27_2_23/res_positive.csv
+    capdec_negative: ~/experiments/capdec/27_2_23/res_negative.csv
 #    prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/prompt_manipulation/d4jnwh7t-copper-cherry-13/results_23_36_32__25_03_2023.csv
 #    image_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_manipulation/h9yfdeh2-misunderstood-forest-12/results_23_33_40__25_03_2023.csv
 #    image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_and_prompt_manipulation/jk7xzo7u-dulcet-bush-11/results_23_29_58__25_03_2023.csv
 #    ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/ZeroStyleCap/xuk6u1fz-eternal-night-7/results_21_29_00__23_03_2023.csv
-    #erc
+#    #erc
 #    ZeroStyleCap: /home/bdaniela/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/total_results_erc.csv
 #    ZeroStyleCap: /home/bdaniela/results/zero_style_cap/erc_old_params/total_results_erc.csv
-    # roberta val
+#     #roberta val
 #    ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa/val_set/03_05_2023/total_results_zero_style_cap_roBerta_val.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa/val_set/03_05_2023/total_results_text_style_.csv
 #     ZeroStyleCap: /home/bdaniela/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set/03_05_2023/total_results_text_style_.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss/05_05_2023/total_results_text_style_.csv
-     # style embed - 14.5.23
-#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_enbedding_model_real_std/total_results_text_style_.csv
+#     #style embed - 14.5.23
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_real_std/total_results_text_style_.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8/total_results_text_style_.csv
-     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/erc/senticap_StylizedZeroCap_erc/total_results_text_style_.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/erc/senticap_StylizedZeroCap_erc/total_results_text_style_.csv
+#     stop in good res -15.5.23
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_stop_in_good_res/15_05_2023/total_results_text_style_.csv
 
   flickrstyle10k:
 #    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
@@ -123,10 +128,10 @@ emoji_vocab_path: ~/projects/torchMoji/model/vocabulary.json
 emoji_pretrained_path: ~/projects/torchMoji/model/pytorch_model.bin
 maxlen_emoji_sentence: 30
 num_classes: 64
-idx_emoji_style_dict:
-  senticap:
-    positive: 53
-    negative: 34
-  flickrstyle10k:
-    humor: 0
-    romantic: 23
+#idx_emoji_style_dict:
+#  senticap:
+#    positive: 53
+#    negative: 34
+#  flickrstyle10k:
+#    humor: 0
+#    romantic: 23

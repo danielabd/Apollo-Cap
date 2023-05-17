@@ -207,7 +207,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 def run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, base_img, dataset_type, imgs_path,
                    img_weights, cuda_idx, title2print):
     if text_generator == None:
-        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, config=config, **vars(config))
+        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, config=config, img_idx=config['img_path_idx'], **vars(config))
     # text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(config))
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)

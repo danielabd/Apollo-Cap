@@ -11,7 +11,7 @@ use_style_model: False
 wandb_mode: online #'disabled, offline, online' #todo:
 max_num_of_imgs: -1
 data_type: test #val, test
-target_seq_length: 15
+target_seq_length: 30
 beam_size:
   senticap: 5
   flickrstyle10k: 5

@@ -4,7 +4,7 @@ import math
 import os.path
 import heapq
 # import pdb
-
+from transformers import AutoConfig
 import numpy as np
 from torch import nn
 from transformers.models.gpt2 import GPT2LMHeadModel, GPT2Tokenizer
@@ -199,7 +199,10 @@ class CLIPTextGenerator:
         # self.sentiment_model = ''  # todo: remove it
         # if False:  # todo: remove it
         if config['style_type'] == 'roBERTa': # todo: remove it  -  using sentiment model roberta
-            self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
+            # self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
+            f_roberta_config = AutoConfig.from_pretrained(self.config['finetuned_roberta_config'])
+            self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.config['finetuned_roberta_model_path'],
+                                                                                  config=f_roberta_config)
             self.sentiment_model.to(self.device)
             self.sentiment_model.eval()
 
@@ -210,6 +213,9 @@ class CLIPTextGenerator:
             # SENTIMENT: tokenizer for sentiment analysis module
             self.sentiment_tokenizer_name = self.sentiment_model_name
             self.sentiment_tokenizer = AutoTokenizer.from_pretrained(self.sentiment_tokenizer_name)
+
+
+
 
             # SENTIMENT: fields for type and scale of sentiment
             self.sentiment_scale = 1
@@ -998,7 +1004,7 @@ class CLIPTextGenerator:
 
         while(1):
             i += 1
-            print(f"iteration num: {i}")
+            # print(f"iteration num: {i}")
             if self.config['print_for_debug']:
                 print(f"************** word_loc =  {word_loc}, iter num = {i} **************")
             if new_weighted_loss:

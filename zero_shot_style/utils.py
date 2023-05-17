@@ -125,7 +125,7 @@ def get_hparams(args):
             if type(hparams[k]) == dict and hparams['dataset'] in hparams[k]:
                 hparams[k] = hparams[k][hparams['dataset']]
 
-    #fix paths in config file according to the homw dir in th server
+    #fix paths in config file according to the home dir in th server
     for k1 in hparams:
         if type(hparams[k1])==dict:
             for k2 in hparams[k1]:

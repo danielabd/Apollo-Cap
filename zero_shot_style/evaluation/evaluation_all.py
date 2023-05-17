@@ -39,7 +39,7 @@ from argparse import ArgumentParser
 from zero_shot_style.utils import get_hparams, replace_user_home_dir
 
 NORMALIZE_GRADE_SCALE = 100
-MAX_PERPLEXITY = 500
+MAX_PERPLEXITY = 1500
 target_seq_length = 30
 
 
@@ -159,19 +159,20 @@ class STYLE_CLS:
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
         output = self.model(input_id, mask)
 
-        #binary output
-        # outputs_bin = torch.round(torch.tensor([out[0] for out in output])).to(self.device)
-        # if outputs_bin[0] == gt_label_idx:
-        #     cls_score = 1
-        # else:
-        #     cls_score = 0
-
-        # continuous output
-        if gt_label_idx == 1:
-            cls_score = torch.tensor([out[0] for out in output]).to(self.device)
+        ### binary output
+        outputs_bin = torch.round(torch.tensor([out[0] for out in output])).to(self.device)
+        if outputs_bin[0] == gt_label_idx:
+            cls_score = 1
         else:
-            cls_score = torch.tensor([1-out[0] for out in output]).to(self.device)
+            cls_score = 0
 
+        ##############
+        # # continuous output
+        # if gt_label_idx == 1:
+        #     cls_score = torch.tensor([out[0] for out in output]).to(self.device)
+        # else:
+        #     cls_score = torch.tensor([1-out[0] for out in output]).to(self.device)
+        # ##############
         # normalized_output = output[0]/torch.norm(output[0])
 
         # cls_score = normalized_output[gt_label_idx]*1+ normalized_output[1-gt_label_idx]*-1
@@ -498,8 +499,12 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                 if metric == 'fluency':
                     mean_score_per_metric_and_style[metric][style] = np.mean(score_per_metric_and_style[metric][style])
                 else:
-                    mean_score_per_metric_and_style[metric][style] = np.mean(
+                    try:
+                        mean_score_per_metric_and_style[metric][style] = np.mean(
                         score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
+                    except:
+                        mean_score_per_metric_and_style[metric][style] = np.mean([s[0].cpu() for s in
+                            score_per_metric_and_style[metric][style]]) * NORMALIZE_GRADE_SCALE
                 print(
                     f"mean_score_per_metric_and_style[metric][{style}] = {mean_score_per_metric_and_style[metric][style]}")
             t2_metric = timeit.default_timer();
@@ -640,7 +645,11 @@ def get_res_data(res_paths):
     '''
     res_data_per_test = {}
     i = 1 #0 - idx_img_name_in_res
+    j = 2 # caption res in column idx=2
     for test_name in res_paths:
+        if test_name.startswith('capdec'):
+            i = 0
+            j = 1
         res_data = {}
         with open(res_paths[test_name], 'r') as csvfile:
             spamreader = csv.reader(csvfile)
@@ -667,7 +676,7 @@ def get_res_data(res_paths):
                         for i, s in enumerate(styles):
                             # res_data[k][s] = row[i+1]
                             # limit sentence to target_seq_length as we create in ZeroStyleCap
-                            res_data[k][s] = ' '.join(row[i + 2].split()[:target_seq_length])
+                            res_data[k][s] = ' '.join(row[i + j].split()[:target_seq_length])
                     except:
                         pass
         res_data_per_test[test_name] = res_data
@@ -969,7 +978,6 @@ def main():
     res_data_per_test = get_res_data(config['res_path2eval'])
     # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
     # exit(0)
-
     mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'],
                                         config['cuda_idx'], data_dir, config['txt_cls_model_paths'],
                                         config['labels_dict_idxs'], gt_imgs_for_test, config)

@@ -6,6 +6,12 @@ use_style_threshold: False
 debug: False
 debug_mac: False
 run_type: caption #caption, arithmetics, img_prompt_manipulation
+print_for_debug: False
+
+experiement_global_name:
+  senticap: senticap_ZeroStyleCap_prompt_manipulation
+  flickrstyle10k: flickrstyle10k_ZeroStyleCap_embed
+
 
 ##for validation
 wandb_mode: online #'disabled, offline, online' #todo:
@@ -100,10 +106,6 @@ clip_scale:
 
 
 use_text_style_example: False
-
-experiement_global_name:
-  senticap: senticap_ZeroStyleCap_embed_debug_loss
-  flickrstyle10k: flickrstyle10k_ZeroStyleCap_embed
 
 hidden_state_to_take_txt_cls:
   senticap: -1
