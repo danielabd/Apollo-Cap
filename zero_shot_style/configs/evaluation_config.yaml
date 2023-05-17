@@ -7,8 +7,8 @@ model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 
 #todo:
 #metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-#metrics: [fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
 
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
@@ -52,6 +52,18 @@ res_path2eval:
     image_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/image_manipulation/total_results_image_manipulation.csv
     image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/image_and_prompt_manipulation/total_results_image_and_prompt_manipulation.csv
     ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/ZeroStyleCap/total_results_text_style_Flickrstyle10k.csv
+
+
+# finetuned roBERTa
+finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
+finetuned_roberta_config: ~/checkpoints/finetuned_roberta/config.json
+labels_dict_idxs_roberta:
+  senticap:
+    positive: 1
+    negative: 0
+  flickrstyle10k:
+    humor: 0
+    romantic: 1:
 
 max_num_imgs2test:
   senticap: -1
@@ -103,6 +115,7 @@ styles:
 img_idx_to_start_from: 0
 max_num_of_imgs: 5 #-1
 specific_idxs_to_skip: [2,3]
+
 
 labels_dict_idxs:
   senticap:

@@ -196,8 +196,6 @@ class CLIPTextGenerator:
         task = 'sentiment'
         MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
         self.sentiment_model_name = MODEL
-        # self.sentiment_model = ''  # todo: remove it
-        # if False:  # todo: remove it
         if config['style_type'] == 'roBERTa': # todo: remove it  -  using sentiment model roberta
             # self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
             f_roberta_config = AutoConfig.from_pretrained(self.config['finetuned_roberta_config'])
@@ -214,8 +212,8 @@ class CLIPTextGenerator:
             self.sentiment_tokenizer_name = self.sentiment_model_name
             self.sentiment_tokenizer = AutoTokenizer.from_pretrained(self.sentiment_tokenizer_name)
 
-
-
+            MODEL = f"cardiffnlp/twitter-roberta-base-sentiment"
+            sentiment_tokenizer = AutoTokenizer.from_pretrained(MODEL)
 
             # SENTIMENT: fields for type and scale of sentiment
             self.sentiment_scale = 1

@@ -10,6 +10,7 @@
 import json
 from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
+from torch import nn
 
 import pandas as pds
 import shutil
@@ -26,6 +27,9 @@ from nltk.lm.preprocessing import padded_everygram_pipeline
 from nltk.lm import MLE
 import os
 import pickle
+
+from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
+
 from zero_shot_style.evaluation.pycocoevalcap.bleu.bleu import Bleu
 from zero_shot_style.evaluation.pycocoevalcap.cider.cider import Cider
 from zero_shot_style.evaluation.pycocoevalcap.meteor.meteor import Meteor
@@ -109,6 +113,89 @@ class CLIPScore:
         # print(f'text: {res}')
         # print('CLIPScore = %s' % score[0][0])
         return score[0][0], [score]
+
+class STYLE_CLS_ROBERTA:
+    def __init__(self, finetuned_roberta_config,finetuned_roberta_model_path, desired_cuda_num, labels_dict_idxs_roberta, data_dir=None, max_batch_size=100):
+        self.data_dir = data_dir
+        self.desired_cuda_num = desired_cuda_num
+        self.labels_dict_idxs_roberta = labels_dict_idxs_roberta
+        # self.df_test = pd.read_csv(os.path.join(data_dir, 'test.csv'))
+        use_cuda = torch.cuda.is_available()
+        self.device = torch.device(f"cuda" if use_cuda else "cpu")
+        self.sentiment_model = self.load_model(finetuned_roberta_config,finetuned_roberta_model_path)
+        self.max_batch_size = max_batch_size
+        # SENTIMENT: tokenizer for sentiment analysis module
+        task = 'sentiment'
+        base_roberta_model = f"cardiffnlp/twitter-roberta-base-{task}"
+        self.sentiment_tokenizer = AutoTokenizer.from_pretrained(base_roberta_model)
+        # SENTIMENT: fields for type and scale of sentiment
+        self.sentiment_scale = 1
+
+
+    def load_model(self, finetuned_roberta_config,finetuned_roberta_model_path):
+        f_roberta_config = AutoConfig.from_pretrained(finetuned_roberta_config)
+        sentiment_model = AutoModelForSequenceClassification.from_pretrained(
+            finetuned_roberta_model_path,
+            config=f_roberta_config)
+        sentiment_model.to(self.device)
+        sentiment_model.eval()
+
+        # SENTIMENT: Freeze sentiment model weights
+        for param in sentiment_model.parameters():
+            param.requires_grad = False
+
+        return sentiment_model
+
+    def compute_score(self, res, gt_label):
+        '''
+
+        :param gts: list of text
+        :param res: dict. key=str. value=list of single str
+        :return:
+        '''
+        res_val = res
+        if type(res) == dict:
+            res_val = list(res.values())[0][0]
+
+        with torch.no_grad():
+            inputs = self.sentiment_tokenizer([res_val], padding=True, return_tensors="pt")
+            inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
+            inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
+            logits = self.sentiment_model(**inputs)['logits']
+            relevant_logits = torch.tensor([logits[:,i] for i in [0,2]])
+            output = nn.functional.softmax(relevant_logits, dim=-1) #todo:check it
+            cls_score = output[self.labels_dict_idxs_roberta[gt_label]].item()
+        return cls_score, None
+
+    def compute_label_for_list(self, res, gt_label):
+        '''
+
+        :param gts: list of labels
+        :param res: list of sentences
+        :return:
+        '''
+        with torch.no_grad():
+            # if type(gt_label_idx)==type('str'):
+            #     gt_label_idx = self.labels_dict_idxs[gt_label_idx]
+            total_outputs = torch.tensor([]).to(self.device)
+            for i in range(round(np.ceil(len(res)/self.max_batch_size))):
+                part_res = res[i*self.max_batch_size:(i+1)*self.max_batch_size]
+                inputs = self.sentiment_tokenizer(part_res, padding=True, return_tensors="pt")
+                inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
+                inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
+                logits = self.sentiment_model(**inputs)['logits']
+                relevant_logits = [logits[:, i] for i in [0, 2]] # todo:check it
+                output = nn.functional.softmax(relevant_logits, dim=-1)  # todo:check it
+                cls_scores = torch.sum(output[:,self.labels_dict_idxs_roberta[gt_label]])#todo
+            return cls_scores
+
+    def compute_score_for_total_data(self, gts, res, dataset_name):
+        self.df_test = pd.read_csv(os.path.join(self.data_dir, 'test.csv'))
+        total_acc_test_for_all_data = evaluate_text_style_classification(self.model[dataset_name], self.df_test,
+                                                                         self.labels_dict_idxs, self.desired_cuda_num)
+        return total_acc_test_for_all_data, None
+
+
 
 
 class STYLE_CLS:
@@ -371,7 +458,7 @@ def evaluate_single_res(res, gt, image_path, label, metrics, evaluation_obj):
     evaluation = {}
     print('evaluate single res.')
     for metric in metrics:
-        if metric in ['style_classification', 'style_classification_emoji']:
+        if metric in ['style_classification', 'style_classification_emoji', 'style_classification_roberta']:
             if label == 'factual':
                 evaluation[metric] = None
                 continue
@@ -395,9 +482,15 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
     if 'style_classification' in metrics:
         style_cls_obj = STYLE_CLS(txt_cls_model_paths_to_load, cuda_idx, labels_dict_idxs, data_dir,
                                                 config['hidden_state_to_take_txt_cls'])
+        print(f"style_cls_obj = STYLE_CLS")
     if 'style_classification_emoji' in config['metrics']:
         style_cls_emoji_obj = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'],
                                                       config['emoji_pretrained_path'], config['idx_emoji_style_dict'], config['use_single_emoji_style'], config['desired_labels'])
+    if 'style_classification_roberta' in config['metrics']:
+        style_cls_obj = STYLE_CLS_ROBERTA(config['finetuned_roberta_config'],config['finetuned_roberta_model_path'], cuda_idx, config['labels_dict_idxs_roberta'], data_dir)
+        print(f"style_cls_obj = STYLE_CLS_ROBERTA")
+
+
     if 'fluency' in metrics:
         fluency_obj = Fluency()
     all_scores = {}
@@ -437,6 +530,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                 scorer.reset_keys()
             elif metric == 'style_classification':
                 scorer = style_cls_obj
+            elif metric == 'style_classification_roberta':
+                scorer = style_cls_obj
             elif metric == 'style_classification_emoji':
                 scorer = style_cls_emoji_obj
 
@@ -452,7 +547,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                     score_dict_per_metric[metric][k] = {}
                     scores_dict_per_metric[metric][k] = {}
                     for i2, style in enumerate(styles):
-                        if style == 'factual' and metric == 'style_classification':
+                        if style == 'factual' and (metric == 'style_classification' or metric == 'style_classification_roberta'):
                             continue
                         if style in gts_per_data_set[k] and style in res[test_name][k]:
                             if not gts_per_data_set[k][style]:
@@ -467,7 +562,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                 all_scores = save_all_data_k(all_scores, k, test_name, style, metric,
                                                              score_dict_per_metric, res=tmp_res[k][0],
                                                              image_path=gts_per_data_set[k]['image_path'])
-                            elif metric in ['style_classification', 'style_classification_emoji']:
+                            elif metric in ['style_classification','style_classification_roberta', 'style_classification_emoji']:
                                 score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
                                     style] = scorer.compute_score(tmp_res, style)
                                 score_per_metric_and_style[metric][style].append(

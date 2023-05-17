@@ -9,7 +9,8 @@ import torch
 import clip
 import wandb
 import yaml
-from zero_shot_style.evaluation.evaluation_all import get_gts_data, CLIPScoreRef, CLIPScore, STYLE_CLS, STYLE_CLS_EMOJI
+from zero_shot_style.evaluation.evaluation_all import get_gts_data, CLIPScoreRef, CLIPScore, STYLE_CLS, STYLE_CLS_EMOJI, \
+    STYLE_CLS_ROBERTA
 from zero_shot_style.evaluation.evaluation_all import evaluate_single_res
 from zero_shot_style.evaluation.pycocoevalcap.bleu.bleu import Bleu
 from zero_shot_style.evaluation.pycocoevalcap.rouge.rouge import Rouge
@@ -175,8 +176,12 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
     device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
     clip_grades = (torch.cat(encoded_captions) @ image_features.t()).squeeze()
-    if evaluation_obj and 'style_classification' in evaluation_obj:
-        style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
+    if evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj):
+        if 'style_classification' in evaluation_obj:
+            style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
+        elif 'style_classification_roberta' in evaluation_obj:
+            style_cls_grades = torch.tensor(
+                evaluation_obj['style_classification_roberta'].compute_label_for_list(captions, label)).to(device)
         #check if there is caption with correct style
         consider_style = False
         for i in style_cls_grades:
@@ -568,6 +573,14 @@ def get_evaluation_obj(config, text_generator, evaluation_obj):
                 evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
                                                                    config['labels_dict_idxs'], None, config[
                                                                        'hidden_state_to_take_txt_cls'],config['max_batch_size_style_cls'])
+                print(f"style_cls_obj = STYLE_CLS")
+            if metric == 'style_classification_roberta' and 'style_classification_roberta' not in evaluation_obj:
+                evaluation_obj['style_classification_roberta'] = STYLE_CLS_ROBERTA(config['finetuned_roberta_config'],
+                                                  config['finetuned_roberta_model_path'], config['cuda_idx_num'], config['labels_dict_idxs_roberta'],
+                                                  None)
+                print(f"style_cls_obj = STYLE_CLS_ROBERTA")
+
+
             if metric == 'style_classification_emoji' and 'style_classification_emoji' not in evaluation_obj:
                 evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'],
                                                                                config['maxlen_emoji_sentence'],
@@ -620,6 +633,8 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                 fluency_score = DEFAULT_PERPLEXITY_SCORE
             if 'style_classification' in config['evaluation_metrics']:
                 style_cls_score = evaluation_results[img_name][label]['scores']['style_classification']
+            elif 'style_classification_roberta' in config['evaluation_metrics']:
+                style_cls_score = evaluation_results[img_name][label]['scores']['style_classification_roberta']
             else:
                 style_cls_score = DEFAULT_STYLE_CLS_SCORE
             if 'style_classification_emoji' in config['evaluation_metrics']:
@@ -680,7 +695,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     avg_clip_score = np.mean(clip_scores) / config['desired_min_CLIP_score']
     avg_fluency_score = mean_perplexity
     avg_style_cls_score = np.mean(style_cls_scores)
-    avg_style_cls_emoji_score = torch.mean(torch.stack(style_cls_emoji_scores))
+    # avg_style_cls_emoji_score = torch.mean(torch.stack(style_cls_emoji_scores))
     if 'requires_min_fluency_score' in config:
         if avg_fluency_score > config['requires_min_fluency_score']:
             final_avg_total_score = calculate_avg_score_wo_fluence(avg_clip_score, avg_style_cls_score)
@@ -841,6 +856,13 @@ def initial_variables():
                 evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
                                                         config['labels_dict_idxs'], data_dir, config[
                                                             'hidden_state_to_take_txt_cls'], config['max_batch_size_style_cls'])
+                print(f"style_cls_obj = STYLE_CLS")
+            if 'style_classification_roberta' in config['metrics']:
+                evaluation_obj['style_classification_roberta'] = STYLE_CLS_ROBERTA(config['finetuned_roberta_config'],
+                                                  config['finetuned_roberta_model_path'], config['cuda_idx_num'], config['labels_dict_idxs_roberta'],
+                                                  data_dir)
+                print(f"style_cls_obj = STYLE_CLS_ROBERTA")
+
             if 'style_classification_emoji' in config['evaluation_metrics']:
                 evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
 

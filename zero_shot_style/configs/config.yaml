@@ -3,7 +3,7 @@ dataset: senticap # senticap,flickrstyle10k
 style_type: roBERTa  #'style_embed' or 'emoji' or 'erc' or 'roBERTa' #todo
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
-debug: False
+debug: False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
@@ -34,7 +34,8 @@ desired_labels:
 save_config_file: True # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-evaluation_metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#evaluation_metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+evaluation_metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
 
 experiement_global_name:
@@ -44,7 +45,13 @@ experiement_global_name:
 # finetuned roBERTa
 finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
 finetuned_roberta_config: ~/checkpoints/finetuned_roberta/config.json
-
+labels_dict_idxs_roberta:
+  senticap:
+    positive: 1
+    negative: 0
+  flickrstyle10k:
+    humor: 0
+    romantic: 1
 
 # weighted loss
 new_weighted_loss: False #todo
