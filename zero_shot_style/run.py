@@ -66,6 +66,9 @@ def get_args():
                         help="Should we reset the context at each token gen")
     parser.add_argument("--reverse_imgs_list", action="store_true",
                         help="Should we reverse the order of images list we run on")
+    parser.add_argument("--update_ViT", action="store_true",
+                        help="Should update CLIP tensors also")
+
     parser.add_argument("--clip_loss_temperature", type=float, default=0.01)
     parser.add_argument("--std_embedding_vectors_positive", type=float, default=0.028914157)
     parser.add_argument("--std_embedding_vectors_negative", type=float, default=0.020412436)

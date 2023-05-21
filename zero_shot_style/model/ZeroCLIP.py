@@ -324,10 +324,10 @@ class CLIPTextGenerator:
         imgs = [Image.open(x) for x in img_path]
         clip_imgs = [self.clip_preprocess(x).unsqueeze(0).to(self.device) for x in imgs]
 
-        with torch.no_grad():
+        if self.config['update_ViT']:
             if self.model_based_on == 'bert' or source_clip:
                 image_fts = [self.clip.encode_image(x) for x in clip_imgs]
-            elif self.model_based_on == 'clip': #for text_style
+            elif self.model_based_on == 'clip':  # for text_style
                 image_fts = [self.text_style_model.forward_im(x) for x in clip_imgs]
 
             if weights is not None:
@@ -336,7 +336,21 @@ class CLIPTextGenerator:
                 image_features = sum(image_fts)
 
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            return image_features.detach()
+            return image_features
+        else:
+            with torch.no_grad():
+                if self.model_based_on == 'bert' or source_clip:
+                    image_fts = [self.clip.encode_image(x) for x in clip_imgs]
+                elif self.model_based_on == 'clip': #for text_style
+                    image_fts = [self.text_style_model.forward_im(x) for x in clip_imgs]
+
+                if weights is not None:
+                    image_features = sum([x * weights[i] for i, x in enumerate(image_fts)])
+                else:
+                    image_features = sum(image_fts)
+
+                image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+                return image_features.detach()
 
     def get_txt_features(self, text, source_clip = False):
         with torch.no_grad():
@@ -524,7 +538,7 @@ class CLIPTextGenerator:
 
         sentiment_loss = 0
         losses = []
-
+        style_probs = {}
         for idx_p in range(probs.shape[0]): #go over all beams
           
             top_texts = []
@@ -555,13 +569,14 @@ class CLIPTextGenerator:
             
             target = torch.zeros_like(probs[idx_p], device=self.device)
             target[top_indices[idx_p]] = predicted_probs[0]
-            
             target = target.unsqueeze(0)
             cur_sentiment_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
             
-            
             sentiment_loss += cur_sentiment_loss
             losses.append(cur_sentiment_loss)
+
+            if self.config['update_ViT']:
+                style_probs[idx_p] = target
         
         loss_string = ''
         for idx_p in range(probs.shape[0]): #go over all beams
@@ -569,8 +584,7 @@ class CLIPTextGenerator:
                 loss_string = f'{losses[0]}'
             else:
                 loss_string = loss_string+'%, '+f'{losses[idx_p]}'
-            
-        return sentiment_loss, losses
+        return sentiment_loss, losses, style_probs
 
     def get_text_style_loss_with_clip(self, probs, context_tokens):
         for p_ in self.clip.transformer.parameters():
@@ -1032,12 +1046,11 @@ class CLIPTextGenerator:
                 p0.retain_grad()
                 p1.retain_grad()
 
-            shifted_context = list(map(add_context, context, curr_shift))
+            shifted_context = list(map(add_context, context, curr_shift))  # array like addition for tuples
 
             shifted_outputs = self.lm_model(last_token, past_key_values=shifted_context)
             logits = shifted_outputs["logits"][:, -1, :]
             probs = nn.functional.softmax(logits, dim=-1)
-
 
             ###################################################
             if word_loc>=self.config['start_word_loc_heavy_iteration'] and i >= 1:
@@ -1123,7 +1136,8 @@ class CLIPTextGenerator:
 
             # CLIP LOSS
             if self.clip_scale!=0:
-                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM = self.clip_loss(probs, context_tokens)
+                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs = self.clip_loss(probs, context_tokens)
+                # todo: check that clip_probs have grads
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print("after calc clip loss:")
                 clip_loss_fixed = round(clip_loss.item(),3)
@@ -1194,10 +1208,11 @@ class CLIPTextGenerator:
                     elif self.style_type == 'style_embed': #my text style embedding that I trained
                         text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
                     elif self.style_type == 'roBERTa':
-                        text_style_loss, text_style_losses = self.get_sentiment_loss(probs, context_tokens, self.style)
+                        text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs, context_tokens, self.style)
                     else:
                         print('check what is the style model!')
                         exit(-1)
+
                     #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                     # loss += self.text_style_scale * text_style_loss
                     if not new_weighted_loss:
@@ -1261,6 +1276,13 @@ class CLIPTextGenerator:
                 #    self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
                 #    self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
                 #write_tmp_text_loss(self.tmp_text_loss)
+
+            if self.config['update_ViT']:
+              clip_ViT_loss = 0
+              for idx_p in clip_probs.keys():
+                  clip_ViT_loss += torch.sum(-(style_probs[idx_p] * torch.log(clip_probs[idx_p]))) #todo: check if need detach on style tensor
+              clip_ViT_loss.backward()
+
             loss.backward()
 
             # ---------- Weights ----------
@@ -1364,9 +1386,10 @@ class CLIPTextGenerator:
         return logits
 
     def clip_loss(self, probs, context_tokens):
-        for p_ in self.clip.transformer.parameters():
-            if p_.grad is not None:
-                p_.grad.data.zero_()
+        if not self.config['update_ViT']:
+            for p_ in self.clip.transformer.parameters(): #todo: check if it defend on text params.
+                if p_.grad is not None:
+                    p_.grad.data.zero_()
 
         top_size = 512
         top_probs_LM, top_indices = probs.topk(top_size, -1)
@@ -1383,6 +1406,8 @@ class CLIPTextGenerator:
         debug_best_probs_vals_LM=[]
         if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
             print("in clip loss:")
+
+        clip_probs = {} #for all beams
         for idx_p in range(probs.shape[0]): # for beam search
             top_texts = []
             prefix_text = prefix_texts[idx_p]
@@ -1398,9 +1423,145 @@ class CLIPTextGenerator:
             debug_best_top_texts_LM.extend(LM_top_text)
             text_features = self.get_txt_features(top_texts)
 
-            with torch.no_grad():
-                similiraties = (self.image_features @ text_features.T)
+            if not self.config['update_ViT']:
+                with torch.no_grad():
+                    similiraties = (self.image_features @ text_features.T)
+                    ##### #todo:debug
+                    # top_probs_clip, top_indices_clip = similiraties.topk(10, -1)
+                    # top_texts_clip = [top_texts[i] for i in top_indices_clip[0]]
+                    # print(f"top_texts_clip = {top_texts_clip}")
+                    # torch.topk(similiraties, k=10)
+                    # style_sco
+                    # res[top_indices]
 
+                    #10.5.23
+                    if self.config['cut_cand2clip']:
+                        #########compute style score for text:
+                        # get style score for text
+                        with torch.no_grad():
+                            results = self.perplexity.compute(data=top_texts, model_id='gpt2',
+                                                         add_start_token=False)
+                            fluency_scores = torch.tensor([1 - np.min([res_i, MAX_PERPLEXITY]) / MAX_PERPLEXITY for res_i in results['perplexities']]).to(self.device)
+                            # self.config['desired_min_fluency_score']
+                            # fixed_perplexity = 1 - np.min([results['perplexities'][0], MAX_PERPLEXITY]) / MAX_PERPLEXITY
+
+                            inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
+                            inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
+                            inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
+                            logits = self.sentiment_model(**inputs)['logits']
+                            sentiment_grades = None
+                            ########
+                            positive_grades = nn.functional.softmax(logits, dim=-1)[:, 2]
+                            neutral_grades = nn.functional.softmax(logits, dim=-1)[:, 1]
+                            negative_grades = nn.functional.softmax(logits, dim=-1)[:, 0]
+                            style_scores = []
+                            if self.style == 'positive':
+                                desired_scores = positive_grades
+                                undesired_scores = negative_grades
+                            elif self.style == 'negative':
+                                desired_scores = negative_grades
+                                undesired_scores = positive_grades
+                            for i in range(len(desired_scores)):
+                                # if desired_scores[i] > 2*undesired_scores[i] and desired_scores[i]> 2* neutral_grades[i]:
+                                if desired_scores[i] > 0.5 and fluency_scores[i] > self.config['desired_min_fluency_score']:
+                                    style_scores.append(1)
+                                else:
+                                    style_scores.append(0)
+
+                            # if self.style == 'positive':
+                            #     sentiment_grades = nn.functional.softmax(logits, dim=-1)[:, 2]
+                            # elif self.style == 'neutral':
+                            #     sentiment_grades = nn.functional.softmax(logits, dim=-1)[:, 1]
+                            # elif self.style == 'negative':
+                            #     sentiment_grades = nn.functional.softmax(logits, dim=-1)[:, 0]
+                        #########
+                        # style_scores = [1 for i in outputs_bin if i == self.desired_style_bin]
+
+                        # style_scores = torch.tensor([1 if i>0.5  else 0 for i in sentiment_grades]).to(self.device)
+                        style_scores = torch.tensor(style_scores).to(self.device)
+                        if self.device == "cuda":
+                            similiraties = torch.mul(similiraties, style_scores)
+                        else:
+                            similiraties = np.multiply(similiraties, style_scores)
+                    # end - 10.5.23
+                    if self.use_text_style_cutting:
+                        #if self.check_if_cut_score[idx_p]:
+                        if self.check_if_cut_score:
+                            cut_scores = True
+                            similarity_topk_vals, similarity_topk_indices = similiraties[0].topk(self.config['requires_num_min_clip_score_val'][self.style])
+
+                            for i in similarity_topk_vals:
+                                if i <= self.config['requires_min_clip_score_val'][self.style]:
+                                    cut_scores = False
+                            if cut_scores:
+                                # print("~~~~~")
+                                # print(f"similarity_topk_vals={similarity_topk_vals}")
+                                # print("~~~~~")
+                                self.check_if_cut_score = False
+                        if not self.check_if_cut_score:
+                            # print("~~~~~")
+                            if self.config['style_type'] == 'emoji':
+                                ############ top_texts[0] = "In love"; top_texts[1] = "In hate"
+                                tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                                tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                                emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
+                                emoji_style_grades = emoji_style_probs[:,
+                                                     self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                                if self.config['style_mul_not_cut']:
+                                    style_scores = (emoji_style_grades / torch.sum(emoji_style_grades)).to(self.device)
+                                else:
+                                    emoji_style_grades_cutted = [0] * len(emoji_style_grades)
+                                    for i in range(len(emoji_style_grades)):
+                                        if emoji_style_grades[i] > self.config['threshold_sentiment'][self.style] and similiraties[0][i]>=self.config['requires_min_clip_score_val'][self.style]:  # todo
+                                            # if emoji_style_grades[i]>0.3:
+                                            # print(f"i={i},emoji_style_grades[i]={emoji_style_grades[i]},top_texts[i]={top_texts[i]}")
+                                            emoji_style_grades_cutted[i] = 1
+                                    style_scores = torch.tensor(emoji_style_grades_cutted).to(self.device)
+                                ############
+                            elif self.config['style_type'] == 'style_embed':
+                                outputs_bin = self.text_style_cls_model.compute_label_for_list(top_texts)
+                                style_scores = [1 for i in outputs_bin if i == self.desired_style_bin]
+
+                            # top_probs_style, top_indices_style = style_scores.sort(descending=True)
+                            # top_texts_emoji_style = [top_texts[i] for i in top_indices_style]
+                            # clip_prob_by_top_style_cls = [similiraties[0][i].item() for i in top_indices_style]
+
+                            # good_style_idxs = (style_scores == 1).nonzero(as_tuple=True)[0]
+                            # top_texts_emoji_style = [top_texts[i] for i in good_style_idxs]
+                            # print(f"top_texts_emoji_style = {top_texts_emoji_style}")
+                            # similiraties[good_style_idxs]
+                            #####
+                            # similiraties = similiraties * style_scores
+                            #zero sentences which are not in the desired style
+
+                            if self.device == "cuda":
+                                similiraties = torch.mul(similiraties, style_scores)
+                            else:
+                                similiraties = np.multiply(similiraties, style_scores)
+                        # top_probs_indices_clip_emoji_style, top_indices_clip_emoji_style = similiraties.topk(10, -1)
+                        # top_texts_clip_emoji_style = [top_texts[i] for i in top_indices_clip_emoji_style[0]]
+                        # print(f"top_texts_clip_emoji_style = {top_texts_clip_emoji_style}")
+                    ############
+                    # top_texts = ['Ugly and disgusting  image', 'Beautiful and amazing image']
+                    # top_texts = ['The wonderful line waiting in the baggage carousel.',
+                    #              'A suitcase devastated the platform at Penn Station in New York City.']
+                    # pos_text = ['positive']
+                    if self.text_style_list:
+                        text_style_features = self.get_txt_features([self.text_style_list])
+                        similarity_to_style = text_style_features @ text_features.T
+                        similarity_to_style_normalized = similarity_to_style / similarity_to_style[0].norm(dim=-1)
+                        #add affect with the style:
+                        image_text_similiraties = (self.image_features @ text_features.T)
+                        if self.device=="cuda":
+                            similiraties = torch.mul(image_text_similiraties, similarity_to_style_normalized)
+                        else:
+                            similiraties = np.multiply(image_text_similiraties, similarity_to_style_normalized)
+                        ######
+
+                    target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
+                    target_probs = target_probs.type(torch.float32)
+            else:
+                similiraties = (self.image_features @ text_features.T)
                 ##### #todo:debug
                 # top_probs_clip, top_indices_clip = similiraties.topk(10, -1)
                 # top_texts_clip = [top_texts[i] for i in top_indices_clip[0]]
@@ -1409,14 +1570,15 @@ class CLIPTextGenerator:
                 # style_sco
                 # res[top_indices]
 
-                #10.5.23
+                # 10.5.23
                 if self.config['cut_cand2clip']:
                     #########compute style score for text:
                     # get style score for text
                     with torch.no_grad():
                         results = self.perplexity.compute(data=top_texts, model_id='gpt2',
-                                                     add_start_token=False)
-                        fluency_scores = torch.tensor([1 - np.min([res_i, MAX_PERPLEXITY]) / MAX_PERPLEXITY for res_i in results['perplexities']]).to(self.device)
+                                                          add_start_token=False)
+                        fluency_scores = torch.tensor([1 - np.min([res_i, MAX_PERPLEXITY]) / MAX_PERPLEXITY for res_i in
+                                                       results['perplexities']]).to(self.device)
                         # self.config['desired_min_fluency_score']
                         # fixed_perplexity = 1 - np.min([results['perplexities'][0], MAX_PERPLEXITY]) / MAX_PERPLEXITY
 
@@ -1460,10 +1622,11 @@ class CLIPTextGenerator:
                         similiraties = np.multiply(similiraties, style_scores)
                 # end - 10.5.23
                 if self.use_text_style_cutting:
-                    #if self.check_if_cut_score[idx_p]:
+                    # if self.check_if_cut_score[idx_p]:
                     if self.check_if_cut_score:
                         cut_scores = True
-                        similarity_topk_vals, similarity_topk_indices = similiraties[0].topk(self.config['requires_num_min_clip_score_val'][self.style])
+                        similarity_topk_vals, similarity_topk_indices = similiraties[0].topk(
+                            self.config['requires_num_min_clip_score_val'][self.style])
 
                         for i in similarity_topk_vals:
                             if i <= self.config['requires_min_clip_score_val'][self.style]:
@@ -1487,7 +1650,9 @@ class CLIPTextGenerator:
                             else:
                                 emoji_style_grades_cutted = [0] * len(emoji_style_grades)
                                 for i in range(len(emoji_style_grades)):
-                                    if emoji_style_grades[i] > self.config['threshold_sentiment'][self.style] and similiraties[0][i]>=self.config['requires_min_clip_score_val'][self.style]:  # todo
+                                    if emoji_style_grades[i] > self.config['threshold_sentiment'][self.style] and \
+                                            similiraties[0][i] >= self.config['requires_min_clip_score_val'][
+                                        self.style]:  # todo
                                         # if emoji_style_grades[i]>0.3:
                                         # print(f"i={i},emoji_style_grades[i]={emoji_style_grades[i]},top_texts[i]={top_texts[i]}")
                                         emoji_style_grades_cutted[i] = 1
@@ -1507,7 +1672,7 @@ class CLIPTextGenerator:
                         # similiraties[good_style_idxs]
                         #####
                         # similiraties = similiraties * style_scores
-                        #zero sentences which are not in the desired style
+                        # zero sentences which are not in the desired style
 
                         if self.device == "cuda":
                             similiraties = torch.mul(similiraties, style_scores)
@@ -1516,18 +1681,13 @@ class CLIPTextGenerator:
                     # top_probs_indices_clip_emoji_style, top_indices_clip_emoji_style = similiraties.topk(10, -1)
                     # top_texts_clip_emoji_style = [top_texts[i] for i in top_indices_clip_emoji_style[0]]
                     # print(f"top_texts_clip_emoji_style = {top_texts_clip_emoji_style}")
-                ############
-                # top_texts = ['Ugly and disgusting  image', 'Beautiful and amazing image']
-                # top_texts = ['The wonderful line waiting in the baggage carousel.',
-                #              'A suitcase devastated the platform at Penn Station in New York City.']
-                # pos_text = ['positive']
                 if self.text_style_list:
                     text_style_features = self.get_txt_features([self.text_style_list])
                     similarity_to_style = text_style_features @ text_features.T
                     similarity_to_style_normalized = similarity_to_style / similarity_to_style[0].norm(dim=-1)
-                    #add affect with the style:
+                    # add affect with the style:
                     image_text_similiraties = (self.image_features @ text_features.T)
-                    if self.device=="cuda":
+                    if self.device == "cuda":
                         similiraties = torch.mul(image_text_similiraties, similarity_to_style_normalized)
                     else:
                         similiraties = np.multiply(image_text_similiraties, similarity_to_style_normalized)
@@ -1535,6 +1695,7 @@ class CLIPTextGenerator:
 
                 target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
                 target_probs = target_probs.type(torch.float32)
+
             if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"beam num = {idx_p}")
             probs_val_debug_loss, _ = target_probs[0].topk(probs.shape[0])
@@ -1545,7 +1706,7 @@ class CLIPTextGenerator:
             target = torch.zeros_like(probs[idx_p])
             target[top_indices[idx_p]] = target_probs[0]
             target = target.unsqueeze(0)
-            cur_clip_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
+            cur_clip_loss = torch.sum(-(target.detach() * torch.log(probs[idx_p:(idx_p + 1)]))) #todo check grad becuase ViT - I added .detach()
 
             clip_loss += cur_clip_loss
             losses.append(cur_clip_loss)
@@ -1556,6 +1717,9 @@ class CLIPTextGenerator:
             clip_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
             debug_best_top_texts_clip.extend(clip_top_text)
 
+            if self.config['update_ViT']:
+                clip_probs[idx_p] = target
+
         debug_best_probs_vals_LM = [float(i.cpu().data.numpy()) for i in debug_best_probs_vals_LM]
 
         total_best_sentences_clip = {}
@@ -1564,4 +1728,4 @@ class CLIPTextGenerator:
             total_best_sentences_clip[debug_best_top_texts_clip[i]] = debug_best_probs_vals_clip[i]
         for i in np.argsort(debug_best_probs_vals_LM)[-DEBUG_NUM_WORDS:]:
             total_best_sentences_LM[debug_best_top_texts_LM[i]] = debug_best_probs_vals_LM[i]
-        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM
+        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs

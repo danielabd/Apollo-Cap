@@ -12,7 +12,7 @@ experiement_global_name:
   senticap: senticap_ZeroStyleCap_prompt_manipulation
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_embed
 
-
+update_ViT: False
 ##for validation
 wandb_mode: online #'disabled, offline, online' #todo:
 max_num_of_imgs: -1
