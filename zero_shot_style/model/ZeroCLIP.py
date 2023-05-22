@@ -111,9 +111,11 @@ class CLIPTextGenerator:
                  evaluation_obj=None,
                  desired_style_bin=None,
                  use_text_style_cutting=False,
+                 img_path=None,
                  **kwargs):
 
         self.style_type = None
+        self.img_path = img_path
         self.config = config
         self.use_text_style_cutting = use_text_style_cutting
         if evaluation_obj:
@@ -170,7 +172,7 @@ class CLIPTextGenerator:
         # Initialize CLIP
         # self.clip, self.clip_preprocess = clip.load(os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','ViT-B/32'), device=self.device,download_root=clip_checkpoints, jit=False)
         self.clip, self.clip_preprocess = clip.load("ViT-B/32", device=self.device,
-                                                    download_root=clip_checkpoints, jit=False)
+                                                    download_root=clip_checkpoints, jit=False, use_flash_attention=False) #todo
         # convert_models_to_fp32(self.clip)
         self.clip.eval()
 
@@ -317,7 +319,7 @@ class CLIPTextGenerator:
         return self.debug_tracking
 
 
-    def get_img_feature(self, img_path, weights, source_clip = False):
+    def get_img_feature(self, img_path, weights, source_clip = False, use_flash_attention = False):
         #imgs = [Image.fromarray(cv2.imread(x)) for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x).astype('uint8'), 'RGB') for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x), 'RGB') for x in img_path]
@@ -340,7 +342,8 @@ class CLIPTextGenerator:
         else:
             with torch.no_grad():
                 if self.model_based_on == 'bert' or source_clip:
-                    image_fts = [self.clip.encode_image(x) for x in clip_imgs]
+                    # image_fts = [self.clip.encode_image(x, use_flash_attention) for x in clip_imgs]
+                    image_fts =self.clip.encode_image(clip_imgs[0], use_flash_attention)
                 elif self.model_based_on == 'clip': #for text_style
                     image_fts = [self.text_style_model.forward_im(x) for x in clip_imgs]
 
@@ -997,6 +1000,8 @@ class CLIPTextGenerator:
         print(f"self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations = {self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations}")
         print(f"word_loc = {word_loc}")
         context_delta = [tuple([np.zeros(x.shape).astype("float32") for x in p]) for p in context]
+        ###get img features
+        self.image_features = self.get_img_feature([self.img_path], None, use_flash_attention=True)
 
         window_mask = torch.ones_like(context[0][0]).to(self.device)
 

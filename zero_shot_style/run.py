@@ -152,7 +152,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     # debug_tracking: debug_tracking[img_path][label][word_num][iteration][module]:<list>
     if text_generator == None:
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, tmp_text_loss=tmp_text_loss,
-                                           text_style_scale=config['text_style_scale'], config=config, evaluation_obj=evaluation_obj, **vars(config))
+                                           text_style_scale=config['text_style_scale'], config=config, evaluation_obj=evaluation_obj,img_path = img_path, **vars(config))
     if image_features == None:
         image_features = text_generator.get_img_feature([img_path], None)
 
