@@ -93,7 +93,11 @@ def merge_list_res_files_to_one(file_list, tgt_path):
         data = pd.read_csv(f)
         if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
              data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
-        for i,k in enumerate(data['img_num']):
+        if 'img_num' in data:
+            col_name = 'img_num'
+        else:
+            col_name = 'img_num\style'
+        for i,k in enumerate(data[col_name]):
             pos = data['positive'][i]
             neg = data['negative'][i]
             total_data[k] = {'img_num': k, 'positive': pos, 'negative': neg}
@@ -338,6 +342,8 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         # src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_enbedding_model_real_std'
         # src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/erc/senticap_StylizedZeroCap_erc'
         src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_stop_in_good_res/15_05_2023'
+        # 22.5.23
+        src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/image_manipulation'
         # 15.5.23
 
         # src_dir_text_style = os.path.join(base_path,'text_style')
@@ -485,7 +491,7 @@ def main():
     # get_img_idx_to_name(args.caption_img_dict)
     factual_wo_prompt = False
     use_factual = False
-    merge_dirs = True
+    merge_dirs = False
     t = {"prompt_manipulation": "img_num","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
 
     exp_to_merge = ["zerostylecap"]
@@ -504,8 +510,9 @@ def main():
         # file_list = get_list_of_files()
         # dir_files = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'
         dir_files = '/Users/danielabendavid/results/zero_style_cap/erc_old_params'
+        dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/prompt_manipulation'
         file_list = [os.path.join(dir_files,f) for f in os.listdir(dir_files) if f.endswith('.csv') and f.startswith('results')]
-        tgt_path = os.path.join(dir_files,'total_results_erc.csv')
+        tgt_path = os.path.join(dir_files,'total_results.csv')
         merge_list_res_files_to_one(file_list, tgt_path)
     print("finish program")
 
