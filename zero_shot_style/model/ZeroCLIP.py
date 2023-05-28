@@ -329,7 +329,7 @@ class CLIPTextGenerator:
         return self.debug_tracking
 
 
-    def get_img_feature(self, img_path, weights, source_clip = False, use_flash_attention = False, k=None, v=None, return_k_v=False):
+    def get_img_feature(self, img_path, weights, source_clip = False, use_flash_attention = False, k=None, v=None, return_k_v=False, get_preroccessed_img=False):
         #imgs = [Image.fromarray(cv2.imread(x)) for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x).astype('uint8'), 'RGB') for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x), 'RGB') for x in img_path]
@@ -361,7 +361,10 @@ class CLIPTextGenerator:
             if return_k_v:
                 return image_features, k, v, clip_img
             else:
-                return image_features, clip_img
+                if get_preroccessed_img:
+                    return image_features, clip_img
+                else:
+                    return image_features
         else:
             with torch.no_grad():
                 if self.model_based_on == 'bert' or source_clip:
@@ -377,7 +380,7 @@ class CLIPTextGenerator:
                     image_features = sum(image_fts)
 
                 image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-                return image_features.detach(), None
+                return image_features.detach()
 
     def get_txt_features(self, text, source_clip = False):
         with torch.no_grad():

@@ -159,7 +159,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, tmp_text_loss=tmp_text_loss,
                                            text_style_scale=config['text_style_scale'], config=config, evaluation_obj=evaluation_obj,img_path = img_path,**vars(config))
     if image_features == None:
-        image_features,clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False)
+        image_features,clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False, get_preroccessed_img=True)
 
     # SENTIMENT: added scale parameter
     if config['imitate_text_style'] or config['use_text_style_example']:
@@ -934,7 +934,7 @@ def main():
         #     print(f'img_path_idx={img_path_idx}')
         # continue
         if not config['debug_mac']:
-            image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False)
+            image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False, get_preroccessed_img=True)
         else:
             image_features = None
         if img_path_idx < config['img_idx_to_start_from']:
