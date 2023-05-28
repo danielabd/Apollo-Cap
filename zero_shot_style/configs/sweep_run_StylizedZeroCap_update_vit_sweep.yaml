@@ -1,0 +1,19 @@
+program: run_update_vit.py
+project: StylizedZeroCap_update_vit
+method: bayes
+metric:
+  goal: maximize #minimize
+  name:  evaluation/final_avg_total_score
+parameters:
+  num_iterations_clip_style:
+    max: 4
+    min: 1
+    distribution: int_uniform
+  loss_scale_style_clip:
+    max: 0.1
+    min: 0.8
+    distribution: uniform
+  loss_scale_src_clip_clip:
+    max: 0.1
+    min: 0.8
+    distribution: uniform

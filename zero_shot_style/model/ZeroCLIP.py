@@ -11,6 +11,7 @@ from transformers.models.gpt2 import GPT2LMHeadModel, GPT2Tokenizer
 from transformers.models.gpt_neo import GPTNeoForCausalLM
 import torch
 import clip
+from clip import *
 from PIL import Image
 from datetime import datetime
 import sys
@@ -73,6 +74,8 @@ def log_info(text, verbose=True):
 def add_context(x, y):
     return (x[0] + y[0], x[1] + y[1])
 
+def add_context_clip(x, y):
+    return (x[0] + y[0])
 
 def convert_models_to_fp32(model):
     for p in model.parameters():
@@ -172,7 +175,13 @@ class CLIPTextGenerator:
         # Initialize CLIP
         # self.clip, self.clip_preprocess = clip.load(os.path.join(os.path.expanduser('~'),'projects/zero-shot-style/zero_shot_style','ViT-B/32'), device=self.device,download_root=clip_checkpoints, jit=False)
         self.clip, self.clip_preprocess = clip.load("ViT-B/32", device=self.device,
-                                                    download_root=clip_checkpoints, jit=False, use_flash_attention=False) #todo
+                                                    download_root=clip_checkpoints, jit=False) #todo
+
+        # self.clip, self.clip_preprocess = clip.load("ViT-B/32", device=self.device,
+        #                                             download_root=clip_checkpoints, jit=False,
+        #                                             use_flash_attention=False)  # todo
+
+
         # convert_models_to_fp32(self.clip)
         self.clip.eval()
 
@@ -182,6 +191,7 @@ class CLIPTextGenerator:
         self.num_iterations = int(num_iterations)
         self.clip_loss_temperature = clip_loss_temperature
         self.text_style_loss_temperature = text_style_loss_temperature
+        self.clip_scale = clip_scale
         self.clip_scale = clip_scale
         self.ce_scale = ce_scale
         self.text_style_scale = text_style_scale
@@ -319,31 +329,45 @@ class CLIPTextGenerator:
         return self.debug_tracking
 
 
-    def get_img_feature(self, img_path, weights, source_clip = False, use_flash_attention = False):
+    def get_img_feature(self, img_path, weights, source_clip = False, use_flash_attention = False, k=None, v=None, return_k_v=False):
         #imgs = [Image.fromarray(cv2.imread(x)) for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x).astype('uint8'), 'RGB') for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x), 'RGB') for x in img_path]
         imgs = [Image.open(x) for x in img_path]
         clip_imgs = [self.clip_preprocess(x).unsqueeze(0).to(self.device) for x in imgs]
-
+        clip_img = clip_imgs[0] #todo:handle to several images
         if self.config['update_ViT']:
             if self.model_based_on == 'bert' or source_clip:
-                image_fts = [self.clip.encode_image(x) for x in clip_imgs]
+                # image_fts = [self.clip.encode_image(x,return_k_v=return_k_v) for x in clip_imgs]
+                image_fts = []
+                for x in clip_imgs:
+                    if return_k_v:
+                        image_fts_s, k, v = self.clip.encode_image(x, return_k_v=return_k_v)
+                    else:
+                        image_fts_s = self.clip.encode_image(x, return_k_v=return_k_v)
+                    if type(image_fts_s) == tuple:
+                        image_fts_s = image_fts_s[0]
+                    image_fts.append(image_fts_s)
+                    # self.k_clip = k
+                    # self.v_clip = v
+                # image_fts = [self.clip.encode_image(x,return_k_v=return_k_v) for x in clip_imgs]
             elif self.model_based_on == 'clip':  # for text_style
                 image_fts = [self.text_style_model.forward_im(x) for x in clip_imgs]
-
             if weights is not None:
                 image_features = sum([x * weights[i] for i, x in enumerate(image_fts)])
             else:
                 image_features = sum(image_fts)
-
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            return image_features
+            if return_k_v:
+                return image_features, k, v, clip_img
+            else:
+                return image_features, clip_img
         else:
             with torch.no_grad():
                 if self.model_based_on == 'bert' or source_clip:
-                    # image_fts = [self.clip.encode_image(x, use_flash_attention) for x in clip_imgs]
-                    image_fts =self.clip.encode_image(clip_imgs[0], use_flash_attention)
+                    image_fts = [self.clip.encode_image(x, use_flash_attention) for x in clip_imgs]
+                    if type(image_fts[0]) == tuple:
+                        image_fts[0] = image_fts[0][0]
                 elif self.model_based_on == 'clip': #for text_style
                     image_fts = [self.text_style_model.forward_im(x) for x in clip_imgs]
 
@@ -353,7 +377,7 @@ class CLIPTextGenerator:
                     image_features = sum(image_fts)
 
                 image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-                return image_features.detach()
+                return image_features.detach(), None
 
     def get_txt_features(self, text, source_clip = False):
         with torch.no_grad():
@@ -387,10 +411,12 @@ class CLIPTextGenerator:
             features = features / features.norm(dim=-1, keepdim=True)
             return features.detach()
 
-    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None,img_idx=None, img_name=None, style=None, desired_style_bin=False):
+    def run(self, image_features, cond_text, beam_size, text_style_scale = None, text_to_imitate = None, desired_style_embedding_vector = None, desired_style_embedding_std_vector = None, style_type = None,img_idx=None, img_name=None, style=None, desired_style_bin=False,clip_img=None):
     
         # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
         self.image_features = image_features
+        self.src_image_features = image_features.detach()
+        self.clip_img= clip_img
         self.text_style_list = text_to_imitate
         self.img_idx = img_idx
         self.img_name = img_name
@@ -548,7 +574,14 @@ class CLIPTextGenerator:
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]: #go over all optional topk next word
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
-            
+            # ######todo: daniela debug    effect of update CLIP
+            # # top_texts = ["The bedroom used child abuse"]*DEBUG_NUM_WORDS+["The bedroom of a sweet baby"]*DEBUG_NUM_WORDS
+            # for i in range(len(top_texts)):
+            #     if i<=len(top_texts)/2:
+            #         top_texts[i] = "The bedroom used child abuse"
+            #     else:
+            #         top_texts[i] = "The bedroom of a sweet baby"
+            # ######todo: daniela debug    effect of update CLIP
             
             #get score for text
             with torch.no_grad():
@@ -572,7 +605,7 @@ class CLIPTextGenerator:
             
             target = torch.zeros_like(probs[idx_p], device=self.device)
             target[top_indices[idx_p]] = predicted_probs[0]
-            target = target.unsqueeze(0)
+            # target = target.unsqueeze(0)
             cur_sentiment_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
             
             sentiment_loss += cur_sentiment_loss
@@ -996,12 +1029,13 @@ class CLIPTextGenerator:
 
     
     def shift_context(self, word_loc, context, last_token, context_tokens, probs_before_shift):
+        # contex=past_ke_values of GPT2. tuple of 24, each one composed of 2, s.t. each one of size (5,16,<num of words in context>,64)
         print(f"img_idx={self.img_idx},img_name={self.img_name}, style={self.style}")
         print(f"self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations = {self.ce_scale,self.clip_scale,self.text_style_scale,self.num_iterations}")
         print(f"word_loc = {word_loc}")
         context_delta = [tuple([np.zeros(x.shape).astype("float32") for x in p]) for p in context]
         ###get img features
-        self.image_features = self.get_img_feature([self.img_path], None, use_flash_attention=True)
+        # self.image_features = self.get_img_feature([self.img_path], None, use_flash_attention=True, return_k_v=False)
 
         window_mask = torch.ones_like(context[0][0]).to(self.device)
 
@@ -1044,14 +1078,14 @@ class CLIPTextGenerator:
             # else:
             #     self.config['print_for_debug'] = False
             self.debug_tracking[word_loc][i] = {}
+
             curr_shift = [tuple([torch.from_numpy(x).requires_grad_(True).to(device=self.device) for x in p_]) for p_ in
                           context_delta]
-
             for p0, p1 in curr_shift:
                 p0.retain_grad()
                 p1.retain_grad()
-
             shifted_context = list(map(add_context, context, curr_shift))  # array like addition for tuples
+
 
             shifted_outputs = self.lm_model(last_token, past_key_values=shifted_context)
             logits = shifted_outputs["logits"][:, -1, :]
@@ -1137,11 +1171,188 @@ class CLIPTextGenerator:
                             break
                 #########
             ###################################################
+
             loss = 0.0
+
+            #optimize image embedding according to the style
+            if self.config['update_ViT'] and word_loc>=self.config['start_loop_clip_style_in_word_num']:#todo check
+                # contex=past_ke_values of GPT2. tuple of 24, each one composed of 2, s.t. each one of size (5,16,<num of words in context>,64)
+                # update clip
+                self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
+
+                image_fts, k_clip,v_clip = self.clip.encode_image(self.clip_img, return_k_v=True)
+
+                window_mask_clip = torch.ones_like(k_clip[0]).to(self.device)
+
+                if type(image_fts) == tuple:
+                    image_fts = image_fts[0]
+                image_features = sum(image_fts)
+                self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+
+                k_delta_clip = [np.zeros(p.shape).astype("float32") for p in k_clip]#context]
+                v_delta_clip = [np.zeros(p.shape).astype("float32") for p in v_clip]#context]
+
+                curr_shift_k = [torch.from_numpy(p_).requires_grad_(True).to(device=self.device) for p_ in
+                                k_delta_clip]
+                curr_shift_v = [torch.from_numpy(p_).requires_grad_(True).to(device=self.device) for p_ in
+                                v_delta_clip]
+
+                for (p_k, p_v) in zip(curr_shift_k, curr_shift_v):
+                    p_k.retain_grad()
+                    p_v.retain_grad()
+
+                shifted_k_clip = [k_clip[i1] + curr_shift_k[i1] for i1 in range(len(curr_shift_k))]
+                shifted_v_clip = [v_clip[i1] + curr_shift_v[i1] for i1 in range(len(curr_shift_v))]
+                # shifted_k_clip = list(
+                #     map(add_context_clip, tuple(k_clip), tuple(curr_shift_k)))  # array like addition for tuples
+                # shifted_v_clip = list(
+                #     map(add_context_clip, v_clip, curr_shift_v))  # array like addition for tuples
+
+                # self.image_features, k, v = self.get_img_feature(self.img_path, None, source_clip=False,
+                #                                                  use_flash_attention=False, k=shifted_k_clip, v=shifted_v_clip,
+                #                                                  return_k_v=True)
+                image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
+                                                                   updated_v_in=shifted_v_clip, return_k_v=True)
+                if type(image_fts) == tuple:
+                    image_fts = image_fts[0]
+                image_features = sum(image_fts)
+                self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+                for clip_update_iter in range(self.config['num_iterations_clip_style']):  # todo: change it self.k=list of 12, each with size of(1,12,50,64)
+                    # CLIP LOSS
+                    clip_ViT_loss = 0
+                    if self.clip_scale != 0:
+                        clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs = self.clip_loss(
+                            probs, context_tokens,grad_lm=False)
+                        # if not new_weighted_loss:
+                        #     loss += self.clip_scale * clip_loss # change to variable scale
+                    # TEXT_STYLE loss:
+                    if self.use_style_model and not self.use_text_style_cutting:
+                        text_style_loss=-100
+                        if self.text_style_scale!=0:
+                            total_best_sentences_style = None
+                            if self.style_type == 'erc':
+                                text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_erc(
+                                    probs, context_tokens)
+                            elif self.style_type == 'clip': #using clip model for text style
+                                text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
+                            elif self.style_type == 'emoji':
+                                text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(probs, context_tokens)
+                            elif self.style_type == 'style_embed': #my text style embedding that I trained
+                                text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
+                            elif self.style_type == 'roBERTa':
+                                text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs, context_tokens, self.style)
+                            else:
+                                print('check what is the style model!')
+                                exit(-1)
+
+                            #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+                            # loss += self.text_style_scale * text_style_loss
+
+                    # calc loss according to style
+                    clip_style_loss = 0
+                    for idx_p in clip_probs.keys():
+                        clip_style_loss += torch.sum(-((style_probs[idx_p]+EPSILON) * torch.log((clip_probs[idx_p]+EPSILON)))) #todo: check if need detach on style tensor
+                    # calc loss according to init clip
+                    mse_loss = nn.MSELoss()
+                    clip_src_clip_loss = mse_loss(self.src_image_features[0], self.image_features)
+
+                    clip_ViT_loss = self.config['loss_scale_style_clip']*clip_style_loss + self.config['loss_scale_src_clip_clip']*clip_src_clip_loss
+                    #clip_ViT_loss.retain_grad() #todo: check if need it
+
+                    clip_ViT_loss.backward()
+
+                    ##############
+                    ###add the shift to context_clip
+
+                    factor = 1 #1 #todo check
+                    print(f"factor={factor}, global_iteration={i}, update_clip_iter={clip_update_iter}, clip_ViT_loss={clip_ViT_loss}, clip_src_clip_loss={clip_src_clip_loss}, clip_style_loss={clip_style_loss}")
+                    # --------- Specific Gen ---------
+
+                    sep_grads_k = None
+                    sep_grads_v = None
+                    for b in range(k_clip[0].shape[0]): #todo:check it
+                        tmp_sep_norms_k = [(torch.norm(x.grad[b:(b + 1)] * window_mask_clip[b:(b + 1)]) + 1e-15) for x in curr_shift_k] #for p_ in curr_shift]
+
+                        tmp_sep_norms_v = [(torch.norm(x.grad[b:(b + 1)] * window_mask_clip[b:(b + 1)]) + 1e-15) for x in curr_shift_v] #for p_ in curr_shift]
+
+                        # normalize gradients
+                        tmp_grad_k = [-self.stepsize * factor * (
+                                x.grad[b:(b + 1)] * window_mask_clip[b:(b + 1)] / tmp_sep_norms_k[
+                            j] ** self.grad_norm_factor).data.cpu().numpy()
+                                           for j, x in enumerate(curr_shift_k)] #for i, p_ in enumerate(curr_shift)]
+                        tmp_grad_v = [-self.stepsize * factor * (
+                                x.grad[b:(b + 1)] * window_mask_clip[b:(b + 1)] / tmp_sep_norms_v[
+                            j] ** self.grad_norm_factor).data.cpu().numpy()
+                                      for j, x in enumerate(curr_shift_v)]  # for i, p_ in enumerate(curr_shift)]
+
+                        if sep_grads_k is None:
+                            sep_grads_k = tmp_grad_k
+                        else:
+                            for l_index in range(len(sep_grads_k)):
+                                sep_grads_k[l_index] = list(sep_grads_k[l_index])
+                                for k_index in range(len(sep_grads_k[0])):
+                                    sep_grads_k[l_index][k_index] = np.concatenate(
+                                        (sep_grads_k[l_index][k_index], tmp_grad_k[l_index][k_index]), axis=0)
+                                sep_grads_k[l_index] = tuple(sep_grads_k[l_index])
+
+
+                        if sep_grads_v is None:
+                                sep_grads_v = tmp_grad_v
+                        else:
+                            for l_index in range(len(sep_grads_v)):
+                                sep_grads_v[l_index] = list(sep_grads_v[l_index])
+                                for v_index in range(len(sep_grads_v[0])):
+                                    sep_grads_v[l_index][v_index] = np.concatenate(
+                                        (sep_grads_v[l_index][v_index], tmp_grad_v[l_index][v_index]), axis=0)
+                                sep_grads_v[l_index] = tuple(sep_grads_v[l_index])
+                    final_grads_k = sep_grads_k
+                    final_grads_v = sep_grads_v
+
+                    # --------- update context ---------
+                    k_delta_clip = [final_grads_k[i1] + k_delta_clip[i1] for i1 in range(len(k_delta_clip))]
+                    v_delta_clip = [final_grads_v[i1] + v_delta_clip[i1] for i1 in range(len(v_delta_clip))]
+
+                    for (p_k, p_v) in zip(curr_shift_k,curr_shift_v):
+                        p_k.grad.data.zero_()
+                        p_v.grad.data.zero_()
+
+                    new_k_clip = []
+                    new_v_clip = []
+                    for p_k, p_v in zip(k_clip,v_clip):
+                        new_k_clip.append(p_k.detach())
+                        new_v_clip.append(p_v.detach())
+                    k_clip = new_k_clip
+                    v_clip = new_v_clip
+                    ##############
+                    #
+                    # self.image_features, k, v = self.get_img_feature(self.img_path, None, source_clip=False,
+                    #                                                  use_flash_attention=False, k=k, v=v,
+                    #                                                  return_k_v=True)
+
+                    #update features for next
+                    curr_shift_k = [torch.from_numpy(p_).requires_grad_(True).to(device=self.device) for p_ in
+                                    k_delta_clip]
+                    curr_shift_v = [torch.from_numpy(p_).requires_grad_(True).to(device=self.device) for p_ in
+                                    v_delta_clip]
+
+                    for (p_k, p_v) in zip(curr_shift_k, curr_shift_v):
+                        p_k.retain_grad()
+                        p_v.retain_grad()
+
+                    shifted_k_clip = [k_clip[i1] + curr_shift_k[i1] for i1 in range(len(curr_shift_k))]
+                    shifted_v_clip = [v_clip[i1] + curr_shift_v[i1] for i1 in range(len(curr_shift_v))]
+                    image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
+                                                                       updated_v_in=shifted_v_clip, return_k_v=True)
+
+                    if type(image_fts) == tuple:
+                        image_fts = image_fts[0]
+                    image_features = sum(image_fts)
+                    self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+                print("****************************************")
 
             # CLIP LOSS
             if self.clip_scale!=0:
-                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs = self.clip_loss(probs, context_tokens)
+                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs = self.clip_loss(probs, context_tokens, grad_lm=True)
                 # todo: check that clip_probs have grads
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print("after calc clip loss:")
@@ -1159,12 +1370,12 @@ class CLIPTextGenerator:
                 if i == 0: #first iteration
                     LM_0_probs = list(total_best_sentences_LM.values())
                     LM_0_vals = list(total_best_sentences_LM.keys())
-                self.debug_tracking[word_loc][i]['LM_0 - prob'] = LM_0_probs
-                self.debug_tracking[word_loc][i]['LM_0 - val'] = LM_0_vals
-                self.debug_tracking[word_loc][i]['LM - prob'] = list(total_best_sentences_LM.values())
-                self.debug_tracking[word_loc][i]['LM - val'] = list(total_best_sentences_LM.keys())
-                self.debug_tracking[word_loc][i]['CLIP - prob'] = list(total_best_sentences_clip.values())
-                self.debug_tracking[word_loc][i]['CLIP - val'] = list(total_best_sentences_clip.keys())
+                    self.debug_tracking[word_loc][i]['LM_0 - prob'] = LM_0_probs
+                    self.debug_tracking[word_loc][i]['LM_0 - val'] = LM_0_vals
+                    self.debug_tracking[word_loc][i]['LM - prob'] = list(total_best_sentences_LM.values())
+                    self.debug_tracking[word_loc][i]['LM - val'] = list(total_best_sentences_LM.keys())
+                    self.debug_tracking[word_loc][i]['CLIP - prob'] = list(total_best_sentences_clip.values())
+                    self.debug_tracking[word_loc][i]['CLIP - val'] = list(total_best_sentences_clip.keys())
             else:
                 clip_loss, clip_losses = 0,[torch.tensor(0)]*probs.shape[0]
 
@@ -1198,96 +1409,6 @@ class CLIPTextGenerator:
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"ce_loss with scale = {clip_loss_scale_fixed}")
 
-            # TEXT_STYLE loss:
-            if self.use_style_model and not self.use_text_style_cutting:
-                text_style_loss=-100
-                if self.text_style_scale!=0:
-                    total_best_sentences_style = None
-                    if self.style_type == 'erc':
-                        text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_erc(
-                            probs, context_tokens)
-                    elif self.style_type == 'clip': #using clip model for text style
-                        text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
-                    elif self.style_type == 'emoji':
-                        text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(probs, context_tokens)
-                    elif self.style_type == 'style_embed': #my text style embedding that I trained
-                        text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
-                    elif self.style_type == 'roBERTa':
-                        text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs, context_tokens, self.style)
-                    else:
-                        print('check what is the style model!')
-                        exit(-1)
-
-                    #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
-                    # loss += self.text_style_scale * text_style_loss
-                    if not new_weighted_loss:
-                        loss += self.text_style_scale * text_style_loss
-
-                    if new_weighted_loss:
-                        ce_loss_n = ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(
-                            -1).sum()
-
-
-                        ##stop_cond
-                        clip_loss_improvement = (last_clip_loss - clip_loss.detach())/last_clip_loss
-                        text_style_loss_improvement = (last_text_style_loss-text_style_loss.detach())/last_text_style_loss
-                        if clip_loss_improvement < self.config['desired_improvement_loss'] and text_style_loss_improvement < self.config['desired_improvement_loss']:
-                            break
-
-                        #calc the weight for each loss
-                        alpha1 = torch.nn.functional.relu(clip_loss.detach() / th_clip_loss - 1)+0.01
-                        alpha2 = torch.nn.functional.relu(ce_loss_n.detach() / th_ce_loss - 1)+0.01
-                        alpha3 = torch.nn.functional.relu(text_style_loss.detach() / th_style_loss - 1)+0.01
-                        sum_alpha = torch.sum(alpha1 + alpha2 + alpha3)
-
-                        # loss += alpha1 * clip_loss  # change to variable scale
-                        # loss += alpha2 * ce_loss_n
-                        # loss += alpha3 * text_style_loss
-
-                        loss += alpha1/sum_alpha * clip_loss  # change to variable scale
-                        loss += alpha2/sum_alpha * ce_loss_n
-                        loss += alpha3/sum_alpha * text_style_loss
-
-
-                        last_clip_loss = clip_loss.detach()
-                        last_text_style_loss = text_style_loss.detach()
-
-
-                    #########
-
-                    if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
-                        print("after calc text_style loss:")
-                    text_style_loss_fixed = round(text_style_loss.item(), 3)
-                    if self.config['print_for_debug']:
-                        print(f"{i}: text_style_loss = {text_style_loss_fixed}")
-                    text_style_losses_fixed = [round(i.item(), 3) for i in text_style_losses]
-                    if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
-                        print(f"text_style_losses = {text_style_losses_fixed}")
-                    text_style_loss_scaled_fixed = round(self.text_style_scale * text_style_loss.item(), 3)
-                    if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
-                        print(f"text_style_loss with scale = {text_style_loss_scaled_fixed}")
-
-
-                    if total_best_sentences_style:
-                        self.debug_tracking[word_loc][i]['STYLE - prob'] = list(total_best_sentences_style.values())
-                        self.debug_tracking[word_loc][i]['STYLE - val'] = list(total_best_sentences_style.keys())
-
-                # tmp_text_loss[iteration_num][beam_num][text / ce_loss / clip_loss / style_loss]
-                #for beam_num in range(len(best_sentences_LM)):
-                #    self.tmp_text_loss[cur_iter][beam_num]['clip_text'] = best_sentences_clip[beam_num]
-                #    self.tmp_text_loss[cur_iter][beam_num]['clip_loss'] = clip_losses[beam_num]
-                #    self.tmp_text_loss[cur_iter][beam_num]['style_text'] = best_sentences_style[beam_num]
-                #    self.tmp_text_loss[cur_iter][beam_num]['style_loss'] = text_style_losses[beam_num]
-                #    self.tmp_text_loss[cur_iter][beam_num]['ce_text'] = best_sentences_LM[beam_num]
-                #    self.tmp_text_loss[cur_iter][beam_num]['ce_loss'] = ce_losses[beam_num]
-                #write_tmp_text_loss(self.tmp_text_loss)
-
-            if self.config['update_ViT']:
-              clip_ViT_loss = 0
-              for idx_p in clip_probs.keys():
-                  clip_ViT_loss += torch.sum(-(style_probs[idx_p] * torch.log(clip_probs[idx_p]))) #todo: check if need detach on style tensor
-              clip_ViT_loss.backward()
-
             loss.backward()
 
             # ---------- Weights ----------
@@ -1312,11 +1433,11 @@ class CLIPTextGenerator:
             sep_grads = None
 
             for b in range(context_tokens.shape[0]):
-                tmp_sep_norms = [[(torch.norm(x.grad[b:(b + 1)] * window_mask[b:(b + 1)]) + 1e-15) for x in p_]
+                tmp_sep_norms = [[(torch.norm(x.grad[b:(b + 1)] * window_mask[b:(b + 1)]) + 1e-15) for x in p_]  #list of size 24, each contains 2 element probably for k and v
                                  for p_ in curr_shift]
 
                 # normalize gradients
-                tmp_grad = [tuple([-self.stepsize * factor * (
+                tmp_grad = [tuple([-self.stepsize * factor * (   #list of size 24, each contains 2 element probably for k and v
                         x.grad[b:(b + 1)] * window_mask[b:(b + 1)] / tmp_sep_norms[i][
                     j] ** self.grad_norm_factor).data.cpu().numpy()
                                    for j, x in enumerate(p_)])
@@ -1325,12 +1446,12 @@ class CLIPTextGenerator:
                     sep_grads = tmp_grad
                 else:
                     for l_index in range(len(sep_grads)):
-                        sep_grads[l_index] = list(sep_grads[l_index])
+                        sep_grads[l_index] = list(sep_grads[l_index]) #tuple of 2->list of 2
                         for k_index in range(len(sep_grads[0])):
                             sep_grads[l_index][k_index] = np.concatenate(
                                 (sep_grads[l_index][k_index], tmp_grad[l_index][k_index]), axis=0)
                         sep_grads[l_index] = tuple(sep_grads[l_index])
-            final_grads = sep_grads
+            final_grads = sep_grads #list of size 24, each contains 2 element probably for k and v
 
             # --------- update context ---------
             context_delta = list(map(add_context, final_grads, context_delta))
@@ -1390,7 +1511,14 @@ class CLIPTextGenerator:
 
         return logits
 
-    def clip_loss(self, probs, context_tokens):
+    def clip_loss(self, probs, context_tokens, grad_lm=True):
+        '''
+
+        :param probs:
+        :param context_tokens:
+        :param grad_lm: weaher to condifer grads in LM
+        :return:
+        '''
         if not self.config['update_ViT']:
             for p_ in self.clip.transformer.parameters(): #todo: check if it defend on text params.
                 if p_.grad is not None:
@@ -1418,6 +1546,15 @@ class CLIPTextGenerator:
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]:
                 top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+            ######todo: daniela debug    effect of update CLIP
+            # top_texts = ["The bedroom used child abuse"]+["The bedroom of a sweet baby"]
+            # if  update_initial_clip: #todo:remove it
+            #     for i in range(len(top_texts)):
+            #         if i<=len(top_texts)/2:
+            #             top_texts[i] = "The bedroom used child abuse"
+            #         else:
+            #             top_texts[i] = "The bedroom of a sweet baby"
+            #     ######todo: daniela debug    effect of update CLIP
             best_sentences_LM.append(prefix_text + self.lm_tokenizer.decode(probs[idx_p].topk(1).indices[0]))
 
             # grades according to match to style
@@ -1698,29 +1835,45 @@ class CLIPTextGenerator:
                         similiraties = np.multiply(image_text_similiraties, similarity_to_style_normalized)
                     ######
 
-                target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
+
+                similiraties = similiraties.float() #todo: check if need / self.clip_loss_temperature
+                target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1) # .detach() todo: check if it is ok
                 target_probs = target_probs.type(torch.float32)
 
             if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"beam num = {idx_p}")
-            probs_val_debug_loss, _ = target_probs[0].topk(probs.shape[0])
-            probs_val_fixed = [round(i.item(),3) for i in probs_val_debug_loss]
+            # target_probs = target_probs[0]
+            probs_val_debug_loss, _ = target_probs.topk(probs.shape[0])
+            try:
+                probs_val_fixed = [round(i.item(),3) for i in probs_val_debug_loss]
+            except:
+                probs_val_fixed = [round(i.item(), 3) for i in probs_val_debug_loss[0]]
             if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"clip_top_{probs.shape[0]}_target_probs = {probs_val_fixed}")
 
             target = torch.zeros_like(probs[idx_p])
-            target[top_indices[idx_p]] = target_probs[0]
+            target[top_indices[idx_p]] = target_probs
             target = target.unsqueeze(0)
-            cur_clip_loss = torch.sum(-(target.detach() * torch.log(probs[idx_p:(idx_p + 1)]))) #todo check grad becuase ViT - I added .detach()
+            if grad_lm:
+                cur_clip_loss = torch.sum(-(target.detach() * torch.log(probs[idx_p:(idx_p + 1)]))) #todo check grad becuase ViT - I added .detach()
+            else:
+                cur_clip_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)]).detach())) #todo check grad becuase ViT - I added .detach()
 
             clip_loss += cur_clip_loss
             losses.append(cur_clip_loss)
-            best_sentences_clip.append(top_texts[torch.argmax(target_probs[0])])
             #debug
-            probs_val, indices = target_probs[0].topk(DEBUG_NUM_WORDS)
-            debug_best_probs_vals_clip.extend(list(probs_val.cpu().data.numpy()))
-            clip_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
-            debug_best_top_texts_clip.extend(clip_top_text)
+            try:
+                probs_val, indices = target_probs.topk(DEBUG_NUM_WORDS)
+                best_sentences_clip.append(top_texts[torch.argmax(target_probs)])
+            except:
+                probs_val, indices = target_probs[0].topk(DEBUG_NUM_WORDS)
+                best_sentences_clip.append(top_texts[torch.argmax(target_probs[0])])
+
+            # if len(indices[0])>1:
+            #     indices = indices[0]
+            # debug_best_probs_vals_clip.extend(list(probs_val.cpu().data.numpy()))
+            # clip_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
+            # debug_best_top_texts_clip.extend(clip_top_text)
 
             if self.config['update_ViT']:
                 clip_probs[idx_p] = target
@@ -1729,8 +1882,8 @@ class CLIPTextGenerator:
 
         total_best_sentences_clip = {}
         total_best_sentences_LM = {}
-        for i in np.argsort(debug_best_probs_vals_clip)[-DEBUG_NUM_WORDS:]:
-            total_best_sentences_clip[debug_best_top_texts_clip[i]] = debug_best_probs_vals_clip[i]
-        for i in np.argsort(debug_best_probs_vals_LM)[-DEBUG_NUM_WORDS:]:
-            total_best_sentences_LM[debug_best_top_texts_LM[i]] = debug_best_probs_vals_LM[i]
+        # for i in np.argsort(debug_best_probs_vals_clip)[-DEBUG_NUM_WORDS:]:
+        #     total_best_sentences_clip[debug_best_top_texts_clip[i]] = debug_best_probs_vals_clip[i]
+        # for i in np.argsort(debug_best_probs_vals_LM)[-DEBUG_NUM_WORDS:]:
+        #     total_best_sentences_LM[debug_best_top_texts_LM[i]] = debug_best_probs_vals_LM[i]
         return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs
