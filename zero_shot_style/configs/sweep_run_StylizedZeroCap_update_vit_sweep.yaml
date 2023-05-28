@@ -10,10 +10,10 @@ parameters:
     min: 1
     distribution: int_uniform
   loss_scale_style_clip:
-    max: 0.1
-    min: 0.8
+    max: 0.9
+    min: 0.1
     distribution: uniform
   loss_scale_src_clip_clip:
-    max: 0.1
-    min: 0.8
+    max: 0.9
+    min: 0.1
     distribution: uniform
