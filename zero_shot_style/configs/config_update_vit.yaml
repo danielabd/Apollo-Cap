@@ -33,7 +33,7 @@ update_ViT: True #todo !!!!!!
 num_iterations_clip_style: 2
 loss_scale_style_clip: 0.5
 loss_scale_src_clip_clip: 0.5
-start_loop_clip_style_in_word_num: 3
+start_loop_clip_style_in_word_num: 1
 ######
 desired_labels:
   senticap: [positive, negative] #[factual, positive, negative] #todo!!!!!!
