@@ -36,7 +36,7 @@ loss_scale_src_clip_clip: 0.5
 start_loop_clip_style_in_word_num: 3
 ######
 desired_labels:
-  senticap: [factual] #[factual, positive, negative] #todo!!!!!!
+  senticap: [positive] #[factual, positive, negative] #todo!!!!!!
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 save_config_file: False # False, True todo
