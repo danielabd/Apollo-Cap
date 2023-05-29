@@ -934,7 +934,12 @@ def main():
         #     print(f'img_path_idx={img_path_idx}')
         # continue
         if not config['debug_mac']:
-            image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False, get_preroccessed_img=True)
+            if config['update_ViT']:
+                image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False,
+                                                                          get_preroccessed_img=True)
+            else:
+                image_features = text_generator.get_img_feature([img_path], None, return_k_v=False,
+                                                                get_preroccessed_img=True)
         else:
             image_features = None
         if img_path_idx < config['img_idx_to_start_from']:
