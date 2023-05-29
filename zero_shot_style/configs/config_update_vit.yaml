@@ -1,16 +1,16 @@
 ###### stylized ZeroCap: create captions - for run.py
 dataset: senticap # senticap,flickrstyle10k
-style_type: roBERTa  #'style_embed' or 'emoji' or 'erc' or 'roBERTa' #todo
+style_type: style_embed  #'style_embed' or 'emoji' or 'erc' or 'roBERTa' #todo
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False #False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: disabled #'disabled, offline, online' #todo:
+wandb_mode: online #'disabled, offline, online' #todo:
 ##for validation
-specific_idxs_to_skip: [0,1,2,3,4] #[2,3] #todo
-max_num_of_imgs: 2 #todo
+specific_idxs_to_skip: [2,3] #todo
+max_num_of_imgs: 5 #todo
 reverse_imgs_list: False
 data_type: val #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [544065] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
@@ -32,8 +32,8 @@ max_batch_size_style_cls: 10
 update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
 kv_only_first_layer: True
 num_iterations_clip_style: 2
-loss_scale_style_clip: 0.74
-loss_scale_src_clip_clip: 0.31   #0.5
+loss_scale_style_clip: 1
+loss_scale_src_clip_clip: 0.2   #0.5
 start_loop_clip_style_in_word_num: 1
 ######
 desired_labels:
@@ -221,7 +221,7 @@ calc_evaluation: True
 
 
 num_iterations:
-  senticap: 5 #10 #5 # 8
+  senticap: 10 #10 #5 # 8
   flickrstyle10k: 5 # 8
 ##
 #std_embedding_vectors_positive: 0.031123760342107343 #0.015731973987010497 # 0.030191882925088297 #0.028914157

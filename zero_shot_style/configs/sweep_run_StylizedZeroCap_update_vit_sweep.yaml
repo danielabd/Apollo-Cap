@@ -1,5 +1,5 @@
 program: run_update_vit.py
-project: StylizedZeroCap_update_vit
+project: StylizedZeroCap_update_vit_style_embed
 method: bayes
 metric:
   goal: maximize #minimize
@@ -15,5 +15,13 @@ parameters:
     distribution: uniform
   loss_scale_src_clip_clip:
     max: 0.9
+    min: 0.1
+    distribution: uniform
+  ce_scale:
+    max: 3
+    min: 0.1
+    distribution: uniform
+  clip_scale:
+    max: 3
     min: 0.1
     distribution: uniform
