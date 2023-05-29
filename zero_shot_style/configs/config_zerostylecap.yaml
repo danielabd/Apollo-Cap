@@ -9,7 +9,7 @@ print_for_debug : False # todo
 print_for_debug_redundant : False
 wandb_mode: disabled #'disabled, offline, online' #todo:
 ##for validation
-specific_idxs_to_skip: [0,1,2,3,4] #[2,3] #todo
+#specific_idxs_to_skip: [0,1,2,3,4] #[2,3] #todo
 max_num_of_imgs: -1 #todo
 reverse_imgs_list: False
 data_type: val #val, test #todo:!!!!!!!!
