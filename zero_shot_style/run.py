@@ -41,7 +41,7 @@ EPSILON = 0.0000000001
 def get_args():
     parser.add_argument('--config_file', type=str,
                         # default=os.path.join('.', 'configs', 'config.yaml'),
-                        default=os.path.join('.', 'configs', 'config.yaml'),
+                        default=os.path.join('.', 'configs', 'config_update_vit.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -159,7 +159,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, tmp_text_loss=tmp_text_loss,
                                            text_style_scale=config['text_style_scale'], config=config, evaluation_obj=evaluation_obj,img_path = img_path,**vars(config))
     if image_features == None:
-        image_features,clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False, get_preroccessed_img=True)
+        image_features,clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False, get_preroccessed_img=True,kv_only_first_layer=config['kv_only_first_layer'])
 
     # SENTIMENT: added scale parameter
     if config['imitate_text_style'] or config['use_text_style_example']:
@@ -937,10 +937,10 @@ def main():
             clip_img = None
             if config['update_ViT']:
                 image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False,
-                                                                          get_preroccessed_img=True)
+                                                                          get_preroccessed_img=True,kv_only_first_layer=config['kv_only_first_layer'])
             else:
                 image_features = text_generator.get_img_feature([img_path], None, return_k_v=False,
-                                                                get_preroccessed_img=True)
+                                                                get_preroccessed_img=True,kv_only_first_layer=config['kv_only_first_layer'])
         else:
             image_features = None
         if img_path_idx < config['img_idx_to_start_from']:

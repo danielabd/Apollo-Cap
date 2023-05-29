@@ -3,11 +3,11 @@ dataset: senticap # senticap,flickrstyle10k
 style_type: roBERTa  #'style_embed' or 'emoji' or 'erc' or 'roBERTa' #todo
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
-debug: False #todo
+debug: False #False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: online #'disabled, offline, online' #todo:
+wandb_mode: disabled #'disabled, offline, online' #todo:
 ##for validation
 specific_idxs_to_skip: [0,1,2,3,4] #[2,3] #todo
 max_num_of_imgs: 2 #todo
@@ -19,7 +19,7 @@ data_type: val #val, test #todo:!!!!!!!!
 cut_cand2clip: False
 iterate_until_good_fluency: False
 start_word_loc_heavy_iteration: 2
-use_style_model: True #toodo
+use_style_model: True #toodo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
 desired_min_style_score: 1
 desired_min_fluency_score: 0.9
 desired_min_clip_score: 0.28
@@ -29,14 +29,15 @@ max_batch_size_style_cls: 10
 
 
 ###### update clip ViT tensors
-update_ViT: True #todo !!!!!!
+update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
+kv_only_first_layer: True
 num_iterations_clip_style: 2
-loss_scale_style_clip: 0.5
-loss_scale_src_clip_clip: 0.5
+loss_scale_style_clip: 0.74
+loss_scale_src_clip_clip: 0.31   #0.5
 start_loop_clip_style_in_word_num: 1
 ######
 desired_labels:
-  senticap: [positive, negative] #[factual, positive, negative] #todo!!!!!!
+  senticap: [positive, negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 save_config_file: True # False, True todo

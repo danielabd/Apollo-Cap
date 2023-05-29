@@ -329,7 +329,7 @@ class CLIPTextGenerator:
         return self.debug_tracking
 
 
-    def get_img_feature(self, img_path, weights, source_clip = False, use_flash_attention = False, k=None, v=None, return_k_v=False, get_preroccessed_img=False):
+    def get_img_feature(self, img_path, weights, source_clip = False, use_flash_attention = False, k=None, v=None, return_k_v=False, get_preroccessed_img=False,kv_only_first_layer=True):
         #imgs = [Image.fromarray(cv2.imread(x)) for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x).astype('uint8'), 'RGB') for x in img_path]
         #imgs = [Image.fromarray(cv2.imread(x), 'RGB') for x in img_path]
@@ -342,9 +342,9 @@ class CLIPTextGenerator:
                 image_fts = []
                 for x in clip_imgs:
                     if return_k_v:
-                        image_fts_s, k, v = self.clip.encode_image(x, return_k_v=return_k_v)
+                        image_fts_s, k, v = self.clip.encode_image(x, return_k_v=return_k_v,kv_only_first_layer=kv_only_first_layer)
                     else:
-                        image_fts_s = self.clip.encode_image(x, return_k_v=return_k_v)
+                        image_fts_s = self.clip.encode_image(x, return_k_v=return_k_v,kv_only_first_layer=kv_only_first_layer)
                     if type(image_fts_s) == tuple:
                         image_fts_s = image_fts_s[0]
                     image_fts.append(image_fts_s)
@@ -1187,7 +1187,7 @@ class CLIPTextGenerator:
                 # update clip
                 self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
 
-                image_fts, k_clip,v_clip = self.clip.encode_image(self.clip_img, return_k_v=True)
+                image_fts, k_clip,v_clip = self.clip.encode_image(self.clip_img, return_k_v=True,kv_only_first_layer=self.config['kv_only_first_layer'])
 
                 window_mask_clip = torch.ones_like(k_clip[0]).to(self.device)
 
@@ -1219,7 +1219,7 @@ class CLIPTextGenerator:
                 #                                                  use_flash_attention=False, k=shifted_k_clip, v=shifted_v_clip,
                 #                                                  return_k_v=True)
                 image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
-                                                                   updated_v_in=shifted_v_clip, return_k_v=True)
+                                                                   updated_v_in=shifted_v_clip, return_k_v=True,kv_only_first_layer=self.config['kv_only_first_layer'])
                 if type(image_fts) == tuple:
                     image_fts = image_fts[0]
                 image_features = sum(image_fts)
@@ -1349,7 +1349,7 @@ class CLIPTextGenerator:
                     shifted_k_clip = [k_clip[i1] + curr_shift_k[i1] for i1 in range(len(curr_shift_k))]
                     shifted_v_clip = [v_clip[i1] + curr_shift_v[i1] for i1 in range(len(curr_shift_v))]
                     image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
-                                                                       updated_v_in=shifted_v_clip, return_k_v=True)
+                                                                       updated_v_in=shifted_v_clip, return_k_v=True, kv_only_first_layer=self.config['kv_only_first_layer'])
 
                     if type(image_fts) == tuple:
                         image_fts = image_fts[0]

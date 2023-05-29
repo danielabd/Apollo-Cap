@@ -30,11 +30,11 @@ import pickle
 
 from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
-from zero_shot_style.evaluation.pycocoevalcap.bleu.bleu import Bleu
-from zero_shot_style.evaluation.pycocoevalcap.cider.cider import Cider
-from zero_shot_style.evaluation.pycocoevalcap.meteor.meteor import Meteor
-from zero_shot_style.evaluation.pycocoevalcap.rouge.rouge import Rouge
-from zero_shot_style.evaluation.pycocoevalcap.spice import Spice
+# from zero_shot_style.evaluation.pycocoevalcap.bleu.bleu import Bleu
+# from zero_shot_style.evaluation.pycocoevalcap.cider.cider import Cider
+# from zero_shot_style.evaluation.pycocoevalcap.meteor.meteor import Meteor
+# from zero_shot_style.evaluation.pycocoevalcap.rouge.rouge import Rouge
+# from zero_shot_style.evaluation.pycocoevalcap.spice import Spice
 from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
 from zero_shot_style.evaluation.text_style_classification import evaluate as evaluate_text_style_classification
 from zero_shot_style.evaluation.text_style_classification import BertClassifier, tokenizer
