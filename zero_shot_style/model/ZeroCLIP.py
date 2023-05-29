@@ -776,6 +776,7 @@ class CLIPTextGenerator:
         debug_best_probs_vals_style = []
         if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
             print("in text_style loss:")
+        style_probs = {}
         for idx_p in range(probs.shape[0]):  # go over all beams
             top_texts = []
             prefix_text = prefix_texts[idx_p]
@@ -875,6 +876,9 @@ class CLIPTextGenerator:
             style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
             debug_best_top_texts_style.extend(style_top_text)
 
+            if self.config['update_ViT']:
+                style_probs[idx_p] = target
+
         total_best_sentences_style = {}
         for i in np.argsort(debug_best_probs_vals_style)[-DEBUG_NUM_WORDS:]:
             total_best_sentences_style[debug_best_top_texts_style[i]] = debug_best_probs_vals_style[i]
@@ -886,7 +890,7 @@ class CLIPTextGenerator:
             else:
                 loss_string = loss_string + '%, ' + f'{losses[idx_p]}'
 
-        return text_style_loss, losses, best_sentences, total_best_sentences_style
+        return text_style_loss, losses, best_sentences, total_best_sentences_style, style_probs
 
     def get_text_style_loss_emoji(self, probs, context_tokens):
         top_size = 512
@@ -1241,7 +1245,7 @@ class CLIPTextGenerator:
                             elif self.style_type == 'emoji':
                                 text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(probs, context_tokens)
                             elif self.style_type == 'style_embed': #my text style embedding that I trained
-                                text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss(probs, context_tokens)
+                                text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style, style_probs = self.get_text_style_loss(probs, context_tokens)
                             elif self.style_type == 'roBERTa':
                                 text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs, context_tokens, self.style)
                             else:
