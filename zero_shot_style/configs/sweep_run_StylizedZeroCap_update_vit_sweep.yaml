@@ -6,15 +6,15 @@ metric:
   name:  evaluation/final_avg_total_score
 parameters:
   num_iterations_clip_style:
-    max: 4
+    max: 6
     min: 1
     distribution: int_uniform
   loss_scale_style_clip:
-    max: 0.9
+    max: 3
     min: 0.1
     distribution: uniform
   loss_scale_src_clip_clip:
-    max: 0.9
+    max: 3
     min: 0.1
     distribution: uniform
   ce_scale:
