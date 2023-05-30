@@ -336,7 +336,7 @@ class CLIPTextGenerator:
         imgs = [Image.open(x) for x in img_path]
         clip_imgs = [self.clip_preprocess(x).unsqueeze(0).to(self.device) for x in imgs]
         clip_img = clip_imgs[0] #todo:handle to several images
-        if self.config['update_ViT']:
+        if self.config.get('update_ViT',False):
             if self.model_based_on == 'bert' or source_clip:
                 # image_fts = [self.clip.encode_image(x,return_k_v=return_k_v) for x in clip_imgs]
                 image_fts = []
@@ -614,7 +614,7 @@ class CLIPTextGenerator:
             sentiment_loss += cur_sentiment_loss
             losses.append(cur_sentiment_loss)
 
-            if self.config['update_ViT']:
+            if self.config.get('update_ViT',False):
                 style_probs[idx_p] = target
         
         loss_string = ''
@@ -876,7 +876,7 @@ class CLIPTextGenerator:
             style_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
             debug_best_top_texts_style.extend(style_top_text)
 
-            if self.config['update_ViT']:
+            if self.config.get('update_ViT',False):
                 style_probs[idx_p] = target
 
         total_best_sentences_style = {}
@@ -1181,7 +1181,7 @@ class CLIPTextGenerator:
             loss = 0.0
 
             #optimize image embedding according to the style
-            if self.config['update_ViT'] and word_loc>=self.config['start_loop_clip_style_in_word_num']:#todo check
+            if self.config.get('update_ViT',False) and word_loc>=self.config['start_loop_clip_style_in_word_num']:#todo check
                 # contex=past_ke_values of GPT2. tuple of 24, each one composed of 2, s.t. each one of size (5,16,<num of words in context>,64)
                 # update clip
                 self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
@@ -1270,7 +1270,7 @@ class CLIPTextGenerator:
                     ##############
                     ###add the shift to context_clip
 
-                    factor = 1 #1 #todo check
+                    factor = 10 #1 #todo check
                     print(f"factor={factor}, global_iteration={i}, update_clip_iter={clip_update_iter}, clip_ViT_loss={clip_ViT_loss}, clip_src_clip_loss={clip_src_clip_loss}, clip_style_loss={clip_style_loss}")
                     # --------- Specific Gen ---------
 
@@ -1554,7 +1554,7 @@ class CLIPTextGenerator:
         :param grad_lm: weaher to condifer grads in LM
         :return:
         '''
-        if not self.config['update_ViT']:
+        if not self.config.get('update_ViT',False):
             for p_ in self.clip.transformer.parameters(): #todo: check if it defend on text params.
                 if p_.grad is not None:
                     p_.grad.data.zero_()
@@ -1600,7 +1600,7 @@ class CLIPTextGenerator:
             debug_best_top_texts_LM.extend(LM_top_text)
             text_features = self.get_txt_features(top_texts)
 
-            if not self.config['update_ViT']:
+            if not self.config.get('update_ViT',False):
                 with torch.no_grad():
                     similiraties = (self.image_features @ text_features.T)
                     ##### #todo:debug
@@ -1910,7 +1910,7 @@ class CLIPTextGenerator:
             # clip_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
             # debug_best_top_texts_clip.extend(clip_top_text)
 
-            if self.config['update_ViT']:
+            if self.config.get('update_ViT',False):
                 clip_probs[idx_p] = target
 
         debug_best_probs_vals_LM = [float(i.cpu().data.numpy()) for i in debug_best_probs_vals_LM]
