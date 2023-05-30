@@ -1356,6 +1356,35 @@ class CLIPTextGenerator:
                     self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
                 print("****************************************")
 
+            if not self.config.get('update_ViT', False):
+                # TEXT_STYLE loss:
+                text_style_loss = -100
+                if self.use_style_model and not self.use_text_style_cutting:
+                    if self.text_style_scale != 0:
+                        total_best_sentences_style = None
+                        if self.style_type == 'erc':
+                            text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_erc(
+                                probs, context_tokens)
+                        elif self.style_type == 'clip':  # using clip model for text style
+                            text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs,
+                                                                                                    context_tokens)
+                        elif self.style_type == 'emoji':
+                            text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(
+                                probs, context_tokens)
+                        elif self.style_type == 'style_embed':  # my text style embedding that I trained
+                            text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style, style_probs = self.get_text_style_loss(
+                                probs, context_tokens)
+                        elif self.style_type == 'roBERTa':
+                            text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs,
+                                                                                                      context_tokens,
+                                                                                                      self.style)
+                        else:
+                            print('check what is the style model!')
+                            exit(-1)
+
+                        # print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+                        loss += self.text_style_scale * text_style_loss
+
             # CLIP LOSS
             if self.clip_scale!=0:
                 clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs = self.clip_loss(probs, context_tokens, grad_lm=True)
