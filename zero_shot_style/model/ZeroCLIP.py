@@ -1232,8 +1232,8 @@ class CLIPTextGenerator:
                         # if not new_weighted_loss:
                         #     loss += self.clip_scale * clip_loss # change to variable scale
                     # TEXT_STYLE loss:
+                    text_style_loss = -100
                     if self.use_style_model and not self.use_text_style_cutting:
-                        text_style_loss=-100
                         if self.text_style_scale!=0:
                             total_best_sentences_style = None
                             if self.style_type == 'erc':
