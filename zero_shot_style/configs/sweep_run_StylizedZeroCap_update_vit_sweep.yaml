@@ -17,11 +17,11 @@ parameters:
     max: 3
     min: 0.1
     distribution: uniform
-  ce_scale:
-    max: 3
-    min: 0.1
-    distribution: uniform
-  clip_scale:
-    max: 3
-    min: 0.1
-    distribution: uniform
+#  ce_scale:
+#    max: 3
+#    min: 0.1
+#    distribution: uniform
+#  clip_scale:
+#    max: 3
+#    min: 0.1
+#    distribution: uniform

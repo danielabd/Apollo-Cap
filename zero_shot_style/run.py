@@ -859,7 +859,7 @@ def initial_variables():
     txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
     evaluation_obj = {}
     if 'evaluation_metrics' in config:
-        if config['use_style_threshold'] or config['iterate_until_good_fluency']:
+        if config.get('use_style_threshold', False) or config.get('iterate_until_good_fluency', False):
             if 'style_classification' in config['evaluation_metrics']:
                 evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
                                                         config['labels_dict_idxs'], data_dir, config[

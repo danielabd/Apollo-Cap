@@ -669,8 +669,8 @@ def diversitiy(res, gts):
         vocab_list = {}
         for k in res[test_name]:
             for style in res[test_name][k]:
-                if style == 'factual':
-                    continue
+                # if style == 'factual':
+                #     continue
                 if style not in vocab_list:
                     vocab_list[style] = []
                 tokenized_text = list(map(str.lower, nltk.tokenize.word_tokenize(res[test_name][k][style])))
@@ -762,6 +762,9 @@ def get_res_data(res_paths):
                 except:
                     pass
                 if title:
+                    if row[1]=='factual':
+                        i = 0
+                        j = 1
                     styles = row[i+1:]
                     title = False
                     continue

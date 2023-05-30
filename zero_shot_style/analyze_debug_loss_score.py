@@ -127,8 +127,16 @@ def add_eval_data(all_data,eval_debug_file_path, desired_scores, mapping_img_nam
         if test_name == 'ZeroStyleCap':
             style = eval_data.iloc[i, get_score_type_idx(eval_data.columns,'style')]
             img_idx = str(mapping_img_name2idx[eval_data.iloc[i, get_score_type_idx(eval_data.columns, 'k')]])
-            if img_idx in all_data[test_name] and style in all_data[test_name][img_idx]:
+            if style=='factual':
+                cond = str(img_idx) in all_data[test_name]
+            else:
+                cond1 = img_idx in all_data[test_name]
+                cond2 = style in all_data[test_name][img_idx]
+                cond = cond1 and cond2
+            if cond: #todo: return it
                 for score_type in desired_scores:
+                    if style == 'factual':
+                        style = 'positive'
                     all_data[test_name][img_idx][style][score_type] = eval_data.iloc[i, get_score_type_idx(eval_data.columns, score_type)]
     return all_data
 
@@ -292,7 +300,7 @@ def merge_debug_files(debug_dir_for_file_paths, merged_debug_file_name):
 
 
 def main():
-    configfile = os.path.join('.', 'configs', 'config.yaml')
+    configfile = os.path.join('.', 'configs', 'config_update_vit.yaml')  #'config.yaml')
     # debug_file_paths = {
     #     # "image_and_prompt_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_and_prompt_manipulation/senticap_image_and_prompt_manipulation_debug.txt",
     #     # "image_manipulation": "/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/image_manipulation/senticap_image_manipulation_debug.txt",
@@ -301,17 +309,20 @@ def main():
     #
     final_iterations_idx = 4 #suppose there are only 5 iterations in the results,  so we take as statistic the loss res of iter idx 4
     # debug_dir_for_file_paths = {"ZeroStyleCap": "/Users/danielabendavid/results/zero_style_cap/roBERTa/val_set"}
-    debug_dir_for_file_paths = {"ZeroStyleCap": "/Users/danielabendavid/results/zero_style_cap/roBERTa/val_set_weighted_loss"}
-    merged_debug_file_name = 'merged_debug_file_roBERTa_val_set.txt' #will be in the dir debug_dir_for_file_paths
+    # debug_dir_for_file_paths = {"ZeroStyleCap": "/Users/danielabendavid/results/zero_style_cap/roBERTa/val_set_weighted_loss"}
+    debug_dir_for_file_paths = {"ZeroStyleCap": "/Users/danielabendavid/results/zero_style_cap/senticap/source_zerocap"}
+    merged_debug_file_name = 'merged_debug_file_source_zerocap_val_set.txt'  #'merged_debug_file_roBERTa_val_set.txt' #will be in the dir debug_dir_for_file_paths
     # eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_fixed_param_25_3_23/evaluation_all_frames.csv'
     # eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set/03_05_2023/evaluation_all_frames.csv'
     eval_debug_file_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss/05_05_2023/evaluation_all_frames.csv'
+    eval_debug_file_path = '/Users/danielabendavid/experiments/zero_style_cap/senticap/source_zero_stylecap/29_05_2023/evaluation_all_frames.csv'
     data_split = 'val' # 'test'
 
     img_dir_path = os.path.join(os.path.expanduser('~'),'data/senticap/images/'+data_split)
     ZeroStyleCap_loss_data_path = os.path.join(debug_dir_for_file_paths["ZeroStyleCap"], "ZeroStyleCap_debug_loss_data.pkl")
-    desired_scores = ['fluency', 'CLIPScore', 'style_classification']
-    scores_th = {'fluency':0.9, 'CLIPScore':0.3, 'style_classification':1}
+    # desired_scores = ['fluency', 'CLIPScore', 'style_classification'] #todo
+    desired_scores = ['fluency', 'CLIPScore']
+    scores_th = {'fluency':0.95, 'CLIPScore':0.33, 'style_classification':1}
     # scores_th = {'fluency':0.9, 'CLIPScore':0.32, 'style_classification':1}
     best_data_tgt_pdf_file_name = f"debug_res_fluency={scores_th['fluency']}_CLIPScore={scores_th['CLIPScore']}_style_classification={scores_th['style_classification']}.pdf"
     all_data_tgt_pdf_file_name = f"debug_res_all_data.pdf"

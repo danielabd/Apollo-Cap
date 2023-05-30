@@ -1046,17 +1046,16 @@ class CLIPTextGenerator:
 
         window_mask = torch.ones_like(context[0][0]).to(self.device)
 
-        source_print_for_debug = self.config['print_for_debug']
         clip_loss_fixed = 100
         ce_loss_fixed = 100
         text_style_loss_fixed = 100
         i=-1
 
-        th_clip_loss = self.config['th_clip_loss']
-        th_ce_loss = self.config['th_ce_loss']
-        th_style_loss = self.config['th_style_loss']
-        new_weighted_loss = self.config['new_weighted_loss']
-        max_num_iterations = self.config['max_num_iterations']
+        th_clip_loss = self.config.get('th_clip_loss',-1)
+        th_ce_loss = self.config.get('th_ce_loss',-1)
+        th_style_loss = self.config.get('th_style_loss',-1)
+        new_weighted_loss = self.config.get('new_weighted_loss',-1)
+        max_num_iterations = self.config.get('max_num_iterations',-1)
         last_clip_loss = 1e6
         last_text_style_loss = 1e6
 
@@ -1070,8 +1069,8 @@ class CLIPTextGenerator:
                     break
             else:# not new_weighted_loss:
                 pass
-            if self.config['iterate_until_good_fluency']:
-                if word_loc>=self.config['start_word_loc_heavy_iteration']:
+            if self.config.get('iterate_until_good_fluency', False):
+                if word_loc>=self.config.get('start_word_loc_heavy_iteration', 1):
                     if i == self.config['heavy_max_num_iterations']:
                         break
                 elif i == self.num_iterations:
@@ -1099,8 +1098,8 @@ class CLIPTextGenerator:
             probs = nn.functional.softmax(logits, dim=-1)
 
             ###################################################
-            if word_loc>=self.config['start_word_loc_heavy_iteration'] and i >= 1:
-                if 'iterate_until_good_fluency' in self.config and self.config['iterate_until_good_fluency']:
+            if word_loc>=self.config.get('start_word_loc_heavy_iteration', 1) and i >= 1:
+                if self.config.get('iterate_until_good_fluency', False):
                     with torch.no_grad():
                         top_size = 512
                         top_probs_LM, top_indices = probs.topk(top_size, -1)
@@ -1637,10 +1636,10 @@ class CLIPTextGenerator:
                         #if self.check_if_cut_score[idx_p]:
                         if self.check_if_cut_score:
                             cut_scores = True
-                            similarity_topk_vals, similarity_topk_indices = similiraties[0].topk(self.config['requires_num_min_clip_score_val'][self.style])
+                            similarity_topk_vals, similarity_topk_indices = similiraties[0].topk(self.config.get('requires_num_min_clip_score_val',-1)[self.style])
 
                             for i in similarity_topk_vals:
-                                if i <= self.config['requires_min_clip_score_val'][self.style]:
+                                if i <= self.config.get('requires_min_clip_score_val',-1)[self.style]:
                                     cut_scores = False
                             if cut_scores:
                                 # print("~~~~~")
@@ -1656,12 +1655,12 @@ class CLIPTextGenerator:
                                 emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
                                 emoji_style_grades = emoji_style_probs[:,
                                                      self.config['idx_emoji_style_dict'][self.style]].sum(-1)
-                                if self.config['style_mul_not_cut']:
+                                if self.config.get('style_mul_not_cut',False):
                                     style_scores = (emoji_style_grades / torch.sum(emoji_style_grades)).to(self.device)
                                 else:
                                     emoji_style_grades_cutted = [0] * len(emoji_style_grades)
                                     for i in range(len(emoji_style_grades)):
-                                        if emoji_style_grades[i] > self.config['threshold_sentiment'][self.style] and similiraties[0][i]>=self.config['requires_min_clip_score_val'][self.style]:  # todo
+                                        if emoji_style_grades[i] > self.config['threshold_sentiment'][self.style] and similiraties[0][i]>=self.config.get('requires_min_clip_score_val',-1)[self.style]:  # todo
                                             # if emoji_style_grades[i]>0.3:
                                             # print(f"i={i},emoji_style_grades[i]={emoji_style_grades[i]},top_texts[i]={top_texts[i]}")
                                             emoji_style_grades_cutted[i] = 1
@@ -1775,10 +1774,10 @@ class CLIPTextGenerator:
                     if self.check_if_cut_score:
                         cut_scores = True
                         similarity_topk_vals, similarity_topk_indices = similiraties[0].topk(
-                            self.config['requires_num_min_clip_score_val'][self.style])
+                            self.config.get('requires_num_min_clip_score_val',-1)[self.style])
 
                         for i in similarity_topk_vals:
-                            if i <= self.config['requires_min_clip_score_val'][self.style]:
+                            if i <= self.config.get('requires_min_clip_score_val',-1)[self.style]:
                                 cut_scores = False
                         if cut_scores:
                             # print("~~~~~")
@@ -1794,13 +1793,13 @@ class CLIPTextGenerator:
                             emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
                             emoji_style_grades = emoji_style_probs[:,
                                                  self.config['idx_emoji_style_dict'][self.style]].sum(-1)
-                            if self.config['style_mul_not_cut']:
+                            if self.config.get('style_mul_not_cut',False):
                                 style_scores = (emoji_style_grades / torch.sum(emoji_style_grades)).to(self.device)
                             else:
                                 emoji_style_grades_cutted = [0] * len(emoji_style_grades)
                                 for i in range(len(emoji_style_grades)):
                                     if emoji_style_grades[i] > self.config['threshold_sentiment'][self.style] and \
-                                            similiraties[0][i] >= self.config['requires_min_clip_score_val'][
+                                            similiraties[0][i] >= self.config.get('requires_min_clip_score_val',-1)[
                                         self.style]:  # todo
                                         # if emoji_style_grades[i]>0.3:
                                         # print(f"i={i},emoji_style_grades[i]={emoji_style_grades[i]},top_texts[i]={top_texts[i]}")

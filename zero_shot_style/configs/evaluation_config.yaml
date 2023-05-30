@@ -1,17 +1,23 @@
 #senticap
 dataset: senticap # senticap,flickrstyle10k
 style_type: 'style_embed' #'style_embed' or 'emoji'
-data_split: test #val, test
+data_split: val #val, test #todo
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 
-#todo:
 #metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#todo
+#metrics: [CLIPScore, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
+update_ViT: False
 
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+styles:
+  senticap: [factual]  #[positive, negative] #todo
+  flickrstyle10k: [humor, romantic]
+
 desired_labels:
   senticap: [positive, negative] #[factual, positive, negative]
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
@@ -35,11 +41,12 @@ res_path2eval:
 #     ZeroStyleCap: /home/bdaniela/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set/03_05_2023/total_results_text_style_.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_StylizedZeroCap_roBERTa_val_set_weighted_loss/05_05_2023/total_results_text_style_.csv
 #     #style embed - 14.5.23
-#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_real_std/total_results_text_style_.csv
+     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_real_std/total_results_text_style_.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8/total_results_text_style_.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/erc/senticap_StylizedZeroCap_erc/total_results_text_style_.csv
 #     stop in good res -15.5.23
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_stop_in_good_res/15_05_2023/total_results_text_style_.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/source_zero_stylecap/29_05_2023/total_results.csv
 
 
   flickrstyle10k:
@@ -64,7 +71,7 @@ labels_dict_idxs_roberta:
     negative: 0
   flickrstyle10k:
     humor: 0
-    romantic: 1:
+    romantic: 1
 
 max_num_imgs2test:
   senticap: -1
@@ -107,9 +114,7 @@ model_based_on: 'bert'
 test_imgs:
   senticap: /home/nlp/tzufar/data/senticap/images/test
   flickrstyle10k: /home/nlp/tzufar/data/flickrstyle10k/images/test
-styles:
-  senticap: [positive, negative]
-  flickrstyle10k: [humor, romantic]
+
 
 #specific_imgs_to_test: [225571, 471814, 72873, 357322, 106314, 368459, 575135, 423830, 51258, 265596, 551518, 448703]
 #specific_img_idxs_to_test: [60, 61, 62, 63, 64, 65, 66, 67, 128, 129, 130, 131, 132, 133, 134, 135]

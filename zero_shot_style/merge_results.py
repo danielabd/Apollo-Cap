@@ -99,12 +99,94 @@ def merge_list_res_files_to_one(file_list, tgt_path):
             col_name = 'img_num\style'
         for i,k in enumerate(data[col_name]):
             pos = data['positive'][i]
-            neg = data['negative'][i]
+            try:
+                neg = data['negative'][i]
+            except:
+                neg = None
             total_data[k] = {'img_num': k, 'positive': pos, 'negative': neg}
         total_data_test_type = pd.DataFrame(list(total_data.values()))
         total_data_test_type.to_csv(tgt_path, index=False, header=True)
         print(f"finish to create: {tgt_path}")
     print('Finish of program!')
+
+
+def get_results_of_single_folder(total_data, dirs):
+    for d in dirs:
+        path_file = ''
+        if d.startswith(".") or os.path.isfile(os.path.join(src_dirs[test_type],d)):
+            continue
+        files = os.listdir(os.path.join(src_dirs[test_type],d))
+        # take the relevant file
+        for f in files:
+            # if test_type == 'text_style':
+            #     if f != "results_23_26_35__05_02_2023.csv":
+            #         continue
+
+            # if f.endswith('.csv'):
+            #     path_file = os.path.join(src_dirs[test_type],d,f)
+            #     break
+            #########
+            #todo: check the next:
+            # if test_type == 'text_style':
+            #     if f == 'results.csv':
+            #         path_file = os.path.join(src_dirs[test_type],d,f)
+            #         break
+            # elif f.endswith('.csv'):
+            #     path_file = os.path.join(src_dirs[test_type],d,f)
+            #     break
+            #######
+            if f.startswith('avg_'):
+                continue
+            if f.endswith('.csv'):
+                path_file = os.path.join(src_dirs[test_type],d,f)
+                break
+        if not path_file:
+            continue
+        data = pd.read_csv(path_file)
+        # if f!='results_all_models_source_classes_03_43_42__10_02_2023.csv' and f!='results_all_models_source_classes_00_18_04__12_02_2023.csv':
+        #     data = data.head(data.shape[0] - 1) #remove last line for the case that it is not completed
+        if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
+             data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
+        if 'positive' in data.columns:
+            label1 = 'positive'
+            label2 = 'negative'
+        elif 'humor' in data.columns:
+            label1 = 'humor'
+            label2 = 'romantic'
+        # for i,k in enumerate(data[t[test_type]]):
+        for i,k in enumerate(data[data.columns[0]]):
+            pos = data[label1][i]
+            neg = data[label2][i]
+            # try:
+            #     neg = data['negative'][i]
+            # except:
+            #     neg = data['ngeative'][i]
+            if use_factual:
+                try:
+                    fact = data['factual'][i]
+                except:
+                    try:
+                        fact = data['neutral'][i]
+                    except:
+                        fact = ''
+                if test_type == 'prompt_manipulation':
+                    factual_image_of_a_prompt_manipulation[k] = fact
+                if test_type == 'image_manipulation':
+                    factual_image_manipulation[k] = fact
+                # if test_type == 'image_and_prompt_manipulation':
+                #     factual_image_of_a_image_and_prompt_manipulation[k] = fact
+                #     if fact!= factual_image_of_a_prompt_manipulation[k]:
+                #         print('check')
+                if factual_wo_prompt:
+                    fact = factual_image_manipulation[k]
+                else: #write factual with prompt of image of a...
+                    fact = factual_image_of_a_prompt_manipulation[k]
+                single_data = {'img_num': k, 'factual': fact, label1: pos, label2: neg}
+            else:
+                single_data = {'idx': img_name_to_idx[k], 'img_num': k, label1: pos, label2: neg}
+            total_data[k] = single_data
+    return total_data
+
 
 def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,img_name_to_idx):
     #go over test type
@@ -123,79 +205,12 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
         total_data = {}
         # go over all dirs of this test type
         for d in res_paths[test_type]:
-            path_file = ''
-            if d.startswith(".") or os.path.isfile(os.path.join(src_dirs[test_type],d)):
-                continue
-            files = os.listdir(os.path.join(src_dirs[test_type],d))
-            # take the relevant file
-            for f in files:
-                # if test_type == 'text_style':
-                #     if f != "results_23_26_35__05_02_2023.csv":
-                #         continue
-
-                # if f.endswith('.csv'):
-                #     path_file = os.path.join(src_dirs[test_type],d,f)
-                #     break
-                #########
-                #todo: check the next:
-                # if test_type == 'text_style':
-                #     if f == 'results.csv':
-                #         path_file = os.path.join(src_dirs[test_type],d,f)
-                #         break
-                # elif f.endswith('.csv'):
-                #     path_file = os.path.join(src_dirs[test_type],d,f)
-                #     break
-                #######
-                if f.startswith('avg_'):
-                    continue
-                if f.endswith('.csv'):
-                    path_file = os.path.join(src_dirs[test_type],d,f)
-                    break
-            if not path_file:
-                continue
-            data = pd.read_csv(path_file)
-            # if f!='results_all_models_source_classes_03_43_42__10_02_2023.csv' and f!='results_all_models_source_classes_00_18_04__12_02_2023.csv':
-            #     data = data.head(data.shape[0] - 1) #remove last line for the case that it is not completed
-            if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
-                 data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
-            if 'positive' in data.columns:
-                label1 = 'positive'
-                label2 = 'negative'
-            elif 'humor' in data.columns:
-                label1 = 'humor'
-                label2 = 'romantic'
-            # for i,k in enumerate(data[t[test_type]]):
-            for i,k in enumerate(data[data.columns[0]]):
-                pos = data[label1][i]
-                neg = data[label2][i]
-                # try:
-                #     neg = data['negative'][i]
-                # except:
-                #     neg = data['ngeative'][i]
-                if use_factual:
-                    try:
-                        fact = data['factual'][i]
-                    except:
-                        try:
-                            fact = data['neutral'][i]
-                        except:
-                            fact = ''
-                    if test_type == 'prompt_manipulation':
-                        factual_image_of_a_prompt_manipulation[k] = fact
-                    if test_type == 'image_manipulation':
-                        factual_image_manipulation[k] = fact
-                    # if test_type == 'image_and_prompt_manipulation':
-                    #     factual_image_of_a_image_and_prompt_manipulation[k] = fact
-                    #     if fact!= factual_image_of_a_prompt_manipulation[k]:
-                    #         print('check')
-                    if factual_wo_prompt:
-                        fact = factual_image_manipulation[k]
-                    else: #write factual with prompt of image of a...
-                        fact = factual_image_of_a_prompt_manipulation[k]
-                    single_data = {'img_num': k, 'factual': fact, label1: pos, label2: neg}
-                else:
-                    single_data = {'idx': img_name_to_idx[k], 'img_num': k, label1: pos, label2: neg}
-                total_data[k] = single_data
+            # path_d = os.path
+            if os.path.isdir(d) and '-' not in d:
+                for d1 in d:
+                    total_data = get_results_of_single_folder(total_data, d1)
+            elif os.path.isdir(d):
+                total_data = get_results_of_single_folder(total_data, d)
         keys_test_type[test_type] = list(total_data.keys())
         total_data_test_type = pd.DataFrame(list(total_data.values()))
         for i in list(total_data.values()):
@@ -344,7 +359,8 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_stop_in_good_res/15_05_2023'
         # 22.5.23
         src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/image_manipulation'
-        # 15.5.23
+        # 29.5.23
+        src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/finetuned_roberta_best_sweep'
 
         # src_dir_text_style = os.path.join(base_path,'text_style')
         text_style_dir_path = os.listdir(src_dir_text_style)
@@ -511,6 +527,7 @@ def main():
         # dir_files = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'
         dir_files = '/Users/danielabendavid/results/zero_style_cap/erc_old_params'
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/prompt_manipulation'
+        dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/source_zero_stylecap/29_05_2023'
         file_list = [os.path.join(dir_files,f) for f in os.listdir(dir_files) if f.endswith('.csv') and f.startswith('results')]
         tgt_path = os.path.join(dir_files,'total_results.csv')
         merge_list_res_files_to_one(file_list, tgt_path)
