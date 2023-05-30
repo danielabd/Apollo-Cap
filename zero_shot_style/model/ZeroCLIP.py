@@ -1583,7 +1583,7 @@ class CLIPTextGenerator:
                     # res[top_indices]
 
                     #10.5.23
-                    if self.config['cut_cand2clip']:
+                    if self.config.get('cut_cand2clip',False):
                         #########compute style score for text:
                         # get style score for text
                         with torch.no_grad():
@@ -1719,7 +1719,7 @@ class CLIPTextGenerator:
                 # res[top_indices]
 
                 # 10.5.23
-                if self.config['cut_cand2clip']:
+                if self.config.get('cut_cand2clip',False):
                     #########compute style score for text:
                     # get style score for text
                     with torch.no_grad():
