@@ -765,16 +765,21 @@ def get_res_data(res_paths):
                     if row[1]=='factual':
                         i = 0
                         j = 1
+                    try:
+                        i = row.index('img_num')
+                        j = row.index('img_num') + 1
+                    except:
+                        pass
                     styles = row[i+1:]
                     title = False
                     continue
                 else:
                     try:
                         res_data[k] = {}
-                        for i, s in enumerate(styles):
+                        for i_s, s in enumerate(styles):
                             # res_data[k][s] = row[i+1]
                             # limit sentence to target_seq_length as we create in ZeroStyleCap
-                            res_data[k][s] = ' '.join(row[i + j].split()[:target_seq_length])
+                            res_data[k][s] = ' '.join(row[i_s + j].split()[:target_seq_length])
                     except:
                         pass
         res_data_per_test[test_name] = res_data
@@ -832,25 +837,39 @@ def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, v
         total_rows = []
         title = True
         avg_metric = {}
+        metrics.append("diversity-vocab_size")
         for test_name in mean_score:
             row = [test_name]
             for style in styles:
                 for metric in metrics:
-                    if not np.isnan(mean_score[test_name][metric][style]):
+                    if test_name.startswith('capdec') and style not in vocab_size[test_name]:
+                        continue
+                    if metric=="diversity-vocab_size" or not np.isnan(mean_score[test_name][metric][style]):
                         if title:
                             dataset_row.append(dataset)
                             style_row.append(style)
                             metrics_row.append(metric)
-                        row.append(mean_score[test_name][metric][style])
-                        if metric not in avg_metric:
-                            avg_metric[metric] = [mean_score[test_name][metric][style]]
+                        if metric == "diversity-vocab_size":
+                            row.append(vocab_size[test_name][style])
                         else:
-                            avg_metric[metric].append(mean_score[test_name][metric][style])
-                if 'diversity-vocab_size' not in avg_metric:
-                    avg_metric['diversity-vocab_size'] = [vocab_size[test_name][style]]
-                else:
-                    if style in vocab_size[test_name]:
-                        avg_metric['diversity-vocab_size'].append(vocab_size[test_name][style])
+                            row.append(mean_score[test_name][metric][style])
+                        if metric not in avg_metric:
+                            if metric == "diversity-vocab_size":
+                                val_for_metric = vocab_size[test_name][style]
+                            else:
+                                val_for_metric = mean_score[test_name][metric][style]
+                            avg_metric[metric] = [val_for_metric]
+                        else:
+                            if metric == "diversity-vocab_size":
+                                val_for_metric = vocab_size[test_name][style]
+                            else:
+                                val_for_metric = mean_score[test_name][metric][style]
+                            avg_metric[metric].append(val_for_metric)
+                # if 'diversity-vocab_size' not in avg_metric:
+                #     avg_metric['diversity-vocab_size'] = [vocab_size[test_name][style]]
+                # else:
+                #     if style in vocab_size[test_name]:
+                #         avg_metric['diversity-vocab_size'].append(vocab_size[test_name][style])
             for m in avg_metric:
                 if title:
                     dataset_row.append('total avg.')

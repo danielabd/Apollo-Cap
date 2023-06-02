@@ -10,18 +10,18 @@ parameters:
     min: 1
     distribution: int_uniform
   loss_scale_style_clip:
-    max: 33
+    max: 5
     min: 0.1
     distribution: uniform
   loss_scale_src_clip_clip:
     max: 3
     min: 0.1
     distribution: uniform
-#  ce_scale:
-#    max: 3
-#    min: 0.1
-#    distribution: uniform
-#  clip_scale:
-#    max: 3
-#    min: 0.1
-#    distribution: uniform
+  ce_scale:
+    max: 3
+    min: 0.1
+    distribution: uniform
+  clip_scale:
+    max: 6
+    min: 0.1
+    distribution: uniform
