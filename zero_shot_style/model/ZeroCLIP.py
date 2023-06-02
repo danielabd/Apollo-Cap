@@ -368,7 +368,7 @@ class CLIPTextGenerator:
         else:
             with torch.no_grad():
                 if self.model_based_on == 'bert' or source_clip:
-                    image_fts = [self.clip.encode_image(x, use_flash_attention) for x in clip_imgs]
+                    image_fts = [self.clip.encode_image(x) for x in clip_imgs]
                     if type(image_fts[0]) == tuple:
                         image_fts[0] = image_fts[0][0]
                 elif self.model_based_on == 'clip': #for text_style
@@ -1058,7 +1058,8 @@ class CLIPTextGenerator:
         max_num_iterations = self.config.get('max_num_iterations',-1)
         last_clip_loss = 1e6
         last_text_style_loss = 1e6
-
+        #todo: check if nee the next line
+        self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
         while(1):
             i += 1
             # print(f"iteration num: {i}")
@@ -1184,45 +1185,57 @@ class CLIPTextGenerator:
             if self.config.get('update_ViT',False) and word_loc>=self.config['start_loop_clip_style_in_word_num']:#todo check
                 # contex=past_ke_values of GPT2. tuple of 24, each one composed of 2, s.t. each one of size (5,16,<num of words in context>,64)
                 # update clip
-                self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
+                # self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
 
-                image_fts, k_clip,v_clip = self.clip.encode_image(self.clip_img, return_k_v=True,kv_only_first_layer=self.config['kv_only_first_layer'])
+                ########## try with continue update CLIP and not rest it every global iteration of ZeroCap
+                if i==0:
+                # try:
+                #     image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
+                #                                                        updated_v_in=shifted_v_clip, return_k_v=True,
+                #                                                        kv_only_first_layer=self.config[
+                #                                                            'kv_only_first_layer'])
+                # except:
+                    image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, return_k_v=True,
+                                                                       kv_only_first_layer=self.config[
+                                                                           'kv_only_first_layer'])
+                ##########
 
-                window_mask_clip = torch.ones_like(k_clip[0]).to(self.device)
 
-                if type(image_fts) == tuple:
-                    image_fts = image_fts[0]
-                image_features = sum(image_fts)
-                self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+                    window_mask_clip = torch.ones_like(k_clip[0]).to(self.device)
 
-                k_delta_clip = [np.zeros(p.shape).astype("float32") for p in k_clip]#context]
-                v_delta_clip = [np.zeros(p.shape).astype("float32") for p in v_clip]#context]
+                    if type(image_fts) == tuple:
+                        image_fts = image_fts[0]
+                    image_features = sum(image_fts)
+                    self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
-                curr_shift_k = [torch.from_numpy(p_).requires_grad_(True).to(device=self.device) for p_ in
-                                k_delta_clip]
-                curr_shift_v = [torch.from_numpy(p_).requires_grad_(True).to(device=self.device) for p_ in
-                                v_delta_clip]
+                    k_delta_clip = [np.zeros(p.shape).astype("float32") for p in k_clip]#context]
+                    v_delta_clip = [np.zeros(p.shape).astype("float32") for p in v_clip]#context]
 
-                for (p_k, p_v) in zip(curr_shift_k, curr_shift_v):
-                    p_k.retain_grad()
-                    p_v.retain_grad()
+                    curr_shift_k = [torch.from_numpy(p_).requires_grad_(True).to(device=self.device) for p_ in
+                                    k_delta_clip]
+                    curr_shift_v = [torch.from_numpy(p_).requires_grad_(True).to(device=self.device) for p_ in
+                                    v_delta_clip]
 
-                shifted_k_clip = [k_clip[i1] + curr_shift_k[i1] for i1 in range(len(curr_shift_k))]
-                shifted_v_clip = [v_clip[i1] + curr_shift_v[i1] for i1 in range(len(curr_shift_v))]
-                # shifted_k_clip = list(
-                #     map(add_context_clip, tuple(k_clip), tuple(curr_shift_k)))  # array like addition for tuples
-                # shifted_v_clip = list(
-                #     map(add_context_clip, v_clip, curr_shift_v))  # array like addition for tuples
+                    for (p_k, p_v) in zip(curr_shift_k, curr_shift_v):
+                        p_k.retain_grad()
+                        p_v.retain_grad()
 
-                # self.image_features, k, v = self.get_img_feature(self.img_path, None, source_clip=False,
-                #                                                  use_flash_attention=False, k=shifted_k_clip, v=shifted_v_clip,
-                #                                                  return_k_v=True)
-                image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
-                                                                   updated_v_in=shifted_v_clip, return_k_v=True,kv_only_first_layer=self.config['kv_only_first_layer'])
-                if type(image_fts) == tuple:
-                    image_fts = image_fts[0]
-                image_features = sum(image_fts)
-                self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+                    shifted_k_clip = [k_clip[i1] + curr_shift_k[i1] for i1 in range(len(curr_shift_k))]
+                    shifted_v_clip = [v_clip[i1] + curr_shift_v[i1] for i1 in range(len(curr_shift_v))]
+                    # shifted_k_clip = list(
+                    #     map(add_context_clip, tuple(k_clip), tuple(curr_shift_k)))  # array like addition for tuples
+                    # shifted_v_clip = list(
+                    #     map(add_context_clip, v_clip, curr_shift_v))  # array like addition for tuples
+
+                    # self.image_features, k, v = self.get_img_feature(self.img_path, None, source_clip=False,
+                    #                                                  use_flash_attention=False, k=shifted_k_clip, v=shifted_v_clip,
+                    #                                                  return_k_v=True)
+                    image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
+                                                                       updated_v_in=shifted_v_clip, return_k_v=True,kv_only_first_layer=self.config['kv_only_first_layer'])
+                    if type(image_fts) == tuple:
+                        image_fts = image_fts[0]
+                    image_features = sum(image_fts)
+                    self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
                 for clip_update_iter in range(self.config['num_iterations_clip_style']):  # todo: change it self.k=list of 12, each with size of(1,12,50,64)
                     # CLIP LOSS
                     clip_ViT_loss = 0
@@ -1576,6 +1589,12 @@ class CLIPTextGenerator:
             print("in clip loss:")
 
         clip_probs = {} #for all beams
+        # my debugging of update CLIP
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        text_features_specific_test = self.get_txt_features([self.style])
+        similiraties_specific_test = (self.image_features @ text_features_specific_test.T)
+        print(f"similiraties_specific_test = {similiraties_specific_test.item()}")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         for idx_p in range(probs.shape[0]): # for beam search
             top_texts = []
             prefix_text = prefix_texts[idx_p]
@@ -1738,6 +1757,7 @@ class CLIPTextGenerator:
                     target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
                     target_probs = target_probs.type(torch.float32)
             else:
+                similiraties = (self.image_features @ text_features.T)
                 similiraties = (self.image_features @ text_features.T)
                 ##### #todo:debug
                 # top_probs_clip, top_indices_clip = similiraties.topk(10, -1)
