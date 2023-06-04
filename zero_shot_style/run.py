@@ -41,7 +41,8 @@ EPSILON = 0.0000000001
 def get_args():
     parser.add_argument('--config_file', type=str,
                         # default=os.path.join('.', 'configs', 'config.yaml'),
-                        default=os.path.join('.', 'configs', 'config_update_vit.yaml'), #todo: change config file
+                        # default=os.path.join('.', 'configs', 'config_update_vit.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_finetuned_roberta_best_sweep.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -933,6 +934,8 @@ def main():
         # if int(img_path.split('.')[0].split('/')[-1]) == 225571:
         #     print(f'img_path_idx={img_path_idx}')
         # continue
+        # todo: remove it!!!
+        # img_path = os.path.join(os.path.expanduser('~'),'data/stylized_images','49.png')
         if not config['debug_mac']:
             clip_img = None
             if config['update_ViT']:

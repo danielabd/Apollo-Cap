@@ -208,7 +208,7 @@ class CLIPTextGenerator:
         task = 'sentiment'
         MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
         self.sentiment_model_name = MODEL
-        if config['style_type'] == 'roBERTa': # todo: remove it  -  using sentiment model roberta
+        if config['style_type'] == 'roberta': # todo: remove it  -  using sentiment model roberta
             # self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
             f_roberta_config = AutoConfig.from_pretrained(self.config['finetuned_roberta_config'])
             self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.config['finetuned_roberta_model_path'],
@@ -430,7 +430,7 @@ class CLIPTextGenerator:
         #     self.check_if_cut_score[idx_p] = True
         if self.use_style_model:
             self.text_style_scale = text_style_scale
-            self.style_type = style_type #'clip','twitter','emotions' , 'erc' or 'roBERTa'
+            self.style_type = style_type #'clip','twitter','emotions' , 'erc' or 'roberta'
             if self.style_type == 'style_embed':
                 if not text_to_imitate:
                     # self.desired_style_embedding_vector = desired_style_embedding_vector.to(self.device)
@@ -1203,6 +1203,7 @@ class CLIPTextGenerator:
 
                     window_mask_clip = torch.ones_like(k_clip[0]).to(self.device)
 
+
                     if type(image_fts) == tuple:
                         image_fts = image_fts[0]
                     image_features = sum(image_fts)
@@ -1258,7 +1259,7 @@ class CLIPTextGenerator:
                                 text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(probs, context_tokens)
                             elif self.style_type == 'style_embed': #my text style embedding that I trained
                                 text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style, style_probs = self.get_text_style_loss(probs, context_tokens)
-                            elif self.style_type == 'roBERTa':
+                            elif self.style_type == 'roberta':
                                 text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs, context_tokens, self.style)
                             else:
                                 print('check what is the style model!')
@@ -1285,6 +1286,9 @@ class CLIPTextGenerator:
 
                     factor = 10 #1 #todo check
                     print(f"factor={factor}, global_iteration={i}, update_clip_iter={clip_update_iter}, clip_ViT_loss={clip_ViT_loss}, clip_src_clip_loss={clip_src_clip_loss}, clip_style_loss={clip_style_loss}")
+                    if self.config.get('kv_only_first_layer', False):
+                        print(f"num_iterations_clip_style={self.config['num_iterations_clip_style']}, loss_scale_style_clip={self.config['loss_scale_style_clip']}, loss_scale_src_clip_clip={self.config['loss_scale_src_clip_clip']}")
+
                     # --------- Specific Gen ---------
 
                     sep_grads_k = None
@@ -1387,7 +1391,7 @@ class CLIPTextGenerator:
                         elif self.style_type == 'style_embed':  # my text style embedding that I trained
                             text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style, style_probs = self.get_text_style_loss(
                                 probs, context_tokens)
-                        elif self.style_type == 'roBERTa':
+                        elif self.style_type == 'roberta':
                             text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs,
                                                                                                       context_tokens,
                                                                                                       self.style)
@@ -1590,7 +1594,45 @@ class CLIPTextGenerator:
 
         clip_probs = {} #for all beams
         # my debugging of update CLIP
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~") #todo:
+        # print("similarity between corrected image to style image:")
+        # if self.style == 'positive':
+        #     desired_style_image_name = '50.png'
+        #     undesired_style_image_name = '51.png'
+        #     undesired_style = 'negative'
+        # elif self.style == 'negative':
+        #     desired_style_image_name = '51.png'
+        #     undesired_style_image_name = '50.png'
+        #     undesired_style = 'positive'
+        # neutral_style_image_name = '49.png'
+        # for style_image_name in [desired_style_image_name,undesired_style_image_name,neutral_style_image_name]:
+        #     img_path_rel_img = os.path.join(os.path.expanduser('~'), 'data/stylized_images', style_image_name)
+        #     clip_img_rel_img = self.clip_preprocess(Image.open(img_path_rel_img)).unsqueeze(0).to(self.device)
+        #     image_fts_rel_img = self.clip.encode_image(clip_img_rel_img, return_k_v=False)
+        #     if type(image_fts_rel_img) == tuple:
+        #         image_fts_rel_img = image_fts_rel_img[0]
+        #     image_features_rel_img = sum(image_fts_rel_img)
+        #     image_features_rel_img = image_features_rel_img / image_features_rel_img.norm(dim=-1, keepdim=True)
+        #     similiraties_rel_img = (self.image_features @ image_features_rel_img) #todo: check if need here transpode T
+        #     if style_image_name==desired_style_image_name:
+        #         print(f"image similarity to the desired style ({self.style})= {similiraties_rel_img.item()}")
+        #     elif style_image_name==undesired_style_image_name:
+        #         print(f"image similarity to the undesired style ({undesired_style})= {similiraties_rel_img.item()}")
+        #     elif style_image_name==neutral_style_image_name:
+        #         print(f"image similarity to the neutral style ('neutral style')= {similiraties_rel_img.item()}")
+
+        # for style_image_name in [desired_style_image_name,undesired_style_image_name,neutral_style_image_name]:
+        #     image_features_rel_img = self.get_combined_feature([self.img_path,os.path.join(os.path.expanduser('~'), 'data/stylized_images', neutral_style_image_name), os.path.join(os.path.expanduser('~'), 'data/stylized_images', style_image_name)], [], self.config['arithmetics_weights'], None)
+        #     similiraties_rel_img = (self.image_features @ torch.squeeze(image_features_rel_img)) #todo: check if need here transpode T
+        #     if style_image_name==desired_style_image_name:
+        #         print(f"image similarity to the desired style ({self.style})= {similiraties_rel_img.item()}")
+        #     elif style_image_name==undesired_style_image_name:
+        #         print(f"image similarity to the undesired style ({undesired_style})= {similiraties_rel_img.item()}")
+        #     elif style_image_name==neutral_style_image_name:
+        #         print(f"image similarity to the neutral style ('neutral style')= {similiraties_rel_img.item()}")
+
+        # image_features = self.get_combined_feature([self.imgs_path,os.path.join(os.path.expanduser('~'), 'data/stylized_images', desired_style_image_name), os.path.join(os.path.expanduser('~'), 'data/stylized_images', neutral_style_image_name)], [], self.config['arithmetics_weights'], None)
+        print("similarity between corrected image embedding to text of style name:")
         text_features_specific_test = self.get_txt_features([self.style])
         similiraties_specific_test = (self.image_features @ text_features_specific_test.T)
         print(f"similiraties_specific_test = {similiraties_specific_test.item()}")

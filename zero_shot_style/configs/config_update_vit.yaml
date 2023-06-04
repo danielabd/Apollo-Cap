@@ -1,6 +1,6 @@
 ###### stylized ZeroCap: create captions - for run.py
 dataset: senticap # senticap,flickrstyle10k
-style_type: style_embed  #'style_embed' or 'emoji' or 'erc' or 'roBERTa' #todo
+style_type: style_embed  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False #False #todo
@@ -13,8 +13,8 @@ specific_idxs_to_skip: [2,3] #todo
 max_num_of_imgs: 5 #todo
 reverse_imgs_list: False
 data_type: val #val, test #todo:!!!!!!!!
-#specific_imgs_to_test: [544065] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-specific_img_idxs_to_test: [207]
+specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+#specific_img_idxs_to_test: [121]
 ########## 10.5.23
 cut_cand2clip: False
 iterate_until_good_fluency: False
@@ -48,7 +48,7 @@ evaluation_metrics: [CLIPScore, style_classification_roberta, fluency]   # ['ble
 
 
 experiement_global_name:
-  senticap: StylizedZeroCap_update_vit_along_iteration_global_prms #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_update_vit_along_iteration_global_prms_test2 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 # finetuned roBERTa

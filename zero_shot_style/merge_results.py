@@ -110,7 +110,8 @@ def merge_list_res_files_to_one(file_list, tgt_path):
     print('Finish of program!')
 
 
-def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factual=False):
+def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factual=False, merge_sweep=False):
+    sweep_exp = path_d.split('/')[-1]
     path_file = ''
     files = os.listdir(path_d)
     # take the relevant file
@@ -158,8 +159,8 @@ def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factua
             single_data = {'img_num': k, label1: pos, label2: neg}
         else:
             # single_data = {'idx': img_name_to_idx[k], 'img_num': k, label1: pos, label2: neg}
-            single_data = {'idx': img_name_to_idx[k], 'img_num': k, label1: pos, label2: neg}
-        total_data[k] = single_data
+            single_data = {'idx': img_name_to_idx[k], 'img_num': k,'sweep_exp': sweep_exp, label1: pos, label2: neg}
+        total_data[sweep_exp] = single_data
     return total_data
 
 
@@ -184,6 +185,52 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
             path_d = os.path.join(res_paths[test_type],d)
             if os.path.isdir(path_d):
                 total_data = get_results_of_single_folder(total_data, path_d,img_name_to_idx)
+        keys_test_type[test_type] = list(total_data.keys())
+        total_data_test_type = pd.DataFrame(list(total_data.values()))
+        for i in list(total_data.values()):
+            if i['img_num'] == 104906:
+                print("here")
+        total_data_test_type.to_csv(tgt_paths[test_type], index=False, header=True)
+        print(f"finish to create: {tgt_paths[test_type]}")
+        # write_data_to_global_file_for_debug(total_data_test_type, img_idx_to_name, tgt_paths_debug[test_type], t[test_type])
+        # for
+    print('Finish of program!')
+
+    # imgs_to_add = {}
+    # for test_type in  keys_test_type:
+    #     if test_type=='text_style':
+    #         continue
+    #     else:
+    #         imgs_to_add[test_type] = []
+    #     for i in keys_test_type['text_style']:
+    #         if i not in keys_test_type[test_type]:
+    #             imgs_to_add[test_type].append(i)
+    #     print(f"For {test_type}, need to add images: ")
+    #     print(imgs_to_add[test_type])
+
+    print('Finish of program!')
+
+def merge_res_sweep_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,img_name_to_idx):
+    #go over test type
+    keys_test_type = {}
+
+    if use_factual:
+        factual_image_of_a_prompt_manipulation = {}
+        factual_image_manipulation = {}
+        if factual_wo_prompt:
+            exp_to_merge.remove('image_manipulation')
+            exp_to_merge.insert(0,'image_manipulation')
+        else:
+            exp_to_merge.remove('prompt_manipulation')
+            exp_to_merge.insert(0, 'prompt_manipulation')
+    for test_type in exp_to_merge:
+        total_data = {}
+        # go over all dirs of this test type
+        dirs_of_res_paths = os.listdir(res_paths[test_type])
+        for d in dirs_of_res_paths:
+            path_d = os.path.join(res_paths[test_type],d)
+            if os.path.isdir(path_d):
+                total_data = get_results_of_single_folder(total_data, path_d,img_name_to_idx, merge_sweep=True)
         keys_test_type[test_type] = list(total_data.keys())
         total_data_test_type = pd.DataFrame(list(total_data.values()))
         for i in list(total_data.values()):
@@ -334,11 +381,16 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/image_manipulation'
         # 29.5.23
         src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/finetuned_roberta_best_sweep'
+        #erc
+        src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/erc/senticap_StylizedZeroCap_erc'
         # 31.5.23
-        src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8'
+        # src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8'
         # src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/finetuned_roberta_best_sweep'
         # 2.6.23
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/source_zero_stylecap/29_05_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/source_zero_stylecap/29_05_2023"
+        # 4.6.23
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/StylizedZeroCap_update_vit_along_iteration_global_prms/04_06_2023"
+
         # src_dir_text_style = os.path.join(base_path,'text_style')
         # text_style_dir_path = os.listdir(src_dir_text_style)
         text_style_dir_path = src_dir_text_style
@@ -495,21 +547,26 @@ def main():
     # get_img_idx_to_name(args.caption_img_dict)
     factual_wo_prompt = False
     use_factual = False
-    merge_dirs = True
     t = {"prompt_manipulation": "img_num","image_manipulation": "img_num\style",  "image_and_prompt_manipulation": "img_num\style", "text_style": "img_num"}
 
     exp_to_merge = ["zerostylecap"]
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "zerostylecap"]
-    #todo:
+
+    test_split = 'val'
+    merge_dirs = True
+    merge_res_of_sweep = True
 
     if merge_dirs:
         dataset = 'senticap'
-        test_split = 'test'
         suffix_name = ''
         res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name)  # todo:
         img_name_to_idx = map_img_name_to_idx(dataset, test_split)
-        merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,
+        if merge_res_of_sweep:
+            merge_res_sweep_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,
                                img_name_to_idx)
+        else:
+            merge_res_files_to_one(exp_to_merge, res_paths, src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,
+                                   img_name_to_idx)
     else: # for the case of file list
         # file_list = get_list_of_files()
         # dir_files = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/erc_weighted_loss/28_04_2023/tmp'

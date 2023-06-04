@@ -1117,6 +1117,7 @@ def main():
         list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
         config['tgt_eval_results_file_name_for_all_frames'])
 
+    print(f"finished to evaluat on {len(all_scores)} images.")
     write_results(mean_score, tgt_eval_results_file_name, config['dataset'], config['metrics'], config['styles'],
                   vocab_size)
     write_results_for_all_frames(all_scores, tgt_eval_results_file_name_for_all_frames, config['metrics'])
