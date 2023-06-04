@@ -549,9 +549,10 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                     for i2, style in enumerate(styles):
                         if style == 'factual' and (metric == 'style_classification' or metric == 'style_classification_roberta'):
                             continue
-                        if style in gts_per_data_set[k] and style in res[test_name][k]:
-                            if not gts_per_data_set[k][style]:
-                                continue
+                        # if style in gts_per_data_set[k] and style in res[test_name][k]:
+                        if style in res[test_name][k]:
+                            # if not gts_per_data_set[k][style]:
+                            #     continue
                             tmp_res = {k: [res[test_name][k][style]]}
                             if metric == 'CLIPScore':
                                 # score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(os.path.join(config['test_imgs'],gts_per_data_set[k]['image_path'].split('/')[-1]), tmp_res)
