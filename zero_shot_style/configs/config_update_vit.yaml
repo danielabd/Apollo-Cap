@@ -13,8 +13,8 @@ specific_idxs_to_skip: [2,3] #todo
 max_num_of_imgs: 5 #todo
 reverse_imgs_list: False
 data_type: val #val, test #todo:!!!!!!!!
-specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-#specific_img_idxs_to_test: [121]
+#specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+specific_img_idxs_to_test: [207]
 ########## 10.5.23
 cut_cand2clip: False
 iterate_until_good_fluency: False
