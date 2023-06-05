@@ -419,6 +419,9 @@ class Fluency:
         # print(f"data=self.tests:")
         # print(f"{self.tests}")
         # print(f"data=self.tests")
+        self.tests = ['Despite the efforts, the final finish of the ski touring system ended in disappointment.',
+                        'Regrettably, the inefficient sucksling board is utilized for extracting water from educational materials.',
+                        'Winter hiking in the Canadian wilderness can be extremely challenging, as depicted in this evocative photograph by The Man.']
         results = self.perplexity.compute(data=self.tests, model_id=self.model_id,
                                           add_start_token=True)  # check is the source
         # results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=True)
@@ -426,6 +429,7 @@ class Fluency:
             k = self.k[i]
             style = self.style[i]
             metric = self.metric[i]
+            # print(1 - np.min([pp, MAX_PERPLEXITY]) / MAX_PERPLEXITY)
             score_dict_per_metric[metric][k][style] = 1 - np.min([pp, MAX_PERPLEXITY]) / MAX_PERPLEXITY
             score_per_metric_and_style[metric][style].append(score_dict_per_metric[metric][k][style])
             all_scores = save_all_data_k(all_scores, k, test_name, style, metric, score_dict_per_metric,
