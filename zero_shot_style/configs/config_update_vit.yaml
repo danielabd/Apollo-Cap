@@ -1,6 +1,6 @@
 ###### stylized ZeroCap: create captions - for run.py
 dataset: senticap # senticap,flickrstyle10k
-style_type: style_embed  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
+style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
 debug: False #False #todo
@@ -48,7 +48,7 @@ evaluation_metrics: [CLIPScore, style_classification_roberta, fluency]   # ['ble
 
 
 experiement_global_name:
-  senticap: StylizedZeroCap_update_vit_along_iteration_global_prms2 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_update_vit_focus_clip #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 # finetuned roBERTa
