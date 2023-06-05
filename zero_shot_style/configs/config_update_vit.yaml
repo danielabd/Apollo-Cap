@@ -31,7 +31,7 @@ max_batch_size_style_cls: 10
 ###### update clip ViT tensors
 update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
 kv_only_first_layer: True
-num_iterations_clip_style: 5
+num_iterations_clip_style: 6
 loss_scale_style_clip: 33
 loss_scale_src_clip_clip: 0.000002   #0.5
 start_loop_clip_style_in_word_num: 1

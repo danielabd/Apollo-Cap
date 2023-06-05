@@ -124,17 +124,23 @@ def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factua
     if not path_file:
         return total_data
     data = pd.read_csv(path_file)
-    if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
-         data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
+    #uncomment it for the cas we want to illuminate not comleted caption
+    # if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
+    #      data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
+    label1=None; label2=None
     if 'positive' in data.columns:
         label1 = 'positive'
-        label2 = 'negative'
     elif 'humor' in data.columns:
         label1 = 'humor'
+    if 'negative' in data.columns:
+        label2 = 'negative'
+    elif 'romantic' in data.columns:
         label2 = 'romantic'
     for i,k in enumerate(data[data.columns[0]]):
-        pos = data[label1][i]
-        neg = data[label2][i]
+        if label1:
+            pos = data[label1][i]
+        if label2:
+            neg = data[label2][i]
         if use_factual:
             try:
                 fact = data['factual'][i]
@@ -156,10 +162,17 @@ def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factua
             # else: #write factual with prompt of image of a...
             #     fact = factual_image_of_a_prompt_manipulation[k]
             # single_data = {'img_num': k, 'factual': fact, label1: pos, label2: neg}
-            single_data = {'img_num': k, label1: pos, label2: neg}
+
+            # single_data = {'img_num': k, label1: pos, label2: neg}
+            single_data = {'img_num': k}
         else:
             # single_data = {'idx': img_name_to_idx[k], 'img_num': k, label1: pos, label2: neg}
-            single_data = {'idx': img_name_to_idx[k], 'img_num': k,'sweep_exp': sweep_exp, label1: pos, label2: neg}
+            # single_data = {'idx': img_name_to_idx[k], 'img_num': k,'sweep_exp': sweep_exp, label1: pos, label2: neg}
+            single_data = {'idx': img_name_to_idx[k], 'img_num': k,'sweep_exp': sweep_exp}
+        if label1:
+            single_data[label1] = pos
+        if label2:
+            single_data[label2] = neg
         total_data[sweep_exp] = single_data
     return total_data
 
@@ -390,6 +403,8 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/source_zero_stylecap/29_05_2023"
         # 4.6.23
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/StylizedZeroCap_update_vit_along_iteration_global_prms/04_06_2023"
+        # 5.6.23 - test 2
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/StylizedZeroCap_update_vit_along_iteration_global_prms_test2/05_06_2023"
 
         # src_dir_text_style = os.path.join(base_path,'text_style')
         # text_style_dir_path = os.listdir(src_dir_text_style)
