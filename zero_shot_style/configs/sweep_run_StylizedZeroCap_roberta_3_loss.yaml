@@ -1,4 +1,4 @@
-program: run_3_loss_roberta
+program: run_3_loss_roberta.py
 project: StylizedZeroCap_roberta_3_loss
 method: bayes
 metric:
