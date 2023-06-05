@@ -1284,7 +1284,7 @@ class CLIPTextGenerator:
                     ##############
                     ###add the shift to context_clip
 
-                    factor = 1 #10 #1 #todo check
+                    factor = 10 #1 #todo check
                     print(f"factor={factor}, global_iteration={i}, update_clip_iter={clip_update_iter}, clip_ViT_loss={clip_ViT_loss}, clip_src_clip_loss={clip_src_clip_loss}, clip_style_loss={clip_style_loss}")
                     if self.config.get('kv_only_first_layer', False):
                         print(f"num_iterations_clip_style={self.config['num_iterations_clip_style']}, loss_scale_style_clip={self.config['loss_scale_style_clip']}, loss_scale_src_clip_clip={self.config['loss_scale_src_clip_clip']}")
