@@ -1,5 +1,5 @@
 program: run_update_vit.py
-project: StylizedZeroCap_update_vit_style_embed
+project: StylizedZeroCap_update_vit_style_embed2
 method: bayes
 metric:
   goal: maximize #minimize
