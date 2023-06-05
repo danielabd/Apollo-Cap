@@ -208,11 +208,11 @@ class CLIPTextGenerator:
         task = 'sentiment'
         MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
         self.sentiment_model_name = MODEL
-        if config['style_type'] == 'roberta': # todo: remove it  -  using sentiment model roberta
-            # self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
-            f_roberta_config = AutoConfig.from_pretrained(self.config['finetuned_roberta_config'])
-            self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.config['finetuned_roberta_model_path'],
-                                                                                  config=f_roberta_config)
+        if config['style_type'] == 'roberta':
+            self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
+            # f_roberta_config = AutoConfig.from_pretrained(self.config['finetuned_roberta_config'])
+            # self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.config['finetuned_roberta_model_path'],
+            #                                                                       config=f_roberta_config)
             self.sentiment_model.to(self.device)
             self.sentiment_model.eval()
 
@@ -1632,11 +1632,12 @@ class CLIPTextGenerator:
         #         print(f"image similarity to the neutral style ('neutral style')= {similiraties_rel_img.item()}")
 
         # image_features = self.get_combined_feature([self.imgs_path,os.path.join(os.path.expanduser('~'), 'data/stylized_images', desired_style_image_name), os.path.join(os.path.expanduser('~'), 'data/stylized_images', neutral_style_image_name)], [], self.config['arithmetics_weights'], None)
-        print("similarity between corrected image embedding to text of style name:")
-        text_features_specific_test = self.get_txt_features([self.style])
-        similiraties_specific_test = (self.image_features @ text_features_specific_test.T)
-        print(f"similiraties_specific_test = {similiraties_specific_test.item()}")
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        #for debug update ViT
+        # print("similarity between corrected image embedding to text of style name:")
+        # text_features_specific_test = self.get_txt_features([self.style])
+        # similiraties_specific_test = (self.image_features @ text_features_specific_test.T)
+        # print(f"similiraties_specific_test = {similiraties_specific_test.item()}")
+        # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         for idx_p in range(probs.shape[0]): # for beam search
             top_texts = []
             prefix_text = prefix_texts[idx_p]
