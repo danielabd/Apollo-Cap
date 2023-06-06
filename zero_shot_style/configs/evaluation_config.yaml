@@ -11,7 +11,7 @@ model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 #metrics: [CLIPScore, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-metrics: [style_classification_roberta]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
 update_ViT: False
 
@@ -56,10 +56,10 @@ res_path2eval:
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/image_and_prompt_manipulation/total_results_image_and_prompt_manipulation.csv
 #      style embed
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_real_std/total_results_text_style_.csv
-#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8/total_results_text_style_style_embed_8.csv
+     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8/total_results_text_style_style_embed_8.csv
      #finetuned roberta best sweep
-     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/finetuned_roberta_best_sweep/total_results_text_style_finetuned_roberta.csv
-
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/finetuned_roberta_best_sweep/total_results_text_style_finetuned_roberta.csv
+#
   flickrstyle10k:
 #    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
 #    capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
