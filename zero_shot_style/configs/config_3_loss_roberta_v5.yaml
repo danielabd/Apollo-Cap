@@ -3,11 +3,11 @@ dataset: senticap # senticap,flickrstyle10k
 style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
-debug: False #False #todo
+debug: True #False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: disabled  #online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!
+wandb_mode: online  #online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
 max_num_of_imgs: 5 #todo
@@ -143,7 +143,7 @@ beam_size:
 
 #my embedding model real std
 text_style_scale:
-  senticap: 3.3 #8.7 #- comparison to other baselines
+  senticap: 3 #1.324 # 3.3 #8.7 #- comparison to other baselines
   flickrstyle10k: 4.518869472661613
 ce_scale:
   senticap: 1.706 #3.34 #2.2 #- comparison to other baselines

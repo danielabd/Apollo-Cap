@@ -126,11 +126,13 @@ class STYLE_CLS_ROBERTA:
         self.max_batch_size = max_batch_size
 
         MODEL = f"cardiffnlp/twitter-roberta-base-sentiment-latest"
-        self.roberta_model = AutoModelForSequenceClassification.from_pretrained(MODEL)
-        self.roberta_model.eval()
+        self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(MODEL)
+        self.sentiment_model.to(self.device)
+        self.sentiment_model.eval()
+        # SENTIMENT: Freeze sentiment model weights
+        for param in self.sentiment_model.parameters():
+            param.requires_grad = False
         self.sentiment_tokenizer = AutoTokenizer.from_pretrained(MODEL)
-        # config = AutoConfig.from_pretrained(MODEL)
-        # PT
 
         # # SENTIMENT: tokenizer for sentiment analysis module
         # task = 'sentiment'
@@ -140,12 +142,21 @@ class STYLE_CLS_ROBERTA:
         # self.sentiment_scale = 1
 
     def preprocess(self, text):
-        new_text = []
-        for t in text.split(" "):
-            t = '@user' if t.startswith('@') and len(t) > 1 else t
-            t = 'http' if t.startswith('http') else t
-            new_text.append(t)
-        return " ".join(new_text)
+        def preprocess_single_text(text):
+            new_text = []
+            for t in text.split(" "):
+                t = '@user' if t.startswith('@') and len(t) > 1 else t
+                t = 'http' if t.startswith('http') else t
+                new_text.append(t)
+            return " ".join(new_text)
+
+        if type(text) == list:
+            new_text_list = []
+            for t in text:
+                new_text_list.append(preprocess_single_text(t))
+            return new_text_list
+        else:
+            return preprocess_single_text(text)
 
     def load_model(self, finetuned_roberta_config,finetuned_roberta_model_path):
         f_roberta_config = AutoConfig.from_pretrained(finetuned_roberta_config)
@@ -171,12 +182,11 @@ class STYLE_CLS_ROBERTA:
         res_val = res
         if type(res) == dict:
             res_val = list(res.values())[0][0]
-
         text = self.preprocess(res_val)
         with torch.no_grad():
             # inputs = self.sentiment_tokenizer([text], padding=True, return_tensors="pt")
-            encoded_input = self.sentiment_tokenizer(text, return_tensors="pt")
-            output = self.roberta_model(**encoded_input)
+            encoded_input = self.sentiment_tokenizer(text, return_tensors="pt").to(self.device)
+            output = self.sentiment_model(**encoded_input)
             scores = output[0][0].detach()
             scores = nn.functional.softmax(scores)
 
@@ -197,20 +207,35 @@ class STYLE_CLS_ROBERTA:
         :param res: list of sentences
         :return:
         '''
+        # text = self.preprocess(res)
+        # with torch.no_grad():
+        #     # inputs = self.sentiment_tokenizer([text], padding=True, return_tensors="pt")
+        #     encoded_input = self.sentiment_tokenizer(text, return_tensors="pt")
+        #     output = self.sentiment_model(**encoded_input)
+        #
         with torch.no_grad():
-            # if type(gt_label_idx)==type('str'):
-            #     gt_label_idx = self.labels_dict_idxs[gt_label_idx]
-            total_outputs = torch.tensor([]).to(self.device)
-            for i in range(round(np.ceil(len(res)/self.max_batch_size))):
-                part_res = res[i*self.max_batch_size:(i+1)*self.max_batch_size]
-                inputs = self.sentiment_tokenizer(part_res, padding=True, return_tensors="pt")
-                inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
-                inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
-                logits = self.sentiment_model(**inputs)['logits']
-                relevant_logits = [logits[:, i] for i in [0, 2]] # todo:check it
-                output = nn.functional.softmax(relevant_logits, dim=-1)  # todo:check it
-                cls_scores = torch.sum(output[:,self.labels_dict_idxs_roberta[gt_label]])#todo
-            return cls_scores
+            text_list = self.preprocess(res)
+            encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(self.device)
+            output = self.sentiment_model(**encoded_input)
+            scores = output[0].detach()
+            scores1 = nn.functional.softmax(scores, dim=-1)
+            cls_scores = scores1[:,self.labels_dict_idxs_roberta[gt_label]]
+        return cls_scores
+
+        # with torch.no_grad():
+        #     # if type(gt_label_idx)==type('str'):
+        #     #     gt_label_idx = self.labels_dict_idxs[gt_label_idx]
+        #     total_outputs = torch.tensor([]).to(self.device)
+        #     for i in range(round(np.ceil(len(res)/self.max_batch_size))):
+        #         part_res = res[i*self.max_batch_size:(i+1)*self.max_batch_size]
+        #         inputs = self.sentiment_tokenizer(part_res, padding=True, return_tensors="pt")
+        #         inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
+        #         inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
+        #         logits = self.sentiment_model(**inputs)['logits']
+        #         relevant_logits = [logits[:, i] for i in [0, 2]] # todo:check it
+        #         output = nn.functional.softmax(relevant_logits, dim=-1)  # todo:check it
+        #         cls_scores = torch.sum(output[:,self.labels_dict_idxs_roberta[gt_label]])#todo
+        #     return cls_scores
 
     def compute_score_for_total_data(self, gts, res, dataset_name):
         self.df_test = pd.read_csv(os.path.join(self.data_dir, 'test.csv'))

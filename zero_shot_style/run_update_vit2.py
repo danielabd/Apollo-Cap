@@ -42,7 +42,6 @@ def get_args():
     parser.add_argument('--config_file', type=str,
                         # default=os.path.join('.', 'configs', 'config.yaml'),
                         default=os.path.join('.', 'configs', 'config_update_vit2.yaml'), #todo: change config file
-                        # default=os.path.join('.', 'configs', 'config_finetuned_roberta_best_sweep.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -447,6 +446,12 @@ class Fluency:
         # total_avg_perplexity = 1-np.min([results['mean_perplexity'],MAX_PERPLEXITY])/MAX_PERPLEXITY
         return perplexities, total_avg_perplexity
 
+
+    def compute_score_for_single_text(self, text):
+        results = self.perplexity.compute(data=[text], model_id=self.model_id, add_start_token=False)
+        fixed_perplexity = 1 - np.min([results['mean_perplexity'], MAX_PERPLEXITY]) / MAX_PERPLEXITY
+        return results['perplexities'], fixed_perplexity
+
     def add_results(self, evaluation_results):
         for img_name in evaluation_results:
             for label in evaluation_results[img_name]:
@@ -604,14 +609,14 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
         return
     print("Calc evaluation of the results...")
     # calc perplexity
-    if 'fluency' in config['evaluation_metrics'] and config['calc_fluency']:
-        evaluation_obj['fluency'] = Fluency(config['desired_labels'])
-        evaluation_obj['fluency'].add_results(evaluation_results)
-        perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score()
-    else:
-        mean_perplexity = DEFAULT_PERPLEXITY_SCORE
+    # if 'fluency' in config['evaluation_metrics'] and config['calc_fluency']:
+    #     evaluation_obj['fluency'] = Fluency(config['desired_labels'])
+    #     evaluation_obj['fluency'].add_results(evaluation_results)
+    #     perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score()
+    # else:
+    #     mean_perplexity = DEFAULT_PERPLEXITY_SCORE
 
-    evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
+    # evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
 
     style_cls_scores = []
     style_cls_emoji_scores = []
@@ -626,18 +631,19 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             if label == 'img_path':
                 continue
             # if config["dataset"] == "senticap":
-            evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
-            evaluation_results[img_name][label]['scores'] = evaluate_single_res(
-                evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
-                evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
-                evaluation_obj)
+            # evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
+            # evaluation_results[img_name][label]['scores'] = evaluate_single_res(
+            #     evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
+            #     evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
+            #     evaluation_obj)
 
             if 'CLIPScore' in config['evaluation_metrics']:
                 clip_score = evaluation_results[img_name][label]['scores']['CLIPScore']
             else:
                 clip_score = DEFAULT_CLIP_SCORE
             if config['calc_fluency'] and 'fluency' in config['evaluation_metrics']:
-                fluency_score = perplexities[img_name][label]
+                # fluency_score = perplexities[img_name][label]
+                fluency_score = evaluation_results[img_name][label]['scores']['fluency']
             else:
                 fluency_score = DEFAULT_PERPLEXITY_SCORE
             if 'style_classification' in config['evaluation_metrics']:
@@ -875,6 +881,9 @@ def initial_variables():
             if 'style_classification_emoji' in config['evaluation_metrics']:
                 evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
 
+        if 'fluency' in config['evaluation_metrics'] and config['calc_fluency']:
+            evaluation_obj['fluency'] = Fluency(config['desired_labels'])
+
     desired_labels_list, mean_embedding_vectors, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
     # if config['debug']:
     #     config['desired_labels'] = [config['desired_labels'][0]]
@@ -1019,6 +1028,17 @@ def main():
             else:
                 raise Exception('run_type must be caption or arithmetics!')
             evaluation_results[img_name][label]['res'] = best_caption
+            evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
+            evaluation_results[img_name][label]['scores'] = {}
+            # evaluation_obj['fluency'].add_results(evaluation_results)
+            evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
+            evaluation_results[img_name][label]['scores'] = evaluate_single_res(
+                evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
+                evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
+                evaluation_obj)
+            perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score_for_single_text(best_caption)
+            evaluation_results[img_name][label]['scores']['fluency'] = mean_perplexity
+            print(f"evaluation scores: CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}, fluency={evaluation_results[img_name][label]['scores']['fluency']}, style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
 
     evaluate_results(config, evaluation_results, gts_data, results_dir, factual_captions, text_generator,evaluation_obj)
     print('Finish of program!')
