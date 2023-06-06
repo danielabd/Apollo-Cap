@@ -7,7 +7,7 @@ debug: False #False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: online  #online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!
+wandb_mode: online #'disabled, offline, online' #todo:
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
 max_num_of_imgs: 5 #todo
@@ -29,10 +29,10 @@ max_batch_size_style_cls: 10
 
 
 ###### update clip ViT tensors
-update_ViT: False #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
+update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
 kv_only_first_layer: True
 num_iterations_clip_style: 6
-loss_scale_style_clip: 33
+loss_scale_style_clip: 4.013
 loss_scale_src_clip_clip: 0.000002   #0.5
 start_loop_clip_style_in_word_num: 1
 ######
@@ -48,7 +48,7 @@ evaluation_metrics: [CLIPScore, style_classification_roberta, fluency]   # ['ble
 
 
 experiement_global_name:
-  senticap: StylizedZeroCap_roberta_3_loss_v6 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_update_vit_focus_clip2 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 # finetuned roBERTa
@@ -143,16 +143,14 @@ beam_size:
 
 #my embedding model real std
 text_style_scale:
-  senticap: 3 #1.324 # 3.3 #8.7 #- comparison to other baselines
+  senticap: 3.3 #8.7 #- comparison to other baselines
   flickrstyle10k: 4.518869472661613
 ce_scale:
-  senticap: 3.34 #1.706 #3.34 #2.2 #- comparison to other baselines
+  senticap: 2.89 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap:  5.6 #6.926 # 5.6 #1.6 #- comparison to other baselines
+  senticap:  5.6 #1.6 #- comparison to other baselines
   flickrstyle10k: 4.587441437503964
-
-
 
 #motorcycle
 #beam_size:
