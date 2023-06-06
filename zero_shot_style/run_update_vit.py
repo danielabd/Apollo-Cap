@@ -736,7 +736,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     if config['wandb_mode'] == 'online':
         wandb.log({'evaluation/mean_style_cls_scores': avg_style_cls_score,
                    # 'evaluation/mean_style_cls_emoji_scores': avg_style_cls_emoji_score,
-                   'evaluation/mean_clip_scores': avg_clip_score,
+                   'evaluation/avg_clip_score': avg_clip_score,
                    'evaluation/mean_fluency_scores': avg_fluency_score,
                    'evaluation/final_avg_total_score': final_avg_total_score})
 
