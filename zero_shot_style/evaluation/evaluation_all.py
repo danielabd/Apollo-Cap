@@ -419,9 +419,9 @@ class Fluency:
         # print(f"data=self.tests:")
         # print(f"{self.tests}")
         # print(f"data=self.tests")
-        self.tests = ['Despite the efforts, the final finish of the ski touring system ended in disappointment.',
-                        'Regrettably, the inefficient sucksling board is utilized for extracting water from educational materials.',
-                        'Winter hiking in the Canadian wilderness can be extremely challenging, as depicted in this evocative photograph by The Man.']
+        # self.tests = ['Despite the efforts, the final finish of the ski touring system ended in disappointment.',
+        #                 'Regrettably, the inefficient sucksling board is utilized for extracting water from educational materials.',
+        #                 'Winter hiking in the Canadian wilderness can be extremely challenging, as depicted in this evocative photograph by The Man.']
         results = self.perplexity.compute(data=self.tests, model_id=self.model_id,
                                           add_start_token=True)  # check is the source
         # results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=True)
