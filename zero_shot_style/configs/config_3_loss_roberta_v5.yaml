@@ -7,7 +7,7 @@ debug: False #False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: online #'disabled, offline, online' #todo:
+wandb_mode: disabled  #online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
 max_num_of_imgs: 5 #todo
@@ -56,7 +56,8 @@ finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
 finetuned_roberta_config: ~/checkpoints/finetuned_roberta/config.json
 labels_dict_idxs_roberta:
   senticap:
-    positive: 1
+#    positive: 1
+    positive: 2
     negative: 0
   flickrstyle10k:
     humor: 0

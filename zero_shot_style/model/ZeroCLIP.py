@@ -205,10 +205,14 @@ class CLIPTextGenerator:
         self.forbidden_factor = forbidden_factor
 
         # SENTIMENT: adding the sentiment model
-        task = 'sentiment'
-        MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
+        # task = 'sentiment'
+        # MODEL = f"cardiffnlp/twitter-roberta-base-{task}-latest"
+        MODEL = f"cardiffnlp/twitter-roberta-base-sentiment-latest"
+
         self.sentiment_model_name = MODEL
         if config['style_type'] == 'roberta':
+            # tokenizer = AutoTokenizer.from_pretrained(MODEL)
+            # config = AutoConfig.from_pretrained(MODEL)
             self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.sentiment_model_name)
             # f_roberta_config = AutoConfig.from_pretrained(self.config['finetuned_roberta_config'])
             # self.sentiment_model = AutoModelForSequenceClassification.from_pretrained(self.config['finetuned_roberta_model_path'],
@@ -221,11 +225,14 @@ class CLIPTextGenerator:
                 param.requires_grad = False
 
             # SENTIMENT: tokenizer for sentiment analysis module
-            self.sentiment_tokenizer_name = self.sentiment_model_name
-            self.sentiment_tokenizer = AutoTokenizer.from_pretrained(self.sentiment_tokenizer_name)
+            self.sentiment_tokenizer = AutoTokenizer.from_pretrained(MODEL)
+            # config = AutoConfig.from_pretrained(MODEL)
 
-            MODEL = f"cardiffnlp/twitter-roberta-base-sentiment"
-            sentiment_tokenizer = AutoTokenizer.from_pretrained(MODEL)
+            # self.sentiment_tokenizer_name = self.sentiment_model_name
+            # self.sentiment_tokenizer = AutoTokenizer.from_pretrained(self.sentiment_tokenizer_name)
+
+            # MODEL = f"cardiffnlp/twitter-roberta-base-sentiment"
+            # sentiment_tokenizer = AutoTokenizer.from_pretrained(MODEL)
 
             # SENTIMENT: fields for type and scale of sentiment
             self.sentiment_scale = 1
@@ -562,7 +569,23 @@ class CLIPTextGenerator:
         return probs
         
     # SENTIMENT: function we added for changing the result to the requested sentiment
-    def get_sentiment_loss(self, probs, context_tokens,sentiment_type): 
+    def get_sentiment_loss(self, probs, context_tokens,sentiment_type):
+        def preprocess(text):
+            def preprocess_single_text(text):
+                new_text = []
+                for t in text.split(" "):
+                    t = '@user' if t.startswith('@') and len(t) > 1 else t
+                    t = 'http' if t.startswith('http') else t
+                    new_text.append(t)
+                return " ".join(new_text)
+            if type(text) == list:
+                new_text_list = []
+                for t in text:
+                    new_text_list.append(preprocess_single_text(t))
+                return new_text_list
+            else:
+                return preprocess_single_text(text)
+
         top_size = 512
         _, top_indices = probs.topk(top_size, -1)
 
@@ -572,7 +595,6 @@ class CLIPTextGenerator:
         losses = []
         style_probs = {}
         for idx_p in range(probs.shape[0]): #go over all beams
-          
             top_texts = []
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]: #go over all optional topk next word
@@ -585,21 +607,34 @@ class CLIPTextGenerator:
             #     else:
             #         top_texts[i] = "The bedroom of a sweet baby"
             # ######todo: daniela debug    effect of update CLIP
-            
             #get score for text
             with torch.no_grad():
-                inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
-                inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
-                inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
-                logits = self.sentiment_model(**inputs)['logits']
-                                   
-                sentiment_grades = None
+                text_list = preprocess(top_texts)
+                encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(self.device)
+                output = self.sentiment_model(**encoded_input)
+                scores = output[0].detach()
+                scores1 = nn.functional.softmax(scores, dim=-1)
+                scores2 = nn.functional.softmax(scores1,dim=0)
+                # sentiment_grades = None
                 if sentiment_type=='positive':
-                        sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,2]
+                    sentiment_grades= scores2[:,2]
                 elif sentiment_type=='neutral':
-                        sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,1]
+                    sentiment_grades = scores2[:, 1]
                 elif sentiment_type=='negative':
-                        sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,0]
+                    sentiment_grades = scores2[:, 0]
+
+                # inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
+                # inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
+                # inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
+                # logits = self.sentiment_model(**inputs)['logits']
+                                   
+                # # sentiment_grades = None
+                # if sentiment_type=='positive':
+                #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,2]
+                # elif sentiment_type=='neutral':
+                #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,1]
+                # elif sentiment_type=='negative':
+                #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,0]
                 sentiment_grades = sentiment_grades.unsqueeze(0)
                 
                 predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()

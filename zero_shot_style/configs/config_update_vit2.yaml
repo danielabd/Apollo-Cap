@@ -56,7 +56,8 @@ finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
 finetuned_roberta_config: ~/checkpoints/finetuned_roberta/config.json
 labels_dict_idxs_roberta:
   senticap:
-    positive: 1
+#    positive: 1
+    positive: 2
     negative: 0
   flickrstyle10k:
     humor: 0
