@@ -1,0 +1,21 @@
+program: run_3_loss_roberta_v4.py
+project: StylizedZeroCap_roberta_3_loss
+method: bayes
+metric:
+  goal: maximize #minimize
+#  name:  evaluation/final_avg_total_score
+  name:  evaluation/avg_clip_score
+parameters:
+  ce_scale:
+    max: 6.9 #3 #1.8  #4 #3 #5
+    min: 3 #1 #1.3 #2 #1
+    distribution: uniform
+  clip_scale:
+    max: 8 #7 #6 #6 #5
+    min: 5.6 #4.5 #3.6 #2.5 #1.5 #1
+    distribution: uniform
+  text_style_scale:
+    max: 7 #3.6 #4.7 #5 #6 # 4.5 #9
+    min: 2.2 #1 #2 #4.2 #3 # 3.5 #2
+    distribution: uniform
+
