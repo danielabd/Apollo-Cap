@@ -31,7 +31,7 @@ from utils import parser, get_hparams
 from evaluate import load
 
 
-MAX_PERPLEXITY = 500
+MAX_PERPLEXITY = 1500
 DEFAULT_PERPLEXITY_SCORE = 1
 DEFAULT_CLIP_SCORE = 1
 DEFAULT_STYLE_CLS_SCORE = 1
