@@ -708,7 +708,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
         wandb.log({'details_evaluation/total_score_text': total_score_and_text})
 
     avg_clip_score = np.mean(clip_scores) / config['desired_min_CLIP_score']
-    avg_fluency_score = mean_perplexity
+    avg_fluency_score = np.mean(fluency_scores)
     avg_style_cls_score = np.mean(style_cls_scores)
     # avg_style_cls_emoji_score = torch.mean(torch.stack(style_cls_emoji_scores))
     if 'requires_min_fluency_score' in config:
