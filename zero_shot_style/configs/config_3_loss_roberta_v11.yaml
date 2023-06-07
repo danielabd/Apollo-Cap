@@ -26,6 +26,9 @@ desired_min_clip_score: 0.28
 heavy_max_num_iterations: 7
 max_batch_size_style_cls: 10
 ##########
+experiement_global_name:
+  senticap: StylizedZeroCap_roberta_3_loss_v11 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 
 ###### update clip ViT tensors
@@ -47,9 +50,6 @@ save_config_file: True # False, True todo
 evaluation_metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
 
-experiement_global_name:
-  senticap: StylizedZeroCap_roberta_3_loss_v10 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 # finetuned roBERTa
 finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
