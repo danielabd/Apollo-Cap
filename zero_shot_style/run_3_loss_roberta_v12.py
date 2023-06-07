@@ -40,7 +40,7 @@ EPSILON = 0.0000000001
 def get_args():
     parser.add_argument('--config_file', type=str,
                         # default=os.path.join('.', 'configs', 'config.yaml'),
-                        default=os.path.join('.', 'configs', 'config_3_loss_roberta_v10.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_3_loss_roberta_v12.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -656,7 +656,8 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             else:
                 style_cls_emoji_score = DEFAULT_STYLE_CLS_EMOJI_SCORE
 
-            avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
+            # avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score) #todo: return when using style
+            avg_total_score = 2 * (clip_score * fluency_score) / (clip_score + fluency_score)
 
             #todo: I removed the option that there is no style cls  in eval metrics
             # if 'style_classification' in evaluation_results[img_name][label]['scores']:
@@ -929,13 +930,10 @@ def main():
     gts_data = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_type'], factual_captions, config['max_num_imgs2test'])
     if not config['debug_mac']:
         text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
-                                           tmp_text_loss=tmp_text_loss, config=config,
-                                           evaluation_obj=evaluation_obj,
+                                           tmp_text_loss=tmp_text_loss, config=config, evaluation_obj=evaluation_obj,
                                            **config)
-        text_generator.set_params(config['ce_scale'], config['clip_scale'], config['text_style_scale'],
-                                  config['beam_size'], config['num_iterations'])
     else:
-        image_features = None
+        text_generator = None
 
     # go over all images
     evaluation_results = {}  # total_results_structure
@@ -953,17 +951,6 @@ def main():
         evaluation_results[img_name] = {'img_path': img_path}
         if not os.path.isfile(config['img_path']):
             continue
-
-        if not config['debug_mac']:
-            if config['update_ViT']:
-                image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False,
-                                                                          get_preroccessed_img=True,
-                                                                          kv_only_first_layer=config.get(
-                                                                              'kv_only_first_layer', True))
-            else:
-                image_features = text_generator.get_img_feature([img_path], None, return_k_v=False,
-                                                                get_preroccessed_img=True)
-
         # go over all labels
         for label_idx, label in enumerate(desired_labels_list):
             if config['wandb_mode'] == 'online':
@@ -971,8 +958,23 @@ def main():
             config['cond_text'] = config["cond_text_dict"][label]
             config = update_running_params(label, config)
             if not config['debug_mac']:
+                text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
+                                                   tmp_text_loss=tmp_text_loss, config=config,
+                                                   evaluation_obj=evaluation_obj,
+                                                   **config)
+                clip_img = None
+                if config['update_ViT']:
+                    image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False,
+                                                                              get_preroccessed_img=True,
+                                                                              kv_only_first_layer=config.get(
+                                                                                  'kv_only_first_layer', True))
+                else:
+                    image_features = text_generator.get_img_feature([img_path], None, return_k_v=False,
+                                                                    get_preroccessed_img=True)
                 text_generator.set_params(config['ce_scale'], config['clip_scale'], config['text_style_scale'],
                                           config['beam_size'], config['num_iterations'])
+            else:
+                image_features = None
 
             evaluation_results[img_name][label] = {}
             if not config['imitate_text_style']:
