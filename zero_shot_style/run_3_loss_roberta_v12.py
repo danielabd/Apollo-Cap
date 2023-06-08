@@ -656,7 +656,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             else:
                 style_cls_emoji_score = DEFAULT_STYLE_CLS_EMOJI_SCORE
 
-            avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score) #todo: return when using style
+            avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
 
             #todo: I removed the option that there is no style cls  in eval metrics
             # if 'style_classification' in evaluation_results[img_name][label]['scores']:
