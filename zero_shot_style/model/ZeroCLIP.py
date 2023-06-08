@@ -4,8 +4,10 @@ import math
 import os.path
 import heapq
 # import pdb
+import matplotlib.pyplot as plt
 from transformers import AutoConfig
 import numpy as np
+import matplotlib.pyplot as plt
 from torch import nn
 from transformers.models.gpt2 import GPT2LMHeadModel, GPT2Tokenizer
 from transformers.models.gpt_neo import GPTNeoForCausalLM
@@ -32,6 +34,8 @@ from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
 from evaluate import load
 
+TOP_SZIE = 200#512
+max_prob_len = 500 #-1
 MAX_PERPLEXITY = 6000
 DEBUG_NUM_WORDS = 10
 EPSILON = 0.0000000001
@@ -236,6 +240,7 @@ class CLIPTextGenerator:
 
             # SENTIMENT: fields for type and scale of sentiment
             self.sentiment_scale = 1
+            self.sentiment_temperature = 0.01
             self.sentiment_type = 'none' # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
 
         self.use_style_model = use_style_model
@@ -324,6 +329,11 @@ class CLIPTextGenerator:
             # TEXT_STYLE: tokenizer for text style analysis module
             #self.text_style_tokenizer_name = self.text_style_model_name
             #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
+
+    def update_config(self,config):
+        self.config = config
+        self.img_path = config['img_path']
+        self.img_idx = config['img_path_idx']
 
     def set_params(self, ce_scale, clip_scale, text_style_scale, beam_size,  num_iterations):
         self.ce_scale = ce_scale
@@ -452,7 +462,7 @@ class CLIPTextGenerator:
                     else: #style_type=='twitter' or 'emotions'
                         #### based on bert
                         tokenized_text_to_imitate = self.text_style_tokenizer(text_to_imitate, padding='max_length',
-                                                                            max_length=512, truncation=True,
+                                                                            max_length=TOP_SZIE, truncation=True,
                                                                             return_tensors="pt")
                         masks_mimic = tokenized_text_to_imitate['attention_mask'].to(self.device)
                         input_ids_mimic = tokenized_text_to_imitate['input_ids'].squeeze(1).to(self.device)
@@ -567,26 +577,28 @@ class CLIPTextGenerator:
         probs = probs / probs.sum()
 
         return probs
-        
+
+    def preprocess_text_for_roberta(self, text):
+        def preprocess_single_text(text):
+            new_text = []
+            for t in text.split(" "):
+                t = '@user' if t.startswith('@') and len(t) > 1 else t
+                t = 'http' if t.startswith('http') else t
+                new_text.append(t)
+            return " ".join(new_text)
+
+        if type(text) == list:
+            new_text_list = []
+            for t in text:
+                new_text_list.append(preprocess_single_text(t))
+            return new_text_list
+        else:
+            return preprocess_single_text(text)
+
     # SENTIMENT: function we added for changing the result to the requested sentiment
     def get_sentiment_loss(self, probs, context_tokens,sentiment_type):
-        def preprocess(text):
-            def preprocess_single_text(text):
-                new_text = []
-                for t in text.split(" "):
-                    t = '@user' if t.startswith('@') and len(t) > 1 else t
-                    t = 'http' if t.startswith('http') else t
-                    new_text.append(t)
-                return " ".join(new_text)
-            if type(text) == list:
-                new_text_list = []
-                for t in text:
-                    new_text_list.append(preprocess_single_text(t))
-                return new_text_list
-            else:
-                return preprocess_single_text(text)
 
-        top_size = 512
+        top_size = TOP_SZIE
         _, top_indices = probs.topk(top_size, -1)
 
         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
@@ -609,7 +621,7 @@ class CLIPTextGenerator:
             # ######todo: daniela debug    effect of update CLIP
             #get score for text
             with torch.no_grad():
-                text_list = preprocess(top_texts)
+                text_list = self.preprocess_text_for_roberta(top_texts)
                 encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(self.device)
                 output = self.sentiment_model(**encoded_input)
                 scores = output[0].detach()
@@ -637,7 +649,8 @@ class CLIPTextGenerator:
                 #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,0]
                 sentiment_grades = sentiment_grades.unsqueeze(0)
                 
-                predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()
+                # predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()
+                predicted_probs = nn.functional.softmax(sentiment_grades / self.sentiment_temperature, dim=-1).detach() #todo: parametrize it
                 predicted_probs = predicted_probs.type(torch.float32).to(self.device)
              
             
@@ -645,7 +658,14 @@ class CLIPTextGenerator:
             target[top_indices[idx_p]] = predicted_probs[0]
             # target = target.unsqueeze(0)
             cur_sentiment_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
-            
+
+            # x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+            # y = target.cpu().numpy()
+            # plt.figure()
+            # plt.plot(x, y)
+            # plt.title(f"style probs for beam_idx={idx_p}")
+            # plt.show(block=False)
+
             sentiment_loss += cur_sentiment_loss
             losses.append(cur_sentiment_loss)
 
@@ -658,14 +678,14 @@ class CLIPTextGenerator:
                 loss_string = f'{losses[0]}'
             else:
                 loss_string = loss_string+'%, '+f'{losses[idx_p]}'
-        return sentiment_loss, losses, style_probs
+        return sentiment_loss, losses, style_probs, target
 
     def get_text_style_loss_with_clip(self, probs, context_tokens):
         for p_ in self.clip.transformer.parameters():
             if p_.grad is not None:
                 p_.grad.data.zero_()
 
-        top_size = 512
+        top_size = TOP_SZIE
         _, top_indices = probs.topk(top_size, -1)
 
         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
@@ -704,7 +724,7 @@ class CLIPTextGenerator:
 
     def get_text_style_loss_erc(self, probs, context_tokens):
         #use representative vector for calculating the distance between candidates and the representative vecotr
-        top_size = 512
+        top_size = TOP_SZIE
         top_probs_LM, top_indices = probs.topk(top_size, -1)
 
         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
@@ -799,7 +819,7 @@ class CLIPTextGenerator:
 
     def get_text_style_loss(self, probs, context_tokens):
         #use representative vector for calculating the distance between candidates and the representative vecotr
-        top_size = 512
+        top_size = TOP_SZIE
         top_probs_LM, top_indices = probs.topk(top_size, -1)
 
         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
@@ -928,7 +948,7 @@ class CLIPTextGenerator:
         return text_style_loss, losses, best_sentences, total_best_sentences_style, style_probs
 
     def get_text_style_loss_emoji(self, probs, context_tokens):
-        top_size = 512
+        top_size = TOP_SZIE
         top_probs_LM, top_indices = probs.topk(top_size, -1)
 
         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
@@ -1095,6 +1115,16 @@ class CLIPTextGenerator:
         last_text_style_loss = 1e6
         #todo: check if nee the next line
         self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
+        probs_before_shift = torch.unsqueeze(probs_before_shift[0][:max_prob_len], 0)  # todo:remove it
+
+        x = np.arange(0, probs_before_shift.shape[1], 1)  # top_indices[idx_p]
+        for idx_p_i in range(probs_before_shift.shape[0]):
+            y = probs_before_shift[idx_p_i].cpu().numpy()
+            plt.figure()
+            plt.plot(x, y)
+            plt.title(f"source LM probs for beam_idx={idx_p_i}")
+            plt.show(block=False)
+
         while(1):
             i += 1
             # print(f"iteration num: {i}")
@@ -1132,12 +1162,55 @@ class CLIPTextGenerator:
             shifted_outputs = self.lm_model(last_token, past_key_values=shifted_context)
             logits = shifted_outputs["logits"][:, -1, :]
             probs = nn.functional.softmax(logits, dim=-1)
+            probs = torch.unsqueeze(probs[0][:max_prob_len], 0)  # todo:remove it
+
+            # pritn probs
+            if i>=1:
+                x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+                # plt.figure()
+                # plt.plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
+                # plt.plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
+                # plt.plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
+                # plt.plot(x, target_probs_clip[0].cpu().numpy(), label='target_probs_clip')
+                # plt.title(f"style probs for beam_idx={idx_p}")
+                # plt.legend()
+                # Create a grid of subplots
+                fig, axs = plt.subplots(2, 2)
+
+                # Plot the graphs in separate subplots
+                axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
+                axs[0, 0].set_title('Source LM Probs')
+
+                axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
+                axs[0, 1].set_title('Fixed LM Probs')
+
+                axs[1, 0].plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
+                axs[1, 0].set_title('Target Probs Style')
+
+                axs[1, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
+                axs[1, 1].set_title('Target Probs Clip')
+
+                # Add a global title
+                fig.suptitle(f'iteration number={i}')
+
+                # Adjust the spacing between subplots
+                plt.tight_layout()
+
+                plt.show(block=False)
+
+            # x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+            # for idx_p_i in range(probs.shape[0]):
+            #     y = probs[idx_p_i].detach().cpu().numpy()
+            #     plt.figure()
+            #     plt.plot(x,y)
+            #     plt.title(f"fixed LM probs for beam_idx={idx_p_i}")
+            #     plt.show(block=False)
 
             ###################################################
             if word_loc>=self.config.get('start_word_loc_heavy_iteration', 1) and i >= 1:
                 if self.config.get('iterate_until_good_fluency', False):
                     with torch.no_grad():
-                        top_size = 512
+                        top_size = TOP_SZIE
                         top_probs_LM, top_indices = probs.topk(top_size, -1)
                         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in
                                         context_tokens]
@@ -1427,7 +1500,7 @@ class CLIPTextGenerator:
                             text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style, style_probs = self.get_text_style_loss(
                                 probs, context_tokens)
                         elif self.style_type == 'roberta':
-                            text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs,
+                            text_style_loss, text_style_losses, style_probs, target_probs_style = self.get_sentiment_loss(probs,
                                                                                                       context_tokens,
                                                                                                       self.style)
                         else:
@@ -1436,10 +1509,12 @@ class CLIPTextGenerator:
 
                         # print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
                         loss += self.text_style_scale * text_style_loss
+                    else:
+                        target_probs_style = torch.zeros_like(probs[-1])
 
             # CLIP LOSS
             if self.clip_scale!=0:
-                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs = self.clip_loss(probs, context_tokens, grad_lm=True)
+                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs, target_probs_clip = self.clip_loss(probs, context_tokens, grad_lm=True)
                 # todo: check that clip_probs have grads
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print("after calc clip loss:")
@@ -1465,6 +1540,7 @@ class CLIPTextGenerator:
                     self.debug_tracking[word_loc][i]['CLIP - val'] = list(total_best_sentences_clip.keys())
             else:
                 clip_loss, clip_losses = 0,[torch.tensor(0)]*probs.shape[0]
+                target_probs_clip = torch.zeros_like(probs[-1])
 
             # CE/Fluency loss
             if self.ce_scale!=0:
@@ -1611,7 +1687,7 @@ class CLIPTextGenerator:
                 if p_.grad is not None:
                     p_.grad.data.zero_()
 
-        top_size = 512
+        top_size = TOP_SZIE #512
         top_probs_LM, top_indices = probs.topk(top_size, -1)
 
         prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
@@ -1994,6 +2070,13 @@ class CLIPTextGenerator:
 
             clip_loss += cur_clip_loss
             losses.append(cur_clip_loss)
+
+            # x = np.arange(0, probs.shape[1], 1)  # top_indices[idx_p]
+            # y = target[0].cpu().numpy()
+            # plt.figure()
+            # plt.plot(x, y)
+            # plt.title(f"CLIP probs for beam_idx={idx_p}")
+            # plt.show(block=False)
             #debug
             try:
                 probs_val, indices = target_probs.topk(DEBUG_NUM_WORDS)
@@ -2019,4 +2102,4 @@ class CLIPTextGenerator:
         #     total_best_sentences_clip[debug_best_top_texts_clip[i]] = debug_best_probs_vals_clip[i]
         # for i in np.argsort(debug_best_probs_vals_LM)[-DEBUG_NUM_WORDS:]:
         #     total_best_sentences_LM[debug_best_top_texts_LM[i]] = debug_best_probs_vals_LM[i]
-        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs
+        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs, target[0]
