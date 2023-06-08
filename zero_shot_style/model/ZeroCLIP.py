@@ -34,8 +34,9 @@ from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
 from evaluate import load
 
-TOP_SZIE = 200#512
-max_prob_len = 500 #-1
+factor_clip_style=1000
+TOP_SZIE = 512 #200
+max_prob_len = -1 #500
 MAX_PERPLEXITY = 6000
 DEBUG_NUM_WORDS = 10
 EPSILON = 0.0000000001
@@ -1117,13 +1118,14 @@ class CLIPTextGenerator:
         self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
         probs_before_shift = torch.unsqueeze(probs_before_shift[0][:max_prob_len], 0)  # todo:remove it
 
-        x = np.arange(0, probs_before_shift.shape[1], 1)  # top_indices[idx_p]
-        for idx_p_i in range(probs_before_shift.shape[0]):
-            y = probs_before_shift[idx_p_i].cpu().numpy()
-            plt.figure()
-            plt.plot(x, y)
-            plt.title(f"source LM probs for beam_idx={idx_p_i}")
-            plt.show(block=False)
+        #plot probbilities
+        # x = np.arange(0, probs_before_shift.shape[1], 1)  # top_indices[idx_p]
+        # for idx_p_i in range(probs_before_shift.shape[0]):
+        #     y = probs_before_shift[idx_p_i].cpu().numpy()
+        #     plt.figure()
+        #     plt.plot(x, y)
+        #     plt.title(f"source LM probs for beam_idx={idx_p_i}")
+        #     plt.show(block=False)
 
         while(1):
             i += 1
@@ -1164,39 +1166,34 @@ class CLIPTextGenerator:
             probs = nn.functional.softmax(logits, dim=-1)
             probs = torch.unsqueeze(probs[0][:max_prob_len], 0)  # todo:remove it
 
-            # pritn probs
-            if i>=1:
-                x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
-                # plt.figure()
-                # plt.plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
-                # plt.plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
-                # plt.plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
-                # plt.plot(x, target_probs_clip[0].cpu().numpy(), label='target_probs_clip')
-                # plt.title(f"style probs for beam_idx={idx_p}")
-                # plt.legend()
-                # Create a grid of subplots
-                fig, axs = plt.subplots(2, 2)
+            # # print probs graphs
+            # if i>=1:
+            #     x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+            #     # Create a grid of subplots
+            #     fig, axs = plt.subplots(2, 2)
+            #
+            #     # Plot the graphs in separate subplots
+            #     axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
+            #     axs[0, 0].set_title('Source LM Probs')
+            #
+            #     axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
+            #     axs[0, 1].set_title('Fixed LM Probs')
+            #
+            #     axs[1, 0].plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
+            #     axs[1, 0].set_title('Target Probs Style')
+            #
+            #     axs[1, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
+            #     axs[1, 1].set_title('Target Probs Clip')
+            #
+            #     # Add a global title
+            #     fig.suptitle(f'iteration number={i}')
+            #
+            #     # Adjust the spacing between subplots
+            #     plt.tight_layout()
+            #
+            #     plt.show(block=False)
+            #
 
-                # Plot the graphs in separate subplots
-                axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
-                axs[0, 0].set_title('Source LM Probs')
-
-                axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
-                axs[0, 1].set_title('Fixed LM Probs')
-
-                axs[1, 0].plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
-                axs[1, 0].set_title('Target Probs Style')
-
-                axs[1, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
-                axs[1, 1].set_title('Target Probs Clip')
-
-                # Add a global title
-                fig.suptitle(f'iteration number={i}')
-
-                # Adjust the spacing between subplots
-                plt.tight_layout()
-
-                plt.show(block=False)
 
             # x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
             # for idx_p_i in range(probs.shape[0]):
@@ -1910,6 +1907,48 @@ class CLIPTextGenerator:
 
                     target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
                     target_probs = target_probs.type(torch.float32)
+
+
+                    ########adding style effect#todo
+                    text_list = self.preprocess_text_for_roberta(top_texts)
+                    encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                        self.device)
+                    output = self.sentiment_model(**encoded_input)
+                    scores = output[0].detach()
+                    scores = nn.functional.softmax(scores, dim=-1) #get grades for each image
+                    # scores = nn.functional.softmax(scores, dim=0) #rank grades between all images
+                    # sentiment_grades = None
+                    if self.style == 'positive':
+                        sentiment_grades = scores[:, 2]
+                    elif self.style == 'neutral':
+                        sentiment_grades = scores[:, 1]
+                    elif self.style == 'negative':
+                        sentiment_grades = scores[:, 0]
+                    # inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
+                    # inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
+                    # inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
+                    # logits = self.sentiment_model(**inputs)['logits']
+                    # # sentiment_grades = None
+                    # if sentiment_type=='positive':
+                    #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,2]
+                    # elif sentiment_type=='neutral':
+                    #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,1]
+                    # elif sentiment_type=='negative':
+                    #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,0]
+                    sentiment_grades = sentiment_grades.unsqueeze(0)
+
+                    # predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()
+
+                    # predicted_probs = nn.functional.softmax(sentiment_grades / self.sentiment_temperature,
+                    #                                         dim=-1).detach()  # todo: parametrize it
+                    # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+                    # target_probs = factor_clip_style * target_probs * predicted_probs
+                    clip_target_probs = target_probs
+                    clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
+                    clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
+
+                    target_probs = clip_target_probs_weightes_style_normalized
+                    ########adding style effect
             else:
                 similiraties = (self.image_features @ text_features.T)
                 similiraties = (self.image_features @ text_features.T)
