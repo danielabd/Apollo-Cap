@@ -241,7 +241,7 @@ class CLIPTextGenerator:
 
             # SENTIMENT: fields for type and scale of sentiment
             self.sentiment_scale = 1
-            self.sentiment_temperature = 0.01
+            self.sentiment_temperature = config.get('sentiment_temperature',0.01)
             self.sentiment_type = 'none' # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
 
         self.use_style_model = use_style_model
@@ -1916,7 +1916,7 @@ class CLIPTextGenerator:
                     output = self.sentiment_model(**encoded_input)
                     scores = output[0].detach()
                     scores = nn.functional.softmax(scores, dim=-1) #get grades for each image
-                    # scores = nn.functional.softmax(scores, dim=0) #rank grades between all images
+                    scores = nn.functional.softmax(scores/self.sentiment_temperature, dim=0) #rank grades between all images
                     # sentiment_grades = None
                     if self.style == 'positive':
                         sentiment_grades = scores[:, 2]
