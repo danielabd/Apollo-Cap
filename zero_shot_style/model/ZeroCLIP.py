@@ -1168,32 +1168,32 @@ class CLIPTextGenerator:
             if self.config.get('calc_grad_according_to_first_beam', False):
                 probs = torch.unsqueeze(probs[0][:max_prob_len], 0)  # todo:remove it # 9.6.23
 
-            # print probs graphs
-            if i>=1:
-                x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
-                # Create a grid of subplots
-                fig, axs = plt.subplots(2, 2)
-
-                # Plot the graphs in separate subplots
-                axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
-                axs[0, 0].set_title('Source LM Probs')
-
-                axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
-                axs[0, 1].set_title('Fixed LM Probs')
-
-                axs[1, 0].plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
-                axs[1, 0].set_title('Target Probs Style')
-
-                axs[1, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
-                axs[1, 1].set_title('Target Probs Clip')
-
-                # Add a global title
-                fig.suptitle(f'iteration number={i}')
-
-                # Adjust the spacing between subplots
-                plt.tight_layout()
-
-                plt.show(block=False)
+            # # print probs graphs
+            # if i>=1:
+            #     x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+            #     # Create a grid of subplots
+            #     fig, axs = plt.subplots(2, 2)
+            #
+            #     # Plot the graphs in separate subplots
+            #     axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
+            #     axs[0, 0].set_title('Source LM Probs')
+            #
+            #     axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
+            #     axs[0, 1].set_title('Fixed LM Probs')
+            #
+            #     axs[1, 0].plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
+            #     axs[1, 0].set_title('Target Probs Style')
+            #
+            #     axs[1, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
+            #     axs[1, 1].set_title('Target Probs Clip')
+            #
+            #     # Add a global title
+            #     fig.suptitle(f'iteration number={i}')
+            #
+            #     # Adjust the spacing between subplots
+            #     plt.tight_layout()
+            #
+            #     plt.show(block=False)
 
 
 
