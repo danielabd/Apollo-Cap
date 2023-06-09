@@ -1116,7 +1116,8 @@ class CLIPTextGenerator:
         last_text_style_loss = 1e6
         #todo: check if nee the next line
         self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
-        probs_before_shift = torch.unsqueeze(probs_before_shift[0][:max_prob_len], 0)  # todo:remove it
+        if self.config.get('calc_grad_according_to_first_beam',False):
+            probs_before_shift = torch.unsqueeze(probs_before_shift[0][:max_prob_len], 0)  # todo:remove it 9.6.23
 
         #plot probbilities
         # x = np.arange(0, probs_before_shift.shape[1], 1)  # top_indices[idx_p]
@@ -1164,35 +1165,36 @@ class CLIPTextGenerator:
             shifted_outputs = self.lm_model(last_token, past_key_values=shifted_context)
             logits = shifted_outputs["logits"][:, -1, :]
             probs = nn.functional.softmax(logits, dim=-1)
-            probs = torch.unsqueeze(probs[0][:max_prob_len], 0)  # todo:remove it
+            if self.config.get('calc_grad_according_to_first_beam', False):
+                probs = torch.unsqueeze(probs[0][:max_prob_len], 0)  # todo:remove it # 9.6.23
 
-            # # print probs graphs
-            # if i>=1:
-            #     x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
-            #     # Create a grid of subplots
-            #     fig, axs = plt.subplots(2, 2)
-            #
-            #     # Plot the graphs in separate subplots
-            #     axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
-            #     axs[0, 0].set_title('Source LM Probs')
-            #
-            #     axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
-            #     axs[0, 1].set_title('Fixed LM Probs')
-            #
-            #     axs[1, 0].plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
-            #     axs[1, 0].set_title('Target Probs Style')
-            #
-            #     axs[1, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
-            #     axs[1, 1].set_title('Target Probs Clip')
-            #
-            #     # Add a global title
-            #     fig.suptitle(f'iteration number={i}')
-            #
-            #     # Adjust the spacing between subplots
-            #     plt.tight_layout()
-            #
-            #     plt.show(block=False)
-            #
+            # print probs graphs
+            if i>=1:
+                x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+                # Create a grid of subplots
+                fig, axs = plt.subplots(2, 2)
+
+                # Plot the graphs in separate subplots
+                axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
+                axs[0, 0].set_title('Source LM Probs')
+
+                axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
+                axs[0, 1].set_title('Fixed LM Probs')
+
+                axs[1, 0].plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
+                axs[1, 0].set_title('Target Probs Style')
+
+                axs[1, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
+                axs[1, 1].set_title('Target Probs Clip')
+
+                # Add a global title
+                fig.suptitle(f'iteration number={i}')
+
+                # Adjust the spacing between subplots
+                plt.tight_layout()
+
+                plt.show(block=False)
+
 
 
             # x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
@@ -1527,8 +1529,12 @@ class CLIPTextGenerator:
                 clip_loss_scale_fixed = round(self.clip_scale * clip_loss.item(),3)
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"clip_loss with scale = {clip_loss_scale_fixed}")
-                if not new_weighted_loss:
-                    loss += self.clip_scale * clip_loss # change to variable scale
+
+                if not self.config.get('loss_1_mul_clip_style_in_lm', False):
+                    if not new_weighted_loss:
+                        loss += self.clip_scale * clip_loss # change to variable scale
+
+
                 if i == 0: #first iteration
                     LM_0_probs = list(total_best_sentences_LM.values())
                     LM_0_vals = list(total_best_sentences_LM.keys())
@@ -1544,10 +1550,26 @@ class CLIPTextGenerator:
 
             # CE/Fluency loss
             if self.ce_scale!=0:
-                ce_loss_before_scale = ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
-                ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
-                if not new_weighted_loss:
-                    loss += ce_loss.sum()
+                if self.config.get('loss_1_mul_clip_style_in_lm', False): #todo: continue to debug it
+                    probs_before_shift_attention_clip_style = torch.zeros_like(probs_before_shift)
+                    for i_b in range(probs.shape[0]):
+                        # clip_probs[i_b] = nn.functional.softmax(clip_probs[i_b]/self.config.get('clip_style_temperature',1))
+                        # clip_probs[i_b] = nn.functional.softmax(clip_probs[i_b]/0.0001)
+                        # clip_probs[i_b] = clip_probs[i_b]/EPSILON
+                        # probs_before_shift_attention_clip_style[i_b] = probs_before_shift[i_b] * clip_probs[i_b] + EPSILON
+                        probs_before_shift_attention_clip_style[i_b] = probs_before_shift[i_b]*clip_probs[i_b] + clip_probs[i_b]*10
+                        norm_val = probs_before_shift_attention_clip_style[i_b].clone()
+                        norm_val = norm_val.detach()
+                        probs_before_shift_attention_clip_style[i_b] = probs_before_shift_attention_clip_style[i_b]/norm_val.sum()
+                    ce_loss_before_scale = ((probs * probs.log()) - (probs * probs_before_shift_attention_clip_style.log())).sum(-1)
+                    ce_loss = ((probs * probs.log()) - (probs * probs_before_shift_attention_clip_style.log())).sum(-1)
+                    if not new_weighted_loss:
+                        loss = ce_loss.sum()
+                else:
+                    ce_loss_before_scale = ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
+                    ce_loss = self.ce_scale * ((probs * probs.log()) - (probs * probs_before_shift.log())).sum(-1)
+                    if not new_weighted_loss:
+                        loss += ce_loss.sum()
 
                 ce_losses = (probs * probs_before_shift.log()).sum(-1)
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
@@ -1572,6 +1594,7 @@ class CLIPTextGenerator:
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print(f"ce_loss with scale = {clip_loss_scale_fixed}")
 
+            # torch.autograd.set_detect_anomaly(True)
             loss.backward()
 
             # ---------- Weights ----------
@@ -2133,7 +2156,7 @@ class CLIPTextGenerator:
             # clip_top_text = [top_texts[i] for i in indices.cpu().data.numpy()]
             # debug_best_top_texts_clip.extend(clip_top_text)
 
-            if self.config.get('update_ViT',False):
+            if self.config.get('update_ViT',False) or self.config.get('loss_1_mul_clip_style_in_lm',False) :
                 clip_probs[idx_p] = target
 
         debug_best_probs_vals_LM = [float(i.cpu().data.numpy()) for i in debug_best_probs_vals_LM]
