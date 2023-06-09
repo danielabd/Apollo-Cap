@@ -1375,8 +1375,11 @@ class CLIPTextGenerator:
 
                     # calc loss according to style
                     clip_style_loss = 0
-                    for idx_p in clip_probs.keys():
-                        clip_style_loss += torch.sum(-((style_probs[idx_p]+EPSILON) * torch.log((clip_probs[idx_p]+EPSILON)))) #todo: check if need detach on style tensor
+                    if self.config.get('mul_clip_style_prob',False):
+                        print("multiply clip and style probs  in order to influence image embedding to be in specific style")
+                    else: #calc CE between clip prob and style prob
+                        for idx_p in clip_probs.keys():
+                            clip_style_loss += torch.sum(-((style_probs[idx_p]+EPSILON) * torch.log((clip_probs[idx_p]+EPSILON)))) #todo: check if need detach on style tensor
                     # calc loss according to init clip
                     mse_loss = nn.MSELoss()
                     clip_src_clip_loss = mse_loss(self.src_image_features[0], self.image_features)
@@ -1908,46 +1911,46 @@ class CLIPTextGenerator:
                     target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1).detach()
                     target_probs = target_probs.type(torch.float32)
 
+                    if self.config.get('mul_clip_style',False):
+                        ########adding style effect#todo
+                        text_list = self.preprocess_text_for_roberta(top_texts)
+                        encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                            self.device)
+                        output = self.sentiment_model(**encoded_input)
+                        scores = output[0].detach()
+                        scores = nn.functional.softmax(scores, dim=-1) #get grades for each image
+                        scores = nn.functional.softmax(scores/self.sentiment_temperature, dim=0) #rank grades between all images
+                        # sentiment_grades = None
+                        if self.style == 'positive':
+                            sentiment_grades = scores[:, 2]
+                        elif self.style == 'neutral':
+                            sentiment_grades = scores[:, 1]
+                        elif self.style == 'negative':
+                            sentiment_grades = scores[:, 0]
+                        # inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
+                        # inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
+                        # inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
+                        # logits = self.sentiment_model(**inputs)['logits']
+                        # # sentiment_grades = None
+                        # if sentiment_type=='positive':
+                        #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,2]
+                        # elif sentiment_type=='neutral':
+                        #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,1]
+                        # elif sentiment_type=='negative':
+                        #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,0]
+                        sentiment_grades = sentiment_grades.unsqueeze(0)
 
-                    ########adding style effect#todo
-                    text_list = self.preprocess_text_for_roberta(top_texts)
-                    encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
-                        self.device)
-                    output = self.sentiment_model(**encoded_input)
-                    scores = output[0].detach()
-                    scores = nn.functional.softmax(scores, dim=-1) #get grades for each image
-                    scores = nn.functional.softmax(scores/self.sentiment_temperature, dim=0) #rank grades between all images
-                    # sentiment_grades = None
-                    if self.style == 'positive':
-                        sentiment_grades = scores[:, 2]
-                    elif self.style == 'neutral':
-                        sentiment_grades = scores[:, 1]
-                    elif self.style == 'negative':
-                        sentiment_grades = scores[:, 0]
-                    # inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
-                    # inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
-                    # inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
-                    # logits = self.sentiment_model(**inputs)['logits']
-                    # # sentiment_grades = None
-                    # if sentiment_type=='positive':
-                    #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,2]
-                    # elif sentiment_type=='neutral':
-                    #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,1]
-                    # elif sentiment_type=='negative':
-                    #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,0]
-                    sentiment_grades = sentiment_grades.unsqueeze(0)
+                        # predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()
 
-                    # predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()
+                        # predicted_probs = nn.functional.softmax(sentiment_grades / self.sentiment_temperature,
+                        #                                         dim=-1).detach()  # todo: parametrize it
+                        # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+                        # target_probs = factor_clip_style * target_probs * predicted_probs
+                        clip_target_probs = target_probs
+                        clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
+                        clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
 
-                    # predicted_probs = nn.functional.softmax(sentiment_grades / self.sentiment_temperature,
-                    #                                         dim=-1).detach()  # todo: parametrize it
-                    # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
-                    # target_probs = factor_clip_style * target_probs * predicted_probs
-                    clip_target_probs = target_probs
-                    clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
-                    clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
-
-                    target_probs = clip_target_probs_weightes_style_normalized
+                        target_probs = clip_target_probs_weightes_style_normalized
                     ########adding style effect
             else:
                 similiraties = (self.image_features @ text_features.T)
