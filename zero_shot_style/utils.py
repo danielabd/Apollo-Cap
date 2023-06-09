@@ -119,7 +119,8 @@ def get_hparams(args):
     # hparams = update_hparams(hparams, args)
     hparams = update_hparams(experiment_config, args)
     if hparams['style_type'] == 'style_embed' and hparams['dataset'] == 'senticap':
-        hparams['labels_dict_idxs_roberta']['senticap']['positive'] = 1
+        if 'labels_dict_idxs_roberta' in hparams:
+            hparams['labels_dict_idxs_roberta']['senticap']['positive'] = 1
 
     # update params according to dataset
     if 'dataset' in hparams:

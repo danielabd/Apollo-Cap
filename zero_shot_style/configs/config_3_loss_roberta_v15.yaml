@@ -31,6 +31,7 @@ experiement_global_name:
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 sentiment_temperature: 0.01
 
+mul_clip_styl: True
 ###### update clip ViT tensors
 update_ViT: False #todo !!
 kv_only_first_layer: True
