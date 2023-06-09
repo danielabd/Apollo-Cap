@@ -529,6 +529,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                labels_dict_idxs, gt_imgs_for_test, config):
     print("Calculate scores:")
     mean_score = {}
+    std_score = {}
+    median_score = {}
     if ('CLIPScoreRef' in metrics) or ('CLIPScore' in metrics):
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, config=config)
     if 'style_classification' in metrics:
@@ -555,6 +557,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
         score_dict_per_metric = {}
         scores_dict_per_metric = {}
         mean_score_per_metric_and_style = {}
+        std_score_per_metric_and_style = {}
+        median_score_per_metric_and_style = {}
         # initial evaluation objects
         for metric in metrics:
             print(f"    Calc scores for metric: ***{metric}***")
@@ -593,9 +597,12 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
             score_dict_per_metric[metric] = {}
             scores_dict_per_metric[metric] = {}
             mean_score_per_metric_and_style[metric] = {}
+            std_score_per_metric_and_style[metric] = {}
+            median_score_per_metric_and_style[metric] = {}
             # go over each image caption from res
             for i1, k in enumerate(res[test_name]):
-                if k in gts_per_data_set:
+                if True:
+                # if k in gts_per_data_set:
                     score_dict_per_metric[metric][k] = {}
                     scores_dict_per_metric[metric][k] = {}
                     for i2, style in enumerate(styles):
@@ -646,22 +653,39 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
             for style in styles:
                 if metric == 'fluency':
                     mean_score_per_metric_and_style[metric][style] = np.mean(score_per_metric_and_style[metric][style])
+                    std_score_per_metric_and_style[metric][style] = np.std(score_per_metric_and_style[metric][style])
+                    median_score_per_metric_and_style[metric][style] = np.median(score_per_metric_and_style[metric][style])
                 else:
                     try:
                         mean_score_per_metric_and_style[metric][style] = np.mean(
                         score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
+                        std_score_per_metric_and_style[metric][style] = np.std(
+                        score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
+                        median_score_per_metric_and_style[metric][style] = np.median(
+                        score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
+
                     except:
                         mean_score_per_metric_and_style[metric][style] = np.mean([s[0].cpu() for s in
                             score_per_metric_and_style[metric][style]]) * NORMALIZE_GRADE_SCALE
+                        std_score_per_metric_and_style[metric][style] = np.std([s[0].cpu() for s in
+                                                                                  score_per_metric_and_style[metric][
+                                                                                      style]]) * NORMALIZE_GRADE_SCALE
+                        median_score_per_metric_and_style[metric][style] = np.median([s[0].cpu() for s in
+                                                                                  score_per_metric_and_style[metric][
+                                                                                      style]]) * NORMALIZE_GRADE_SCALE
                 print(
-                    f"mean_score_per_metric_and_style[metric][{style}] = {mean_score_per_metric_and_style[metric][style]}")
+                    f"mean_score_per_metric_and_style[metric][{style}] = {mean_score_per_metric_and_style[metric][style]},\
+                    std_score_per_metric_and_style[metric][{style}] = {std_score_per_metric_and_style[metric][style]},\
+                    median_score_per_metric_and_style[metric][{style}] = {median_score_per_metric_and_style[metric][style]}")
             t2_metric = timeit.default_timer();
             print(
                 f"Time to calc this metric: {(t2_metric - t1_metric) / 60} minutes = {t2_metric - t1_metric} seconds.")
         mean_score[test_name] = mean_score_per_metric_and_style
+        std_score[test_name] = std_score_per_metric_and_style
+        median_score[test_name] = median_score_per_metric_and_style
         t2_exp = timeit.default_timer();
         print(f"Time to calc this test: {(t2_exp - t1_exp) / 60} minutes = {t2_exp - t1_exp} seconds.")
-    return mean_score, all_scores
+    return mean_score, all_scores, std_score, median_score
 
 
 def copy_imgs_to_test_dir(gts_per_data_set, res, styles, metrics, gt_imgs_for_test):
@@ -872,7 +896,7 @@ def write_results_for_all_frames(all_scores, tgt_eval_results_path_for_all_frame
     print(f"finished to write results for all frames in {tgt_eval_results_path_for_all_frames}")
 
 
-def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, vocab_size):
+def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, vocab_size,  std_score = None, median_score=None):
     print(f"Write results to {tgt_eval_results_path}...")
     with open(tgt_eval_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
@@ -890,33 +914,50 @@ def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, v
         total_rows = []
         title = True
         avg_metric = {}
+        avg_metric_std = {}
+        avg_metric_median = {}
         metrics.append("diversity-vocab_size")
-        for test_name in mean_score:
-            row = [test_name]
+        for test_name in mean_score: #go over each experiement
+            row = [test_name] #first column
             for style in styles:
                 for metric in metrics:
                     if test_name.startswith('capdec') and style not in vocab_size[test_name]:
                         continue
                     if metric=="diversity-vocab_size" or not np.isnan(mean_score[test_name][metric][style]):
                         if title:
-                            dataset_row.append(dataset)
-                            style_row.append(style)
-                            metrics_row.append(metric)
+                            dataset_row.append(dataset+'-avg')
+                            style_row.append(style+'-avg')
+                            metrics_row.append(metric+'-avg')
+                            if metric != "diversity-vocab_size":
+                                dataset_row.append(dataset)
+                                dataset_row.append(dataset)
+                                style_row.append(style)
+                                style_row.append(style)
+                                metrics_row.append(metric + '-std')
+                                metrics_row.append(metric + '-median')
                         if metric == "diversity-vocab_size":
                             row.append(vocab_size[test_name][style])
-                        else:
+                        else: # append score values
                             row.append(mean_score[test_name][metric][style])
+                            row.append(std_score[test_name][metric][style])
+                            row.append(median_score[test_name][metric][style])
                         if metric not in avg_metric:
                             if metric == "diversity-vocab_size":
                                 val_for_metric = vocab_size[test_name][style]
                             else:
                                 val_for_metric = mean_score[test_name][metric][style]
-                            avg_metric[metric] = [val_for_metric]
+                                val_for_metric_std = std_score[test_name][metric][style]
+                                val_for_metric_median = median_score[test_name][metric][style]
+                                avg_metric_std[metric] = [val_for_metric_std]  # list for total avg over styles
+                                avg_metric_median[metric] = [val_for_metric_median]  # list for total avg over styles
+                            avg_metric[metric] = [val_for_metric] #list for total avg over styles
                         else:
                             if metric == "diversity-vocab_size":
                                 val_for_metric = vocab_size[test_name][style]
                             else:
                                 val_for_metric = mean_score[test_name][metric][style]
+                                avg_metric_std[metric].append(std_score[test_name][metric][style])
+                                avg_metric_median[metric].append(median_score[test_name][metric][style])
                             avg_metric[metric].append(val_for_metric)
                 # if 'diversity-vocab_size' not in avg_metric:
                 #     avg_metric['diversity-vocab_size'] = [vocab_size[test_name][style]]
@@ -924,11 +965,23 @@ def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, v
                 #     if style in vocab_size[test_name]:
                 #         avg_metric['diversity-vocab_size'].append(vocab_size[test_name][style])
             for m in avg_metric:
-                if title:
-                    dataset_row.append('total avg.')
-                    style_row.append('total avg.')
-                    metrics_row.append(m)
-                row.append(np.mean(avg_metric[m]))
+                if m != "diversity-vocab_size":
+                    if title:
+                        dataset_row.extend(['total avg.']*3)
+                        style_row.extend(['total avg.']*3)
+                        metrics_row.append(m)
+                        metrics_row.append(m+'-std')
+                        metrics_row.append(m+'-median')
+                    row.append(np.mean(avg_metric[m]))
+                    row.append(np.mean(avg_metric_std[m]))
+                    row.append(np.mean(avg_metric_median[m]))
+                else:
+                    if title:
+                        dataset_row.append('total avg.')
+                        style_row.append('total avg.')
+                        metrics_row.append(m)
+                    row.append(np.mean(avg_metric[m]))
+
             total_rows.append(row)
             title = False
         writer.writerow(dataset_row)
@@ -1148,7 +1201,7 @@ def main():
     res_data_per_test = get_res_data(config['res_path2eval'])
     # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
     # exit(0)
-    mean_score, all_scores = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'],
+    mean_score, all_scores, std_score, median_score = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'],
                                         config['cuda_idx'], data_dir, config['txt_cls_model_paths'],
                                         config['labels_dict_idxs'], gt_imgs_for_test, config)
 
@@ -1158,8 +1211,9 @@ def main():
     for test_name in res_data_per_test:
         for metric in config['metrics']:
             for style in config['styles']:
-                print(
-                    f"{test_name}: {config['dataset']}: {metric} score for {style} = {mean_score[test_name][metric][style]}")
+                print(f"{test_name}: {config['dataset']}: {metric} mean score for {style} = {mean_score[test_name][metric][style]}")
+                print(f"{test_name}: {config['dataset']}: {metric} std score for {style} = {std_score[test_name][metric][style]}")
+                print(f"{test_name}: {config['dataset']}: {metric} median score for {style} = {median_score[test_name][metric][style]}")
     for test_name in res_data_per_test:
         print(f'Vocabulary size for experiment {test_name} dataset is {vocab_size[test_name]}')
 
@@ -1171,7 +1225,7 @@ def main():
 
     print(f"finished to evaluat on {len(all_scores)} images.")
     write_results(mean_score, tgt_eval_results_file_name, config['dataset'], config['metrics'], config['styles'],
-                  vocab_size)
+                  vocab_size, std_score, median_score)
     write_results_for_all_frames(all_scores, tgt_eval_results_file_name_for_all_frames, config['metrics'])
 
     print('Finished to evaluate')

@@ -158,7 +158,7 @@ def write_results_image_manipulation(img_dict_img_arithmetic,results_dir,tgt_res
             cur_row = [img_num_str]
             styles = img_dict_img_arithmetic[img].keys()
             if writeTitle:
-                titles0 = ['img_num\style']
+                titles0 = ['img_num']
                 titles0.extend(styles)
                 writer.writerow(titles0)
                 writeTitle = False
