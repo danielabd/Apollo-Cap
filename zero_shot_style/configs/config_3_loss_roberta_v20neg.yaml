@@ -28,9 +28,14 @@ heavy_max_num_iterations: 7
 max_batch_size_style_cls: 10
 ##########
 experiement_global_name:
-  senticap: StylizedZeroCap_roberta_3_loss_v17 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_roberta_3_loss_v20neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
-sentiment_temperature: 0.001
+sentiment_temperature: 0.05
+plot_prob_graphs: True
+######
+desired_labels:
+  senticap: [negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
+  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 mul_clip_style: True
 loss_1_mul_clip_style_in_lm: False
@@ -43,10 +48,6 @@ num_iterations_clip_style: 6
 loss_scale_style_clip: 33
 loss_scale_src_clip_clip: 0.000002   #0.5
 start_loop_clip_style_in_word_num: 1
-######
-desired_labels:
-  senticap: [positive,negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
-  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 save_config_file: True #True # False, True todo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
@@ -151,10 +152,10 @@ text_style_scale:
   senticap: 0 #1.324 # 3.3 #8.7 #- comparison to other baselines
   flickrstyle10k: 4.518869472661613
 ce_scale:
-  senticap: 0.5 #3.34 #1.706 #3.34 #2.2 #- comparison to other baselines
+  senticap: 0.8 #3.34 #1.706 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap:  16 # 5.6 #1.6 #- comparison to other baselines
+  senticap:  4 # 5.6 #1.6 #- comparison to other baselines
   flickrstyle10k: 4.587441437503964
 
 

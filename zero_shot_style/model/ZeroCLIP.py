@@ -1169,31 +1169,40 @@ class CLIPTextGenerator:
                 probs = torch.unsqueeze(probs[0][:max_prob_len], 0)  # todo:remove it # 9.6.23
 
             # # print probs graphs
-            # if i>=1:
-            #     x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
-            #     # Create a grid of subplots
-            #     fig, axs = plt.subplots(2, 2)
-            #
-            #     # Plot the graphs in separate subplots
-            #     axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
-            #     axs[0, 0].set_title('Source LM Probs')
-            #
-            #     axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
-            #     axs[0, 1].set_title('Fixed LM Probs')
-            #
-            #     axs[1, 0].plot(x, target_probs_style.cpu().numpy(), label='target_probs_style')
-            #     axs[1, 0].set_title('Target Probs Style')
-            #
-            #     axs[1, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
-            #     axs[1, 1].set_title('Target Probs Clip')
-            #
-            #     # Add a global title
-            #     fig.suptitle(f'iteration number={i}')
-            #
-            #     # Adjust the spacing between subplots
-            #     plt.tight_layout()
-            #
-            #     plt.show(block=False)
+            if self.config.get('plot_prob_graphs',False):
+                if i>=1:
+                    for i_beam in range(probs.shape[0])
+                        x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+                        # Create a grid of subplots
+                        fig, axs = plt.subplots(2, 3)
+
+                        # Plot the graphs in separate subplots
+                        axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
+                        axs[0, 0].set_title('Source LM Probs')
+
+                        axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
+                        axs[0, 1].set_title('Fixed LM Probs')
+                        clip_target_probs_before_style
+                        axs[1, 0].plot(x, sentiment_grades_before_temp.cpu().numpy(), label='sentiment_grades_before_temp')
+                        axs[1, 0].set_title('sentiment grades before temp')
+
+                        axs[1, 1].plot(x, sentiment_grades_after_temp.cpu().numpy(), label='sentiment_grades_after_temp')
+                        axs[1, 1].set_title('sentiment grades after temp')
+
+
+                        axs[2, 0].plot(x, clip_target_probs_before_style.cpu().numpy(), label='clip_target_probs_before_style')
+                        axs[2, 0].set_title('clip target probs before style')
+
+                        axs[2, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
+                        axs[2, 1].set_title('Target Probs Clip')
+
+                        # Add a global title
+                        fig.suptitle(f'i_beam={i_beam}, iteration number={i}')
+
+                    # Adjust the spacing between subplots
+                    plt.tight_layout()
+
+                    plt.show(block=False)
 
 
 
@@ -1348,7 +1357,7 @@ class CLIPTextGenerator:
                     # CLIP LOSS
                     clip_ViT_loss = 0
                     if self.clip_scale != 0:
-                        clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs = self.clip_loss(
+                        clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs,clip_target_probs_before_style,sentiment_grades_before_temp,sentiment_grades_after_temp = self.clip_loss(
                             probs, context_tokens,grad_lm=False)
                         # if not new_weighted_loss:
                         #     loss += self.clip_scale * clip_loss # change to variable scale
@@ -1516,7 +1525,7 @@ class CLIPTextGenerator:
 
             # CLIP LOSS
             if self.clip_scale!=0:
-                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs, target_probs_clip = self.clip_loss(probs, context_tokens, grad_lm=True)
+                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs, target_probs_clip,clip_target_probs_before_style,sentiment_grades_before_temp ,sentiment_grades_after_temp = self.clip_loss(probs, context_tokens, grad_lm=True)
                 # todo: check that clip_probs have grads
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                     print("after calc clip loss:")
@@ -1772,6 +1781,7 @@ class CLIPTextGenerator:
         # similiraties_specific_test = (self.image_features @ text_features_specific_test.T)
         # print(f"similiraties_specific_test = {similiraties_specific_test.item()}")
         # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        clip_target_probs_before_style = None; sentiment_grades_after_temp=None;sentiment_grades_before_temp=None
         for idx_p in range(probs.shape[0]): # for beam search
             top_texts = []
             prefix_text = prefix_texts[idx_p]
@@ -1942,14 +1952,18 @@ class CLIPTextGenerator:
                         output = self.sentiment_model(**encoded_input)
                         scores = output[0].detach()
                         scores = nn.functional.softmax(scores, dim=-1) #get grades for each image
+                        sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
                         scores = nn.functional.softmax(scores/self.sentiment_temperature, dim=0) #rank grades between all images
                         # sentiment_grades = None
                         if self.style == 'positive':
                             sentiment_grades = scores[:, 2]
+                            sentiment_grades_before_temp=sentiment_grades_before_temp[:,2]
                         elif self.style == 'neutral':
                             sentiment_grades = scores[:, 1]
+                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
                         elif self.style == 'negative':
                             sentiment_grades = scores[:, 0]
+                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
                         # inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
                         # inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
                         # inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
@@ -1970,6 +1984,8 @@ class CLIPTextGenerator:
                         # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
                         # target_probs = factor_clip_style * target_probs * predicted_probs
                         clip_target_probs = target_probs
+                        clip_target_probs_before_style = clip_target_probs
+                        sentiment_grades_after_temp = sentiment_grades
                         clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
                         clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
 
@@ -2167,4 +2183,4 @@ class CLIPTextGenerator:
         #     total_best_sentences_clip[debug_best_top_texts_clip[i]] = debug_best_probs_vals_clip[i]
         # for i in np.argsort(debug_best_probs_vals_LM)[-DEBUG_NUM_WORDS:]:
         #     total_best_sentences_LM[debug_best_top_texts_LM[i]] = debug_best_probs_vals_LM[i]
-        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs, target[0]
+        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs, target[0], clip_target_probs_before_style,sentiment_grades_before_temp,sentiment_grades_after_temp

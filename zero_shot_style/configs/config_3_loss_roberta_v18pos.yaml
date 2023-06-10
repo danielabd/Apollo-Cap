@@ -36,7 +36,7 @@ desired_labels:
   senticap: [positive] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
-mul_clip_styl: True
+mul_clip_style: True
 loss_1_mul_clip_style_in_lm: False
 calc_grad_according_to_first_beam: False
 clip_style_temperature: 0.1
