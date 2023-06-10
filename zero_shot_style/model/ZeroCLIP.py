@@ -1171,7 +1171,7 @@ class CLIPTextGenerator:
             # # print probs graphs
             if self.config.get('plot_prob_graphs',False):
                 if i>=1:
-                    for i_beam in range(probs.shape[0])
+                    for i_beam in range(probs.shape[0]):
                         x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
                         # Create a grid of subplots
                         fig, axs = plt.subplots(2, 3)
@@ -1182,7 +1182,7 @@ class CLIPTextGenerator:
 
                         axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
                         axs[0, 1].set_title('Fixed LM Probs')
-                        clip_target_probs_before_style
+                        # clip_target_probs_before_style
                         axs[1, 0].plot(x, sentiment_grades_before_temp.cpu().numpy(), label='sentiment_grades_before_temp')
                         axs[1, 0].set_title('sentiment grades before temp')
 
