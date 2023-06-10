@@ -1168,41 +1168,41 @@ class CLIPTextGenerator:
             if self.config.get('calc_grad_according_to_first_beam', False):
                 probs = torch.unsqueeze(probs[0][:max_prob_len], 0)  # todo:remove it # 9.6.23
 
-            # # print probs graphs
-            if self.config.get('plot_prob_graphs',False):
-                if i>=1:
-                    for i_beam in range(probs.shape[0]):
-                        x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
-                        # Create a grid of subplots
-                        fig, axs = plt.subplots(2, 3)
-
-                        # Plot the graphs in separate subplots
-                        axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
-                        axs[0, 0].set_title('Source LM Probs')
-
-                        axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
-                        axs[0, 1].set_title('Fixed LM Probs')
-                        # clip_target_probs_before_style
-                        axs[1, 0].plot(x, sentiment_grades_before_temp.cpu().numpy(), label='sentiment_grades_before_temp')
-                        axs[1, 0].set_title('sentiment grades before temp')
-
-                        axs[1, 1].plot(x, sentiment_grades_after_temp.cpu().numpy(), label='sentiment_grades_after_temp')
-                        axs[1, 1].set_title('sentiment grades after temp')
-
-
-                        axs[2, 0].plot(x, clip_target_probs_before_style.cpu().numpy(), label='clip_target_probs_before_style')
-                        axs[2, 0].set_title('clip target probs before style')
-
-                        axs[2, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
-                        axs[2, 1].set_title('Target Probs Clip')
-
-                        # Add a global title
-                        fig.suptitle(f'i_beam={i_beam}, iteration number={i}')
-
-                    # Adjust the spacing between subplots
-                    plt.tight_layout()
-
-                    plt.show(block=False)
+            # # # print probs graphs
+            # if self.config.get('plot_prob_graphs',False):
+            #     if i>=1:
+            #         for i_beam in range(probs.shape[0]):
+            #             x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+            #             # Create a grid of subplots
+            #             fig, axs = plt.subplots(2, 3)
+            #
+            #             # Plot the graphs in separate subplots
+            #             axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
+            #             axs[0, 0].set_title('Source LM Probs')
+            #
+            #             axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
+            #             axs[0, 1].set_title('Fixed LM Probs')
+            #             # clip_target_probs_before_style
+            #             axs[1, 0].plot(x, sentiment_grades_before_temp.cpu().numpy(), label='sentiment_grades_before_temp')
+            #             axs[1, 0].set_title('sentiment grades before temp')
+            #
+            #             axs[1, 1].plot(x, sentiment_grades_after_temp.cpu().numpy(), label='sentiment_grades_after_temp')
+            #             axs[1, 1].set_title('sentiment grades after temp')
+            #
+            #
+            #             axs[2, 0].plot(x, clip_target_probs_before_style.cpu().numpy(), label='clip_target_probs_before_style')
+            #             axs[2, 0].set_title('clip target probs before style')
+            #
+            #             axs[2, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
+            #             axs[2, 1].set_title('Target Probs Clip')
+            #
+            #             # Add a global title
+            #             fig.suptitle(f'i_beam={i_beam}, iteration number={i}')
+            #
+            #         # Adjust the spacing between subplots
+            #         plt.tight_layout()
+            #
+            #         plt.show(block=False)
 
 
 
