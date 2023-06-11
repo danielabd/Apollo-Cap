@@ -1304,7 +1304,7 @@ class CLIPTextGenerator:
                 # self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
 
                 ########## try with continue update CLIP and not rest it every global iteration of ZeroCap
-                if i==0:
+                if i==0: #in the first iteration of generating new token
                 # try:
                 #     image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
                 #                                                        updated_v_in=shifted_v_clip, return_k_v=True,
@@ -1355,48 +1355,54 @@ class CLIPTextGenerator:
                     self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
                 for clip_update_iter in range(self.config['num_iterations_clip_style']):  # todo: change it self.k=list of 12, each with size of(1,12,50,64)
                     # CLIP LOSS
-                    clip_ViT_loss = 0
-                    if self.clip_scale != 0:
-                        clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs,clip_target_probs_before_style,sentiment_grades_before_temp,sentiment_grades_after_temp = self.clip_loss(
-                            probs, context_tokens,grad_lm=False)
-                        # if not new_weighted_loss:
-                        #     loss += self.clip_scale * clip_loss # change to variable scale
-                    # TEXT_STYLE loss:
-                    text_style_loss = -100
-                    if self.use_style_model and not self.use_text_style_cutting:
-                        if self.text_style_scale!=0:
-                            total_best_sentences_style = None
-                            if self.style_type == 'erc':
-                                text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_erc(
-                                    probs, context_tokens)
-                            elif self.style_type == 'clip': #using clip model for text style
-                                text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
-                            elif self.style_type == 'emoji':
-                                text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(probs, context_tokens)
-                            elif self.style_type == 'style_embed': #my text style embedding that I trained
-                                text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style, style_probs = self.get_text_style_loss(probs, context_tokens)
-                            elif self.style_type == 'roberta':
-                                text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs, context_tokens, self.style)
-                            else:
-                                print('check what is the style model!')
-                                exit(-1)
+                    if self.config.get('only_clip_styled_clip_loss'):
+                        clip_loss, losses, clip_probs, clip_target_probs_before_style, sentiment_grades_before_temp, sentiment_grades_after_temp = self.get_clip_probs(
+                            probs, context_tokens)
+                        clip_ViT_loss = clip_loss
 
-                            #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
-                            # loss += self.text_style_scale * text_style_loss
+                    else:
+                        clip_ViT_loss = 0
+                        if self.clip_scale != 0:
+                            clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs,clip_target_probs_before_style,sentiment_grades_before_temp,sentiment_grades_after_temp = self.clip_loss(
+                                probs, context_tokens,grad_lm=False)
+                            # if not new_weighted_loss:
+                            #     loss += self.clip_scale * clip_loss # change to variable scale
+                        # TEXT_STYLE loss:
+                        text_style_loss = -100
+                        if self.use_style_model and not self.use_text_style_cutting:
+                            if self.text_style_scale!=0:
+                                total_best_sentences_style = None
+                                if self.style_type == 'erc':
+                                    text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_erc(
+                                        probs, context_tokens)
+                                elif self.style_type == 'clip': #using clip model for text style
+                                    text_style_loss, text_style_losses = self.get_text_style_loss_with_clip(probs, context_tokens)
+                                elif self.style_type == 'emoji':
+                                    text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style = self.get_text_style_loss_emoji(probs, context_tokens)
+                                elif self.style_type == 'style_embed': #my text style embedding that I trained
+                                    text_style_loss, text_style_losses, best_sentences_style, total_best_sentences_style, style_probs = self.get_text_style_loss(probs, context_tokens)
+                                elif self.style_type == 'roberta':
+                                    text_style_loss, text_style_losses, style_probs = self.get_sentiment_loss(probs, context_tokens, self.style)
+                                else:
+                                    print('check what is the style model!')
+                                    exit(-1)
 
-                    # calc loss according to style
-                    clip_style_loss = 0
-                    if self.config.get('mul_clip_style_prob',False):
-                        print("multiply clip and style probs  in order to influence image embedding to be in specific style")
-                    else: #calc CE between clip prob and style prob
-                        for idx_p in clip_probs.keys():
-                            clip_style_loss += torch.sum(-((style_probs[idx_p]+EPSILON) * torch.log((clip_probs[idx_p]+EPSILON)))) #todo: check if need detach on style tensor
-                    # calc loss according to init clip
-                    mse_loss = nn.MSELoss()
-                    clip_src_clip_loss = mse_loss(self.src_image_features[0], self.image_features)
+                                #print(f'text_style_loss = {text_style_loss}, text_style_loss_with_scale = {self.text_style_scale * text_style_loss}')
+                                # loss += self.text_style_scale * text_style_loss
 
-                    clip_ViT_loss = self.config['loss_scale_style_clip']*clip_style_loss + self.config['loss_scale_src_clip_clip']*clip_src_clip_loss
-                    #clip_ViT_loss.retain_grad() #todo: check if need it
+                        # calc loss according to style
+                        clip_style_loss = 0
+                        if self.config.get('mul_clip_style_prob',False):
+                            print("multiply clip and style probs  in order to influence image embedding to be in specific style")
+                        else: #calc CE between clip prob and style prob
+                            for idx_p in clip_probs.keys():
+                                clip_style_loss += torch.sum(-((style_probs[idx_p]+EPSILON) * torch.log((clip_probs[idx_p]+EPSILON)))) #todo: check if need detach on style tensor
+                        # calc loss according to init clip
+                        mse_loss = nn.MSELoss()
+                        clip_src_clip_loss = mse_loss(self.src_image_features[0], self.image_features)
+
+                        clip_ViT_loss = self.config['loss_scale_style_clip']*clip_style_loss + self.config['loss_scale_src_clip_clip']*clip_src_clip_loss
+                        #clip_ViT_loss.retain_grad() #todo: check if need it
 
                     clip_ViT_loss.backward()
 
@@ -1404,7 +1410,8 @@ class CLIPTextGenerator:
                     ###add the shift to context_clip
 
                     factor = 1 #1 #todo check
-                    print(f"factor={factor}, global_iteration={i}, update_clip_iter={clip_update_iter}, clip_ViT_loss={clip_ViT_loss}, clip_src_clip_loss={clip_src_clip_loss}, clip_style_loss={clip_style_loss}")
+                    # print(f"factor={factor}, global_iteration={i}, update_clip_iter={clip_update_iter}, clip_ViT_loss={clip_ViT_loss}, clip_src_clip_loss={clip_src_clip_loss}, clip_style_loss={clip_style_loss}"
+                    print(f"factor={factor}, global_iteration={i}, update_clip_iter={clip_update_iter}, clip_ViT_loss={clip_ViT_loss}, sentiment_temperature={self.config['sentiment_temperature']}")
                     if self.config.get('kv_only_first_layer', False):
                         print(f"num_iterations_clip_style={self.config['num_iterations_clip_style']}, loss_scale_style_clip={self.config['loss_scale_style_clip']}, loss_scale_src_clip_clip={self.config['loss_scale_src_clip_clip']}")
 
@@ -1964,25 +1971,8 @@ class CLIPTextGenerator:
                         elif self.style == 'negative':
                             sentiment_grades = scores[:, 0]
                             sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                        # inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
-                        # inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
-                        # inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
-                        # logits = self.sentiment_model(**inputs)['logits']
-                        # # sentiment_grades = None
-                        # if sentiment_type=='positive':
-                        #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,2]
-                        # elif sentiment_type=='neutral':
-                        #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,1]
-                        # elif sentiment_type=='negative':
-                        #         sentiment_grades= nn.functional.softmax(logits, dim=-1)[:,0]
                         sentiment_grades = sentiment_grades.unsqueeze(0)
 
-                        # predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()
-
-                        # predicted_probs = nn.functional.softmax(sentiment_grades / self.sentiment_temperature,
-                        #                                         dim=-1).detach()  # todo: parametrize it
-                        # predicted_probs = predicted_probs.type(torch.float32).to(self.device)
-                        # target_probs = factor_clip_style * target_probs * predicted_probs
                         clip_target_probs = target_probs
                         clip_target_probs_before_style = clip_target_probs
                         sentiment_grades_after_temp = sentiment_grades
@@ -1990,9 +1980,7 @@ class CLIPTextGenerator:
                         clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
 
                         target_probs = clip_target_probs_weightes_style_normalized
-                    ########adding style effect
-            else:
-                similiraties = (self.image_features @ text_features.T)
+            else: #'update_ViT'=True: collect grad
                 similiraties = (self.image_features @ text_features.T)
                 ##### #todo:debug
                 # top_probs_clip, top_indices_clip = similiraties.topk(10, -1)
@@ -2130,6 +2118,38 @@ class CLIPTextGenerator:
                 target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1) # .detach() todo: check if it is ok
                 target_probs = target_probs.type(torch.float32)
 
+                if self.config.get('mul_clip_style', False):
+                    ########adding style effect#todo
+                    with torch.no_grad():
+                        text_list = self.preprocess_text_for_roberta(top_texts)
+                        encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                            self.device)
+                        output = self.sentiment_model(**encoded_input)
+                        scores = output[0].detach()
+                        scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
+                        sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                        scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                       dim=0)  # rank grades between all images
+                        # sentiment_grades = None
+                        if self.style == 'positive':
+                            sentiment_grades = scores[:, 2]
+                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                        elif self.style == 'neutral':
+                            sentiment_grades = scores[:, 1]
+                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                        elif self.style == 'negative':
+                            sentiment_grades = scores[:, 0]
+                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                        sentiment_grades = sentiment_grades.unsqueeze(0)
+
+                    clip_target_probs = target_probs
+                    clip_target_probs_before_style = clip_target_probs
+                    sentiment_grades_after_temp = sentiment_grades
+                    clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
+                    clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style / clip_target_probs_weightes_style.sum()
+
+                    target_probs = clip_target_probs_weightes_style_normalized
+
             if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
                 print(f"beam num = {idx_p}")
             # target_probs = target_probs[0]
@@ -2184,3 +2204,85 @@ class CLIPTextGenerator:
         # for i in np.argsort(debug_best_probs_vals_LM)[-DEBUG_NUM_WORDS:]:
         #     total_best_sentences_LM[debug_best_top_texts_LM[i]] = debug_best_probs_vals_LM[i]
         return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs, target[0], clip_target_probs_before_style,sentiment_grades_before_temp,sentiment_grades_after_temp
+
+
+    def get_clip_probs(self, probs, context_tokens):
+        if not self.config.get('update_ViT',False):
+            for p_ in self.clip.transformer.parameters(): #todo: check if it defend on text params.
+                if p_.grad is not None:
+                    p_.grad.data.zero_()
+        top_size = TOP_SZIE #512
+        top_probs_LM, top_indices = probs.topk(top_size, -1)
+        prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
+        clip_loss = 0
+        losses = []
+        if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
+            print("in clip loss:")
+
+        clip_probs = {} #for all beams
+        clip_target_probs_before_style = None; sentiment_grades_after_temp=None;sentiment_grades_before_temp=None
+        for idx_p in range(probs.shape[0]): # for beam search
+            top_texts = []
+            prefix_text = prefix_texts[idx_p]
+            for x in top_indices[idx_p]:
+                top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+
+            # grades according to match to style
+            probs_val,indices = top_probs_LM[idx_p].topk(DEBUG_NUM_WORDS)
+            text_features = self.get_txt_features(top_texts)
+
+            #similarities according to fixed clip
+            similiraties = (self.image_features @ text_features.T)
+            similiraties = similiraties.float() #todo: check if need / self.clip_loss_temperature
+            target_probs_fixed = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1) # .detach() todo: check if it is ok
+            target_probs_fixed = target_probs_fixed.type(torch.float32)
+
+            #get vector probs of source clip multiply with style
+            with torch.no_grad():
+                similiraties_source = (self.src_image_features.detach() @ text_features.T.detach()) #todo:check if detach ~~~~~~~~~~~~!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                similiraties_source = similiraties_source.float()  # todo: check if need / self.clip_loss_temperature
+                target_probs_source = nn.functional.softmax(similiraties_source / self.clip_loss_temperature,
+                                                     dim=-1)  # .detach() todo: check if it is ok
+                target_probs_source = target_probs_source.type(torch.float32)
+                ########adding style effect#todo
+                text_list = self.preprocess_text_for_roberta(top_texts)
+                encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                    self.device)
+                output = self.sentiment_model(**encoded_input)
+                scores = output[0].detach()
+                scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
+                sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                               dim=0)  # rank grades between all images
+                # sentiment_grades = None
+                if self.style == 'positive':
+                    sentiment_grades = scores[:, 2]
+                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                elif self.style == 'neutral':
+                    sentiment_grades = scores[:, 1]
+                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                elif self.style == 'negative':
+                    sentiment_grades = scores[:, 0]
+                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                sentiment_grades = sentiment_grades.unsqueeze(0)
+
+            clip_target_probs_source = target_probs_source
+            clip_target_probs_before_style = clip_target_probs_source
+            sentiment_grades_after_temp = sentiment_grades
+            clip_target_probs_weightes_style = sentiment_grades * clip_target_probs_source
+            clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style / clip_target_probs_weightes_style.sum()
+
+            source_target_with_style = torch.zeros_like(probs[idx_p])
+            source_target_with_style[top_indices[idx_p]] = clip_target_probs_weightes_style_normalized
+            source_target_with_style = source_target_with_style.unsqueeze(0)
+
+            target_fixed = torch.zeros_like(probs[idx_p])
+            target_fixed[top_indices[idx_p]] = target_probs_fixed
+            target_fixed = target_fixed.unsqueeze(0)
+
+            cur_clip_loss = torch.sum((target_fixed * torch.log(target_fixed.detach()))) + torch.sum(-(target_fixed * torch.log(source_target_with_style.detach())))  # todo check i need the first element
+            clip_loss += cur_clip_loss
+            losses.append(cur_clip_loss)
+            if self.config.get('update_ViT',False) or self.config.get('loss_1_mul_clip_style_in_lm',False) :
+                clip_probs[idx_p] = source_target_with_style
+        return clip_loss, losses, clip_probs, clip_target_probs_before_style,sentiment_grades_before_temp,sentiment_grades_after_temp

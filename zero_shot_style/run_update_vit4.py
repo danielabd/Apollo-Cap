@@ -30,7 +30,6 @@ from datetime import datetime
 from utils import parser, get_hparams
 from evaluate import load
 
-
 MAX_PERPLEXITY = 1500
 DEFAULT_PERPLEXITY_SCORE = 1
 DEFAULT_CLIP_SCORE = 1
@@ -76,6 +75,7 @@ def get_args():
     parser.add_argument("--ce_scale", type=float, default=0.2)
     parser.add_argument("--clip_scale", type=float, default=1)
     parser.add_argument("--text_style_scale", type=float, default=1)
+    parser.add_argument("--sentiment_temperature", type=float, default=0.01)
     parser.add_argument("--threshold_sentiment", type=float, default=0.3597)
     parser.add_argument("--requires_min_style_score", type=float, default=0.35 )
     parser.add_argument("--requires_min_clip_score_val", type=float, default=0.26)
@@ -235,7 +235,7 @@ def run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, 
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
     t1 = timeit.default_timer();
-    captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'])
+    captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'],img_idx=config['img_path_idx'])
     t2 = timeit.default_timer();
 
     if config['model_based_on'] == 'bert':
@@ -939,22 +939,7 @@ def main():
     evaluation_results = {}  # total_results_structure
     if config['reverse_imgs_list']:
         imgs_to_test.reverse()
-    for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
-        # if int(img_path.split('.')[0].split('/')[-1]) == 225571:
-        #     print(f'img_path_idx={img_path_idx}')
-        # continue
-        # todo: remove it!!!
-        # img_path = os.path.join(os.path.expanduser('~'),'data/stylized_images','49.png')
-        if not config['debug_mac']:
-            clip_img = None
-            if config['update_ViT']:
-                image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False,
-                                                                          get_preroccessed_img=True,kv_only_first_layer=config.get('kv_only_first_layer',True))
-            else:
-                image_features = text_generator.get_img_feature([img_path], None, return_k_v=False,
-                                                                get_preroccessed_img=True)
-        else:
-            image_features = None
+    for img_path_idx, img_path in enumerate(imgs_to_test):
         if img_path_idx < config['img_idx_to_start_from']:
             continue
         print(f"Img num = {img_path_idx}")
@@ -973,14 +958,24 @@ def main():
             config['cond_text'] = config["cond_text_dict"][label]
             config = update_running_params(label, config)
             if not config['debug_mac']:
-                #####################
-                text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
-                                                   tmp_text_loss=tmp_text_loss, config=config,
-                                                   evaluation_obj=evaluation_obj,
-                                                   **config)
-                #####################
+                text_generator.update_config(config)
+                # text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
+                #                                    tmp_text_loss=tmp_text_loss, config=config,
+                #                                    evaluation_obj=evaluation_obj,
+                #                                    **config)
+                clip_img = None
+                if config['update_ViT']:
+                    image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False,
+                                                                              get_preroccessed_img=True,
+                                                                              kv_only_first_layer=config.get(
+                                                                                  'kv_only_first_layer', True))
+                else:
+                    image_features = text_generator.get_img_feature([img_path], None, return_k_v=False,
+                                                                    get_preroccessed_img=True)
                 text_generator.set_params(config['ce_scale'], config['clip_scale'], config['text_style_scale'],
                                           config['beam_size'], config['num_iterations'])
+            else:
+                image_features = None
 
             evaluation_results[img_name][label] = {}
             if not config['imitate_text_style']:
@@ -991,12 +986,6 @@ def main():
             print(f"Img num = {img_path_idx}")
             # prompt manipulation or using text style model
             if config['run_type'] == 'caption':
-                # #########todo
-                # text_generator = CLIPTextGenerator(cuda_idx=config['cuda_idx_num'], model_path=model_path,
-                #                                    tmp_text_loss=tmp_text_loss, config=config,
-                #                                    evaluation_obj=evaluation_obj,
-                #                                    **config)
-                # #########todo
                 title2print = get_title2print(config['img_path'], config['dataset'], label, config)
                 print(title2print)
                 best_caption = run(config, config['img_path'], desired_style_embedding_vector,

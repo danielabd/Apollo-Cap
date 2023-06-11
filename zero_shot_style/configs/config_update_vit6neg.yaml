@@ -30,11 +30,11 @@ mul_clip_styl: True
 only_clip_styled_clip_loss: True
 ######
 desired_labels:
-  senticap: [positive] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
+  senticap: [negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 experiement_global_name:
-  senticap: StylizedZeroCap_update_vit_focus_clip_v6 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_update_vit_focus_clip_v6neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 ###### update clip ViT tensors
