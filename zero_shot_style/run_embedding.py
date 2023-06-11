@@ -39,7 +39,8 @@ EPSILON = 0.0000000001
 
 def get_args():
     parser.add_argument('--config_file', type=str,
-                        default=os.path.join('.', 'configs', 'config_embedding.yaml'),
+                        # default=os.path.join('.', 'configs', 'config_embedding.yaml'),
+                        default=os.path.join('.', 'configs', 'config_prompt_manipulation.yaml'),
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
