@@ -59,14 +59,23 @@ res_path2eval:
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8/total_results_text_style_style_embed_8.csv
      #finetuned roberta best sweep
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/finetuned_roberta_best_sweep/total_results_text_style_finetuned_roberta.csv
-    #val on 20 imgs - prompt_manipulation
+#    val on 20 imgs - prompt_manipulation
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/senticap_StylizedZeroCap_prompt_manipulation/09_06_2023/1-63sniirz-autumn-cherry-1/results_10_34_42__09_06_2023.csv
     #val on 20 imgs - image_manipulation
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/senticap_StylizedZeroCap_image_manipulation/09_06_2023/1-5vs2g62a-blooming-salad-1/results_10_34_48__09_06_2023.csv
     #val on 20 imgs - prompt_and_image_manipulation
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/senticap_StylizedZeroCap_prompt_and_image_manipulation/09_06_2023/1-ma9am9qf-summer-durian-1/results_10_34_51__09_06_2023.csv
     #val on 20 imgs - capdec
-     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/capdec/res_val_20_capdec_senticap.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/capdec/res_val_20_capdec_senticap.csv
+#    val on 20 imgs - prompt_manipulation
+#     ZeroStyleCap: /home/nlp/tzufar/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_prompt_manipulation/11_06_2023/6-lynfqmpx-radiant-dawn-6/results_12_34_47__11_06_2023.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/senticap_StylizedZeroCap_prompt_manipulation/11_06_2023/6-lynfqmpx-radiant-dawn-6/results_12_33_12__11_06_2023.csv
+    #val on 20 imgs - image_manipulation
+#     ZeroStyleCap: /home/nlp/tzufar/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_image_manipulation/11_06_2023/10-y0bf9ym5-trim-star-10/results_12_33_12__11_06_2023.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/senticap_StylizedZeroCap_image_manipulation/11_06_2023/10-y0bf9ym5-trim-star-10/results_12_33_12__11_06_2023.csv
+    #val on 20 imgs - prompt_and_image_manipulation
+     ZeroStyleCap: home/nlp/tzufar/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_prompt_and_image_manipulation/11_06_2023/6-pcsfvx05-pretty-paper-6/results_12_34_47__11_06_2023.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/senticap_StylizedZeroCap_prompt_and_image_manipulation/11_06_2023/6-pcsfvx05-pretty-paper-6/results_12_33_19__11_06_2023.csv
 
 #
   flickrstyle10k:
