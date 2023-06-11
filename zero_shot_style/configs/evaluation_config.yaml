@@ -74,8 +74,10 @@ res_path2eval:
 #     ZeroStyleCap: /home/nlp/tzufar/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_image_manipulation/11_06_2023/10-y0bf9ym5-trim-star-10/results_12_33_12__11_06_2023.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/senticap_StylizedZeroCap_image_manipulation/11_06_2023/10-y0bf9ym5-trim-star-10/results_12_33_12__11_06_2023.csv
     #val on 20 imgs - prompt_and_image_manipulation
-     ZeroStyleCap: home/nlp/tzufar/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_prompt_and_image_manipulation/11_06_2023/6-pcsfvx05-pretty-paper-6/results_12_34_47__11_06_2023.csv
+#     ZeroStyleCap: home/nlp/tzufar/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_prompt_and_image_manipulation/11_06_2023/6-pcsfvx05-pretty-paper-6/results_12_34_47__11_06_2023.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/val_20_imgs/senticap_StylizedZeroCap_prompt_and_image_manipulation/11_06_2023/6-pcsfvx05-pretty-paper-6/results_12_33_19__11_06_2023.csv
+#     val 20 vpos20
+     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v20pos/11_06_2023/18-hponm3ll-feasible-sweep-18/results_05_55_02__11_06_2023.csv
 
 #
   flickrstyle10k:
