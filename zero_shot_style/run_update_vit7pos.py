@@ -39,13 +39,11 @@ EPSILON = 0.0000000001
 
 def get_args():
     parser.add_argument('--config_file', type=str,
-                        # default=os.path.join('.', 'configs', 'config_embedding.yaml'),
-                        default=os.path.join('.', 'configs', 'config_prompt_manipulation.yaml'),
+                        # default=os.path.join('.', 'configs', 'config.yaml'),
+                        default=os.path.join('.', 'configs', 'config_update_vit7pos.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
-    parser.add_argument("--reverse_imgs_list", action="store_true",
-                        help="Should we reverse the order of images list we run on")
     parser.add_argument("--img_name", type=int, default=0)
     parser.add_argument("--use_all_imgs", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
@@ -65,6 +63,11 @@ def get_args():
     parser.add_argument("--cond_text2", type=str, default="")
     parser.add_argument("--reset_context_delta", action="store_true",
                         help="Should we reset the context at each token gen")
+    parser.add_argument("--reverse_imgs_list", action="store_true",
+                        help="Should we reverse the order of images list we run on")
+    parser.add_argument("--update_ViT", action="store_true",
+                        help="Should update CLIP tensors also")
+
     parser.add_argument("--clip_loss_temperature", type=float, default=0.01)
     parser.add_argument("--std_embedding_vectors_positive", type=float, default=0.028914157)
     parser.add_argument("--std_embedding_vectors_negative", type=float, default=0.020412436)
@@ -72,6 +75,7 @@ def get_args():
     parser.add_argument("--ce_scale", type=float, default=0.2)
     parser.add_argument("--clip_scale", type=float, default=1)
     parser.add_argument("--text_style_scale", type=float, default=1)
+    parser.add_argument("--sentiment_temperature", type=float, default=0.01)
     parser.add_argument("--threshold_sentiment", type=float, default=0.3597)
     parser.add_argument("--requires_min_style_score", type=float, default=0.35 )
     parser.add_argument("--requires_min_clip_score_val", type=float, default=0.26)
@@ -224,15 +228,14 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
 
 def run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, base_img, dataset_type, imgs_path,
-                   img_weights, cuda_idx, title2print,img_name=None, style=None):
+                   img_weights, cuda_idx, title2print):
     if text_generator == None:
-        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, config=config, img_idx=config['img_path_idx'], **vars(config))
+        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, config=config, **vars(config))
     # text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(config))
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
     t1 = timeit.default_timer();
-    captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'],img_idx=config['img_path_idx'], img_name=img_name, style=style)
-
+    captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'],img_idx=config['img_path_idx'])
     t2 = timeit.default_timer();
 
     if config['model_based_on'] == 'bert':
@@ -961,7 +964,7 @@ def main():
                 #                                    evaluation_obj=evaluation_obj,
                 #                                    **config)
                 clip_img = None
-                if config.get('update_ViT',False):
+                if config['update_ViT']:
                     image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False,
                                                                               get_preroccessed_img=True,
                                                                               kv_only_first_layer=config.get(
@@ -1009,7 +1012,7 @@ def main():
                 best_caption = run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, img_name,
                                               label, imgs_path=config['arithmetics_imgs'],
                                               img_weights=config['arithmetics_weights'],
-                                              cuda_idx=config['cuda_idx_num'], title2print=title2print, img_name=img_name, style=label)
+                                              cuda_idx=config['cuda_idx_num'], title2print=title2print)
                 write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
             else:
                 raise Exception('run_type must be caption or arithmetics!')
