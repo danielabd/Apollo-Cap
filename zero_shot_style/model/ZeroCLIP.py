@@ -2272,11 +2272,11 @@ class CLIPTextGenerator:
             clip_target_probs_weightes_style = sentiment_grades * clip_target_probs_source
             clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style / clip_target_probs_weightes_style.sum()
 
-            source_target_with_style = torch.zeros_like(probs[idx_p])
+            source_target_with_style = torch.zeros_like(probs[idx_p])+EPSILON
             source_target_with_style[top_indices[idx_p]] = clip_target_probs_weightes_style_normalized
             source_target_with_style = source_target_with_style.unsqueeze(0)
 
-            target_fixed = torch.zeros_like(probs[idx_p])
+            target_fixed = torch.zeros_like(probs[idx_p])+EPSILON
             target_fixed[top_indices[idx_p]] = target_probs_fixed
             target_fixed = target_fixed.unsqueeze(0)
 
