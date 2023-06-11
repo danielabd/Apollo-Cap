@@ -3,11 +3,11 @@ dataset: senticap # senticap,flickrstyle10k
 style_type: style_embed  #'style_embed' or 'emoji' or 'erc' or 'roBERTa' #todo
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
-debug: True # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+debug: False #
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: disabled #'disabled, offline, online' #todo: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+wandb_mode: online #'disabled, offline, online' #todo: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ##for validation
 #specific_idxs_to_skip: [2,3] #todo
 max_num_of_imgs: -1 #todo
