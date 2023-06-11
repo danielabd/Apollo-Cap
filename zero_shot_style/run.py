@@ -964,7 +964,7 @@ def main():
                 #                                    evaluation_obj=evaluation_obj,
                 #                                    **config)
                 clip_img = None
-                if config['update_ViT']:
+                if config.get('update_ViT',False):
                     image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False,
                                                                               get_preroccessed_img=True,
                                                                               kv_only_first_layer=config.get(

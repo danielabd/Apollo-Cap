@@ -179,11 +179,17 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
     device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
     clip_grades = (torch.cat(encoded_captions) @ image_features.t()).squeeze()
-    if evaluation_obj and 'style_classification' in evaluation_obj:
-        style_cls_grades = [evaluation_obj['style_classification'].compute_score(label, c) for c in captions]
+    if evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj):
+        if 'style_classification' in evaluation_obj:
+            style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
+        elif 'style_classification_roberta' in evaluation_obj:
+            style_cls_grades = torch.tensor(
+                evaluation_obj['style_classification_roberta'].compute_label_for_list(captions, label)).to(device)
         #check if there is caption with correct style
         consider_style = False
         for i in style_cls_grades:
+            if type(i)==type((1,1)):
+                i = i[0]
             if i>0:
                 consider_style = True
                 break
@@ -546,7 +552,7 @@ def update_running_params(label, config):
         config = update_zerocap_params(config)  # todo:check if need to return it
         config['use_style_model'] = False
     else:  # label=positive,negative...
-        if config['use_style_model']:
+        if config['use_style_model'] or config['cut_cand2clip']:
             config = update_running_params(config)
         else:
             config = update_zerocap_params(config)
@@ -792,6 +798,7 @@ def initial_variables():
 
     args = get_args()
     config = get_hparams(args)
+
     # os.environ["CUDA_VISIBLE_DEVICES"] = config['cuda_idx_num']
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     mean_embedding_vec_path = os.path.join(os.path.expanduser('~'), config['mean_vec_emb_file'])
