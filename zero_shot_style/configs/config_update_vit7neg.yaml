@@ -31,6 +31,8 @@ max_batch_size_style_cls: 10
 ##########
 mul_clip_styl: True
 only_clip_styled_clip_loss: True
+sentiment_temperature: 0.02
+
 ######
 desired_labels:
   senticap: [negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
@@ -43,7 +45,7 @@ experiement_global_name:
 ###### update clip ViT tensors
 update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
 kv_only_first_layer: True
-num_iterations_clip_style: 6
+num_iterations_clip_style: 3
 loss_scale_style_clip: 4.013
 loss_scale_src_clip_clip: 0.000002   #0.5
 start_loop_clip_style_in_word_num: 1
@@ -147,13 +149,13 @@ beam_size:
 
 #my embedding model real std
 text_style_scale:
-  senticap: 3.3 #8.7 #- comparison to other baselines
+  senticap: 0 #3.3 #8.7 #- comparison to other baselines
   flickrstyle10k: 4.518869472661613
 ce_scale:
-  senticap: 2.89 #3.34 #2.2 #- comparison to other baselines
+  senticap: 0.79 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap:  5.6 #1.6 #- comparison to other baselines
+  senticap: 3.21 #1.6 #- comparison to other baselines
   flickrstyle10k: 4.587441437503964
 
 #motorcycle

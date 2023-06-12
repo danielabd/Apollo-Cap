@@ -168,12 +168,18 @@ def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factua
         else:
             # single_data = {'idx': img_name_to_idx[k], 'img_num': k, label1: pos, label2: neg}
             # single_data = {'idx': img_name_to_idx[k], 'img_num': k,'sweep_exp': sweep_exp, label1: pos, label2: neg}
-            single_data = {'idx': img_name_to_idx[k], 'img_num': k,'sweep_exp': sweep_exp}
+            if merge_sweep:
+                single_data = {'idx': img_name_to_idx[k], 'img_num': k,'sweep_exp': sweep_exp}
+            else:
+                single_data = {'idx': img_name_to_idx[k], 'img_num': k}
         if label1:
             single_data[label1] = pos
         if label2:
             single_data[label2] = neg
-        total_data[sweep_exp] = single_data
+        if merge_sweep:
+            total_data[sweep_exp] = single_data
+        else:
+            total_data[img_name_to_idx[k]] = single_data
     return total_data
 
 
@@ -405,6 +411,8 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/StylizedZeroCap_update_vit_along_iteration_global_prms/04_06_2023"
         # 5.6.23 - test 2
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/StylizedZeroCap_update_vit_along_iteration_global_prms_test2/05_06_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v_test_neg"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v_test_pos"
 
         # src_dir_text_style = os.path.join(base_path,'text_style')
         # text_style_dir_path = os.listdir(src_dir_text_style)
@@ -567,9 +575,9 @@ def main():
     exp_to_merge = ["zerostylecap"]
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "zerostylecap"]
 
-    test_split = 'val'
+    test_split = 'test'
     merge_dirs = True
-    merge_res_of_sweep = True
+    merge_res_of_sweep = False
 
     if merge_dirs:
         dataset = 'senticap'

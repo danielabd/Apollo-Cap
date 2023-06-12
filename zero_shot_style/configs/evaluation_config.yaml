@@ -1,7 +1,7 @@
 #senticap
 dataset: senticap # senticap,flickrstyle10k
 style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
-data_split: val #val, test #todo
+data_split: test #val, test #todo
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 
@@ -17,7 +17,7 @@ update_ViT: False
 
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
-  senticap: [negative]  #[positive, negative, factual] #todo
+  senticap: [positive, negative]  #[positive, negative, factual] #todo
   flickrstyle10k: [humor, romantic]
 
 desired_labels:
@@ -51,7 +51,12 @@ res_path2eval:
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_stop_in_good_res/15_05_2023/total_results_text_style_.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/source_zero_stylecap/29_05_2023/total_results.csv
     #baseline - 31.5.23
-#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/prompt_manipulation/total_results_prompt_manipulation_.csv
+    prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/prompt_manipulation/total_results_prompt_manipulation_.csv
+    image_manipulation: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/image_manipulation/total_results_image_manipulation.csv
+    image_and_prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/image_and_prompt_manipulation/total_results_image_and_prompt_manipulation.csv
+
+
+#    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/prompt_manipulation/total_results_prompt_manipulation_.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/image_manipulation/total_results_image_manipulation.csv
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/image_and_prompt_manipulation/total_results_image_and_prompt_manipulation.csv
 #      style embed
@@ -79,7 +84,11 @@ res_path2eval:
 #     val 20 vpos20
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v20pos/11_06_2023/18-hponm3ll-feasible-sweep-18/results_05_55_02__11_06_2023.csv
 #     val 20vneg22
-     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v22neg/11_06_2023/9-i5ujidxz-crisp-sweep-9/results_11_48_42__11_06_2023.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v22neg/11_06_2023/9-i5ujidxz-crisp-sweep-9/results_11_48_42__11_06_2023.csv
+#     v_test_neg_wo update CLIP
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v_test_neg/total_results_text_style_v_test_neg_wo_update_clip.csv
+##     v_test_pos_wo update CLIP
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v_test_pos/total_results_text_style_v_test_pos_wo_update_clip.csv
 
 
 #
