@@ -136,7 +136,8 @@ def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factua
         label2 = 'negative'
     elif 'romantic' in data.columns:
         label2 = 'romantic'
-    for i,k in enumerate(data[data.columns[0]]):
+    # for i,k in enumerate(data[data.columns[0]]):
+    for i,k in enumerate(data['img_num']):
         if label1:
             pos = data[label1][i]
         if label2:
@@ -414,8 +415,8 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v_test_neg"
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v_test_pos"
         #test with update vit-pos
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v_test_pos/13_06_2023"
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v_test_neg/13_06_2023"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v_test_pos"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v_test_neg"
 
         # src_dir_text_style = os.path.join(base_path,'text_style')
         # text_style_dir_path = os.listdir(src_dir_text_style)
