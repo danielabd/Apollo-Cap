@@ -1,0 +1,45 @@
+program: run_3_loss_roberta_v100pos.py
+project: StylizedZeroCap_roberta_3_loss_v100_pos
+method: bayes
+metric:
+  goal: maximize #minimize
+  name:  evaluation/final_avg_total_score
+#  name:  evaluation/avg_clip_score
+parameters:
+  ce_scale:
+#    distribution: categorical
+#    values:
+#      - 0.6
+#      - 0.7
+#      - 0.8
+    max: 3 #3 #1.8  #4 #3 #5
+    min: 0.2 #1 #1.3 #2 #1
+    distribution: uniform
+  clip_scale:
+    max: 12 #7 #6 #6 #5
+    min: 0.5 #4.5 #3.6 #2.5 #1.5 #1
+    distribution: uniform
+#    distribution: categorical
+#    values:
+#      - 4
+#  sentiment_temperature:
+##    distribution: categorical
+##    values:
+##      - 0.001
+##      - 0.05
+#    max: 0.05 #7 #6 #6 #5
+#    min: 0.001 #4.5 #3.6 #2.5 #1.5 #1
+#    distribution: uniform
+  text_style_scale:
+#    distribution: categorical
+#    values:
+#      - 0.5
+#      - 0.7
+#      - 0.9
+#      - 1.8
+#      - 3.2
+#      - 6.4
+    max: 20 #3.6 #4.7 #5 #6 # 4.5 #9
+    min: 0.5 #1 #2 #4.2 #3 # 3.5 #2
+    distribution: uniform
+
