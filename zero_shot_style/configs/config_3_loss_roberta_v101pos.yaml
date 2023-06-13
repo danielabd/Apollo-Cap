@@ -14,8 +14,8 @@ max_num_of_imgs: -1 #5 #todo
 reverse_imgs_list: False
 data_type: val #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-specific_img_idxs_to_test: [5,6,207]
-#specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
+#specific_img_idxs_to_test: [5,6,207]
+specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
 ########## 10.5.23
 cut_cand2clip: False
 iterate_until_good_fluency: False
@@ -28,7 +28,7 @@ heavy_max_num_iterations: 7
 max_batch_size_style_cls: 10
 ##########
 experiement_global_name:
-  senticap: StylizedZeroCap_roberta_3_loss_v100pos #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_roberta_3_loss_v101pos #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 sentiment_temperature: 0.001
 ######
@@ -148,13 +148,13 @@ beam_size:
 
 #my embedding model real std
 text_style_scale:
-  senticap: 0 #1.324 # 3.3 #8.7 #- comparison to other baselines
+  senticap: 9.68 #1.324 # 3.3 #8.7 #- comparison to other baselines
   flickrstyle10k: 4.518869472661613
 ce_scale:
-  senticap: 0.5 #3.34 #1.706 #3.34 #2.2 #- comparison to other baselines
+  senticap: 1.96 #3.34 #1.706 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap:  16 # 5.6 #1.6 #- comparison to other baselines
+  senticap:  2.19 # 5.6 #1.6 #- comparison to other baselines
   flickrstyle10k: 4.587441437503964
 
 
