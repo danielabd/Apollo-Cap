@@ -1793,7 +1793,10 @@ class CLIPTextGenerator:
             top_texts = []
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]:
-                top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+                text = prefix_text + self.lm_tokenizer.decode(x)
+                if len(text)>77:
+                    text = ''
+                top_texts.append(text)
             ######todo: daniela debug    effect of update CLIP
             # top_texts = ["The bedroom used child abuse"]+["The bedroom of a sweet baby"]
             # if  update_initial_clip: #todo:remove it
