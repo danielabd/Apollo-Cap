@@ -39,7 +39,7 @@ desired_labels:
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 experiement_global_name:
-  senticap: StylizedZeroCap_update_vit_focus_clip_v8neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_update_vit_focus_clip_v_test_neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 ###### update clip ViT tensors
