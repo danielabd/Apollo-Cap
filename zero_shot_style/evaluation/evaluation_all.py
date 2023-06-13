@@ -812,6 +812,90 @@ def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None,
     return gts
 
 
+
+def get_res_data_GPT(res_paths):
+    '''
+
+    :param res_paths: dict. keys:  'prompt_manipulation', 'image_manipulation'. values: path to res
+    :return: res_data_per_test: dict. keys:  'prompt_manipulation', 'image_manipulation'. values: dict to res per image name and style
+    '''
+    res_data_per_test_source = {}
+    res_data_per_test_gpt = {}
+    i = 1 #0 - idx_img_name_in_res
+    j = 2 # caption res in column idx=2
+    idxs_source = []
+    idxs_gpt = []
+    for test_name in res_paths:
+        if test_name.startswith('capdec'):
+            i = 0
+            j = 1
+        res_data_source = {}
+        res_data_gpt = {}
+        with open(res_paths[test_name], 'r') as csvfile:
+            spamreader = csv.reader(csvfile)
+            title = True
+            styles = []
+            for row in spamreader:
+                if row[1]=='':
+                    continue
+                if row[0]=='gpt':
+                    s_row = row.copy()
+                    row[1] = s_row[1].split(' ')[0]
+                    row[2] = s_row[1].split(' - ')[1]
+                if '.jpg' in row[i]:
+                    k = row[i].split('.jpg')[0]
+                else:
+                    k = row[i]
+                if 'COCO' in k:
+                    k = k.split('_')[-1]
+                try:
+                    k = int(k)  
+                except:
+                    pass
+                if title:
+                    if row[1]=='factual':
+                        i = 0
+                        j = 1
+                    try:
+                        i = row.index('img_num')
+                        j = row.index('img_num') + 1
+                    except:
+                        pass
+                    styles = row[i+1:]
+                    styles.remove('')
+                    title = False
+                    continue
+                else:
+                    try:
+                        if row[0] == 'source':
+                            idxs_source.append(k)
+                            res_data_source[k] = {}
+                            for i_s, s in enumerate(styles):
+                                # res_data[k][s] = row[i+1]
+                                # limit sentence to target_seq_length as we create in ZeroStyleCap
+                                res_data_source[k][s] = ' '.join(row[i_s + j].split()[:target_seq_length])
+                        elif row[0] == 'gpt':
+                            res_data_gpt[k] = {}
+                            idxs_gpt.append(k)
+                            for i_s, s in enumerate(styles):
+                                # res_data[k][s] = row[i+1]
+                                # limit sentence to target_seq_length as we create in ZeroStyleCap
+                                if row[i_s + j]=="":
+                                    continue
+                                res_data_gpt[k][s] = ' '.join(row[i_s + j].split()[:target_seq_length])
+                    except:
+                        pass
+
+                if row[0] == 'source':
+                    res_data_per_test_source[test_name] = res_data_source
+                elif row[0] == 'gpt':
+                    res_data_per_test_gpt[test_name] = res_data_gpt
+        for i in idxs_source:
+            if i not in idxs_gpt:
+                res_data_per_test_source[test_name].pop(i)
+    return res_data_per_test_source, res_data_per_test_gpt
+
+
 def get_res_data(res_paths):
     '''
 
@@ -838,7 +922,7 @@ def get_res_data(res_paths):
                 if 'COCO' in k:
                     k = k.split('_')[-1]
                 try:
-                    k = int(k)  
+                    k = int(k)
                 except:
                     pass
                 if title:
@@ -1201,35 +1285,54 @@ def main():
     gts_per_data_set = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_split'],
                                     factual_captions, config['max_num_imgs2test'])
 
-    res_data_per_test = get_res_data(config['res_path2eval'])
-    # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
-    # exit(0)
-    mean_score, all_scores, std_score, median_score = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'],
-                                        config['cuda_idx'], data_dir, config['txt_cls_model_paths'],
-                                        config['labels_dict_idxs'], gt_imgs_for_test, config)
+    # res_data_per_test = get_res_data(config['res_path2eval'])
+    #todo: remove
+    print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
+    res_data_per_test_source, res_data_per_test_gpt = get_res_data_GPT(config['res_path2eval'])
+    for res_data_idx, res_data_per_test in enumerate([res_data_per_test_source, res_data_per_test_gpt]):
+        if res_data_idx == 0:
+            prefix_file_name = 'source_'
+        elif res_data_idx == 1:
+            prefix_file_name = 'gpt_'
+        # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
+        # exit(0)
+        mean_score, all_scores, std_score, median_score = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'],
+                                            config['cuda_idx'], data_dir, config['txt_cls_model_paths'],
+                                            config['labels_dict_idxs'], gt_imgs_for_test, config)
 
-    vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
-    # analyze_fluency(all_scores,config)
+        vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
+        # analyze_fluency(all_scores,config)
 
-    for test_name in res_data_per_test:
-        for metric in config['metrics']:
-            for style in config['styles']:
-                print(f"{test_name}: {config['dataset']}: {metric} mean score for {style} = {mean_score[test_name][metric][style]}")
-                print(f"{test_name}: {config['dataset']}: {metric} std score for {style} = {std_score[test_name][metric][style]}")
-                print(f"{test_name}: {config['dataset']}: {metric} median score for {style} = {median_score[test_name][metric][style]}")
-    for test_name in res_data_per_test:
-        print(f'Vocabulary size for experiment {test_name} dataset is {vocab_size[test_name]}')
+        for test_name in res_data_per_test:
+            for metric in config['metrics']:
+                for style in config['styles']:
+                    print(f"{test_name}: {config['dataset']}: {metric} mean score for {style} = {mean_score[test_name][metric][style]}")
+                    print(f"{test_name}: {config['dataset']}: {metric} std score for {style} = {std_score[test_name][metric][style]}")
+                    print(f"{test_name}: {config['dataset']}: {metric} median score for {style} = {median_score[test_name][metric][style]}")
+        for test_name in res_data_per_test:
+            print(f'Vocabulary size for experiment {test_name} dataset is {vocab_size[test_name]}')
 
-    tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-                                              config['tgt_eval_results_file_name'])
-    tgt_eval_results_file_name_for_all_frames = os.path.join(
-        list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-        config['tgt_eval_results_file_name_for_all_frames'])
+        # tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
+        #                                           config['tgt_eval_results_file_name'])
+        # tgt_eval_results_file_name_for_all_frames = os.path.join(
+        #     list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
+        #     config['tgt_eval_results_file_name_for_all_frames'])
+        # todo: remove
+        print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
+        tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
+                                                  prefix_file_name+config['tgt_eval_results_file_name'])
 
-    print(f"finished to evaluat on {len(all_scores)} images.")
-    write_results(mean_score, tgt_eval_results_file_name, config['dataset'], config['metrics'], config['styles'],
-                  vocab_size, std_score, median_score)
-    write_results_for_all_frames(all_scores, tgt_eval_results_file_name_for_all_frames, config['metrics'])
+
+        tgt_eval_results_file_name_for_all_frames = os.path.join(
+            list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
+            prefix_file_name+config['tgt_eval_results_file_name_for_all_frames'])
+
+
+
+        print(f"finished to evaluat on {len(all_scores)} images.")
+        write_results(mean_score, tgt_eval_results_file_name, config['dataset'], config['metrics'].copy(), config['styles'],
+                      vocab_size, std_score, median_score)
+        write_results_for_all_frames(all_scores, tgt_eval_results_file_name_for_all_frames, config['metrics'])
 
     print('Finished to evaluate')
 
