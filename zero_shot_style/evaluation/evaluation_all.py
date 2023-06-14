@@ -1285,15 +1285,16 @@ def main():
     gts_per_data_set = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_split'],
                                     factual_captions, config['max_num_imgs2test'])
 
-    # res_data_per_test = get_res_data(config['res_path2eval'])
-    #todo: remove
-    print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
-    res_data_per_test_source, res_data_per_test_gpt = get_res_data_GPT(config['res_path2eval'])
-    for res_data_idx, res_data_per_test in enumerate([res_data_per_test_source, res_data_per_test_gpt]):
-        if res_data_idx == 0:
-            prefix_file_name = 'source_'
-        elif res_data_idx == 1:
-            prefix_file_name = 'gpt_'
+    res_data_per_test = get_res_data(config['res_path2eval'])
+    if True:
+    # #todo: remove
+    # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
+    # res_data_per_test_source, res_data_per_test_gpt = get_res_data_GPT(config['res_path2eval'])
+    # for res_data_idx, res_data_per_test in enumerate([res_data_per_test_source, res_data_per_test_gpt]):
+    #     if res_data_idx == 0:
+    #         prefix_file_name = 'source_'
+    #     elif res_data_idx == 1:
+    #         prefix_file_name = 'gpt_'
         # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
         # exit(0)
         mean_score, all_scores, std_score, median_score = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'],
@@ -1312,20 +1313,20 @@ def main():
         for test_name in res_data_per_test:
             print(f'Vocabulary size for experiment {test_name} dataset is {vocab_size[test_name]}')
 
-        # tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-        #                                           config['tgt_eval_results_file_name'])
-        # tgt_eval_results_file_name_for_all_frames = os.path.join(
-        #     list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-        #     config['tgt_eval_results_file_name_for_all_frames'])
-        # todo: remove
-        print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
         tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-                                                  prefix_file_name+config['tgt_eval_results_file_name'])
-
-
+                                                  config['tgt_eval_results_file_name'])
         tgt_eval_results_file_name_for_all_frames = os.path.join(
             list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-            prefix_file_name+config['tgt_eval_results_file_name_for_all_frames'])
+            config['tgt_eval_results_file_name_for_all_frames'])
+
+        # todo: remove
+        # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
+        # tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
+        #                                           prefix_file_name+config['tgt_eval_results_file_name'])
+        #
+        # tgt_eval_results_file_name_for_all_frames = os.path.join(
+        #     list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
+        #     prefix_file_name+config['tgt_eval_results_file_name_for_all_frames'])
 
 
 
