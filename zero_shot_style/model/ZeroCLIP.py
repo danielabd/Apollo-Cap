@@ -2228,7 +2228,10 @@ class CLIPTextGenerator:
             top_texts = []
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]:
-                top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+                text = prefix_text + self.lm_tokenizer.decode(x)
+                if len(text)>77:
+                    text = ''
+                top_texts.append(text)
 
             # grades according to match to style
             probs_val,indices = top_probs_LM[idx_p].topk(DEBUG_NUM_WORDS)
