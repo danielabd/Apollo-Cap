@@ -30,7 +30,7 @@ desired_min_clip_score: 0.28
 heavy_max_num_iterations: 7
 max_batch_size_style_cls: 10
 ##########
-mul_clip_styl: True
+mul_clip_style: True
 only_clip_styled_clip_loss: True
 sentiment_temperature: 0.026
 
