@@ -228,14 +228,15 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
 
 def run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, base_img, dataset_type, imgs_path,
-                   img_weights, cuda_idx, title2print):
+                   img_weights, cuda_idx, title2print,img_name=None, style=None):
     if text_generator == None:
-        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, config=config, **vars(config))
+        text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, model_path=model_path, config=config, img_idx=config['img_path_idx'], **vars(config))
     # text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, **vars(config))
 
     image_features = text_generator.get_combined_feature(imgs_path, [], img_weights, None)
     t1 = timeit.default_timer();
-    captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'],img_idx=config['img_path_idx'])
+    captions = text_generator.run(image_features, config['cond_text'], beam_size=config['beam_size'],img_idx=config['img_path_idx'], img_name=img_name, style=style)
+
     t2 = timeit.default_timer();
 
     if config['model_based_on'] == 'bert':
@@ -322,7 +323,6 @@ def calculate_avg_score_wo_fluence(clip_score, style_cls_score):
     avg_total_score = 2 * (style_cls_score * clip_score) / (
                 style_cls_score + clip_score)
     return avg_total_score
-
 
 
 def calculate_avg_score(clip_score, fluency_score, style_cls_score):
@@ -971,7 +971,7 @@ def main():
                 #                                    evaluation_obj=evaluation_obj,
                 #                                    **config)
                 clip_img = None
-                if config['update_ViT']:
+                if config.get('update_ViT',False):
                     image_features, clip_img = text_generator.get_img_feature([img_path], None, return_k_v=False,
                                                                               get_preroccessed_img=True,
                                                                               kv_only_first_layer=config.get(
@@ -1019,7 +1019,7 @@ def main():
                 best_caption = run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, img_name,
                                               label, imgs_path=config['arithmetics_imgs'],
                                               img_weights=config['arithmetics_weights'],
-                                              cuda_idx=config['cuda_idx_num'], title2print=title2print)
+                                              cuda_idx=config['cuda_idx_num'], title2print=title2print, img_name=img_name, style=label)
                 write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
             else:
                 raise Exception('run_type must be caption or arithmetics!')

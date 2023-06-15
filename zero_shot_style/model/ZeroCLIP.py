@@ -1174,7 +1174,7 @@ class CLIPTextGenerator:
                     for i_beam in range(probs.shape[0]):
                         x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
                         # Create a grid of subplots
-                        fig, axs = plt.subplots(2, 3)
+                        fig, axs = plt.subplots(3, 2)
 
                         # Plot the graphs in separate subplots
                         axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
@@ -1183,20 +1183,26 @@ class CLIPTextGenerator:
                         axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
                         axs[0, 1].set_title('Fixed LM Probs')
                         # clip_target_probs_before_style
-                        if len(sentiment_grades_before_temp.shape)<2:
-                            sentiment_grades_before_temp = torch.unsqueeze(sentiment_grades_before_temp,1)
+                        # if len(sentiment_grades_before_temp.shape)<2:
+                        #     sentiment_grades_before_temp = torch.unsqueeze(sentiment_grades_before_temp,1)
+                        if len(sentiment_grades_before_temp.shape)>1:
+                            sentiment_grades_before_temp=torch.squeeze(sentiment_grades_before_temp)
                         axs[1, 0].plot(x, sentiment_grades_before_temp.cpu().numpy(), label='sentiment_grades_before_temp')
                         axs[1, 0].set_title('sentiment grades before temp')
 
+                        if len(sentiment_grades_after_temp.shape) > 1:
+                            sentiment_grades_after_temp = torch.squeeze(sentiment_grades_after_temp)
                         axs[1, 1].plot(x, sentiment_grades_after_temp.cpu().numpy(), label='sentiment_grades_after_temp')
                         axs[1, 1].set_title('sentiment grades after temp')
 
-                        if len(clip_target_probs_before_style.shape)<2:
-                            clip_target_probs_before_style = torch.unsqueeze(clip_target_probs_before_style,1)
-                        axs[2, 0].plot(x, clip_target_probs_before_style.cpu().numpy(), label='clip_target_probs_before_style')
+                        # if len(clip_target_probs_before_style.shape)<2:
+                        #     clip_target_probs_before_style = torch.unsqueeze(clip_target_probs_before_style,1)
+                        if len(clip_target_probs_before_style.shape) > 1:
+                            clip_target_probs_before_style = torch.squeeze(clip_target_probs_before_style)
+                        axs[2, 0].plot(x, clip_target_probs_before_style.cpu().detach().numpy(), label='clip_target_probs_before_style')
                         axs[2, 0].set_title('clip target probs before style')
 
-                        axs[2, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
+                        axs[2, 1].plot(x, target_probs_clip.cpu().detach().numpy(), label='target_probs_clip')
                         axs[2, 1].set_title('Target Probs Clip')
 
                         # Add a global title
@@ -2159,6 +2165,10 @@ class CLIPTextGenerator:
             sentiment_grades_after_temp_t[top_indices[idx_p]] = sentiment_grades_after_temp
             sentiment_grades_after_temp_t = sentiment_grades_after_temp_t.unsqueeze(0)
 
+            clip_target_probs_before_style_t = torch.zeros_like(probs[idx_p])
+            clip_target_probs_before_style_t[top_indices[idx_p]] = clip_target_probs_before_style
+            clip_target_probs_before_style_t = clip_target_probs_before_style_t.unsqueeze(0)
+
             if grad_lm:
                 cur_clip_loss = torch.sum(-(target.detach() * torch.log(probs[idx_p:(idx_p + 1)]))) #todo check grad becuase ViT - I added .detach()
             else:
@@ -2198,7 +2208,7 @@ class CLIPTextGenerator:
         #     total_best_sentences_clip[debug_best_top_texts_clip[i]] = debug_best_probs_vals_clip[i]
         # for i in np.argsort(debug_best_probs_vals_LM)[-DEBUG_NUM_WORDS:]:
         #     total_best_sentences_LM[debug_best_top_texts_LM[i]] = debug_best_probs_vals_LM[i]
-        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs, target[0], clip_target_probs_before_style,sentiment_grades_before_temp_t,sentiment_grades_after_temp_t
+        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs, target[0], clip_target_probs_before_style_t,sentiment_grades_before_temp_t,sentiment_grades_after_temp_t
 
 
     def get_clip_probs(self, probs, context_tokens):
