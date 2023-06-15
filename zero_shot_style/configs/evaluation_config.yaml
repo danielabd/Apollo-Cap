@@ -94,11 +94,11 @@ res_path2eval:
 #    zerstylecap with 3 losses - pos
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v101pos_test.csv
       #zerstylecap with 3 losses - neg
-#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101neg_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v101neg_test.csv
+     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101neg_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v101neg_test.csv
     #zerstylecap update vit - pos
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v_test_pos/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v_test_pos.csv
      #zerstylecap update vit - neg
-     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v101neg_test.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v101neg_test.csv
 
 
 #
