@@ -1168,41 +1168,41 @@ class CLIPTextGenerator:
             if self.config.get('calc_grad_according_to_first_beam', False):
                 probs = torch.unsqueeze(probs[0][:max_prob_len], 0)  # todo:remove it # 9.6.23
 
-            # # # print probs graphs
-            # if self.config.get('plot_prob_graphs',False):
-            #     if i>=1:
-            #         for i_beam in range(probs.shape[0]):
-            #             x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
-            #             # Create a grid of subplots
-            #             fig, axs = plt.subplots(2, 3)
-            #
-            #             # Plot the graphs in separate subplots
-            #             axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
-            #             axs[0, 0].set_title('Source LM Probs')
-            #
-            #             axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
-            #             axs[0, 1].set_title('Fixed LM Probs')
-            #             # clip_target_probs_before_style
-            #             axs[1, 0].plot(x, sentiment_grades_before_temp.cpu().numpy(), label='sentiment_grades_before_temp')
-            #             axs[1, 0].set_title('sentiment grades before temp')
-            #
-            #             axs[1, 1].plot(x, sentiment_grades_after_temp.cpu().numpy(), label='sentiment_grades_after_temp')
-            #             axs[1, 1].set_title('sentiment grades after temp')
-            #
-            #
-            #             axs[2, 0].plot(x, clip_target_probs_before_style.cpu().numpy(), label='clip_target_probs_before_style')
-            #             axs[2, 0].set_title('clip target probs before style')
-            #
-            #             axs[2, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
-            #             axs[2, 1].set_title('Target Probs Clip')
-            #
-            #             # Add a global title
-            #             fig.suptitle(f'i_beam={i_beam}, iteration number={i}')
-            #
-            #         # Adjust the spacing between subplots
-            #         plt.tight_layout()
-            #
-            #         plt.show(block=False)
+            # # print probs graphs
+            if self.config.get('plot_prob_graphs',False):
+                if i>=1:
+                    for i_beam in range(probs.shape[0]):
+                        x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+                        # Create a grid of subplots
+                        fig, axs = plt.subplots(2, 3)
+
+                        # Plot the graphs in separate subplots
+                        axs[0, 0].plot(x, probs_before_shift[-1].cpu().numpy(), label='source_LM_probs')
+                        axs[0, 0].set_title('Source LM Probs')
+
+                        axs[0, 1].plot(x, probs[-1].detach().cpu().numpy(), label='fixed_LM_probs')
+                        axs[0, 1].set_title('Fixed LM Probs')
+                        # clip_target_probs_before_style
+                        axs[1, 0].plot(x, sentiment_grades_before_temp.cpu().numpy(), label='sentiment_grades_before_temp')
+                        axs[1, 0].set_title('sentiment grades before temp')
+
+                        axs[1, 1].plot(x, sentiment_grades_after_temp.cpu().numpy(), label='sentiment_grades_after_temp')
+                        axs[1, 1].set_title('sentiment grades after temp')
+
+
+                        axs[2, 0].plot(x, clip_target_probs_before_style.cpu().numpy(), label='clip_target_probs_before_style')
+                        axs[2, 0].set_title('clip target probs before style')
+
+                        axs[2, 1].plot(x, target_probs_clip.cpu().numpy(), label='target_probs_clip')
+                        axs[2, 1].set_title('Target Probs Clip')
+
+                        # Add a global title
+                        fig.suptitle(f'i_beam={i_beam}, iteration number={i}')
+
+                    # Adjust the spacing between subplots
+                    plt.tight_layout()
+
+                    plt.show(block=False)
 
 
 
@@ -1302,24 +1302,12 @@ class CLIPTextGenerator:
                 # contex=past_ke_values of GPT2. tuple of 24, each one composed of 2, s.t. each one of size (5,16,<num of words in context>,64)
                 # update clip
                 # self.clip_img = self.clip_preprocess(Image.open(self.img_path)).unsqueeze(0).to(self.device)
-
                 ########## try with continue update CLIP and not rest it every global iteration of ZeroCap
                 if i==0: #in the first iteration of generating new token
-                # try:
-                #     image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
-                #                                                        updated_v_in=shifted_v_clip, return_k_v=True,
-                #                                                        kv_only_first_layer=self.config[
-                #                                                            'kv_only_first_layer'])
-                # except:
                     image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, return_k_v=True,
                                                                        kv_only_first_layer=self.config[
                                                                            'kv_only_first_layer'])
-                ##########
-
-
                     window_mask_clip = torch.ones_like(k_clip[0]).to(self.device)
-
-
                     if type(image_fts) == tuple:
                         image_fts = image_fts[0]
                     image_features = sum(image_fts)
@@ -1339,14 +1327,6 @@ class CLIPTextGenerator:
 
                     shifted_k_clip = [k_clip[i1] + curr_shift_k[i1] for i1 in range(len(curr_shift_k))]
                     shifted_v_clip = [v_clip[i1] + curr_shift_v[i1] for i1 in range(len(curr_shift_v))]
-                    # shifted_k_clip = list(
-                    #     map(add_context_clip, tuple(k_clip), tuple(curr_shift_k)))  # array like addition for tuples
-                    # shifted_v_clip = list(
-                    #     map(add_context_clip, v_clip, curr_shift_v))  # array like addition for tuples
-
-                    # self.image_features, k, v = self.get_img_feature(self.img_path, None, source_clip=False,
-                    #                                                  use_flash_attention=False, k=shifted_k_clip, v=shifted_v_clip,
-                    #                                                  return_k_v=True)
                     image_fts, k_clip, v_clip = self.clip.encode_image(self.clip_img, updated_k_in=shifted_k_clip,
                                                                        updated_v_in=shifted_v_clip, return_k_v=True,kv_only_first_layer=self.config['kv_only_first_layer'])
                     if type(image_fts) == tuple:
@@ -1406,9 +1386,7 @@ class CLIPTextGenerator:
 
                     clip_ViT_loss.backward()
 
-                    ##############
                     ###add the shift to context_clip
-
                     factor = 1 #1 #todo check
                     # print(f"factor={factor}, global_iteration={i}, update_clip_iter={clip_update_iter}, clip_ViT_loss={clip_ViT_loss}, clip_src_clip_loss={clip_src_clip_loss}, clip_style_loss={clip_style_loss}"
                     print(f"factor={factor}, global_iteration={i}, update_clip_iter={clip_update_iter}, clip_ViT_loss={clip_ViT_loss}, sentiment_temperature={self.config['sentiment_temperature']}")
