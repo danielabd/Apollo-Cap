@@ -17,7 +17,7 @@ update_ViT: False
 
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
-  senticap: [positive]  #[positive, negative, factual] #todo
+  senticap: [negative]  #[positive, negative, factual] #todo
   flickrstyle10k: [humor, romantic]
 
 desired_labels:
@@ -98,10 +98,10 @@ res_path2eval:
     #zerstylecap update vit - pos
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v_test_pos/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v_test_pos.csv
      #zerstylecap update vit - neg
-#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101neg_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v101neg_test.csv
-#
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v_test_neg/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v_test_neg.csv
 
-#
+
+
   flickrstyle10k:
 #    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
 #    capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
