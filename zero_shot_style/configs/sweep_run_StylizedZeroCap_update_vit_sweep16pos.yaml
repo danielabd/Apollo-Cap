@@ -1,0 +1,42 @@
+program: run_update_vit16pos.py
+project: StylizedZeroCap_update_vit_focus_clip_pos
+method: bayes
+metric:
+  goal: maximize #minimize
+  name:  evaluation/final_avg_total_score_clip_gpt
+#  name:  evaluation/avg_clip_score
+parameters:
+  sentiment_temperature:
+#    distribution: categorical
+#    values:
+#      - 0.1
+#      - 0.05
+    max: 0.3 #0.15 #0.05 #3 #1.8  #4 #3 #5
+    min: 0.15 #0.033 #0.01 #1 #1.3 #2 #1
+    distribution: uniform
+  ce_scale:
+#    distribution: categorical
+#    values:
+#      - 0.4
+#      - 0.8
+#      - 1.2
+    max: 0.2 #0.25 #3
+    min: 0.11 #0.1 #0.9 #0.1
+    distribution: uniform
+#  clip_scale:
+##    distribution: categorical
+##    values:
+##      - 3
+##      - 4
+#    max: 10 #4 #8 #4.5 #6
+#    min: 6 #3 #0.5 #0.1
+#    distribution: uniform
+#  num_iterations_clip_style:
+#    distribution: categorical
+#    values:
+#      - 1
+#      - 2
+#      - 3
+##    max: 3 #5 #6
+##    min: 1 #1 #3
+##    distribution: int_uniform

@@ -212,6 +212,58 @@ def get_statiistic_data(all_data,final_iterations_idx, loss_data_path):
             final_statistic_std[loss_i].append(statistics.stdev(loss_all_data[loss_i][word_i]))
     return final_statistic_mean, final_statistic_std
 
+def write_to_pdf_only_specific(all_data, img_dir_path, desired_scores, tgt_pdf_file_path,idxs2write):
+    # create a canvas
+    c = canvas.Canvas(tgt_pdf_file_path, pagesize=letter)
+    # set the font size
+    c.setFont("Helvetica", 10)
+    img_width = 130
+    img_height = 130
+    y = 0
+    # for i, idx in enumerate(all_data["ZeroStyleCap"]):
+    idxs2write_str = [str(i) for i in idxs2write]
+    for i, idx in enumerate(idxs2write_str):
+        y = y + 30
+        best_captions = {}
+        for style in all_data["ZeroStyleCap"][idx]:
+            image_num = int(all_data["ZeroStyleCap"][idx][style]['img_name'])
+            image_idx = all_data["ZeroStyleCap"][idx][style]['img_idx']
+            image_path = os.path.join(img_dir_path,all_data["ZeroStyleCap"][idx][style]['img_name']+'.jpg')
+            best_captions[style] = all_data["ZeroStyleCap"][idx][style]['best_caption']
+        title = f"image_num={image_num}, idx={image_idx}"
+
+        #write stylized captions
+        for s,style in enumerate(best_captions):
+            # write scores of stylized captions
+            y = y + 20*s
+            x = 20
+            for si,score_type in enumerate(desired_scores):
+                if score_type in all_data["ZeroStyleCap"][idx][style]:
+                    c.drawString(x, y, f"{score_type}: {all_data['ZeroStyleCap'][idx][style][score_type]},")
+                    score_len = c.stringWidth(f"{score_type}: {all_data['ZeroStyleCap'][idx][style][score_type]},")
+                    x = x+score_len+1
+            y = y + 15
+            # write stylized captions
+            c.drawString(20, y, f"{style}: {best_captions[style]}")
+
+        #write image
+        y = y+20
+        c.drawImage(image_path, 20,
+                    y,
+                    width=img_width, height=img_height)
+        #write title
+        y = y + img_height + 15
+        c.drawString(20, y, title)
+        y = y + 15
+        c.drawString(20, y, "----------------------------------------------------------------------")
+
+        if (i+1) % 3 == 0 and i != 0:
+            c.showPage()
+            y = 0
+    c.showPage()  # add this line to indicate the end of the last page
+    c.save()
+
+    print(f"finish to save pdf of bes results into: {tgt_pdf_file_path}")
 def write_to_pdf(all_data, img_dir_path, desired_scores, tgt_pdf_file_path):
     # create a canvas
     c = canvas.Canvas(tgt_pdf_file_path, pagesize=letter)
@@ -363,7 +415,9 @@ def main():
 
     best_data = get_best_data(all_data, desired_scores, scores_th)
 
-
+    tgt_pdf_file_path = os.path.join(eval_dir, 'val_20_imgs.pdf')
+    idxs2write = [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
+    write_to_pdf_only_specific(all_data, img_dir_path, desired_scores, tgt_pdf_file_path, idxs2write)
     write_to_pdf(best_data, img_dir_path, desired_scores, best_data_pdf_file_path)
     write_to_pdf(all_data, img_dir_path, desired_scores, all_data_pdf_file_path)
     # group loss data only for successful examples
