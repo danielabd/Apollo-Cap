@@ -2152,11 +2152,11 @@ class CLIPTextGenerator:
             target = target.unsqueeze(0)
 
             sentiment_grades_before_temp_t = torch.zeros_like(probs[idx_p])
-            sentiment_grades_before_temp_t[top_indices[idx_p]] = sentiment_grades_before_temp_t
+            sentiment_grades_before_temp_t[top_indices[idx_p]] = sentiment_grades_before_temp
             sentiment_grades_before_temp_t = sentiment_grades_before_temp_t.unsqueeze(0)
 
             sentiment_grades_after_temp_t = torch.zeros_like(probs[idx_p])
-            sentiment_grades_after_temp_t[top_indices[idx_p]] = sentiment_grades_after_temp_t
+            sentiment_grades_after_temp_t[top_indices[idx_p]] = sentiment_grades_after_temp
             sentiment_grades_after_temp_t = sentiment_grades_after_temp_t.unsqueeze(0)
 
             if grad_lm:
