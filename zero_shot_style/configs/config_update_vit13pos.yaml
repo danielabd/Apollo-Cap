@@ -7,7 +7,9 @@ debug: False #False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: disabled #'disabled, offline, online' #todo:
+wandb_mode: online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+plot_prob_graphs: False
+
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
 max_num_of_imgs: 5 #todo
@@ -47,7 +49,6 @@ loss_scale_style_clip: 4.013
 loss_scale_src_clip_clip: 0.000002   #0.5
 start_loop_clip_style_in_word_num: 1
 
-plot_prob_graphs: True
 num_iterations_clip_style: 2 #sweep 9
 ce_scale:
   senticap: 0.3735 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
