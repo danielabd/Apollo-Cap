@@ -40,7 +40,7 @@ EPSILON = 0.0000000001
 def get_args():
     parser.add_argument('--config_file', type=str,
                         # default=os.path.join('.', 'configs', 'config.yaml'),
-                        default=os.path.join('.', 'configs', 'run_update_vit13neg.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'run_update_vit14neg.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
