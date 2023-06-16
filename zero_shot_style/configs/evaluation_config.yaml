@@ -100,7 +100,9 @@ res_path2eval:
      #zerstylecap update vit - neg
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v_test_neg/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v_test_neg.csv
     # check sweep 30 for update vit
-     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v18pos/16_06_2023/tmp/total_results_text_style_tmp.csv
+     #ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v18pos/16_06_2023/tmp/total_results_text_style_tmp.csv
+     #update vit tesr 16.6.23
+     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/tmp/total_results_text_style_16_06_2023.csv
 
 
 
