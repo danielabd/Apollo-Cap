@@ -7,8 +7,8 @@ debug: False #False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: disabled #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-plot_prob_graphs: True #todo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+wandb_mode: online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+plot_prob_graphs: False #todo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
@@ -16,7 +16,7 @@ max_num_of_imgs: 5 #todo
 reverse_imgs_list: False
 data_type: val #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-specific_imgs_to_test: [86542183_5e312ae4d4,232874193_c691df882d] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+specific_imgs_to_test: [86542183_5e312ae4d4,232874193_c691df882d] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!! !!!!!!
 #specific_img_idxs_to_test: [5,6,207]
 #specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
 #specific_img_idxs_to_test: [5,134]
@@ -33,7 +33,7 @@ max_batch_size_style_cls: 10
 ##########
 mul_clip_style: True
 only_clip_styled_clip_loss: False
-sentiment_temperature: 0.01 #0.04
+sentiment_temperature: 0.1 #0.04
 ######
 desired_labels:
   senticap: [negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
@@ -41,7 +41,7 @@ desired_labels:
 
 experiement_global_name:
   senticap: StylizedZeroCap_update_vit_focus_clip_v13neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  flickrstyle10k: flickrstyle10k_ZeroStyleCap_mul_clip_style_humor_v1
+  flickrstyle10k: StylizedZeroCap_mul_clip_style_v1_humor
 
 ###### update clip ViT tensors
 update_ViT: False #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
@@ -61,7 +61,7 @@ text_style_scale:
   senticap: 0 #8.7 #- comparison to other baselines
   flickrstyle10k: 0
 
-save_config_file: False # False, True todo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+save_config_file: True # False, True todo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
