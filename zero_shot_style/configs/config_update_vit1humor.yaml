@@ -7,7 +7,7 @@ debug: False #False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+wandb_mode: disabled #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 plot_prob_graphs: False
 
 ##for validation
@@ -53,15 +53,15 @@ start_loop_clip_style_in_word_num: 1
 num_iterations_clip_style: 2 #sweep 9
 ce_scale:
   senticap: 0.3735 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
-  flickrstyle10k: 3.876555048088627
+  flickrstyle10k: 0.3735
 clip_scale:
   senticap: 1 #1.6 #- comparison to other baselines
-  flickrstyle10k: 4.587441437503964
+  flickrstyle10k: 1
 text_style_scale:
   senticap: 0 #8.7 #- comparison to other baselines
-  flickrstyle10k: 4.518869472661613
+  flickrstyle10k: 0
 
-save_config_file: True # False, True todo
+save_config_file: False # False, True todo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']

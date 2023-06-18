@@ -214,6 +214,7 @@ class CLIPTextGenerator:
         # MODEL = f"cardiffnlp/twitter-roberta-base-{task}-latest"
         MODEL = f"cardiffnlp/twitter-roberta-base-sentiment-latest"
 
+        self.sentiment_temperature = config.get('sentiment_temperature', 0.01)
         self.sentiment_model_name = MODEL
         if config['style_type'] == 'roberta':
             # tokenizer = AutoTokenizer.from_pretrained(MODEL)
@@ -241,7 +242,7 @@ class CLIPTextGenerator:
 
             # SENTIMENT: fields for type and scale of sentiment
             self.sentiment_scale = 1
-            self.sentiment_temperature = config.get('sentiment_temperature',0.01)
+            # self.sentiment_temperature = config.get('sentiment_temperature',0.01)
             self.sentiment_type = 'none' # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
 
         self.use_style_model = use_style_model
@@ -1782,7 +1783,7 @@ class CLIPTextGenerator:
             for x in top_indices[idx_p]:
                 text = prefix_text + self.lm_tokenizer.decode(x)
                 if len(text)>77:
-                    text = ''
+                    text = '.'
                 top_texts.append(text)
             ######todo: daniela debug    effect of update CLIP
             # top_texts = ["The bedroom used child abuse"]+["The bedroom of a sweet baby"]
@@ -1825,7 +1826,13 @@ class CLIPTextGenerator:
                             # self.config['desired_min_fluency_score']
                             # fixed_perplexity = 1 - np.min([results['perplexities'][0], MAX_PERPLEXITY]) / MAX_PERPLEXITY
 
-                            inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
+                            # inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
+                            if self.config['style_type'] == 'roberta':
+                                inputs = self.sentiment_tokenizer(text_list, padding=True,
+                                                                         return_tensors='pt').to(
+                                    self.device)
+                            # elif self.config['style_type'] == 'emoji':
+                            #     inputs = self.emoji_st_tokenizer.tokenize_sentences(top_texts).to(self.device)
                             inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
                             inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
                             logits = self.sentiment_model(**inputs)['logits']
@@ -1944,25 +1951,36 @@ class CLIPTextGenerator:
                     if self.config.get('mul_clip_style',False):
                         ########adding style effect#todo
                         text_list = self.preprocess_text_for_roberta(top_texts)
-                        encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
-                            self.device)
-                        output = self.sentiment_model(**encoded_input)
-                        scores = output[0].detach()
-                        scores = nn.functional.softmax(scores, dim=-1) #get grades for each image
-                        sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
-                        scores = nn.functional.softmax(scores/self.sentiment_temperature, dim=0) #rank grades between all images
-                        # sentiment_grades = None
-                        if self.style == 'positive':
-                            sentiment_grades = scores[:, 2]
-                            sentiment_grades_before_temp=sentiment_grades_before_temp[:,2]
-                        elif self.style == 'neutral':
-                            sentiment_grades = scores[:, 1]
-                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                        elif self.style == 'negative':
-                            sentiment_grades = scores[:, 0]
-                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                        sentiment_grades = sentiment_grades.unsqueeze(0)
-                        sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
+                        if self.config['style_type'] == 'roberta':
+                            encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                                self.device)
+                            output = self.sentiment_model(**encoded_input)
+                            scores = output[0].detach()
+                            scores = nn.functional.softmax(scores, dim=-1) #get grades for each image
+                            sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                            scores = nn.functional.softmax(scores/self.sentiment_temperature, dim=0) #rank grades between all images
+                            # sentiment_grades = None
+                            if self.style == 'positive':
+                                sentiment_grades = scores[:, 2]
+                                sentiment_grades_before_temp=sentiment_grades_before_temp[:,2]
+                            elif self.style == 'neutral':
+                                sentiment_grades = scores[:, 1]
+                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                            elif self.style == 'negative':
+                                sentiment_grades = scores[:, 0]
+                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                            sentiment_grades = sentiment_grades.unsqueeze(0)
+                            sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
+                        elif self.config['style_type'] == 'emoji':
+                            tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                            tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                            emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
+                            scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                            # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
+                            sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                            scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                           dim=0)  # rank grades between all images
+                            sentiment_grades = scores.unsqueeze(0).to(self.device)
 
                         clip_target_probs = target_probs
                         clip_target_probs_before_style = clip_target_probs
@@ -1992,8 +2010,11 @@ class CLIPTextGenerator:
                                                        results['perplexities']]).to(self.device)
                         # self.config['desired_min_fluency_score']
                         # fixed_perplexity = 1 - np.min([results['perplexities'][0], MAX_PERPLEXITY]) / MAX_PERPLEXITY
-
-                        inputs = self.sentiment_tokenizer(top_texts, padding=True, return_tensors="pt")
+                        if self.config['style_type'] == 'roberta':
+                            encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                                self.device)
+                        # elif self.config['style_type'] == 'emoji':
+                        #     encoded_input = self.emoji_st_tokenizer.tokenize_sentences(top_texts).to(self.device)
                         inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
                         inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
                         logits = self.sentiment_model(**inputs)['logits']
@@ -2113,26 +2134,37 @@ class CLIPTextGenerator:
                     ########adding style effect#todo
                     with torch.no_grad():
                         text_list = self.preprocess_text_for_roberta(top_texts)
-                        encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
-                            self.device)
-                        output = self.sentiment_model(**encoded_input)
-                        scores = output[0].detach()
-                        scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
-                        sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
-                        scores = nn.functional.softmax(scores / self.sentiment_temperature,
-                                                       dim=0)  # rank grades between all images
-                        # sentiment_grades = None
-                        if self.style == 'positive':
-                            sentiment_grades = scores[:, 2]
-                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                        elif self.style == 'neutral':
-                            sentiment_grades = scores[:, 1]
-                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                        elif self.style == 'negative':
-                            sentiment_grades = scores[:, 0]
-                            sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                        sentiment_grades = sentiment_grades.unsqueeze(0)
-                        sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
+                        if self.config['style_type'] == 'roberta':
+                            encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                                self.device)
+                            output = self.sentiment_model(**encoded_input)
+                            scores = output[0].detach()
+                            scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
+                            sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                            scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                           dim=0)  # rank grades between all images
+                            # sentiment_grades = None
+                            if self.style == 'positive':
+                                sentiment_grades = scores[:, 2]
+                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                            elif self.style == 'neutral':
+                                sentiment_grades = scores[:, 1]
+                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                            elif self.style == 'negative':
+                                sentiment_grades = scores[:, 0]
+                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                            sentiment_grades = sentiment_grades.unsqueeze(0)
+                            sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
+                        elif self.config['style_type'] == 'emoji':
+                            tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                            tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                            emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
+                            scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                            # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
+                            sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                            scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                           dim=0)  # rank grades between all images
+                            sentiment_grades = scores.unsqueeze(0).to(self.device)
 
                     clip_target_probs = target_probs
                     clip_target_probs_before_style = clip_target_probs
@@ -2243,6 +2275,7 @@ class CLIPTextGenerator:
             similiraties = (self.image_features @ text_features.T)
             similiraties = similiraties.float() #todo: check if need / self.clip_loss_temperature
             target_probs_fixed = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1) # .detach() todo: check if it is ok
+            # target_probs_fixed = torch.unsqueeze(target_probs_fixed,1)
             target_probs_fixed = target_probs_fixed.type(torch.float32)
 
             #get vector probs of source clip multiply with style
@@ -2254,25 +2287,36 @@ class CLIPTextGenerator:
                 target_probs_source = target_probs_source.type(torch.float32)
                 ########adding style effect#todo
                 text_list = self.preprocess_text_for_roberta(top_texts)
-                encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
-                    self.device)
-                output = self.sentiment_model(**encoded_input)
-                scores = output[0].detach()
-                scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
-                sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
-                scores = nn.functional.softmax(scores / self.sentiment_temperature,
-                                               dim=0)  # rank grades between all images
-                # sentiment_grades = None
-                if self.style == 'positive':
-                    sentiment_grades = scores[:, 2]
-                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                elif self.style == 'neutral':
-                    sentiment_grades = scores[:, 1]
-                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                elif self.style == 'negative':
-                    sentiment_grades = scores[:, 0]
-                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                sentiment_grades = sentiment_grades.unsqueeze(0)
+                if self.config['style_type'] == 'roberta':
+                    encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                        self.device)
+                    output = self.sentiment_model(**encoded_input)
+                    scores = output[0].detach()
+                    scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
+                    sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                    scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                   dim=0)  # rank grades between all images
+                    # sentiment_grades = None
+                    if self.style == 'positive':
+                        sentiment_grades = scores[:, 2]
+                        sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                    elif self.style == 'neutral':
+                        sentiment_grades = scores[:, 1]
+                        sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                    elif self.style == 'negative':
+                        sentiment_grades = scores[:, 0]
+                        sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                    sentiment_grades = sentiment_grades.unsqueeze(0)
+                elif self.config['style_type'] == 'emoji':
+                    tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                    tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                    emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
+                    scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                    # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
+                    sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                    scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                   dim=0)  # rank grades between all images
+                    sentiment_grades = scores.unsqueeze(0).to(self.device)
 
             clip_target_probs_source = target_probs_source
             clip_target_probs_before_style = clip_target_probs_source

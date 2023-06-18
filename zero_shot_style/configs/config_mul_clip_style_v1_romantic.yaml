@@ -33,15 +33,15 @@ max_batch_size_style_cls: 10
 ##########
 mul_clip_style: True
 only_clip_styled_clip_loss: False
-sentiment_temperature: 0.01 #0.04
+sentiment_temperature: 0.1 #0.04
 ######
 desired_labels:
   senticap: [negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
-  flickrstyle10k: [humor] #[factual, humor, romantic]
+  flickrstyle10k: [romantic] #[factual, humor, romantic]
 
 experiement_global_name:
   senticap: StylizedZeroCap_update_vit_focus_clip_v13neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  flickrstyle10k: flickrstyle10k_ZeroStyleCap_mul_clip_style_v1
+  flickrstyle10k: StylizedZeroCap_mul_clip_style_v1_romantic
 
 ###### update clip ViT tensors
 update_ViT: False #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!

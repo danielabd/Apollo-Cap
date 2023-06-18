@@ -17,7 +17,7 @@ update_ViT: False
 
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
-  senticap: [positive]  #[positive, negative, factual] #todo
+  senticap: [negative]  #[positive, negative, factual] #todo
   flickrstyle10k: [humor, romantic]
 
 desired_labels:
@@ -102,7 +102,17 @@ res_path2eval:
     # check sweep 30 for update vit
      #ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v18pos/16_06_2023/tmp/total_results_text_style_tmp.csv
      #update vit tesr 16.6.23
-     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/tmp/total_results_text_style_16_06_2023.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/tmp/total_results_text_style_16_06_2023.csv
+     #final test
+    #mul_clip_style_best pos fluency
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_clip_style_wo_update_clip_v19pos_test_best_fluency/total_results_text_style_StylizedZeroCap_roberta_mul_clip_style_wo_update_clip_v19pos_test_best_fluency.csv
+#     #update vit neg best fluency
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence.csv
+#     #update vit neg
+     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v14neg_test.csv
+     #update vit best pos fluence
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence.csv
+
 
 
 

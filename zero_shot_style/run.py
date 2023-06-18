@@ -40,7 +40,7 @@ EPSILON = 0.0000000001
 def get_args():
     parser.add_argument('--config_file', type=str,
                         # default=os.path.join('.', 'configs', 'config.yaml'),
-                        default=os.path.join('.', 'configs', 'config_update_vit1humor.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_mul_clip_style_v1_romantic.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -516,9 +516,13 @@ def get_list_of_imgs_for_caption(config):
             continue
         if ('.jpg' or '.jpeg' or '.png') not in im:
             continue
-        if 'specific_imgs_to_test' in config and len(config['specific_imgs_to_test']) > 0 and int(
-                im.split('.')[0]) not in config['specific_imgs_to_test']:
-            continue
+        if config.get('dataset','senticap') == 'senticap':
+            if 'specific_imgs_to_test' in config and len(config['specific_imgs_to_test']) > 0 and int(
+                    im.split('.')[0]) not in config['specific_imgs_to_test']:
+                continue
+        elif config.get('dataset','senticap') == 'flickrstyle10k':
+            if 'specific_imgs_to_test' in config and len(config['specific_imgs_to_test']) > 0 and im.split('.')[0] not in config['specific_imgs_to_test']:
+                continue
         imgs_to_test.append(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
                                          config['data_type'], im))
     print(f"***There is {len(imgs_to_test)} images to test.***")
@@ -1034,8 +1038,11 @@ def main():
                 evaluation_obj)
             perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score_for_single_text(best_caption)
             evaluation_results[img_name][label]['scores']['fluency'] = mean_perplexity
-            print(f"evaluation scores: CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}, fluency={evaluation_results[img_name][label]['scores']['fluency']}, style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
-
+            print(f"evaluation scores: CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}, fluency={evaluation_results[img_name][label]['scores']['fluency']}, ")
+            if "style_classification_roberta" in config["evaluation_metrics"]:
+                print(f"style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
+            elif "style_classification_emoji" in config["evaluation_metrics"]:
+                print(f"style_classification_emoji={evaluation_results[img_name][label]['scores']['style_classification_emoji']}")
     evaluate_results(config, evaluation_results, gts_data, results_dir, factual_captions, text_generator,evaluation_obj)
     print('Finish of program!')
 
