@@ -10,7 +10,7 @@ print_for_debug_redundant : False
 wandb_mode: online  #online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
-max_num_of_imgs: -1 #5 #todo
+max_num_of_imgs: -1 #todo
 reverse_imgs_list: False
 data_type: test #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
@@ -28,15 +28,16 @@ heavy_max_num_iterations: 7
 max_batch_size_style_cls: 10
 ##########
 experiement_global_name:
-  senticap: StylizedZeroCap_roberta_3_loss_v101pos_test_best_fluency #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_mul_clip_style_roberta_v20neg_test.yaml #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
-sentiment_temperature: 0.001
+sentiment_temperature: 0.05
+plot_prob_graphs: True
 ######
 desired_labels:
-  senticap: [positive] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
+  senticap: [negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
-mul_clip_style: False
+mul_clip_style: True
 loss_1_mul_clip_style_in_lm: False
 calc_grad_according_to_first_beam: False
 clip_style_temperature: 0.1
@@ -148,13 +149,13 @@ beam_size:
 
 #my embedding model real std
 text_style_scale:
-  senticap: 9.680991631893944 #1.324 # 3.3 #8.7 #- comparison to other baselines
+  senticap: 0 #1.324 # 3.3 #8.7 #- comparison to other baselines
   flickrstyle10k: 4.518869472661613
 ce_scale:
-  senticap: 1.9644670369601456 #3.34 #1.706 #3.34 #2.2 #- comparison to other baselines
+  senticap: 0.8 #3.34 #1.706 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap:  2.1900804813302437 # 5.6 #1.6 #- comparison to other baselines
+  senticap:  4 # 5.6 #1.6 #- comparison to other baselines
   flickrstyle10k: 4.587441437503964
 
 

@@ -910,43 +910,50 @@ def get_res_data(res_paths):
             i = 0
             j = 1
         res_data = {}
-        with open(res_paths[test_name], 'r') as csvfile:
-            spamreader = csv.reader(csvfile)
-            title = True
-            styles = []
-            for row in spamreader:
-                if '.jpg' in row[i]:
-                    k = row[i].split('.jpg')[0]
-                else:
-                    k = row[i]
-                if 'COCO' in k:
-                    k = k.split('_')[-1]
-                try:
-                    k = int(k)
-                except:
-                    pass
-                if title:
-                    if row[1]=='factual':
-                        i = 0
-                        j = 1
-                    try:
-                        i = row.index('img_num')
-                        j = row.index('img_num') + 1
-                    except:
-                        pass
-                    styles = row[i+1:]
-                    title = False
-                    continue
-                else:
-                    try:
-                        res_data[k] = {}
-                        for i_s, s in enumerate(styles):
-                            # res_data[k][s] = row[i+1]
-                            # limit sentence to target_seq_length as we create in ZeroStyleCap
-                            res_data[k][s] = ' '.join(row[i_s + j].split()[:target_seq_length])
-                    except:
-                        pass
-        res_data_per_test[test_name] = res_data
+        # with open(res_paths[test_name], 'r') as csvfile:
+        encoding_options = ['utf-8', 'latin-1', 'cp1252']
+        for encoding in encoding_options:
+            try:
+                with open(res_paths[test_name], 'r',encoding=encoding) as csvfile:
+                    spamreader = csv.reader(csvfile)
+                    title = True
+                    styles = []
+                    for row in spamreader:
+                        if '.jpg' in row[i]:
+                            k = row[i].split('.jpg')[0]
+                        else:
+                            k = row[i]
+                        if 'COCO' in k:
+                            k = k.split('_')[-1]
+                        try:
+                            k = int(k)
+                        except:
+                            pass
+                        if title:
+                            if row[1]=='factual':
+                                i = 0
+                                j = 1
+                            try:
+                                i = row.index('img_num')
+                                j = row.index('img_num') + 1
+                            except:
+                                pass
+                            styles = row[i+1:]
+                            title = False
+                            continue
+                        else:
+                            try:
+                                res_data[k] = {}
+                                for i_s, s in enumerate(styles):
+                                    # res_data[k][s] = row[i+1]
+                                    # limit sentence to target_seq_length as we create in ZeroStyleCap
+                                    res_data[k][s] = ' '.join(row[i_s + j].split()[:target_seq_length])
+                            except:
+                                pass
+                res_data_per_test[test_name] = res_data
+                break  # Exit the loop if the file was read successfully
+            except UnicodeDecodeError:
+                continue  # Try the next encoding option
     return res_data_per_test
 
 
@@ -1313,13 +1320,20 @@ def main():
         for test_name in res_data_per_test:
             print(f'Vocabulary size for experiment {test_name} dataset is {vocab_size[test_name]}')
 
+        test_name = list(config['res_path2eval'].values())[0].rsplit('/', 1)[1]
+        # tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
+        #                                           config['tgt_eval_results_file_name'])
+        # tgt_eval_results_file_name_for_all_frames = os.path.join(
+        #     list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
+        #     config['tgt_eval_results_file_name_for_all_frames'])
+        #
         tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-                                                  config['tgt_eval_results_file_name'])
+                                                  config['tgt_eval_results_file_name'].split('.')[0]+'_'+test_name)
         tgt_eval_results_file_name_for_all_frames = os.path.join(
             list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-            config['tgt_eval_results_file_name_for_all_frames'])
+            config['tgt_eval_results_file_name_for_all_frames'].split('.')[0]+'_'+test_name)
 
-        # todo: remove
+    # todo: remove
         # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
         # tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
         #                                           prefix_file_name+config['tgt_eval_results_file_name'])
