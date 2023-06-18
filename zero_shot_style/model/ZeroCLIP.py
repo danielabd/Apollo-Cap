@@ -2190,17 +2190,17 @@ class CLIPTextGenerator:
             target = target.unsqueeze(0)
 
             sentiment_grades_before_temp_t = torch.zeros_like(probs[idx_p])
-            if sentiment_grades_before_temp:
+            if sentiment_grades_before_temp is not None:
                 sentiment_grades_before_temp_t[top_indices[idx_p]] = sentiment_grades_before_temp
             sentiment_grades_before_temp_t = sentiment_grades_before_temp_t.unsqueeze(0)
 
             sentiment_grades_after_temp_t = torch.zeros_like(probs[idx_p])
-            if sentiment_grades_after_temp:
+            if sentiment_grades_after_temp is not None:
                 sentiment_grades_after_temp_t[top_indices[idx_p]] = sentiment_grades_after_temp
             sentiment_grades_after_temp_t = sentiment_grades_after_temp_t.unsqueeze(0)
 
             clip_target_probs_before_style_t = torch.zeros_like(probs[idx_p])
-            if clip_target_probs_before_style:
+            if clip_target_probs_before_style is not None:
                 clip_target_probs_before_style_t[top_indices[idx_p]] = clip_target_probs_before_style
             clip_target_probs_before_style_t = clip_target_probs_before_style_t.unsqueeze(0)
 
