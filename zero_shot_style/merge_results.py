@@ -140,8 +140,12 @@ def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factua
     for i,k in enumerate(data['img_num']):
         if label1:
             pos = data[label1][i]
+            # if len(pos.split(' '))<2:
+            #     continue
         if label2:
             neg = data[label2][i]
+            # if len(neg.split(' '))<2:
+            #     continue
         if use_factual:
             try:
                 fact = data['factual'][i]
@@ -421,15 +425,23 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test"
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101neg_test"
         # src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v18pos/16_06_2023/tmp'#check sweep 30 for updat vit
-        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023"
         #final
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test"
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence"
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence"
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_clip_style_wo_update_clip_v19pos_test_best_fluency"
 
-        #3losses-best_fluency
+        #3losses-best_fluency -pos
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test_best_fluency/18_06_2023"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/19_06_2023"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/18_06_2023"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test_best_fluency"
+        #mul clip-style - neg-best-fluency
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_mul_clip_style_roberta_v20neg_test_best_fluency.yaml/19_06_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/18_06_2023"
+        #3 losses -neg test
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v102neg_test/18_06_2023"
 
         suffix_name = src_dir_text_style.split('/')[-1]
         # src_dir_text_style = os.path.join(base_path,'text_style')

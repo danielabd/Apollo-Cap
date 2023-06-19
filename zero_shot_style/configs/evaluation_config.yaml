@@ -17,7 +17,7 @@ update_ViT: False
 
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
-  senticap: [positive]  #[positive, negative, factual] #todo
+  senticap: [negative]  #[positive, negative, factual] #todo
   flickrstyle10k: [humor, romantic]
 
 desired_labels:
@@ -115,7 +115,16 @@ res_path2eval:
 #  #update vit pos after GPT correction
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_update_vit_focus_clip_v17pos_test_with_GPT_correction.csv
 #  #update vit pos after GPT correction - fluency under 0.9
-     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_update_vit_focus_clip_v17pos_test_with_GPT_correction_fluence_under_0.9.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_update_vit_focus_clip_v17pos_test_with_GPT_correction_fluence_under_0.9.csv
+     #3  losses 102 neg test
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v102neg_test/18_06_2023/total_results_text_style_18_06_2023_roberta_3_loss_v102neg_test.csv
+    #analyze fix fluency - pos-update vit
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_16_06_2023_update_vit_focus_clip_v17pos.csv
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_update_vit_focus_clip_v17pos_test_with_GPT_correction.csv
+     # 3 losses best fluency
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test_best_fluency/total_results_text_style_StylizedZeroCap_roberta_3_loss_v101pos_test_best_fluency.csv
+     #mul clip style neg best fluency
+     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_mul_clip_style_roberta_v20neg_test_best_fluency.yaml/19_06_2023/total_results_text_style_19_06_2023.csv
 
 
 
