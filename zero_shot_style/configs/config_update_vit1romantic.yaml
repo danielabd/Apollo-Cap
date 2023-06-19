@@ -50,7 +50,7 @@ loss_scale_style_clip: 4.013
 loss_scale_src_clip_clip: 0.000002   #0.5
 start_loop_clip_style_in_word_num: 1
 
-num_iterations_clip_style: 2 #sweep 9
+num_iterations_clip_style: 1 #sweep 9
 ce_scale:
   senticap: 0.3735 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 0.3735
