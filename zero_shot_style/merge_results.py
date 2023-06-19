@@ -110,7 +110,7 @@ def merge_list_res_files_to_one(file_list, tgt_path):
     print('Finish of program!')
 
 
-def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factual=False, merge_sweep=False):
+def get_results_of_single_folder(total_data, total_data_to_check, path_d, img_name_to_idx, use_factual=False, merge_sweep=False):
     sweep_exp = path_d.split('/')[-1]
     path_file = ''
     files = os.listdir(path_d)
@@ -122,7 +122,7 @@ def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factua
             path_file = os.path.join(path_d,f)
             break
     if not path_file:
-        return total_data
+        return total_data, total_data_to_check
     data = pd.read_csv(path_file)
     #uncomment it for the cas we want to illuminate not comleted caption
     # if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
@@ -137,15 +137,18 @@ def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factua
     elif 'romantic' in data.columns:
         label2 = 'romantic'
     # for i,k in enumerate(data[data.columns[0]]):
+    check = False
     for i,k in enumerate(data['img_num']):
         if label1:
             pos = data[label1][i]
-            # if len(pos.split(' '))<2:
-            #     continue
+            if len(pos.split(' ')) < 2:
+                check = True
+                # continue
         if label2:
             neg = data[label2][i]
-            # if len(neg.split(' '))<2:
-            #     continue
+            if len(neg.split(' ')) < 2:
+                check = True
+                # continue
         if use_factual:
             try:
                 fact = data['factual'][i]
@@ -184,8 +187,13 @@ def get_results_of_single_folder(total_data, path_d, img_name_to_idx, use_factua
         if merge_sweep:
             total_data[sweep_exp] = single_data
         else:
-            total_data[img_name_to_idx[k]] = single_data
-    return total_data
+            if check:
+                total_data_to_check[img_name_to_idx[k]] = single_data
+            else:
+                total_data[img_name_to_idx[k]] = single_data
+            check = False
+            # total_data[img_name_to_idx[k]] = single_data
+    return total_data, total_data_to_check
 
 
 def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, factual_wo_prompt, use_factual,img_name_to_idx):
@@ -203,12 +211,16 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
             exp_to_merge.insert(0, 'prompt_manipulation')
     for test_type in exp_to_merge:
         total_data = {}
+        total_data_to_check = {}
         # go over all dirs of this test type
         dirs_of_res_paths = os.listdir(res_paths[test_type])
         for d in dirs_of_res_paths:
             path_d = os.path.join(res_paths[test_type],d)
             if os.path.isdir(path_d):
-                total_data = get_results_of_single_folder(total_data, path_d,img_name_to_idx)
+                total_data, total_data_to_check = get_results_of_single_folder(total_data,total_data_to_check, path_d,img_name_to_idx)
+        for i in total_data_to_check:
+            if i not in total_data:
+                total_data[i] = total_data_to_check[i]
         keys_test_type[test_type] = list(total_data.keys())
         total_data_test_type = pd.DataFrame(list(total_data.values()))
         for i in list(total_data.values()):
@@ -249,12 +261,16 @@ def merge_res_sweep_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
             exp_to_merge.insert(0, 'prompt_manipulation')
     for test_type in exp_to_merge:
         total_data = {}
+        total_data_to_check = {}
         # go over all dirs of this test type
         dirs_of_res_paths = os.listdir(res_paths[test_type])
         for d in dirs_of_res_paths:
             path_d = os.path.join(res_paths[test_type],d)
             if os.path.isdir(path_d):
-                total_data = get_results_of_single_folder(total_data, path_d,img_name_to_idx, merge_sweep=True)
+                total_data, total_data_to_check = get_results_of_single_folder(total_data,total_data_to_check, path_d,img_name_to_idx, merge_sweep=True)
+        for i in total_data_to_check:
+            if i not in total_data:
+                total_data[i] = total_data_to_check[i]
         keys_test_type[test_type] = list(total_data.keys())
         total_data_test_type = pd.DataFrame(list(total_data.values()))
         for i in list(total_data.values()):
@@ -426,6 +442,8 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101neg_test"
         # src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v18pos/16_06_2023/tmp'#check sweep 30 for updat vit
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023"
+        #mul clip style neg best fluency
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_mul_clip_style_roberta_v20neg_test_best_fluency.yaml/19_06_2023"
         #final
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test"
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence"
@@ -433,12 +451,12 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_clip_style_wo_update_clip_v19pos_test_best_fluency"
 
         #3losses-best_fluency -pos
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test_best_fluency/18_06_2023"
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/19_06_2023"
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/18_06_2023"
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test_best_fluency"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test_best_fluency/18_06_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/19_06_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/18_06_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test_best_fluency"
         #mul clip-style - neg-best-fluency
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_mul_clip_style_roberta_v20neg_test_best_fluency.yaml/19_06_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_mul_clip_style_roberta_v20neg_test_best_fluency.yaml/19_06_2023"
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/18_06_2023"
         #3 losses -neg test
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v102neg_test/18_06_2023"

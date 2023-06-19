@@ -3,7 +3,7 @@ dataset: flickrstyle10k # senticap,flickrstyle10k
 style_type: emoji  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
 #style_type: 'style_embed' #'style_embed' or 'emoji'
 use_style_threshold: False
-debug: False #False #todo
+debug: False #False #todo !!!!!!!!!
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False

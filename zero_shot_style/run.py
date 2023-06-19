@@ -42,7 +42,8 @@ def get_args():
                         # default=os.path.join('.', 'configs', 'config.yaml'),
                         # default=os.path.join('.', 'configs', 'config_mul_clip_style_v1_romantic.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_3_loss_roberta_v101neg_test.yaml'), #todo: change config file
-                        default=os.path.join('.', 'configs', 'config_mul_clip_style_roberta_v20neg_test.yaml'), #todo: change config file
+                        # default=os.path.join('.', 'configs', 'config_mul_clip_style_roberta_v20neg_test.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_mul_clip_style_v1_humor.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -663,6 +664,8 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                 style_cls_score = evaluation_results[img_name][label]['scores']['style_classification_roberta']
             elif 'style_classification_emoji' in config['evaluation_metrics']:
                 style_cls_emoji_score = evaluation_results[img_name][label]['scores']['style_classification_emoji']
+                # if type(style_cls_emoji_score)==list:
+                style_cls_emoji_score = float(style_cls_emoji_score[0].numpy())
                 style_cls_score = style_cls_emoji_score
             else:
                 style_cls_score = DEFAULT_STYLE_CLS_SCORE
@@ -682,14 +685,11 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             fluency_scores.append(fluency_score)
             # style_cls_scores.append(style_cls_score)
             if 'style_classification_emoji' in config['evaluation_metrics']:
-                if type(style_cls_emoji_score)==list:
-                    style_cls_emoji_scores.append(float(style_cls_emoji_score[0].numpy()))
-                    style_cls_scores.append(float(style_cls_emoji_score[0].numpy()))
-                else:
-                    style_cls_emoji_scores.append(style_cls_emoji_score)
-                    style_cls_scores.append(style_cls_emoji_score)
+                style_cls_emoji_scores.append(style_cls_emoji_score)
+                style_cls_scores.append(style_cls_emoji_score)
             else:
                 style_cls_scores.append(style_cls_score)
+
             avg_total_scores.append(avg_total_score)
             res_text = evaluation_results[img_name][label]['res']
             gt_text = evaluation_results[img_name][label]['gt']

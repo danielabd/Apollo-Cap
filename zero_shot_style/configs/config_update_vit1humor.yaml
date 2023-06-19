@@ -7,7 +7,7 @@ debug: False #False #todo
 debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
-wandb_mode: disabled #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+wandb_mode: online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 plot_prob_graphs: False
 
 ##for validation
@@ -41,7 +41,7 @@ desired_labels:
 
 experiement_global_name:
   senticap: StylizedZeroCap_update_vit_focus_clip_v13neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji1humor
+  flickrstyle10k: StylizedZeroCap_update_vit_style_v1_humor
 
 ###### update clip ViT tensors
 update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
