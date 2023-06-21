@@ -257,7 +257,8 @@ def write_to_pdf(all_data, desired_scores, tgt_pdf_file_path):
     img_width = 130
     img_height = 130
     y = 0
-    for i, idx in enumerate(all_data["ZeroStyleCap"]):
+    test_name = list(all_data.keys())[0]
+    for i, idx in enumerate(all_data[test_name]):
         # if i<5: #todo
         #     continue
 
@@ -356,8 +357,11 @@ def merge_debug_files(debug_dir_for_file_paths, merged_debug_file_name):
 
 def main():
     configfile = os.path.join('.', 'configs', 'config.yaml')
-    score_files = {"ZeroStyleCap": "/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_real_std/evaluation_all_frames_real_std.csv",
-                   "capdec": "/Users/danielabendavid/experiments/capdec/27_2_23/evaluation_all_frames_capdec.csv"}
+    # score_files = {"ZeroStyleCap": "/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_real_std/evaluation_all_frames_real_std.csv",
+    # score_files = {"ZeroStyleCap": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/baselines/capdec_evaluation_all_frames.csv",
+    #                "capdec": "/Users/danielabendavid/experiments/capdec/27_2_23/evaluation_all_frames_capdec.csv"}
+    score_files = {
+        "capdec": "/Users/danielabendavid/experiments/capdec/27_2_23/evaluation_all_frames.csv"}
     data_split = 'test' # 'test'
     base_dir4tgt_pdf_file_path = os.path.join(os.path.expanduser('~'),'experiments')
     img_dir_path = os.path.join(os.path.expanduser('~'),'data/senticap/images/'+data_split)

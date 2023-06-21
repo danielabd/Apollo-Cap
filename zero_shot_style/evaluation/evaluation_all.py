@@ -104,7 +104,7 @@ class CLIPScore:
         # print("calculate CLIPScore...")
         res_val = res
         if type(res) == dict:
-            res_val = list(res.values())[0]
+            res_val = [list(res.values())[0][0][:77]]
         image_features = self.text_generator.get_img_feature([image_path], None, source_clip=True)
         text_features = self.text_generator.get_txt_features(res_val, source_clip=True)
         with torch.no_grad():
@@ -604,6 +604,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
             median_score_per_metric_and_style[metric] = {}
             # go over each image caption from res
             for i1, k in enumerate(res[test_name]):
+                if k not in gts_per_data_set:
+                    continue
                 if True:
                 # if k in gts_per_data_set:
                     score_dict_per_metric[metric][k] = {}
@@ -896,7 +898,7 @@ def get_res_data_GPT(res_paths):
     return res_data_per_test_source, res_data_per_test_gpt
 
 
-def get_res_data(res_paths):
+def get_res_data(res_paths, dataset):
     '''
 
     :param res_paths: dict. keys:  'prompt_manipulation', 'image_manipulation'. values: path to res
@@ -926,7 +928,8 @@ def get_res_data(res_paths):
                         if 'COCO' in k:
                             k = k.split('_')[-1]
                         try:
-                            k = int(k)
+                            if dataset == 'senticap':
+                                k = int(k)
                         except:
                             pass
                         if title:
@@ -1292,7 +1295,7 @@ def main():
     gts_per_data_set = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_split'],
                                     factual_captions, config['max_num_imgs2test'])
 
-    res_data_per_test = get_res_data(config['res_path2eval'])
+    res_data_per_test = get_res_data(config['res_path2eval'],config['dataset'])
     if True:
     # #todo: remove
     # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")

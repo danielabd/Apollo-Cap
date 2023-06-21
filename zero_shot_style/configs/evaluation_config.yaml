@@ -1,6 +1,7 @@
 #senticap
-dataset: senticap # senticap,flickrstyle10k
-style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
+dataset: flickrstyle10k # senticap,flickrstyle10k
+#style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
+style_type: emoji  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
 data_split: test #val, test #todo
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
@@ -11,7 +12,14 @@ model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 #metrics: [CLIPScore, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+
+#metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#metrics: [CLIPScore, style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+
+metrics:
+  senticap: [CLIPScore, style_classification_roberta, fluency]
+  flickrstyle10k: [CLIPScore, style_classification_emoji, fluency]
+
 
 update_ViT: False
 
@@ -128,22 +136,24 @@ res_path2eval:
   #update vit pos - after fix debug
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_16_06_2023_after_fix_debug.csv
    #update vit pos - after fix debug + GPT correction
-     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_update_vit_focus_clip_v17pos_test_with_GPT_correction.csv
-
+#     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_update_vit_focus_clip_v17pos_test_with_GPT_correction.csv
 
 
 
   flickrstyle10k:
 #    capdec_humor: ~/experiments/capdec/27_2_23/res_humor.csv
-#    capdec_romantic: ~/experiments/capdec/27_2_23/res_romantic.csv
+#    : ~/experiments/capdec/27_2_23/res_romantic.csv
 #    prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/5_3_23/c1p9kpt8-smoldering-heart-7/results_13_07_48__15_02_2023.csv
 #    image_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/5_3_23/v584fr44-desiring-etchings-11/results_13_39_19__15_02_2023.csv
 #    image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/5_3_23/gkdoticx-loyal-sweetheart-9/results_13_30_05__15_02_2023.csv
 #    ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/15_02_2023/6mcw38e7-eager-dove-19/results_22_10_24__15_02_2023.csv
-    prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/prompt_manipulation/total_results_prompt_manipulation.csv
-    image_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/image_manipulation/total_results_image_manipulation.csv
-    image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/image_and_prompt_manipulation/total_results_image_and_prompt_manipulation.csv
-    ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/ZeroStyleCap/total_results_text_style_Flickrstyle10k.csv
+#    prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/prompt_manipulation/total_results_prompt_manipulation.csv
+#    image_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/image_manipulation/total_results_image_manipulation.csv
+#    image_and_prompt_manipulation: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/image_and_prompt_manipulation/total_results_image_and_prompt_manipulation.csv
+#    ZeroStyleCap: /home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_fixed_param_25_3_23/ZeroStyleCap/total_results_text_style_Flickrstyle10k.csv
+    # capdec
+#    capdec_humor: /Users/danielabendavid/experiments/capdec/res_humor.csv
+    capdec_romantic: /Users/danielabendavid/experiments/capdec/res_romantic.csv
 
 
 # finetuned roBERTa
@@ -218,6 +228,15 @@ labels_dict_idxs:
 
 #emoji
 use_single_emoji_style: False
+#idx_emoji_style_dict:
+#  senticap:
+##    positive: 53
+##    negative: 34
+#    positive: [0,4,6,7,8,13,15,16,17,18,23,24,36,40,53,60] # 53
+#    negative: [1,2,3,5,12,22,27,29,32,34,35,37,39,42,43,44,45,46,52,55,56,58] # 34
+#  flickrstyle10k:
+#    humor: #0
+#    romantic: #23
 idx_emoji_style_dict:
   senticap:
 #    positive: 53
@@ -225,8 +244,8 @@ idx_emoji_style_dict:
     positive: [0,4,6,7,8,13,15,16,17,18,23,24,36,40,53,60] # 53
     negative: [1,2,3,5,12,22,27,29,32,34,35,37,39,42,43,44,45,46,52,55,56,58] # 34
   flickrstyle10k:
-    humor: #0
-    romantic: #23
+    humor: [0,53] #0
+    romantic: [4, 8, 18, 23, 24] #23
 
 emoji_vocab_path: ~/projects/torchMoji/model/vocabulary.json
 emoji_pretrained_path: ~/projects/torchMoji/model/pytorch_model.bin
