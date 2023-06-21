@@ -2311,6 +2311,13 @@ class CLIPTextGenerator:
                         sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
                     sentiment_grades = sentiment_grades.unsqueeze(0)
                 elif self.config['style_type'] == 'emoji':
+                    for i_text,text in enumerate(top_texts):
+                        if '\t' in text:
+                            top_texts[i_text] = text.replace("\t", " " )
+                        if '\n' in text:
+                            top_texts[i_text] = text.replace("\n", " ")
+                        if text=='':
+                            top_texts = top_texts[:i_text]+top_texts[i_text+1:]
                     tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
                     tokenized = torch.from_numpy(tokenized.astype(np.int32))
                     emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
