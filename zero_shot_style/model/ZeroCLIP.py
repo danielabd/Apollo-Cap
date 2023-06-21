@@ -2317,7 +2317,7 @@ class CLIPTextGenerator:
                         if '\n' in text:
                             top_texts[i_text] = text.replace("\n", " ")
                         if text=='':
-                            top_texts = top_texts[:i_text]+top_texts[i_text+1:]
+                            top_texts[i_text] = ' '
                     tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
                     tokenized = torch.from_numpy(tokenized.astype(np.int32))
                     emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
