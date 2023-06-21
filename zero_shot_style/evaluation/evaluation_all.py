@@ -797,8 +797,6 @@ def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None,
     # import random
     # print(random.sample(list(data.keys()), 20))
     for k in data:
-        if len(gts) >= max_num_imgs2test and max_num_imgs2test > 0:
-            break
         gts[k] = {}
         if factual_captions:
             gts[k]['factual'] = factual_captions[k]

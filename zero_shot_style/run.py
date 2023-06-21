@@ -957,6 +957,8 @@ def main():
     if config['reverse_imgs_list']:
         imgs_to_test.reverse()
     for img_path_idx, img_path in enumerate(imgs_to_test):
+        if len(evaluation_results) >= config['max_num_imgs2test'] and config['max_num_imgs2test'] > 0:
+            break
         if img_path_idx < config['img_idx_to_start_from']:
             continue
         print(f"Img num = {img_path_idx}")
