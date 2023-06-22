@@ -1206,6 +1206,8 @@ class CLIPTextGenerator:
                         axs[2, 0].plot(x, clip_target_probs_before_style_plot[i_beam].cpu().detach().numpy(), label='clip_target_probs_before_style')
                         axs[2, 0].set_title('clip target probs before style')
 
+                        if len(target_probs_clip_plot[i_beam].shape) > 1:
+                            target_probs_clip_plot[i_beam] = torch.squeeze(target_probs_clip_plot[i_beam])
                         axs[2, 1].plot(x, target_probs_clip_plot[i_beam].cpu().detach().numpy(), label='target_probs_clip')
                         axs[2, 1].set_title('Target Probs Clip')
 
@@ -1528,7 +1530,7 @@ class CLIPTextGenerator:
             # CLIP LOSS
             if self.clip_scale!=0:
                 clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs, target_probs_clip,clip_target_probs_before_style,sentiment_grades_before_temp ,sentiment_grades_after_temp = self.clip_loss(probs, context_tokens, grad_lm=True)
-                if not self.config['mul_clip_style']:
+                if self.config['mul_clip_style']:
                     target_probs_clip_plot = target_probs_clip
                     clip_target_probs_before_style_plot = clip_target_probs_before_style
                     sentiment_grades_before_temp_plot = sentiment_grades_before_temp
