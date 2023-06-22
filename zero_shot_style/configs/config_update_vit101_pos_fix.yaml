@@ -33,14 +33,15 @@ max_batch_size_style_cls: 10
 ##########
 mul_clip_style: False
 only_clip_styled_clip_loss: True
-sentiment_temperature: 0.1430339855494212 #0.04
+sentiment_temperature: 0.13987386560507073 #0.1430339855494212 #0.04
 ######
 desired_labels:
-  senticap: [negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
+  senticap: [positive] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 experiement_global_name:
-  senticap: StylizedZeroCap_update_vit_focus_clip_v100neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+#  senticap: StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_update_vit_focus_clip_v101_pos #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 ###### update clip ViT tensors
@@ -52,7 +53,7 @@ start_loop_clip_style_in_word_num: 1
 
 num_iterations_clip_style: 1 #sweep 9
 ce_scale:
-  senticap: 0.2214432225421577 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
+  senticap: 0.23892501359566715 #0.2214432225421577 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
   senticap: 1 #1.6 #- comparison to other baselines
