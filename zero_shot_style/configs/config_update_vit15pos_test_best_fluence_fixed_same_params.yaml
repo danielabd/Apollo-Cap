@@ -8,15 +8,15 @@ debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
 wandb_mode: online #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-plot_prob_graphs: True #todo !!!!!!!!!!!!!!!!!!!!!!
+plot_prob_graphs: False
 
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
 max_num_of_imgs: -1 #todo
 reverse_imgs_list: False
 data_type: test #val, test #todo:!!!!!!!!
-specific_imgs_to_test: [531816] #[12860] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-#specific_img_idxs_to_test: [5,6]
+#specific_imgs_to_test: [274455] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+#specific_img_idxs_to_test: [5,6,207]
 #specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
 #specific_img_idxs_to_test: [5,6,134,144,155]
 #specific_img_idxs_to_test: [5,6]
@@ -33,15 +33,14 @@ max_batch_size_style_cls: 10
 ##########
 mul_clip_style: False
 only_clip_styled_clip_loss: True
-sentiment_temperature: 0.0745 #0.13987386560507073 #0.1430339855494212 #0.04
+sentiment_temperature: 0.1430339855494212 #0.04
 ######
 desired_labels:
   senticap: [positive] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
 experiement_global_name:
-#  senticap: StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  senticap: StylizedZeroCap_update_vit_focus_clip_v101_pos_test #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence_fixed_same_params #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 ###### update clip ViT tensors
@@ -53,7 +52,7 @@ start_loop_clip_style_in_word_num: 1
 
 num_iterations_clip_style: 1 #sweep 9
 ce_scale:
-  senticap: 0.17 #0.23892501359566715 #0.2214432225421577 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
+  senticap: 0.2214432225421577 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
   senticap: 1 #1.6 #- comparison to other baselines

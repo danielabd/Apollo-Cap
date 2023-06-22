@@ -460,6 +460,8 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/18_06_2023"
         #3 losses -neg test
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v102neg_test/18_06_2023"
+        #update vit pos after fix
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v101_pos_test/22_06_2023"
 
         suffix_name = src_dir_text_style.split('/')[-1]
         # src_dir_text_style = os.path.join(base_path,'text_style')

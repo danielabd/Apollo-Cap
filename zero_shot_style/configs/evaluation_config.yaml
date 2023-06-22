@@ -1,7 +1,7 @@
 #senticap
-dataset: flickrstyle10k # senticap,flickrstyle10k
+dataset: senticap # senticap,flickrstyle10k
 #style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
-style_type: emoji  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
+style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
 data_split: test #val, test #todo
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
@@ -137,6 +137,9 @@ res_path2eval:
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_16_06_2023_after_fix_debug.csv
    #update vit pos - after fix debug + GPT correction
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_update_vit_focus_clip_v17pos_test_with_GPT_correction.csv
+  # update vit pos after fix
+    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v101_pos_test/22_06_2023/total_results_text_style_22_06_2023_update_vit_101_pos_test_fix.csv
+
 
 
 
