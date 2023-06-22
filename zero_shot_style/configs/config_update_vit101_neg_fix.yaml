@@ -41,7 +41,7 @@ desired_labels:
 
 experiement_global_name:
 #  senticap: StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  senticap: StylizedZeroCap_update_vit_focus_clip_v101_neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_update_vit_focus_clip_v101_neg2 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 ###### update clip ViT tensors
