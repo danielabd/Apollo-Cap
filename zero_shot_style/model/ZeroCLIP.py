@@ -1172,7 +1172,7 @@ class CLIPTextGenerator:
             # # print probs graphs
             if self.config.get('plot_prob_graphs',False):
                 # if i>=1:
-                if i==self.config['max_num_iterations']: #plot only last iteration
+                if i==self.config['max_num_iterations']-1: #plot only last iteration
                     for i_beam in range(probs.shape[0]):
                         # if i_beam>0: #plot only first
                         #     break
