@@ -43,7 +43,7 @@ def get_args():
                         # default=os.path.join('.', 'configs', 'config_mul_clip_style_v1_romantic.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_3_loss_roberta_v101neg_test.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_mul_clip_style_roberta_v20neg_test.yaml'), #todo: change config file
-                        default=os.path.join('.', 'configs', 'config_update_vit101_neg_fix.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_update_vit101_pos_fix.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
