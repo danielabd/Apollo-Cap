@@ -1786,7 +1786,7 @@ class CLIPTextGenerator:
             for x in top_indices[idx_p]:
                 text = prefix_text + self.lm_tokenizer.decode(x)
                 if len(text)>77:
-                    text = '.'
+                    text = text[:77]
                 top_texts.append(text)
             ######todo: daniela debug    effect of update CLIP
             # top_texts = ["The bedroom used child abuse"]+["The bedroom of a sweet baby"]
@@ -2270,7 +2270,7 @@ class CLIPTextGenerator:
             for x in top_indices[idx_p]:
                 text = prefix_text + self.lm_tokenizer.decode(x)
                 if len(text)>77:
-                    text = ''
+                    text = text[:77]
                 top_texts.append(text)
 
             # grades according to match to style
