@@ -25,7 +25,7 @@ update_ViT: False
 
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
-  senticap: [positive]  #[positive, negative, factual] #todo
+  senticap: [negative]  #[positive, negative, factual] #todo
   flickrstyle10k: [humor, romantic]
 
 desired_labels:
@@ -138,7 +138,11 @@ res_path2eval:
    #update vit pos - after fix debug + GPT correction
 #     ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v17pos/16_06_2023/total_results_text_style_update_vit_focus_clip_v17pos_test_with_GPT_correction.csv
   # update vit pos after fix
-    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v101_pos_test/22_06_2023/total_results_text_style_22_06_2023_update_vit_101_pos_test_fix.csv
+#    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v101_pos_test/22_06_2023/total_results_text_style_22_06_2023_update_vit_101_pos_test_fix.csv
+    #update vit fix same params - pos
+#    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence_fixed_same_params/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence_fixed_same_params.csv
+    #update vit fix same params - neg
+    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params.csv
 
 
 

@@ -37,6 +37,7 @@ DEFAULT_STYLE_CLS_SCORE = 1
 DEFAULT_STYLE_CLS_EMOJI_SCORE = 1
 EPSILON = 0.0000000001
 
+
 def get_args():
     parser.add_argument('--config_file', type=str,
                         # default=os.path.join('.', 'configs', 'config.yaml'),
@@ -956,6 +957,7 @@ def main():
     evaluation_results = {}  # total_results_structure
     if config['reverse_imgs_list']:
         imgs_to_test.reverse()
+    failed_img_names = []
     for img_path_idx, img_path in enumerate(imgs_to_test):
         if len(evaluation_results) >= config['max_num_imgs2test'] and config['max_num_imgs2test'] > 0:
             break
@@ -1004,54 +1006,60 @@ def main():
                 continue
             print(f"Img num = {img_path_idx}")
             # prompt manipulation or using text style model
-            if config['run_type'] == 'caption':
-                title2print = get_title2print(config['img_path'], config['dataset'], label, config)
-                print(title2print)
-                best_caption = run(config, config['img_path'], desired_style_embedding_vector,
-                                   desired_style_embedding_vector_std,
-                                   config['cuda_idx_num'], title2print, model_path, config['style_type'], tmp_text_loss,
-                                   label, img_dict, debug_tracking, text_generator, image_features, evaluation_obj, clip_img)
-                write_caption_results(img_dict, results_dir, tgt_results_path)
-                # write_results_of_text_style_all_models(img_dict, desired_labels_list,
-                #                                    results_dir, 1, tgt_results_path)
-                if config['write_debug_tracking_file']:
-                    write_debug_tracking(results_dir, debug_tracking)
-                # if 'fluency' in config['evaluation_metrics']:
-                    # evaluation_obj['fluency'].add_test(best_caption, img_name, label)
+            try:
+                if config['run_type'] == 'caption':
+                    title2print = get_title2print(config['img_path'], config['dataset'], label, config)
+                    print(title2print)
+                    best_caption = run(config, config['img_path'], desired_style_embedding_vector,
+                                       desired_style_embedding_vector_std,
+                                       config['cuda_idx_num'], title2print, model_path, config['style_type'], tmp_text_loss,
+                                       label, img_dict, debug_tracking, text_generator, image_features, evaluation_obj, clip_img)
+                    write_caption_results(img_dict, results_dir, tgt_results_path)
+                    # write_results_of_text_style_all_models(img_dict, desired_labels_list,
+                    #                                    results_dir, 1, tgt_results_path)
+                    if config['write_debug_tracking_file']:
+                        write_debug_tracking(results_dir, debug_tracking)
+                    # if 'fluency' in config['evaluation_metrics']:
+                        # evaluation_obj['fluency'].add_test(best_caption, img_name, label)
 
-            # image manipulation
-            elif config['run_type'] == 'arithmetics':
-                config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
-                factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
-                img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
-                config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
-                title2print = get_title2print(config['img_path'], config['dataset'],
-                                              label, config)
-                print(title2print)
-                best_caption = run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, img_name,
-                                              label, imgs_path=config['arithmetics_imgs'],
-                                              img_weights=config['arithmetics_weights'],
-                                              cuda_idx=config['cuda_idx_num'], title2print=title2print, img_name=img_name, style=label)
-                write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
-            else:
-                raise Exception('run_type must be caption or arithmetics!')
-            evaluation_results[img_name][label]['res'] = best_caption
-            evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
-            evaluation_results[img_name][label]['scores'] = {}
-            # evaluation_obj['fluency'].add_results(evaluation_results)
-            evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
-            evaluation_results[img_name][label]['scores'] = evaluate_single_res(
-                evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
-                evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
-                evaluation_obj)
-            perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score_for_single_text(best_caption)
-            evaluation_results[img_name][label]['scores']['fluency'] = mean_perplexity
-            print(f"evaluation scores: CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}, fluency={evaluation_results[img_name][label]['scores']['fluency']}, ")
-            if "style_classification_roberta" in config["evaluation_metrics"]:
-                print(f"style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
-            elif "style_classification_emoji" in config["evaluation_metrics"]:
-                print(f"style_classification_emoji={evaluation_results[img_name][label]['scores']['style_classification_emoji']}")
+                # image manipulation
+                elif config['run_type'] == 'arithmetics':
+                    config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
+                    factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
+                    img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
+                    config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
+                    title2print = get_title2print(config['img_path'], config['dataset'],
+                                                  label, config)
+                    print(title2print)
+                    best_caption = run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, img_name,
+                                                  label, imgs_path=config['arithmetics_imgs'],
+                                                  img_weights=config['arithmetics_weights'],
+                                                  cuda_idx=config['cuda_idx_num'], title2print=title2print, img_name=img_name, style=label)
+                    write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
+                else:
+                    raise Exception('run_type must be caption or arithmetics!')
+                evaluation_results[img_name][label]['res'] = best_caption
+                evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
+                evaluation_results[img_name][label]['scores'] = {}
+                # evaluation_obj['fluency'].add_results(evaluation_results)
+                evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
+                evaluation_results[img_name][label]['scores'] = evaluate_single_res(
+                    evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
+                    evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
+                    evaluation_obj)
+                perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score_for_single_text(best_caption)
+                evaluation_results[img_name][label]['scores']['fluency'] = mean_perplexity
+                print(f"evaluation scores: CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}, fluency={evaluation_results[img_name][label]['scores']['fluency']}, ")
+                if "style_classification_roberta" in config["evaluation_metrics"]:
+                    print(f"style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
+                elif "style_classification_emoji" in config["evaluation_metrics"]:
+                    print(f"style_classification_emoji={evaluation_results[img_name][label]['scores']['style_classification_emoji']}")
+            except:
+                print("check why it failed")
+                failed_img_names.append(img_name)
     evaluate_results(config, evaluation_results, gts_data, results_dir, factual_captions, text_generator,evaluation_obj)
+    print("images that failed:")
+    print(failed_img_names)
     print('Finish of program!')
 
 

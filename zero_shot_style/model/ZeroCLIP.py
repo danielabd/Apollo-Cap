@@ -267,7 +267,7 @@ class CLIPTextGenerator:
                 vocabulary = json.load(f)
             self.emoji_st_tokenizer = SentenceTokenizer(vocabulary, config['maxlen_emoji_sentence'])
             print('Loading emoji style model  from {}.'.format(config['emoji_pretrained_path']))
-            self.emoji_style_model = torchmoji_emojis(config['emoji_pretrained_path'])
+            self.emoji_style_model = torchmoji_emojis(config['emoji_pretrained_path']).to(self.device)
             # self.emoji_style_model.to(self.device)
             # TEXT_STYLE: Freeze text style model weights
             for param in self.emoji_style_model.parameters():
@@ -981,7 +981,7 @@ class CLIPTextGenerator:
 
                 # print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
                 # print(f"tokenized.is_cuda={tokenized.is_cuda}")
-                emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
+                emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized.to(self.device)))
                 emoji_style_grades = emoji_style_probs[:,self.config['idx_emoji_style_dict'][self.style]].sum(-1)
                 emoji_style_grades_normalized = emoji_style_grades/torch.sum(emoji_style_grades)
                 # if self.config['use_single_emoji_style']:
@@ -1131,7 +1131,11 @@ class CLIPTextGenerator:
 
         while(1):
             i += 1
-            # print(f"iteration num: {i}")
+            if i==0 or i==self.num_iterations-1:
+                print_probs = False #True #todo: move to false
+            else:
+                print_probs = False
+            print(f"iteration num: {i}")
             if self.config['print_for_debug']:
                 print(f"************** word_loc =  {word_loc}, iter num = {i} **************")
             if new_weighted_loss:
@@ -1169,57 +1173,6 @@ class CLIPTextGenerator:
             if self.config.get('calc_grad_according_to_first_beam', False):
                 probs = torch.  unsqueeze(probs[0][:max_prob_len], 0)  # todo:remove it # 9.6.23
 
-            # # print probs graphs
-            if self.config.get('plot_prob_graphs',False):
-                # if i>=1:
-                if i==self.config['max_num_iterations']-1: #plot only last iteration
-                    for i_beam in range(probs.shape[0]):
-                        # if i_beam>0: #plot only first
-                        #     break
-                        x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
-                        # Create a grid of subplots
-                        fig, axs = plt.subplots(3, 2)
-
-                        # Plot the graphs in separate subplots
-                        axs[0, 0].plot(x, probs_before_shift[i_beam].cpu().numpy(), label='source_LM_probs')
-                        axs[0, 0].set_title('Source LM Probs')
-
-                        axs[0, 1].plot(x, probs[i_beam].detach().cpu().numpy(), label='fixed_LM_probs')
-                        axs[0, 1].set_title('Fixed LM Probs')
-                        # clip_target_probs_before_style
-                        # if len(sentiment_grades_before_temp.shape)<2:
-                        #     sentiment_grades_before_temp = torch.unsqueeze(sentiment_grades_before_temp,1)
-                        if len(sentiment_grades_before_temp_plot[i_beam].shape)>1:
-                            sentiment_grades_before_temp_plot[i_beam]=torch.squeeze(sentiment_grades_before_temp_plot[i_beam])
-                        axs[1, 0].plot(x, sentiment_grades_before_temp_plot[i_beam].cpu().numpy(), label='sentiment_grades_before_temp')
-                        axs[1, 0].set_title('sentiment grades before temp')
-
-                        if len(sentiment_grades_after_temp_plot[i_beam].shape) > 1:
-                            sentiment_grades_after_temp_plot[i_beam] = torch.squeeze(sentiment_grades_after_temp_plot[i_beam])
-                        axs[1, 1].plot(x, sentiment_grades_after_temp_plot[i_beam].cpu().numpy(), label='sentiment_grades_after_temp')
-                        axs[1, 1].set_title('sentiment grades after temp')
-
-                        # if len(clip_target_probs_before_style.shape)<2:
-                        #     clip_target_probs_before_style = torch.unsqueeze(clip_target_probs_before_style,1)
-                        if len(clip_target_probs_before_style_plot[i_beam].shape) > 1:
-                            clip_target_probs_before_style_plot[i_beam] = torch.squeeze(clip_target_probs_before_style_plot[i_beam])
-                        axs[2, 0].plot(x, clip_target_probs_before_style_plot[i_beam].cpu().detach().numpy(), label='clip_target_probs_before_style')
-                        axs[2, 0].set_title('clip target probs before style')
-
-                        if len(target_probs_clip_plot[i_beam].shape) > 1:
-                            target_probs_clip_plot[i_beam] = torch.squeeze(target_probs_clip_plot[i_beam])
-                        axs[2, 1].plot(x, target_probs_clip_plot[i_beam].cpu().detach().numpy(), label='target_probs_clip')
-                        axs[2, 1].set_title('Target Probs Clip')
-
-                        # Add a global title
-                        fig.suptitle(f'word loc = {word_loc}, i_beam={i_beam}, iteration number={i}')
-
-                    # Adjust the spacing between subplots
-                    plt.tight_layout()
-
-                    plt.show(block=False)
-
-
 
             # x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
             # for idx_p_i in range(probs.shape[0]):
@@ -1230,6 +1183,17 @@ class CLIPTextGenerator:
             #     plt.show(block=False)
 
             ###################################################
+            #for error enalysis
+            # GPT0_5k_prob_w3_b_3,GPT0_5k_text_w3_b_3,CLIP0_512_prob_w3_b_3, CLIP0_512_text_w3_b_3
+            if i == 0:
+                if word_loc == 3:
+                    GPT0_5k_prob_w3_b_3 = probs[3]
+                    GPT0_5k_text_w3_b_3 = []
+                    for x in range(len(GPT0_5k_prob_w3_b_3)):
+                        # text = prefix_text + self.lm_tokenizer.decode(x)
+                        text = self.lm_tokenizer.decode(x)
+                        GPT0_5k_text_w3_b_3.append(text)
+
             if word_loc>=self.config.get('start_word_loc_heavy_iteration', 1) and i >= 1:
                 if self.config.get('iterate_until_good_fluency', False):
                     with torch.no_grad():
@@ -1351,8 +1315,11 @@ class CLIPTextGenerator:
                 for clip_update_iter in range(self.config['num_iterations_clip_style']):  # todo: change it self.k=list of 12, each with size of(1,12,50,64)
                     # CLIP LOSS
                     if self.config.get('only_clip_styled_clip_loss'):
-                        clip_loss, losses, clip_probs, clip_target_probs_before_style, sentiment_grades_before_temp, sentiment_grades_after_temp = self.get_clip_probs(
-                            probs, context_tokens)
+                        clip_loss, losses, clip_probs, clip_target_probs_before_style, sentiment_grades_before_temp, sentiment_grades_after_temp, CLIP0_512_prob_w3_b_3_t, CLIP0_512_text_w3_b_3_t = self.get_clip_probs(
+                            probs, context_tokens,print_probs=print_probs)
+                        if i == 0 and word_loc == 3:
+                            CLIP0_512_prob_w3_b_3=CLIP0_512_prob_w3_b_3_t; CLIP0_512_text_w3_b_3=CLIP0_512_text_w3_b_3_t
+
                         target_probs_clip_plot = clip_probs
                         clip_target_probs_before_style_plot = clip_target_probs_before_style
                         sentiment_grades_before_temp_plot = sentiment_grades_before_temp
@@ -1363,7 +1330,7 @@ class CLIPTextGenerator:
                         clip_ViT_loss = 0
                         if self.clip_scale != 0:
                             clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs,clip_target_probs_before_style,sentiment_grades_before_temp,sentiment_grades_after_temp = self.clip_loss(
-                                probs, context_tokens,grad_lm=False)
+                                probs, context_tokens,grad_lm=False,print_probs=print_probs)
                             # if not new_weighted_loss:
                             #     loss += self.clip_scale * clip_loss # change to variable scale
                         # TEXT_STYLE loss:
@@ -1529,12 +1496,145 @@ class CLIPTextGenerator:
 
             # CLIP LOSS
             if self.clip_scale!=0:
-                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs, target_probs_clip,clip_target_probs_before_style,sentiment_grades_before_temp ,sentiment_grades_after_temp = self.clip_loss(probs, context_tokens, grad_lm=True)
+                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs, target_probs_clip,clip_target_probs_before_style2,sentiment_grades_before_temp ,sentiment_grades_after_temp = self.clip_loss(probs, context_tokens, grad_lm=True,print_probs=print_probs)
+                if i == self.num_iterations - 1 and word_loc == 2:
+                    STYLEK_512_prob_w3_b_3 = range(len(sentiment_grades_after_temp[1][0]));
+                    STYLEK_512_text_w3_b_3 = []
+                    # CLIPK_before_style_512_prob_w3_b_3 = clip_target_probs_before_style
+                    CLIPK_before_style_512_text_w3_b_3 = []
+                    CLIPK_after_style_512_prob_w3_b_3 = target_probs_clip
+                    CLIPK_512_text_w3_b_3 = []
+                    for x in range(len(STYLEK_512_prob_w3_b_3)):
+                        # text = prefix_text + self.lm_tokenizer.decode(x)
+                        text = self.lm_tokenizer.decode(x)
+                        STYLEK_512_text_w3_b_3.append(text)
+                        CLIPK_before_style_512_text_w3_b_3.append(text)
+                        CLIPK_512_text_w3_b_3.append(text)
+
+                top_texts_gpt = []
+                p, ii = probs[1].topk(512)
+                if False:
+                    for t in ii:
+                        text=self.lm_tokenizer.decode(t)
+                        top_texts_gpt.append(text)
+                        print(text)
+
+                # p1,i1=clip_target_probs_before_style[3].topk(10)
+                # print(i1)
+                # p1,i2=target_probs_clip[3].topk(10)
+                # print(i2)
+                # gpt0
+                #
+                # p0,i0=probs[3].topk(5)
+                # idxs = 13888,    11,   290,  1486, 21654
+                # style top
+                # [1785, 2607]
+                # clip top before style
+                # 13888, 14752, 44595, 18105
+                # clip top after style
+                # 13888, 14752, 44595, 18342
+                #
+                # all_texts_gpt[13888]
+                # style_l=sentiment_grades_after_temp[3][0]
+                # tdxs_to_test = [13888,   290,  1486, 21654, 1785, 2607, 13888, 14752, 44595, 18105, 18342]
+                # for idx_t in tdxs_to_test:
+                #     text = self.lm_tokenizer.decode(idx_t)
+                #     print(f"text = {text}")
+                #     print(f"GPT0 : {GPT0_5k_prob_w3_b_3[idx_t]}")
+                #     print(f"CLIP0 : {CLIP0_512_prob_w3_b_3[3][0][idx_t]}")
+                #     print(f"STYLE : {style_l[idx_t]}")
+                #     print(f"CLIPK : {CLIPK_after_style_512_prob_w3_b_3[3][0][idx_t]}")
+                #
+                # tdxs_to_test = [13888, 290, 1486, 21654, 1785, 2607, 13888, 14752, 44595, 18105, 18342]
+                # for idx_t in tdxs_to_test:
+                ######                 fordebug!!!!
+                if False: #for debug
+                    beam_num = 1
+                    all_texts_gpt = []
+                    p, ii = probs[1].topk(512)
+                    for t in range(len(probs[beam_num])):
+                        text = self.lm_tokenizer.decode(t)
+                        all_texts_gpt.append(text)
+                    top_gpt0_p,top_gpt0_i =probs_before_shift[beam_num].topk(4)
+                    top_gpt_p,top_gpt_i =probs[beam_num].topk(4)
+                    top_clip0_p,top_clip0_i =clip_target_probs_before_style[beam_num].topk(4)
+                    top_clip02_p,top_clip02_i =clip_target_probs_before_style2[beam_num].topk(4)
+                    top_clipk_p,top_clipk_i =target_probs_clip[beam_num].topk(4)
+                    topk_style_p,top_style_i =sentiment_grades_after_temp[beam_num].topk(4)
+
+                    total_idxs=list(top_gpt0_i.cpu().numpy())+list(top_gpt_i.cpu().numpy())+list(top_clip0_i[0].cpu().numpy())+list(top_clipk_i[0].cpu().numpy())+list(top_style_i[0].cpu().numpy())+list(top_clip02_i[0].cpu().numpy())
+
+                    for l in total_idxs:
+                        text = self.lm_tokenizer.decode(l)
+                        print(f"{text}")
+                        print(f"{probs_before_shift[beam_num][l]}")
+                        print(f"{clip_target_probs_before_style[beam_num][0][l]}")
+                        print(f"{clip_target_probs_before_style2[beam_num][0][l]}")
+                        print(f"{sentiment_grades_after_temp[beam_num][0][l]}")
+                        print(f"{target_probs_clip[beam_num][0][l]}")
+                        print(f"{probs[beam_num][l]}")
+                    #
+
+
+
+
+                # p1,i1=probs[beam_num].topk(4)
+                # all_texts_gpt[1266]
+                # 4950
+                # target_probs_clip[beam_num][4950]
+                # for l in [all_texts_gpt.index('rose')]:
+                #     text = self.lm_tokenizer.decode(l)
+                #     print(f"text = {text}")
+                #     print(f"{probs_before_shift[beam_num][l]}")
+                #     print(f"{clip_target_probs_before_style[beam_num][0][l]}")
+                #     print(f"{sentiment_grades_after_temp[beam_num][0][l]}")
+                #     print(f"{target_probs_clip[beam_num][0][l]}")
+                #     print(f"{probs_before_shift[beam_num][l]}")
+#
+#                 p1,i1 = clip_target_probs_before_style[beam_num].topk(1)
+#                 p1,i1 = probs[beam_num].topk(1)
+#                 for idx_t in i1:
+#                     text = self.lm_tokenizer.decode(idx_t)
+#                     print(text)
+#                     print(f"text = {text}")
+#                     print(f"GPT0 : {probs[beam_num][idx_t]}")
+#                     print(f"CLIP0 : {clip_target_probs_before_style[beam_num][0][idx_t]}")
+#                     print(f"STYLE : {sentiment_grades_after_temp[beam_num][0][idx_t]}")
+#                     print(f"CLIPK : {target_probs_clip[beam_num][0][idx_t]}")
+
+                #
+#     for w in ['face']:
+#     print(f'word= {w}:')
+#     word_idx_for_prob = GPT0_5k_text_w3_b_3.index(w)
+#
+#
+
+#                     print(text)
+#                 # GPT0_5k_prob_w3_b_3 = probs[3]
+#                 for w in ['face','ball','cat','rose','jar','nice','happy']:
+#                 for w in ['arrangement','design','simplicity','flower','image','gift','decoration']:
+#                 # for w in ['face']:
+#                     print(f'word= {w}:')
+#                     word_idx_for_prob = probs[3].cpu().numpy.index(w)
+#
+#                     print(f"GPT0 : {GPT0_5k_prob_w3_b_3[word_idx_for_prob]}")
+#                     print(f"CLIP0 : {CLIP0_512_prob_w3_b_3[word_idx_for_prob]}")
+#                     print(f"STYLE : {STYLEK_512_prob_w3_b_3[word_idx_for_prob]}")
+#                     print(f"CLIPK : {CLIPK_after_style_512_prob_w3_b_3[word_idx_for_prob]}")
+#
+# p1,i1=STYLEK_512_prob_w3_b_3.topk(2)
+#
+# target_probs_clip,clip_target_probs_before_style,sentiment_grades_before_temp ,sentiment_grades_after_temp
+#
+# for word in range(len(GPT0_5k_prob_w3_b_3)):
                 if self.config['mul_clip_style']:
                     target_probs_clip_plot = target_probs_clip
-                    clip_target_probs_before_style_plot = clip_target_probs_before_style
                     sentiment_grades_before_temp_plot = sentiment_grades_before_temp
                     sentiment_grades_after_temp_plot = sentiment_grades_after_temp
+                    try:
+                        clip_target_probs_before_style_plot = clip_target_probs_before_style
+                    except:
+                        pass
 
                 # todo: check that clip_probs have grads
                 if self.config['print_for_debug'] and self.config['print_for_debug_redundant']:
@@ -1676,6 +1776,64 @@ class CLIPTextGenerator:
             #weighted_text_style_loss = self.text_style_scale * text_style_loss
             #if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
             #    break
+            # # print probs graphs
+            if i==0 or i==self.num_iterations-1:
+                if self.config.get('plot_prob_graphs', False):
+                    for i_beam in range(probs.shape[0]):
+                        # if i_beam>0: #plot only first
+                        #     break
+                        x = np.arange(0, probs.shape[1], 1)  # top_indices[idx_p]
+                        # Create a grid of subplots
+                        fig, axs = plt.subplots(3, 2)
+
+                        # Plot the graphs in separate subplots
+                        axs[0, 0].plot(x, probs_before_shift[i_beam].cpu().numpy(), label='source_LM_probs')
+                        axs[0, 0].set_title(f'LM_0 prob')
+
+                        axs[0, 1].plot(x, probs[i_beam].detach().cpu().numpy(), label='fixed_LM_probs')
+                        axs[0, 1].set_title(f'final LM prob')
+                        # clip_target_probs_before_style
+                        # if len(sentiment_grades_before_temp.shape)<2:
+                        #     sentiment_grades_before_temp = torch.unsqueeze(sentiment_grades_before_temp,1)
+                        if len(sentiment_grades_before_temp_plot[i_beam].shape) > 1:
+                            sentiment_grades_before_temp_plot[i_beam] = torch.squeeze(
+                                sentiment_grades_before_temp_plot[i_beam])
+                        # axs[1, 0].plot(x, sentiment_grades_before_temp_plot[i_beam].cpu().numpy(),
+                        #                label='sentiment_grades_before_temp')
+                        # axs[1, 0].set_title('sentiment probs before temp')
+
+                        if len(sentiment_grades_after_temp_plot[i_beam].shape) > 1:
+                            sentiment_grades_after_temp_plot[i_beam] = torch.squeeze(
+                                sentiment_grades_after_temp_plot[i_beam])
+                        axs[1, 1].plot(x, sentiment_grades_after_temp_plot[i_beam].cpu().numpy(),
+                                       label='sentiment_grades_after_temp')
+                        axs[1, 1].set_title(f'style prob')
+
+                        # if len(clip_target_probs_before_style.shape)<2:
+                        #     clip_target_probs_before_style = torch.unsqueeze(clip_target_probs_before_style,1)
+                        try:
+                            if len(clip_target_probs_before_style_plot[i_beam].shape) > 1:
+                                clip_target_probs_before_style_plot[i_beam] = torch.squeeze(
+                                    clip_target_probs_before_style_plot[i_beam])
+                            axs[2, 0].plot(x, clip_target_probs_before_style_plot[i_beam].cpu().detach().numpy(),
+                                           label='clip_target_probs_before_style')
+                            axs[2, 0].set_title(f'CLIP_0 prob')
+                        except:
+                            pass
+
+                        if len(target_probs_clip_plot[i_beam].shape) > 1:
+                            target_probs_clip_plot[i_beam] = torch.squeeze(target_probs_clip_plot[i_beam])
+                        axs[2, 1].plot(x, target_probs_clip_plot[i_beam].cpu().detach().numpy(), label='target_probs_clip')
+                        axs[2, 1].set_title(f'final CLIP prob')
+
+                        # Add a global title
+                        # fig.suptitle(f'word loc = {word_loc}, i_beam={i_beam}, iteration number={i}')
+                        fig.suptitle(f'word loc = {word_loc}, iteration number={i}')
+
+                        # Adjust the spacing between subplots
+                        plt.tight_layout()
+
+                        plt.show(block=False)
 
         print(f"Finished in {i} iterations.")
         if self.config['print_for_debug']:
@@ -1716,7 +1874,7 @@ class CLIPTextGenerator:
 
         return logits
 
-    def clip_loss(self, probs, context_tokens, grad_lm=True):
+    def clip_loss(self, probs, context_tokens, grad_lm=True, print_probs = False):
         '''
 
         :param probs:
@@ -1724,6 +1882,8 @@ class CLIPTextGenerator:
         :param grad_lm: weaher to condifer grads in LM
         :return:
         '''
+        STYLEK_512_prob_w3_b_3_t=None; CLIPK_512_text_w3_b_3_t=None
+        DEBUG_NUM_WORDS = 5
         if not self.config.get('update_ViT',False):
             for p_ in self.clip.transformer.parameters(): #todo: check if it defend on text params.
                 if p_.grad is not None:
@@ -1992,8 +2152,8 @@ class CLIPTextGenerator:
                             sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
                         elif self.config['style_type'] == 'emoji':
                             tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
-                            tokenized = torch.from_numpy(tokenized.astype(np.int32))
-                            emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
+                            tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
+                            emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
                             scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
                             # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
                             sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
@@ -2149,6 +2309,7 @@ class CLIPTextGenerator:
                 target_probs = nn.functional.softmax(similiraties / self.clip_loss_temperature, dim=-1) # .detach() todo: check if it is ok
                 target_probs = target_probs.type(torch.float32)
 
+
                 if self.config.get('mul_clip_style', False):
                     ########adding style effect#todo
                     with torch.no_grad():
@@ -2231,6 +2392,36 @@ class CLIPTextGenerator:
             clip_loss += cur_clip_loss
             losses.append(cur_clip_loss)
 
+            # ########
+            #
+            DEBUG_NUM_WORDS = 5
+            if print_probs:
+                probs_val, indices = clip_target_probs_before_style_t[idx_p].topk(DEBUG_NUM_WORDS)
+                print("in clip loss:")
+                print("clip_target_probs_before_style_t:")
+                for i_x, x in enumerate(indices[0]):
+                    # text = prefix_text + self.lm_tokenizer.decode(x)
+                    text = self.lm_tokenizer.decode(x)
+                    print(f"{text}     :{probs_val[0][i_x]}")
+
+
+                probs_val, indices = sentiment_grades_after_temp_t[idx_p].topk(DEBUG_NUM_WORDS)
+                print("sentiment_grades_after_temp_t:")
+                for i_x, x in enumerate(indices[0]):
+                    # text = prefix_text + self.lm_tokenizer.decode(x)
+                    text = self.lm_tokenizer.decode(x)
+                    print(f"{text}     :{probs_val[0][i_x]}")
+
+                probs_val, indices = clip_target_probs_weightes_style_normalized.topk(DEBUG_NUM_WORDS)
+                if False:
+                    print("clip_target_probs_weightes_style_normalized:")
+                    for i_x, x in enumerate(indices[0]):
+                        # text = prefix_text + self.lm_tokenizer.decode(x)
+                        text = top_texts[x]
+                        print(f"{text}     :{probs_val[0][i_x]}")
+
+            # ########
+
             # x = np.arange(0, probs.shape[1], 1)  # top_indices[idx_p]
             # y = target[0].cpu().numpy()
             # plt.figure()
@@ -2265,7 +2456,7 @@ class CLIPTextGenerator:
         return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs, clip_probs, clip_target_probs_before_style_t,sentiment_grades_before_temp_t,sentiment_grades_after_temp_t
 
 
-    def get_clip_probs(self, probs, context_tokens):
+    def get_clip_probs(self, probs, context_tokens, print_probs=False):
         if not self.config.get('update_ViT',False):
             for p_ in self.clip.transformer.parameters(): #todo: check if it defend on text params.
                 if p_.grad is not None:
@@ -2279,8 +2470,12 @@ class CLIPTextGenerator:
             print("in clip loss:")
 
         clip_probs = {} #for all beams
-        clip_target_probs_before_style = None; sentiment_grades_after_temp=None;sentiment_grades_before_temp=None
+        clip_target_probs_before_style_t = {}
+        sentiment_grades_before_temp_t = {}
+        sentiment_grades_after_temp_t = {}
+        # clip_target_probs_before_style = None; sentiment_grades_after_temp=None;sentiment_grades_before_temp=None
         for idx_p in range(probs.shape[0]): # for beam search
+            print(f"idx beam = {idx_p}")
             top_texts = []
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]:
@@ -2290,9 +2485,17 @@ class CLIPTextGenerator:
                 top_texts.append(text)
 
             # grades according to match to style
-            probs_val,indices = top_probs_LM[idx_p].topk(DEBUG_NUM_WORDS)
-            text_features = self.get_txt_features(top_texts)
+            if print_probs:
+                DEBUG_NUM_WORDS = 5
+                probs_val,indices = probs[idx_p].topk(DEBUG_NUM_WORDS)
+                print(f"prefix = {prefix_text}")
+                print("top_Gpt:")
+                for i_x, x in enumerate(indices):
+                    # text = prefix_text + self.lm_tokenizer.decode(x)
+                    text = self.lm_tokenizer.decode(x)
+                    print(f"{text}:   {probs_val[i_x]}")
 
+            text_features = self.get_txt_features(top_texts)
             #similarities according to fixed clip
             similiraties = (self.image_features @ text_features.T)
             similiraties = similiraties.float() #todo: check if need / self.clip_loss_temperature
@@ -2309,6 +2512,7 @@ class CLIPTextGenerator:
                 target_probs_source = target_probs_source.type(torch.float32)
                 ########adding style effect#todo
                 text_list = self.preprocess_text_for_roberta(top_texts)
+                sentiment_grades_before_temp_t[idx_p] = torch.zeros_like(probs[idx_p])
                 if self.config['style_type'] == 'roberta':
                     encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
                         self.device)
@@ -2318,17 +2522,18 @@ class CLIPTextGenerator:
                     sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
                     scores = nn.functional.softmax(scores / self.sentiment_temperature,
                                                    dim=0)  # rank grades between all images
+
                     # sentiment_grades = None
                     if self.style == 'positive':
                         sentiment_grades = scores[:, 2]
-                        sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                        sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_before_temp[:, 2]
                     elif self.style == 'neutral':
                         sentiment_grades = scores[:, 1]
-                        sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                        sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_before_temp[:, 2]
                     elif self.style == 'negative':
                         sentiment_grades = scores[:, 0]
-                        sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                    sentiment_grades = sentiment_grades.unsqueeze(0)
+                        sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_before_temp[:, 2]
+                    sentiment_grades = sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]].unsqueeze(0)
                 elif self.config['style_type'] == 'emoji':
                     for i_text,text in enumerate(top_texts):
                         if '\t' in text:
@@ -2342,14 +2547,27 @@ class CLIPTextGenerator:
                     emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
                     scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
                     # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
-                    sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                    # sentiment_grades_before_temp[idx_p] = nn.functional.softmax(scores, dim=0)
+                    sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = nn.functional.softmax(scores, dim=0)
+                    sentiment_grades_before_temp_t[idx_p] = sentiment_grades_before_temp_t[idx_p][
+                        top_indices[idx_p]].unsqueeze(0)
+
                     scores = nn.functional.softmax(scores / self.sentiment_temperature,
                                                    dim=0)  # rank grades between all images
                     sentiment_grades = scores.unsqueeze(0).to(self.device)
 
             clip_target_probs_source = target_probs_source
-            clip_target_probs_before_style = clip_target_probs_source
-            sentiment_grades_after_temp = sentiment_grades
+            # clip_target_probs_before_style[idx_p] = clip_target_probs_source
+            clip_target_probs_before_style_t[idx_p] = torch.zeros_like(probs[idx_p])
+            clip_target_probs_before_style_t[idx_p][top_indices[idx_p]] = clip_target_probs_source
+            clip_target_probs_before_style_t[idx_p] = clip_target_probs_before_style_t[idx_p].unsqueeze(0)
+
+            sentiment_grades_after_temp_t[idx_p] = torch.zeros_like(probs[idx_p])
+            sentiment_grades_after_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades
+            sentiment_grades_after_temp_t[idx_p] = sentiment_grades_after_temp_t[idx_p].unsqueeze(0)
+            # sentiment_grades_after_temp[idx_p] = sentiment_grades
+
+
             clip_target_probs_weightes_style = sentiment_grades * clip_target_probs_source
             clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style / clip_target_probs_weightes_style.sum()
 
@@ -2361,9 +2579,44 @@ class CLIPTextGenerator:
             target_fixed[top_indices[idx_p]] = target_probs_fixed
             target_fixed = target_fixed.unsqueeze(0)
 
+
+            #for debug
+
+            CLIP0_512_prob_w3_b_3 = None; CLIP0_512_text_w3_b_3=None
+            if print_probs:
+                probs_val, indices = clip_target_probs_before_style_t[idx_p].topk(DEBUG_NUM_WORDS)
+                print("clip_target_probs_before_style_t:")
+                for i_x, x in enumerate(indices[0]):
+                    # text = prefix_text + self.lm_tokenizer.decode(x)
+                    text = self.lm_tokenizer.decode(x)
+                    print(f"{text}     :{probs_val[0][i_x]}")
+
+                CLIP0_512_prob_w3_b_3 = clip_target_probs_before_style_t
+                CLIP0_512_text_w3_b_3 = list(range(len(clip_target_probs_before_style_t)))
+
+                probs_val, indices = sentiment_grades_after_temp_t[idx_p].topk(DEBUG_NUM_WORDS)
+                if False:
+                    print("sentiment_grades_after_temp_t:")
+                    for i_x, x in enumerate(indices[0]):
+                        # text = prefix_text + self.lm_tokenizer.decode(x)
+                        text = self.lm_tokenizer.decode(x)
+                        print(f"{text}     :{probs_val[0][i_x]}")
+
+            # probs_val, indices = source_target_with_style[idx_p].topk(DEBUG_NUM_WORDS)
+            # for x in indices:
+            #     text = prefix_text + self.lm_tokenizer.decode(x)
+            #     print(text + '\n')
+            #
+            # probs_val, indices = target_fixed.topk(DEBUG_NUM_WORDS)
+            # for x in indices:
+            #     text = prefix_text + self.lm_tokenizer.decode(x)
+            #     print(text + '\n')
+
             cur_clip_loss = torch.sum((target_fixed * torch.log(target_fixed.detach()))) + torch.sum(-(target_fixed * torch.log(source_target_with_style.detach())))  # todo check i need the first element
             clip_loss += cur_clip_loss
             losses.append(cur_clip_loss)
             if self.config.get('update_ViT',False) or self.config.get('loss_1_mul_clip_style_in_lm',False) :
-                clip_probs[idx_p] = source_target_with_style
-        return clip_loss, losses, clip_probs, clip_target_probs_before_style,sentiment_grades_before_temp,sentiment_grades_after_temp
+                clip_probs[idx_p] = target_probs_fixed
+
+
+        return clip_loss, losses, clip_probs, clip_target_probs_before_style_t,sentiment_grades_before_temp_t,sentiment_grades_after_temp_t, CLIP0_512_prob_w3_b_3, CLIP0_512_text_w3_b_3

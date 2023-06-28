@@ -361,7 +361,8 @@ def main():
     # score_files = {"ZeroStyleCap": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/baselines/capdec_evaluation_all_frames.csv",
     #                "capdec": "/Users/danielabendavid/experiments/capdec/27_2_23/evaluation_all_frames_capdec.csv"}
     score_files = {
-        "capdec": "/Users/danielabendavid/experiments/capdec/27_2_23/evaluation_all_frames.csv"}
+        # "capdec": "/Users/danielabendavid/experiments/capdec/27_2_23/evaluation_all_frames.csv"}
+        "APOLLO-CAP-DEC": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/evaluation_all_frames_update_vit_focus_clip_v15pos_test_best_fluence.csv"}
     data_split = 'test' # 'test'
     base_dir4tgt_pdf_file_path = os.path.join(os.path.expanduser('~'),'experiments')
     img_dir_path = os.path.join(os.path.expanduser('~'),'data/senticap/images/'+data_split)
