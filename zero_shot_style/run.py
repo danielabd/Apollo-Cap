@@ -1040,7 +1040,8 @@ def main():
                 else:
                     raise Exception('run_type must be caption or arithmetics!')
                 evaluation_results[img_name][label]['res'] = best_caption
-                evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
+                # evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle for flickr
+                evaluation_results[img_name][label]['gt'] = None  # todo: handle style type
                 evaluation_results[img_name][label]['scores'] = {}
                 # evaluation_obj['fluency'].add_results(evaluation_results)
                 evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)

@@ -253,6 +253,7 @@ def get_wrong_data_names(senticap_captions_test):
 
 def main():
     data_dir = os.path.join(os.path.expanduser('~'),'data')
+    dataset = 'flickrstyle10k' #senticap, flickrstyle10k
     #flickrstyle10k data
     base_path_flickrstyle10k = os.path.join(data_dir,'source','flickrstyle10k')
     imgs_folder_flickrstyle10k = os.path.join(base_path_flickrstyle10k,'flickr_images_dataset')
@@ -272,18 +273,19 @@ def main():
         os.path.join(data_dir, 'source', 'coco', '2017', 'annotations', 'captions_train2017.json'),
         os.path.join(data_dir, 'source', 'coco', '2017', 'annotations', 'captions_val2017.json')]
 
-    flickrstyle10k_data = get_all_flickrstyle10k_data(base_path_flickrstyle10k,imgs_folder_flickrstyle10k,captions_file_path_flickrstyle10k)
-    flickrstyle10k_data_list = list(flickrstyle10k_data.values())
+    if dataset == 'flickrstyle10k':
+        flickrstyle10k_data = get_all_flickrstyle10k_data(base_path_flickrstyle10k,imgs_folder_flickrstyle10k,captions_file_path_flickrstyle10k)
+        flickrstyle10k_data_list = list(flickrstyle10k_data.values())
 
+    if dataset == 'senticap':
+        sr = SenticapReader(filename_senticap,imgs_folder_senticap,imgs_folder2017)
+        senticap_captions_test, senticap_captions_train = add_factual_sentences_to_senticap_data(sr,factual_file_path_list_senticap)
 
-    sr = SenticapReader(filename_senticap,imgs_folder_senticap,imgs_folder2017)
-    senticap_captions_test, senticap_captions_train = add_factual_sentences_to_senticap_data(sr,factual_file_path_list_senticap)
+        test_data_wrong_names = [s.get_imgpath().split('/')[-1].split('.')[0] for s in senticap_captions_test]
 
-    test_data_wrong_names = [s.get_imgpath().split('/')[-1].split('.')[0] for s in senticap_captions_test]
-
-    test_data_names = [s.get_imgpath().split('/')[-1].split('.')[0] for s in sr.get_images() if s.getSplit() == s.TEST_SPLIT]
-    test_data_to_add_for_running = [i for i in test_data_names if i not in test_data_wrong_names]
-    overlap = sum([1 for i in test_data_names if i in test_data_wrong_names])
+        test_data_names = [s.get_imgpath().split('/')[-1].split('.')[0] for s in sr.get_images() if s.getSplit() == s.TEST_SPLIT]
+        test_data_to_add_for_running = [i for i in test_data_names if i not in test_data_wrong_names]
+        overlap = sum([1 for i in test_data_names if i in test_data_wrong_names])
 
     # Writing to sample.json
     # with open(os.path.join(target_data_dir_senticap,"bu_up_to_4_1_2023","test_data_wrong_names.json"), "w") as outfile:
@@ -297,19 +299,20 @@ def main():
 
     ## split datat to train,val,test
     # flickrstyle10k
-    train_val_data_flickrstyle10k, test_data_flickrstyle10k = train_test_split(flickrstyle10k_data_list, test_size=0.3, random_state=42)
-    train_data_flickrstyle10k, val_data_flickrstyle10k = train_test_split(train_val_data_flickrstyle10k, test_size=0.1, random_state=42)
-    #arrange_data(train_data_flickrstyle10k,val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k)
-    # senticap
-    #train_data_senticap, val_data_senticap = train_test_split(senticap_captions_train, test_size=0.1, random_state=42)
-    #test_data_senticap = senticap_captions_test
+    if dataset == 'flickrstyle10k':
+        train_val_data_flickrstyle10k, test_data_flickrstyle10k = train_test_split(flickrstyle10k_data_list, test_size=0.3, random_state=42)
+        train_data_flickrstyle10k, val_data_flickrstyle10k = train_test_split(train_val_data_flickrstyle10k, test_size=0.1, random_state=42)
+        #arrange_data(train_data_flickrstyle10k,val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k)
+        # senticap
+        #train_data_senticap, val_data_senticap = train_test_split(senticap_captions_train, test_size=0.1, random_state=42)
+        #test_data_senticap = senticap_captions_test
 
-    # arrange_data(train_data_senticap, val_data_senticap, test_data_senticap, target_data_dir_senticap)
-    save_images = False
-    save_annotations = False
-    #use all annotated data with factual to test
-    arrange_data(train_data_flickrstyle10k, val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k,save_images,save_annotations, 'flickrstyle10k')
-    # arrange_data_for_senticap(sr, target_data_dir_senticap, save_images, save_annotations)
+        # arrange_data(train_data_senticap, val_data_senticap, test_data_senticap, target_data_dir_senticap)
+        save_images = False
+        save_annotations = True
+        #use all annotated data with factual to test
+        arrange_data(train_data_flickrstyle10k, val_data_flickrstyle10k, test_data_flickrstyle10k,target_data_dir_flickrstyle10k,save_images,save_annotations, 'flickrstyle10k')
+        # arrange_data_for_senticap(sr, target_data_dir_senticap, save_images, save_annotations)
     print('finish')
 
     '''

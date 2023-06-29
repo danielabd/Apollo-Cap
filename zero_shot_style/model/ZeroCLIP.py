@@ -2337,7 +2337,7 @@ class CLIPTextGenerator:
                             sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
                         elif self.config['style_type'] == 'emoji':
                             tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
-                            tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                            tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
                             emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
                             scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
                             # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
@@ -2543,7 +2543,7 @@ class CLIPTextGenerator:
                         if text=='':
                             top_texts[i_text] = ' '
                     tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
-                    tokenized = torch.from_numpy(tokenized.astype(np.int32))
+                    tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
                     emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
                     scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
                     # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
