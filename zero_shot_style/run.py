@@ -36,7 +36,7 @@ DEFAULT_CLIP_SCORE = 1
 DEFAULT_STYLE_CLS_SCORE = 1
 DEFAULT_STYLE_CLS_EMOJI_SCORE = 1
 EPSILON = 0.0000000001
-
+MAX_NUM_IMGS_TO_TEST = 1000
 
 def get_args():
     parser.add_argument('--config_file', type=str,
@@ -1006,7 +1006,8 @@ def main():
                 continue
             print(f"Img num = {img_path_idx}")
             # prompt manipulation or using text style model
-            try:
+            if True:
+            # try:
                 if config['run_type'] == 'caption':
                     title2print = get_title2print(config['img_path'], config['dataset'], label, config)
                     print(title2print)
@@ -1054,9 +1055,9 @@ def main():
                     print(f"style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
                 elif "style_classification_emoji" in config["evaluation_metrics"]:
                     print(f"style_classification_emoji={evaluation_results[img_name][label]['scores']['style_classification_emoji']}")
-            except:
-                print("check why it failed")
-                failed_img_names.append(img_name)
+            # except:
+            #     print("check why it failed")
+            #     failed_img_names.append(img_name)
     evaluate_results(config, evaluation_results, gts_data, results_dir, factual_captions, text_generator,evaluation_obj)
     print("images that failed:")
     print(failed_img_names)
