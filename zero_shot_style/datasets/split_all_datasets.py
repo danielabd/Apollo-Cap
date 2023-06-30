@@ -307,6 +307,19 @@ def main():
         #train_data_senticap, val_data_senticap = train_test_split(senticap_captions_train, test_size=0.1, random_state=42)
         #test_data_senticap = senticap_captions_test
 
+        get_split_according_to_existing_imgs_split = True
+        if get_split_according_to_existing_imgs_split:
+            imgs_path = '/Users/danielabendavid/data/flickrstyle10k/images/test/'
+            test_data_flickrstyle10k = []
+            imgs_for_test = []
+            for fn in os.listdir(imgs_path):
+                i_n = fn.split('.')[0]
+                imgs_for_test.append(i_n)
+
+            for imt in flickrstyle10k_data_list:
+                if imt.get_filename() in imgs_for_test:
+                    test_data_flickrstyle10k.append(imt)
+
         # arrange_data(train_data_senticap, val_data_senticap, test_data_senticap, target_data_dir_senticap)
         save_images = False
         save_annotations = True

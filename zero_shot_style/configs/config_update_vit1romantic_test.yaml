@@ -12,12 +12,12 @@ plot_prob_graphs: False
 
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
-max_num_of_imgs: 5 #todo
+max_num_of_imgs: 1000 #todo
 reverse_imgs_list: False
-data_type: val #val, test #todo:!!!!!!!!
+data_type: test #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
 #specific_imgs_to_test: [86542183_5e312ae4d4,232874193_c691df882d] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-specific_imgs_to_test: [86542183_5e312ae4d4] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+#specific_imgs_to_test: [86542183_5e312ae4d4] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
 #specific_img_idxs_to_test: [5,6,207]
 #specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
 #specific_img_idxs_to_test: [5,134]
@@ -34,7 +34,7 @@ max_batch_size_style_cls: 10
 ##########
 mul_clip_style: True
 only_clip_styled_clip_loss: True
-sentiment_temperature: 0.06462 #0.04
+sentiment_temperature: 0.0672676323972359  #0.04
 ######
 desired_labels:
   senticap: [negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
@@ -42,7 +42,7 @@ desired_labels:
 
 experiement_global_name:
   senticap: StylizedZeroCap_update_vit_focus_clip_v13neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  flickrstyle10k: StylizedZeroCap_update_vit_style_v1_romantic
+  flickrstyle10k: StylizedZeroCap_update_vit_style_v1_romantic_test
 
 ###### update clip ViT tensors
 update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
@@ -53,7 +53,7 @@ start_loop_clip_style_in_word_num: 1
 
 num_iterations_clip_style: 1 #sweep 9
 ce_scale:
-  senticap: 0.3735 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
+  senticap: 0.35666314733274807 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 0.3735
 clip_scale:
   senticap: 1 #1.6 #- comparison to other baselines
