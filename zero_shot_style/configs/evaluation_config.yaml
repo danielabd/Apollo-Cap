@@ -26,8 +26,9 @@ update_ViT: False
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
   senticap: [negative]  #[positive, negative, factual] #todo
-  flickrstyle10k: [humor]
+#  flickrstyle10k: [humor]
 #  flickrstyle10k: [romantic]
+  flickrstyle10k: [humor,romantic]
 
 desired_labels:
   senticap: [positive, negative] #[factual, positive, negative]
@@ -188,6 +189,10 @@ res_path2eval:
     #capdec
     capdec_humor: /Users/danielabendavid/projects/zero-shot-style/zero_shot_style/results/capdec_res_humor.csv
 #    capdec_romantic: /Users/danielabendavid/projects/zero-shot-style/zero_shot_style/results/capdec_res_romantic.csv
+#baseline
+    prompt_man: /Users/danielabendavid/projects/zero-shot-style/zero_shot_style/results/flickrstyle10k/total_results_flickrstyle10k_prompt_manipulation.csv
+    im_man: /Users/danielabendavid/projects/zero-shot-style/zero_shot_style/results/flickrstyle10k/total_results_flickrstyle10k_image_manipulation.csv
+    prompt_and_im_man: /Users/danielabendavid/projects/zero-shot-style/zero_shot_style/results/flickrstyle10k/total_results_flickrstyle10k_image_and_prompt_manipulation.csv
 
 # finetuned roBERTa
 finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
