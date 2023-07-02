@@ -367,6 +367,8 @@ class STYLE_CLS_EMOJI:
 
 
     def load_model(self, emoji_pretrained_path):
+        use_cuda = torch.cuda.is_available()
+        self.device = torch.device(f"cuda" if use_cuda else "cpu")
         emoji_style_model = torchmoji_emojis(emoji_pretrained_path).to(self.device)
         for param in emoji_style_model.parameters():
             param.requires_grad = False
