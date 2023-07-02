@@ -466,6 +466,16 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params"
         # update vit pos after fix -same params - pos
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence_fixed_same_params"
+        # flickrstyle10k
+        #3 loss
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_romantic_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_humor_test"
+        #mul clip style
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_mul_clip_style_v1_romantic_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_mul_clip_style_v1_humor_test"
+        #update vit
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_update_vit_style_v1_humor_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_update_vit_style_v1_romantic_test"
 
         suffix_name = src_dir_text_style.split('/')[-1]
         # src_dir_text_style = os.path.join(base_path,'text_style')
@@ -578,12 +588,13 @@ def map_img_name_to_idx(dataset,test_split):
         os.path.join(os.path.join(os.path.expanduser('~'), 'data', dataset, 'images',test_split)))):
         if ('.jpg' or '.jpeg' or '.png') not in im:
             continue
-        if i == 119:
-            print(f"i={i},img_name={int(im.rsplit('.')[0])}")
         if dataset=='senticap':
-            img_name_to_idx[int(im.rsplit('.')[0])] = i
+            img_name = int(im.rsplit('.')[0])
         elif dataset == 'flickrstyle10k':
-            img_name_to_idx[im.rsplit('.')[0]] = i
+            img_name = im.rsplit('.')[0]
+        img_name_to_idx[img_name] = i
+        if i == 119:
+            print(f"i={i},img_name={img_name}")
     return img_name_to_idx
 
 # img_nums=[]
@@ -629,12 +640,12 @@ def main():
     exp_to_merge = ["zerostylecap"]
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "zerostylecap"]
 
+    dataset = 'flickrstyle10k' #'senticap'
     test_split = 'test'
     merge_dirs = True
     merge_res_of_sweep = False
 
     if merge_dirs:
-        dataset = 'senticap'
         suffix_name = ''
         res_paths, src_dirs, tgt_paths = get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name)  # todo:
         img_name_to_idx = map_img_name_to_idx(dataset, test_split)
