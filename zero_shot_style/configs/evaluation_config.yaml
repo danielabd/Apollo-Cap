@@ -27,8 +27,8 @@ update_ViT: False
 styles:
   senticap: [negative]  #[positive, negative, factual] #todo
 #  flickrstyle10k: [humor]
-#  flickrstyle10k: [romantic]
-  flickrstyle10k: [humor,romantic]
+  flickrstyle10k: [romantic]
+#  flickrstyle10k: [humor,romantic]
 
 desired_labels:
   senticap: [positive, negative] #[factual, positive, negative]
