@@ -362,11 +362,12 @@ class STYLE_CLS_EMOJI:
         self.idx_emoji_style_dict = idx_emoji_style_dict
         self.use_single_emoji_style = use_single_emoji_style
         self.desired_labels = desired_labels
-
+        use_cuda = torch.cuda.is_available()
+        self.device = torch.device(f"cuda" if use_cuda else "cpu")
 
 
     def load_model(self, emoji_pretrained_path):
-        emoji_style_model = torchmoji_emojis(emoji_pretrained_path)
+        emoji_style_model = torchmoji_emojis(emoji_pretrained_path).to(self.device)
         for param in emoji_style_model.parameters():
             param.requires_grad = False
         emoji_style_model.eval()
@@ -384,7 +385,7 @@ class STYLE_CLS_EMOJI:
 
         with torch.no_grad():
             tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences([res_val])
-            tokenized = torch.from_numpy(tokenized.astype(np.int32))
+            tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
             # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
             # self.emoji_style_model.to(torch.device("cuda"))
             # self.emoji_style_model = self.emoji_style_model.to(self.device)
