@@ -26,8 +26,8 @@ update_ViT: False
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
   senticap: [negative]  #[positive, negative, factual] #todo
-#  flickrstyle10k: [humor]
-  flickrstyle10k: [romantic]
+  flickrstyle10k: [humor]
+#  flickrstyle10k: [romantic]
 #  flickrstyle10k: [humor,romantic]
 
 desired_labels:
