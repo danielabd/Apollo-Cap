@@ -812,6 +812,8 @@ def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None,
                 continue
             if style != 'factual':
                 gts[k][style] = data[k][style]
+        if len(gts)>=max_num_imgs2test:
+            break
     return gts
 
 
