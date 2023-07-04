@@ -201,6 +201,7 @@ class CLIPTextGenerator:
         self.ce_scale = ce_scale
         self.text_style_scale = text_style_scale
         self.stepsize = stepsize
+        self.stepsize_clip = self.config.get('stepsize_clip',stepsize)
         self.grad_norm_factor = grad_norm_factor
         self.fusion_factor = fusion_factor
         self.repetition_penalty = repetition_penalty
@@ -1389,11 +1390,11 @@ class CLIPTextGenerator:
                         tmp_sep_norms_v = [(torch.norm(x.grad[b:(b + 1)] * window_mask_clip[b:(b + 1)]) + 1e-15) for x in curr_shift_v] #for p_ in curr_shift]
 
                         # normalize gradients
-                        tmp_grad_k = [-self.stepsize * factor * (
+                        tmp_grad_k = [-self.stepsize_clip * factor * (
                                 x.grad[b:(b + 1)] * window_mask_clip[b:(b + 1)] / tmp_sep_norms_k[
                             j] ** self.grad_norm_factor).data.cpu().numpy()
                                            for j, x in enumerate(curr_shift_k)] #for i, p_ in enumerate(curr_shift)]
-                        tmp_grad_v = [-self.stepsize * factor * (
+                        tmp_grad_v = [-self.stepsize_clip * factor * (
                                 x.grad[b:(b + 1)] * window_mask_clip[b:(b + 1)] / tmp_sep_norms_v[
                             j] ** self.grad_norm_factor).data.cpu().numpy()
                                       for j, x in enumerate(curr_shift_v)]  # for i, p_ in enumerate(curr_shift)]

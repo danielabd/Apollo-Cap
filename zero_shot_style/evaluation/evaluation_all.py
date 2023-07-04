@@ -35,6 +35,7 @@ from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTok
 # from zero_shot_style.evaluation.pycocoevalcap.meteor.meteor import Meteor
 # from zero_shot_style.evaluation.pycocoevalcap.rouge.rouge import Rouge
 # from zero_shot_style.evaluation.pycocoevalcap.spice import Spice
+
 from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
 from zero_shot_style.evaluation.text_style_classification import evaluate as evaluate_text_style_classification
 from zero_shot_style.evaluation.text_style_classification import BertClassifier, tokenizer
@@ -788,7 +789,7 @@ def get_all_sentences(data_dir, dataset_name, type_set):
     return sentences
 
 
-def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None, max_num_imgs2test=-1):
+def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None, max_num_imgs2test=-1,imgs2test_list=[]):
     '''
     :param annotations_path: dictionary:keys=dataset names, values=path to pickle file
     factual_captions: need to b none for flickrstyle10k
@@ -800,6 +801,8 @@ def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None,
     # import random
     # print(random.sample(list(data.keys()), 20))
     for k in data:
+        if k not in imgs2test_list:
+            continue
         gts[k] = {}
         if factual_captions:
             gts[k]['factual'] = factual_captions[k]
@@ -812,8 +815,8 @@ def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None,
                 continue
             if style != 'factual':
                 gts[k][style] = data[k][style]
-        if len(gts)>=max_num_imgs2test:
-            break
+        # if len(gts)>=max_num_imgs2test:
+        #     break
     return gts
 
 
@@ -1281,6 +1284,11 @@ def get_final_results():
 
 
 def main():
+    import pandas as pd
+    imgs2test_path = '/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/imgs2test.csv'
+    imgs2test_path_fixed = replace_user_home_dir(imgs2test_path)
+    imgs2test = pd.read_csv(imgs2test_path_fixed)
+    imgs2test_list = list(imgs2test['img_num'])
     get_final_results()
     args = get_args()
     config = get_hparams(args)
@@ -1296,7 +1304,7 @@ def main():
     else:
         factual_captions = None
     gts_per_data_set = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_split'],
-                                    factual_captions, config['max_num_imgs2test'])
+                                    factual_captions, config['max_num_imgs2test'],imgs2test_list=imgs2test_list)
 
     res_data_per_test = get_res_data(config['res_path2eval'],config['dataset'])
     if True:
