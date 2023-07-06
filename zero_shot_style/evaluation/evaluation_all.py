@@ -801,7 +801,7 @@ def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None,
     # import random
     # print(random.sample(list(data.keys()), 20))
     for k in data:
-        if k not in imgs2test_list:
+        if len(imgs2test_list)>0 and k not in imgs2test_list:
             continue
         gts[k] = {}
         if factual_captions:
