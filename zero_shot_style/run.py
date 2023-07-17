@@ -531,7 +531,7 @@ def get_list_of_imgs_for_caption(config):
                 continue
         imgs_to_test.append(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
                                          config['data_type'], im))
-    print(f"***There is {len(imgs_to_test)} images to test.***")
+    print(f"***There are {len(imgs_to_test)} images to test.***")
     return imgs_to_test
 
 
