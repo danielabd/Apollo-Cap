@@ -26,8 +26,8 @@ update_ViT: False
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
   senticap: [negative]  #[positive, negative, factual] #todo
-#  flickrstyle10k: [humor]
-  flickrstyle10k: [romantic]
+  flickrstyle10k: [humor]
+#  flickrstyle10k: [romantic]
 #  flickrstyle10k: [humor,romantic]
 
 desired_labels:
@@ -166,14 +166,14 @@ res_path2eval:
 #    capdec_romantic: /Users/danielabendavid/experiments/capdec/res_romantic.csv
 #    #ZeroStyleCap
 #    #update
-#    ZeroStyleCap_update_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v1_humor_test/total_results_text_style_StylizedZeroCap_update_vit_style_v1_humor_test.csv
-    ZeroStyleCap_update_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v1_romantic_test/total_results_text_style_StylizedZeroCap_update_vit_style_v1_romantic_test.csv
+    ZeroStyleCap_update_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v1_humor_test/total_results_text_style_StylizedZeroCap_update_vit_style_v1_humor_test.csv
+#    ZeroStyleCap_update_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v1_romantic_test/total_results_text_style_StylizedZeroCap_update_vit_style_v1_romantic_test.csv
 ##    #mul
-#    ZeroStyleCap_mul_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v1_humor_test/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_humor_test.csv
-    ZeroStyleCap_mul_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v1_romantic_test/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_romantic_test.csv
+    ZeroStyleCap_mul_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v1_humor_test/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_humor_test.csv
+#    ZeroStyleCap_mul_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v1_romantic_test/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_romantic_test.csv
 ###    3 loss
-#    ZeroStyleCap_3_loss_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_humor_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_humor_test.csv
-    ZeroStyleCap_3_loss_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_romantic_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_romantic_test.csv
+    ZeroStyleCap_3_loss_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_humor_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_humor_test.csv
+#    ZeroStyleCap_3_loss_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_romantic_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_romantic_test.csv
 
   #in results dir
     #ZeroStyleCap
