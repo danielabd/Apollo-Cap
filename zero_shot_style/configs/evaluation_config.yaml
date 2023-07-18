@@ -144,7 +144,7 @@ res_path2eval:
     #update vit fix same params - pos
 #    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence_fixed_same_params/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence_fixed_same_params.csv
     #update vit fix same params - neg
-    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params.csv
+#    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params.csv
 
 
 
@@ -167,7 +167,7 @@ res_path2eval:
 
     #18.7.23
     capdec_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_humor.csv
-    capdec_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_romantic.csv
+#    capdec_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_romantic.csv
     prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_prompt_manipulation.csv
     image_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_image_manipulation.csv
     image_and_prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_flickrstyle10k_image_and_prompt_manipulation.csv
