@@ -16,7 +16,8 @@ max_num_of_imgs: 5 #todo
 reverse_imgs_list: False
 data_type: val #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-specific_imgs_to_test: [86542183_5e312ae4d4,232874193_c691df882d] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+#specific_imgs_to_test: [86542183_5e312ae4d4,232874193_c691df882d] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+specific_imgs_to_test: [86542183_5e312ae4d4,232874193_c691df882d,145721496_687af9bb18,160805827_5e6646b753,172097783_292c5413d8]
 #specific_imgs_to_test: [86542183_5e312ae4d4] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
 #specific_img_idxs_to_test: [5,6,207]
 #specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
@@ -42,7 +43,7 @@ desired_labels:
 
 experiement_global_name:
   senticap: StylizedZeroCap_update_vit_focus_clip_v13neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  flickrstyle10k: StylizedZeroCap_update_vit_style_v1_humor
+  flickrstyle10k: StylizedZeroCap_update_vit_style_v2_humor
 
 ###### update clip ViT tensors
 update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!

@@ -15,9 +15,10 @@ specific_idxs_to_skip: []#[2,3] #todo
 max_num_of_imgs: 5 #todo
 reverse_imgs_list: False
 data_type: val #val, test #todo:!!!!!!!!
-#specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-specific_imgs_to_test: [86542183_5e312ae4d4,232874193_c691df882d] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-#specific_imgs_to_test: [86542183_5e312ae4d4] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+#specific_imgs_to_test: [461692] #[551518]
+#specific_imgs_to_test: [86542183_5e312ae4d4,232874193_c691df882d]
+#specific_imgs_to_test: [86542183_5e312ae4d4]
+specific_imgs_to_test: [86542183_5e312ae4d4,232874193_c691df882d,145721496_687af9bb18,160805827_5e6646b753,172097783_292c5413d8]
 #specific_img_idxs_to_test: [5,6,207]
 #specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
 #specific_img_idxs_to_test: [5,134]
@@ -38,11 +39,11 @@ sentiment_temperature: 0.06462 #0.04
 ######
 desired_labels:
   senticap: [negative] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
-  flickrstyle10k: [humor] #[factual, humor, romantic]
+  flickrstyle10k: [romantic] #[factual, humor, romantic]
 
 experiement_global_name:
   senticap: StylizedZeroCap_update_vit_focus_clip_v13neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  flickrstyle10k: StylizedZeroCap_update_vit_style_v1_humor
+  flickrstyle10k: StylizedZeroCap_update_vit_style_v2_romantic
 
 ###### update clip ViT tensors
 update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
@@ -51,7 +52,7 @@ loss_scale_style_clip: 4.013
 loss_scale_src_clip_clip: 0.000002   #0.5
 start_loop_clip_style_in_word_num: 1
 
-num_iterations_clip_style: 2 #sweep 9
+num_iterations_clip_style: 1 #sweep 9
 ce_scale:
   senticap: 0.3735 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 0.3735
