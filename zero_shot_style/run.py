@@ -45,7 +45,7 @@ def get_args():
                         # default=os.path.join('.', 'configs', 'config_3_loss_roberta_v101neg_test.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_mul_clip_style_roberta_v20neg_test.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_update_vit15pos_test_best_fluence.yaml'), #todo: change config file
-                        default=os.path.join('.', 'configs', 'config_Apollo_decent_pos_v1.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_Apollo_decent_humor_v1_check.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -668,7 +668,10 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             elif 'style_classification_emoji' in config['evaluation_metrics']:
                 style_cls_emoji_score = evaluation_results[img_name][label]['scores']['style_classification_emoji']
                 # if type(style_cls_emoji_score)==list:
-                style_cls_emoji_score = float(style_cls_emoji_score[0].numpy())
+                try:
+                    style_cls_emoji_score = float(style_cls_emoji_score[0].numpy())
+                except:
+                    style_cls_emoji_score = style_cls_emoji_score[0].item()
                 style_cls_score = style_cls_emoji_score
             else:
                 style_cls_score = DEFAULT_STYLE_CLS_SCORE

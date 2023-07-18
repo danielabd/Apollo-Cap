@@ -43,7 +43,7 @@ desired_labels:
 
 experiement_global_name:
   senticap: StylizedZeroCap_update_vit_focus_clip_v13neg #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  flickrstyle10k: StylizedZeroCap_update_vit_style_v1_humor
+  flickrstyle10k: StylizedZeroCap_Apollo_decent_humor_v1
 
 ###### update clip ViT tensors
 update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
