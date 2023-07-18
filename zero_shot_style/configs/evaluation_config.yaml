@@ -26,8 +26,8 @@ update_ViT: False
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
   senticap: [negative]  #[positive, negative, factual] #todo
-  flickrstyle10k: [humor]
-#  flickrstyle10k: [romantic]
+#  flickrstyle10k: [humor]
+  flickrstyle10k: [romantic]
 #  flickrstyle10k: [humor,romantic]
 
 desired_labels:
@@ -166,8 +166,8 @@ res_path2eval:
 #    capdec_romantic: /Users/danielabendavid/experiments/capdec/res_romantic.csv
 
     #18.7.23
-    capdec_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_humor.csv
-#    capdec_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_romantic.csv
+#    capdec_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_humor.csv
+    capdec_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_romantic.csv
     prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_prompt_manipulation.csv
     image_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_image_manipulation.csv
     image_and_prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_flickrstyle10k_image_and_prompt_manipulation.csv
