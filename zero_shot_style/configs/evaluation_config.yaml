@@ -166,11 +166,20 @@ res_path2eval:
 #    capdec_romantic: /Users/danielabendavid/experiments/capdec/res_romantic.csv
 
     #18.7.23
-    prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_prompt_manipulation.csv
-#    capdec_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_humor.csv
-    capdec_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_romantic.csv
-    image_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_image_manipulation.csv
-    image_and_prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_flickrstyle10k_image_and_prompt_manipulation.csv
+#    prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_prompt_manipulation.csv
+##    capdec_humor: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_humor.csv
+#    capdec_romantic: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/res_romantic.csv
+#    image_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_image_manipulation.csv
+#    image_and_prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_flickrstyle10k_image_and_prompt_manipulation.csv
+#    #humor
+#    3_loss: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_humor_test.csv
+#    mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_humor_test.csv
+#    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_update_vit_style_v1_humor_test.csv
+    # romantic
+    3_loss: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_romantic_test.csv
+    mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_romantic_test.csv
+    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_update_vit_style_v1_romantic_test.csv
+
 
 
 #    #ZeroStyleCap
