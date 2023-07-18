@@ -1351,7 +1351,7 @@ def main():
                                                   config['tgt_eval_results_file_name'].split('.')[0]+'_'+'_'.join(config['styles'])+'_'+test_name)
         tgt_eval_results_file_name_for_all_frames = os.path.join(
             list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-            config['tgt_eval_results_file_name_for_all_frames'].split('.')[0]+'_'+test_name+'_'+'_'.join(config['styles'])
+            config['tgt_eval_results_file_name_for_all_frames'].split('.')[0]+'_'+test_name+'_'+'_'.join(config['styles']))
 
     # todo: remove
         # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
