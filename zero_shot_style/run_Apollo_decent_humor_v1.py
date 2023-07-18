@@ -668,7 +668,10 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             elif 'style_classification_emoji' in config['evaluation_metrics']:
                 style_cls_emoji_score = evaluation_results[img_name][label]['scores']['style_classification_emoji']
                 # if type(style_cls_emoji_score)==list:
-                style_cls_emoji_score = float(style_cls_emoji_score[0].numpy())
+                try:
+                    style_cls_emoji_score = float(style_cls_emoji_score[0].numpy())
+                except:
+                    style_cls_emoji_score = style_cls_emoji_score[0].item()
                 style_cls_score = style_cls_emoji_score
             else:
                 style_cls_score = DEFAULT_STYLE_CLS_SCORE
