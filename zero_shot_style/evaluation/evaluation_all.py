@@ -1348,7 +1348,7 @@ def main():
         #     config['tgt_eval_results_file_name_for_all_frames'])
         #
         tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-                                                  config['tgt_eval_results_file_name'].split('.')[0]+'_'+test_name)
+                                                  config['tgt_eval_results_file_name'].split('.')[0]+'_'+test_name+'_'+'_'.join(config['styles']))
         tgt_eval_results_file_name_for_all_frames = os.path.join(
             list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
             config['tgt_eval_results_file_name_for_all_frames'].split('.')[0]+'_'+test_name)
