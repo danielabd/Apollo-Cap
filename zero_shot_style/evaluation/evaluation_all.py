@@ -913,7 +913,8 @@ def get_res_data(res_paths, dataset):
     res_data_per_test = {}
     i = 1 #0 - idx_img_name_in_res
     j = 2 # caption res in column idx=2
-    for test_name in res_paths:
+    keys2test = []
+    for test_name_i,test_name in enumerate(res_paths):
         if test_name.startswith('capdec'):
             i = 0
             j = 1
@@ -923,10 +924,12 @@ def get_res_data(res_paths, dataset):
         for encoding in encoding_options:
             try:
                 with open(res_paths[test_name], 'r',encoding=encoding) as csvfile:
-                    spamreader = csv.reader(csvfile)
+                    csv_reader = csv.reader(csvfile)
                     title = True
                     styles = []
-                    for row in spamreader:
+                    for r_i,row in enumerate(csv_reader):
+                        if r_i==0:
+                            title_row = row
                         if '.jpg' in row[i]:
                             k = row[i].split('.jpg')[0]
                         else:
@@ -952,14 +955,18 @@ def get_res_data(res_paths, dataset):
                             continue
                         else:
                             try:
+                                if test_name_i > 0 and k not in keys2test:
+                                    continue
                                 res_data[k] = {}
                                 for i_s, s in enumerate(styles):
                                     # res_data[k][s] = row[i+1]
                                     # limit sentence to target_seq_length as we create in ZeroStyleCap
-                                    res_data[k][s] = ' '.join(row[i_s + j].split()[:target_seq_length])
+                                    res_data[k][s] = ' '.join(row[title_row.index(s)].split()[:target_seq_length])
                             except:
                                 pass
                 res_data_per_test[test_name] = res_data
+                if test_name_i == 0:
+                    keys2test.extend(list(res_data.keys()))
                 break  # Exit the loop if the file was read successfully
             except UnicodeDecodeError:
                 continue  # Try the next encoding option
@@ -1284,7 +1291,6 @@ def get_final_results():
 
 
 def main():
-    import pandas as pd
     imgs2test_path = '/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/imgs2test.csv'
     imgs2test_path_fixed = replace_user_home_dir(imgs2test_path)
     imgs2test = pd.read_csv(imgs2test_path_fixed)
