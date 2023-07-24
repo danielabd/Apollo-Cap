@@ -36,6 +36,7 @@ DEFAULT_CLIP_SCORE = 1
 DEFAULT_STYLE_CLS_SCORE = 1
 DEFAULT_STYLE_CLS_EMOJI_SCORE = 1
 EPSILON = 0.0000000001
+MAX_NUM_IMGS_TO_TEST = 1000
 
 def get_args():
     parser.add_argument('--config_file', type=str,
@@ -80,6 +81,7 @@ def get_args():
     parser.add_argument("--requires_min_style_score", type=float, default=0.35 )
     parser.add_argument("--requires_min_clip_score_val", type=float, default=0.26)
     parser.add_argument("--requires_num_min_clip_score_val", type=int, default=10)
+    parser.add_argument("--stepsize_clip", type=float, default=0.3)
 
     parser.add_argument("--requires_min_clip_score_val_pos", type=float, default=0.35)
     parser.add_argument("--requires_min_clip_score_val_neg", type=float, default=0.35)
@@ -525,7 +527,7 @@ def get_list_of_imgs_for_caption(config):
                 continue
         imgs_to_test.append(os.path.join(os.path.join(os.path.expanduser('~'), 'data', config['dataset']), 'images',
                                          config['data_type'], im))
-    print(f"***There is {len(imgs_to_test)} images to test.***")
+    print(f"***There are {len(imgs_to_test)} images to test.***")
     return imgs_to_test
 
 
@@ -659,12 +661,16 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                 style_cls_score = evaluation_results[img_name][label]['scores']['style_classification']
             elif 'style_classification_roberta' in config['evaluation_metrics']:
                 style_cls_score = evaluation_results[img_name][label]['scores']['style_classification_roberta']
+            elif 'style_classification_emoji' in config['evaluation_metrics']:
+                style_cls_emoji_score = evaluation_results[img_name][label]['scores']['style_classification_emoji']
+                # if type(style_cls_emoji_score)==list:
+                try:
+                    style_cls_emoji_score = float(style_cls_emoji_score[0].numpy())
+                except:
+                    style_cls_emoji_score = style_cls_emoji_score[0].item()
+                style_cls_score = style_cls_emoji_score
             else:
                 style_cls_score = DEFAULT_STYLE_CLS_SCORE
-            if 'style_classification_emoji' in config['evaluation_metrics']:
-                style_cls_emoji_score = evaluation_results[img_name][label]['scores']['style_classification_emoji']
-            else:
-                style_cls_emoji_score = DEFAULT_STYLE_CLS_EMOJI_SCORE
 
             avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
 
@@ -679,11 +685,13 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
 
             clip_scores.append(clip_score)
             fluency_scores.append(fluency_score)
-            style_cls_scores.append(style_cls_score)
-            if type(style_cls_emoji_score)==list:
-                style_cls_emoji_scores.append(float(style_cls_emoji_score[0].numpy()))
-            else:
+            # style_cls_scores.append(style_cls_score)
+            if 'style_classification_emoji' in config['evaluation_metrics']:
                 style_cls_emoji_scores.append(style_cls_emoji_score)
+                style_cls_scores.append(style_cls_emoji_score)
+            else:
+                style_cls_scores.append(style_cls_score)
+
             avg_total_scores.append(avg_total_score)
             res_text = evaluation_results[img_name][label]['res']
             gt_text = evaluation_results[img_name][label]['gt']
@@ -950,7 +958,10 @@ def main():
     evaluation_results = {}  # total_results_structure
     if config['reverse_imgs_list']:
         imgs_to_test.reverse()
+    failed_img_names = []
     for img_path_idx, img_path in enumerate(imgs_to_test):
+        if len(evaluation_results) >= config['max_num_imgs2test'] and config['max_num_imgs2test'] > 0:
+            break
         if img_path_idx < config['img_idx_to_start_from']:
             continue
         print(f"Img num = {img_path_idx}")
@@ -996,54 +1007,62 @@ def main():
                 continue
             print(f"Img num = {img_path_idx}")
             # prompt manipulation or using text style model
-            if config['run_type'] == 'caption':
-                title2print = get_title2print(config['img_path'], config['dataset'], label, config)
-                print(title2print)
-                best_caption = run(config, config['img_path'], desired_style_embedding_vector,
-                                   desired_style_embedding_vector_std,
-                                   config['cuda_idx_num'], title2print, model_path, config['style_type'], tmp_text_loss,
-                                   label, img_dict, debug_tracking, text_generator, image_features, evaluation_obj, clip_img)
-                write_caption_results(img_dict, results_dir, tgt_results_path)
-                # write_results_of_text_style_all_models(img_dict, desired_labels_list,
-                #                                    results_dir, 1, tgt_results_path)
-                if config['write_debug_tracking_file']:
-                    write_debug_tracking(results_dir, debug_tracking)
-                # if 'fluency' in config['evaluation_metrics']:
-                    # evaluation_obj['fluency'].add_test(best_caption, img_name, label)
+            if True:
+            # try:
+                if config['run_type'] == 'caption':
+                    title2print = get_title2print(config['img_path'], config['dataset'], label, config)
+                    print(title2print)
+                    best_caption = run(config, config['img_path'], desired_style_embedding_vector,
+                                       desired_style_embedding_vector_std,
+                                       config['cuda_idx_num'], title2print, model_path, config['style_type'], tmp_text_loss,
+                                       label, img_dict, debug_tracking, text_generator, image_features, evaluation_obj, clip_img)
+                    write_caption_results(img_dict, results_dir, tgt_results_path)
+                    # write_results_of_text_style_all_models(img_dict, desired_labels_list,
+                    #                                    results_dir, 1, tgt_results_path)
+                    if config['write_debug_tracking_file']:
+                        write_debug_tracking(results_dir, debug_tracking)
+                    # if 'fluency' in config['evaluation_metrics']:
+                        # evaluation_obj['fluency'].add_test(best_caption, img_name, label)
 
-            # image manipulation
-            elif config['run_type'] == 'arithmetics':
-                config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
-                factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
-                img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
-                config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
-                title2print = get_title2print(config['img_path'], config['dataset'],
-                                              label, config)
-                print(title2print)
-                best_caption = run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, img_name,
-                                              label, imgs_path=config['arithmetics_imgs'],
-                                              img_weights=config['arithmetics_weights'],
-                                              cuda_idx=config['cuda_idx_num'], title2print=title2print, img_name=img_name, style=label)
-                write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
-            else:
-                raise Exception('run_type must be caption or arithmetics!')
-            evaluation_results[img_name][label]['res'] = best_caption
-            evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
-            evaluation_results[img_name][label]['scores'] = {}
-            # evaluation_obj['fluency'].add_results(evaluation_results)
-            evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
-            evaluation_results[img_name][label]['scores'] = evaluate_single_res(
-                evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
-                evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
-                evaluation_obj)
-            perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score_for_single_text(best_caption)
-            evaluation_results[img_name][label]['scores']['fluency'] = mean_perplexity
-            print(f"evaluation scores: CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}, fluency={evaluation_results[img_name][label]['scores']['fluency']}, ")
-            if "style_classification_roberta" in config["evaluation_metrics"]:
-                print(f"style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
-            elif "style_classification_emoji" in config["evaluation_metrics"]:
-                print(f"style_classification_emoji={evaluation_results[img_name][label]['scores']['style_classification_emoji']}")
+                # image manipulation
+                elif config['run_type'] == 'arithmetics':
+                    config['arithmetics_weights'] = [float(x) for x in config['arithmetics_weights']]
+                    factual_img_style = get_full_path_of_stylized_images(data_dir, config["style_img"]["factual"])
+                    img_style = get_full_path_of_stylized_images(data_dir, config["style_img"][label])
+                    config['arithmetics_imgs'] = [config['img_path'], factual_img_style, img_style]
+                    title2print = get_title2print(config['img_path'], config['dataset'],
+                                                  label, config)
+                    print(title2print)
+                    best_caption = run_arithmetic(text_generator, config, model_path, img_dict_img_arithmetic, img_name,
+                                                  label, imgs_path=config['arithmetics_imgs'],
+                                                  img_weights=config['arithmetics_weights'],
+                                                  cuda_idx=config['cuda_idx_num'], title2print=title2print, img_name=img_name, style=label)
+                    write_results_image_manipulation(img_dict_img_arithmetic, results_dir, tgt_results_path)
+                else:
+                    raise Exception('run_type must be caption or arithmetics!')
+                evaluation_results[img_name][label]['res'] = best_caption
+                # evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle for flickr
+                evaluation_results[img_name][label]['gt'] = None  # todo: handle style type
+                evaluation_results[img_name][label]['scores'] = {}
+                # evaluation_obj['fluency'].add_results(evaluation_results)
+                evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
+                evaluation_results[img_name][label]['scores'] = evaluate_single_res(
+                    evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
+                    evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
+                    evaluation_obj)
+                perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score_for_single_text(best_caption)
+                evaluation_results[img_name][label]['scores']['fluency'] = mean_perplexity
+                print(f"evaluation scores: CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}, fluency={evaluation_results[img_name][label]['scores']['fluency']}, ")
+                if "style_classification_roberta" in config["evaluation_metrics"]:
+                    print(f"style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
+                elif "style_classification_emoji" in config["evaluation_metrics"]:
+                    print(f"style_classification_emoji={evaluation_results[img_name][label]['scores']['style_classification_emoji']}")
+            # except:
+            #     print("check why it failed")
+            #     failed_img_names.append(img_name)
     evaluate_results(config, evaluation_results, gts_data, results_dir, factual_captions, text_generator,evaluation_obj)
+    print("images that failed:")
+    print(failed_img_names)
     print('Finish of program!')
 
 
