@@ -1291,13 +1291,17 @@ def get_final_results():
 
 
 def main():
-    imgs2test_path = '/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/imgs2test.csv'
-    imgs2test_path_fixed = replace_user_home_dir(imgs2test_path)
-    imgs2test = pd.read_csv(imgs2test_path_fixed)
-    imgs2test_list = list(imgs2test['img_num'])
     get_final_results()
     args = get_args()
     config = get_hparams(args)
+
+    if config['dataset']=='flickrstyle10k':
+        imgs2test_path = '/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/imgs2test.csv'
+        imgs2test_path_fixed = replace_user_home_dir(imgs2test_path)
+        imgs2test = pd.read_csv(imgs2test_path_fixed)
+        imgs2test_list = list(imgs2test['img_num'])
+    else:
+        imgs2test_list = []
     data_dir = os.path.join(os.path.expanduser('~'), 'data')
     results_dir = os.path.join(os.path.expanduser('~'), 'results')
     results_evaluation_dir = os.path.join(results_dir, 'evaluation')

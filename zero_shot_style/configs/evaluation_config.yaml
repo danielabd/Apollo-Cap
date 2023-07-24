@@ -1,6 +1,7 @@
 #senticap
-dataset: flickrstyle10k # senticap,flickrstyle10k @@@@data@@@@@@@
+#dataset: senticap # senticap,flickrstyle10k @@@@data@@@@@@@
 #style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
+dataset: flickrstyle10k # senticap,flickrstyle10k @@@@data@@@@@@@
 style_type: emoji  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo @@@@data@@@@@@@
 data_split: test #val, test #todo
 #dataset: senticap # senticap,flickrstyle10k
@@ -25,6 +26,7 @@ update_ViT: False
 
 #metrics: [style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 styles:
+#  senticap: [positive]  #[positive, negative, factual] #todo
   senticap: [negative]  #[positive, negative, factual] #todo
   flickrstyle10k: [humor]
 #  flickrstyle10k: [romantic]
@@ -146,6 +148,11 @@ res_path2eval:
     #update vit fix same params - neg
 #    ZeroStyleCap: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params.csv
 
+    #pos
+#    Apollo: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_pos_test/total_results_text_style_Apollo_decent_pos_test.csv
+    #neg
+    Apollo: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_neg_test/total_results_text_style_Apollo_decent_neg_test.csv
+
 
 
 
@@ -172,14 +179,17 @@ res_path2eval:
 #    image_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_image_manipulation.csv
 #    image_and_prompt_manipulation: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_flickrstyle10k_image_and_prompt_manipulation.csv
     #humor
-    3_loss: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_humor_test.csv
-    mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_humor_test.csv
-    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_update_vit_style_v1_humor_test.csv
+#    3_loss: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_humor_test.csv
+#    mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_humor_test.csv
+#    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_update_vit_style_v1_humor_test.csv
+    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v2_humor_test/total_results_text_style_StylizedZeroCap_update_vit_style_v2_humor_test.csv
+#    Apollo: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_Apollo_decent_humor_v1_test/total_results_text_style_StylizedZeroCap_Apollo_decent_humor_v1_test.csv
 #    # romantic
 #    3_loss: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_romantic_test.csv
 #    mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_romantic_test.csv
 #    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_update_vit_style_v1_romantic_test.csv
-
+#    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v2_romantic_test/total_results_text_style_StylizedZeroCap_update_vit_style_v2_romantic_test.csv
+#    Apollo: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_Apollo_decent_romantic_v1_test/total_results_text_style_StylizedZeroCap_Apollo_decent_romantic_v1_test.csv
 
 
 #    #ZeroStyleCap
