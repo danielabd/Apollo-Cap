@@ -1778,7 +1778,8 @@ class CLIPTextGenerator:
             #if weighted_clip_loss<=35 and ce_loss<=1.18 and weighted_text_style_loss<=35.5:
             #    break
             # # print probs graphs
-            if i==0 or i==self.num_iterations-1:
+            # if i==0 or i==self.num_iterations-1:
+            if False:
                 if self.config.get('plot_prob_graphs', False):
                     for i_beam in range(probs.shape[0]):
                         # if i_beam>0: #plot only first
