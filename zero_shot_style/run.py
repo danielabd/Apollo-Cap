@@ -45,7 +45,7 @@ def get_args():
                         # default=os.path.join('.', 'configs', 'config_3_loss_roberta_v101neg_test.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_mul_clip_style_roberta_v20neg_test.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_update_vit15pos_test_best_fluence.yaml'), #todo: change config file
-                        default=os.path.join('.', 'configs', 'config_Apollo_decent_humor_v1_check.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_mul_roberta_v1neg.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
