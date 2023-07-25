@@ -1,10 +1,10 @@
-program: run_update_vit14neg.py
-project: StylizedZeroCap_update_vit_focus_clip_neg
+program: run_update_vit15neg.py
+project: StylizedZeroCap_update_vit_focus_clip_neg_15_0
 method: bayes
 metric:
   goal: maximize #minimize
-  name:  evaluation/final_avg_total_score_clip_gpt
-#  name:  evaluation/final_avg_total_score
+#  name:  evaluation/final_avg_total_score_clip_gpt
+  name:  evaluation/final_avg_total_score
 #  name:  evaluation/avg_clip_score
 parameters:
   sentiment_temperature:
