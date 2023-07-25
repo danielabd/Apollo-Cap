@@ -151,7 +151,7 @@ res_path2eval:
     #pos
 #    Apollo: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_pos_test/total_results_text_style_Apollo_decent_pos_test.csv
     #neg
-    Apollo: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_neg_test/total_results_text_style_Apollo_decent_neg_test.csv
+#    Apollo: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_neg_test/total_results_text_style_Apollo_decent_neg_test.csv
 
 
 
@@ -182,7 +182,7 @@ res_path2eval:
 #    3_loss: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_humor_test.csv
 #    mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_mul_clip_style_v1_humor_test.csv
 #    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_update_vit_style_v1_humor_test.csv
-    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v2_humor_test/total_results_text_style_StylizedZeroCap_update_vit_style_v2_humor_test.csv
+#    update: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v2_humor_test/total_results_text_style_StylizedZeroCap_update_vit_style_v2_humor_test.csv
 #    Apollo: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_Apollo_decent_humor_v1_test/total_results_text_style_StylizedZeroCap_Apollo_decent_humor_v1_test.csv
 #    # romantic
 #    3_loss: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/total_results_text_style_StylizedZeroCap_roberta_3_loss_v1_romantic_test.csv
@@ -221,6 +221,9 @@ res_path2eval:
 #    prompt_man: /Users/danielabendavid/projects/zero-shot-style/zero_shot_style/results/flickrstyle10k/total_results_flickrstyle10k_prompt_manipulation.csv
 #    im_man: /Users/danielabendavid/projects/zero-shot-style/zero_shot_style/results/flickrstyle10k/total_results_flickrstyle10k_image_manipulation.csv
 #    prompt_and_im_man: /Users/danielabendavid/projects/zero-shot-style/zero_shot_style/results/flickrstyle10k/total_results_flickrstyle10k_image_and_prompt_manipulation.csv
+    #mul
+    mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v2_humor_test/total_results_text_style_StylizedZeroCap_mul_clip_style_v2_humor_test.csv
+    3_loss: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_roberta_3_loss_v2_humor_test/total_results_text_style_StylizedZeroCap_roberta_3_loss_v2_humor_test.csv
 
 # finetuned roBERTa
 finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
