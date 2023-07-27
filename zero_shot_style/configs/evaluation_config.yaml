@@ -1,8 +1,8 @@
 #senticap
-#dataset: senticap # senticap,flickrstyle10k @@@@data@@@@@@@
-#style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
-dataset: flickrstyle10k # senticap,flickrstyle10k @@@@data@@@@@@@
-style_type: emoji  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo @@@@data@@@@@@@
+dataset: senticap # senticap,flickrstyle10k @@@@data@@@@@@@
+style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
+#dataset: flickrstyle10k # senticap,flickrstyle10k @@@@data@@@@@@@
+#style_type: emoji  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo @@@@data@@@@@@@
 data_split: test #val, test #todo
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
@@ -152,7 +152,7 @@ res_path2eval:
 #    Apollo: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_pos_test/total_results_text_style_Apollo_decent_pos_test.csv
     #neg
 #    Apollo: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_neg_test/total_results_text_style_Apollo_decent_neg_test.csv
-
+    mul: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_v1_neg_test/26_07_2023/tmp/total_results_text_style_mul_neg_v1.csv
 
 
 
