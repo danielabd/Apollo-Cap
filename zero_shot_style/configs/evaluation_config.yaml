@@ -154,7 +154,7 @@ res_path2eval:
 #    Apollo: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_neg_test/total_results_text_style_Apollo_decent_neg_test.csv
 #    mul: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_v1_neg_test/26_07_2023/tmp/total_results_text_style_mul_neg_v1.csv
 #      mul: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_v2_test/28_07_2023/total_results_text_style_mul_neg_v2_test_28_07_2023.csv
-      mul: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v22neg/28_07_2023/total_results_text_style_28_07_2023.csv
+      mul: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v20neg/28_07_2023/total_results_text_style_28_07_2023.csv
 
 
 
