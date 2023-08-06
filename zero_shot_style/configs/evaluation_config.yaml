@@ -159,7 +159,8 @@ res_path2eval:
 #      mul: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v22neg/28_07_2023/total_results_text_style_28_07_2023.csv
 #      update: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v30neg/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v30neg.csv
 #      update: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v30neg_v31/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v30neg_v31.csv
-      update: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v30neg_v30/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v30neg_v30.csv
+#      update: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v30neg_v30/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v30neg_v30.csv
+      update: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v32neg_test/31_07_2023/total_results_text_style_31_07_2023.csv
 
 
 
