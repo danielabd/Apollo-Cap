@@ -142,6 +142,7 @@ def get_args():
 
     parser.add_argument("--arithmetics_weights", nargs="+", default=[1, 1, -1])
     parser.add_argument("--use_style_model", action="store_true", default=False)
+    parser.add_argument("--use_audio_model", action="store_true", default=False)
     parser.add_argument("--use_text_style_example", action="store_true", default=False)
 
     parser.add_argument("--desired_improvement_loss", type=float, default=0.01)
