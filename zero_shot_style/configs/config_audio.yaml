@@ -16,7 +16,7 @@ use_audio_model: True
 
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
-max_num_of_imgs: -1 #todo
+max_num_of_imgs: 1 #todo
 reverse_imgs_list: False
 data_type: test #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
@@ -48,7 +48,7 @@ experiement_global_name:
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 ###### update clip ViT tensors
-update_ViT: True #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
+update_ViT: False #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
 kv_only_first_layer: True
 loss_scale_style_clip: 4.013
 loss_scale_src_clip_clip: 0.000002   #0.5
