@@ -91,14 +91,17 @@ def merge_list_res_files_to_one(file_list, tgt_path):
     total_data = {}
     for f in file_list:
         data = pd.read_csv(f)
-        if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < 3:
-             data = data.head(data.shape[0] - 1)  # remove last line for the case that it is not completed
+        if not isinstance(data.iloc[-1,-1], str) and math.isnan(data.iloc[-1, -1]) or len(data.iloc[-1, :]) < data.shape[1]:
+             data = data.head(data.shape[0] - 1)
         if 'img_num' in data:
             col_name = 'img_num'
         else:
             col_name = 'img_num\style'
         for i,k in enumerate(data[col_name]):
-            pos = data['positive'][i]
+            try:
+                pos = data['positive'][i]
+            except:
+                pos = None
             try:
                 neg = data['negative'][i]
             except:
@@ -223,6 +226,7 @@ def merge_res_files_to_one(exp_to_merge,  res_paths,  src_dirs, t, tgt_paths, fa
                 total_data[i] = total_data_to_check[i]
         keys_test_type[test_type] = list(total_data.keys())
         total_data_test_type = pd.DataFrame(list(total_data.values()))
+        print(f"total keys in test = {len(total_data_test_type)}")
         for i in list(total_data.values()):
             if i['img_num'] == 104906:
                 print("here")
@@ -350,7 +354,12 @@ def bu_get_all_paths(cur_time, factual_wo_prompt, exp_to_merge,suffix_name):
         src_dir_text_style = '/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_real_std'
         src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
+        src_dir_text_style = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_f_036/03_03_2023'
         src_dir_text_style = os.path.join(os.path.expanduser('~'),'experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023')
+        src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v1_humor_test'
+        src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_humor_test'
+        src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v1_humor_test'
+        # src_dir_text_style = '/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v1_romantic_test'
         # src_dir_text_style = os.path.join(base_path,'text_style')
         text_style_dir_path = os.listdir(src_dir_text_style)
         if factual_wo_prompt:
@@ -458,24 +467,50 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         #mul clip-style - neg-best-fluency
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_mul_clip_style_roberta_v20neg_test_best_fluency.yaml/19_06_2023"
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v101pos_test/18_06_2023"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_v1_neg_test"
         #3 losses -neg test
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_3_loss_v102neg_test/18_06_2023"
         #update vit pos after fix
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v101_pos_test/22_06_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v101_pos_test/22_06_2023"
         # update vit pos after fix -same params - neg
-        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v14neg_test_best_fluence_fixed_same_params"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v100neg_test_best_fluence/22_06_2023"
         # update vit pos after fix -same params - pos
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence_fixed_same_params"
         # flickrstyle10k
         #3 loss
-        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_romantic_test"
-        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_humor_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_romantic_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_roberta_3_loss_v1_humor_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_roberta_3_loss_v2_humor_test"
+
         #mul clip style
-        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_mul_clip_style_v1_romantic_test"
-        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_mul_clip_style_v1_humor_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v1_romantic_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v1_humor_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v2_humor_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v2_romantic_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_v2_test/28_07_2023"
+
         #update vit
-        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_update_vit_style_v1_humor_test"
-        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstle10k/emoji/StylizedZeroCap_update_vit_style_v1_romantic_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v1_humor_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v1_romantic_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v2_humor_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_update_vit_style_v2_romantic_test"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v20neg/28_07_2023"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v30neg"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v30neg_v30"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v30neg_v31"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v32neg_test/31_07_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v21neg/28_07_2023"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v22neg/28_07_2023"
+
+
+        #Apollocap
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_pos_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/Apollo_decent_neg_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_Apollo_decent_humor_v1_test"
+        # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_Apollo_decent_romantic_v1_test"
+
+
 
         suffix_name = src_dir_text_style.split('/')[-1]
         # src_dir_text_style = os.path.join(base_path,'text_style')
@@ -640,8 +675,9 @@ def main():
     exp_to_merge = ["zerostylecap"]
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "zerostylecap"]
 
-    dataset = 'flickrstyle10k' #'senticap'
-    test_split = 'test'
+    # dataset = 'flickrstyle10k' #'senticap'
+    dataset = 'senticap' #'senticap'
+    test_split = 'test' #'test'
     merge_dirs = True
     merge_res_of_sweep = False
 
@@ -663,6 +699,7 @@ def main():
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/source_zero_stylecap/29_05_2023'
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/baseline/prompt_manipulation'
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v18pos/16_06_2023/tmp'
+        dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_v1_neg_test/26_07_2023/tmp'
         file_list = [os.path.join(dir_files,f) for f in os.listdir(dir_files) if f.endswith('.csv') and f.startswith('results')]
         tgt_path = os.path.join(dir_files,'total_results_text_style_tmp.csv')
         merge_list_res_files_to_one(file_list, tgt_path)

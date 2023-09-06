@@ -40,12 +40,15 @@ def get_list_of_imgs_for_caption(config):
 def get_mapping_idx_img_name(configfile):
     with open(configfile, 'rb') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-    config['dataset'] = "senticap"
+    # config['dataset'] = "senticap"
     imgs_to_test = get_list_of_imgs_for_caption(config)
     mapping_idx2img_name = {}
     mapping_img_name2idx = {}
     for img_path_idx, img_path in enumerate(imgs_to_test):  # img_path_list:
-        img_name = int(img_path.split('.')[0].split('/')[-1])
+        if config['dataset'] == "senticap":
+            img_name = int(img_path.split('.')[0].split('/')[-1])
+        else: #config['dataset'] == "flickrstyle10k":
+            img_name = img_path.split('.')[0].split('/')[-1]
         mapping_idx2img_name[img_path_idx] = img_name
         mapping_img_name2idx[img_name] = img_path_idx
     return mapping_idx2img_name, mapping_img_name2idx

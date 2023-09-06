@@ -1,8 +1,8 @@
 #senticap
-dataset: senticap # senticap,flickrstyle10k @@@@data@@@@@@@
-style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
-#dataset: flickrstyle10k # senticap,flickrstyle10k @@@@data@@@@@@@
-#style_type: emoji  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo @@@@data@@@@@@@
+#dataset: senticap # senticap,flickrstyle10k @@@@data@@@@@@@
+#style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo
+dataset: flickrstyle10k # senticap,flickrstyle10k @@@@data@@@@@@@
+style_type: emoji  #'style_embed' or 'emoji' or 'erc' or 'roberta' #todo @@@@data@@@@@@@
 data_split: test #val, test #todo
 #dataset: senticap # senticap,flickrstyle10k
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
@@ -19,7 +19,8 @@ model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 
 metrics:
   senticap: [CLIPScore, style_classification_roberta, fluency]
-  flickrstyle10k: [CLIPScore, style_classification_emoji, fluency]
+#  flickrstyle10k: [CLIPScore, style_classification_emoji, fluency]
+  flickrstyle10k: [style_classification_emoji] #todo: remove it
 
 
 update_ViT: False
@@ -323,7 +324,7 @@ idx_emoji_style_dict:
     negative: [1,2,3,5,12,22,27,29,32,34,35,37,39,42,43,44,45,46,52,55,56,58] # 34
   flickrstyle10k:
     humor: [0,53] #0
-    romantic: [4, 8, 18, 23, 24] #23
+      romantic: [4, 8, 18, 23, 24] #23
 
 emoji_vocab_path: ~/projects/torchMoji/model/vocabulary.json
 emoji_pretrained_path: ~/projects/torchMoji/model/pytorch_model.bin

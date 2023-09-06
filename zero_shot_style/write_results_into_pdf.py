@@ -158,7 +158,10 @@ def get_scores_data(score_files, mapping_img_name2idx, desired_scores):
             all_data[exp][img_idx][style]['caption'] = eval_data.iloc[i, get_score_type_idx(eval_data.columns, 'res')]
             all_data[exp][img_idx][style]['img_idx'] = img_idx
             for score_type in desired_scores:
-                all_data[test_name][img_idx][style][score_type] = eval_data.iloc[i, get_score_type_idx(eval_data.columns, score_type)]
+                val = eval_data.iloc[i, get_score_type_idx(eval_data.columns, score_type)]
+                if type(val)==str and val.startswith("tensor"):
+                    val = float(val.split("[")[1].split("]")[0])
+                all_data[test_name][img_idx][style][score_type] = val
     print("finish to get score data")
     return all_data
 
@@ -247,6 +250,14 @@ def get_statiistic_data(all_data,final_iterations_idx, loss_data_path):
             final_statistic_std[loss_i].append(statistics.stdev(loss_all_data[loss_i][word_i]))
     return final_statistic_mean, final_statistic_std
 
+def sort_data(all_data_exp):
+    sorted_idxs_all_data = {}
+    for i in all_data_exp:
+        for s in all_data_exp[i]:
+            sorted_idxs_all_data[i] = all_data_exp[i][s]['CLIPScore']
+    sorted_idxs_all_data_list = sorted(sorted_idxs_all_data.items(), key=lambda x:x[1],reverse=True)
+    sorted_idxs_all_data_dict = dict(sorted_idxs_all_data_list)
+    return sorted_idxs_all_data_dict
 
 def write_to_pdf(all_data, desired_scores, tgt_pdf_file_path):
     print(f"writing results into {tgt_pdf_file_path}")
@@ -258,7 +269,9 @@ def write_to_pdf(all_data, desired_scores, tgt_pdf_file_path):
     img_height = 130
     y = 0
     test_name = list(all_data.keys())[0]
-    for i, idx in enumerate(all_data[test_name]):
+    sorted_idxs_all_data = sort_data(all_data[test_name])
+    # for i, idx in enumerate(all_data[test_name]):
+    for i, idx in enumerate(sorted_idxs_all_data.keys()):
         # if i<5: #todo
         #     continue
 
@@ -268,7 +281,10 @@ def write_to_pdf(all_data, desired_scores, tgt_pdf_file_path):
             if ei>0:
                 y = y + 20
             for style in all_data[exp][idx]:
-                image_num = int(all_data[exp][idx][style]['img_name'])
+                try:
+                    image_num = int(all_data[exp][idx][style]['img_name'])
+                except:
+                    image_num = all_data[exp][idx][style]['img_name']
                 image_idx = all_data[exp][idx][style]['img_idx']
                 image_path = all_data[exp][idx][style]['img_path']
                 best_captions[style] = all_data[exp][idx][style]['caption']
@@ -319,24 +335,33 @@ def write_to_pdf(all_data, desired_scores, tgt_pdf_file_path):
 
     print(f"finish to save pdf of the results into: {tgt_pdf_file_path}")
 
-def get_best_data(all_data, desired_scores, scores_th):
+def get_best_data(all_data, desired_scores, scores_th,test_names):
     '''
     :param all data:{test_type:{img_idx:{style:{img_idx:,img_name:,style:,clip_loss:{word_num:{beam_num:}}}}}}
     :return:
     '''
     # get best dsta according to threshold scores in scores_th
-    best_data = {"ZeroStyleCap":{}}
-    for idx in all_data["ZeroStyleCap"]:
-        for style in all_data["ZeroStyleCap"][idx]:
-            good_score = True
-            for score_type in desired_scores:
-                if score_type in all_data["ZeroStyleCap"][idx][style]:
-                    if all_data["ZeroStyleCap"][idx][style][score_type] < scores_th[score_type]:
-                        good_score = False
-            if score_type in all_data["ZeroStyleCap"][idx][style] and good_score:
-                if idx not in best_data["ZeroStyleCap"]:
-                    best_data["ZeroStyleCap"][idx] = {}
-                best_data["ZeroStyleCap"][idx][style] = all_data["ZeroStyleCap"][idx][style]
+    # k = "ZeroStyleCap"
+    # k = "update"
+    # best_data = {k:{}}
+    best_data = {}
+    # for test_name in test_names:
+    # for test_name in ['update']:
+    for test_name in ['APOLLO-Cap+decentralization+normalization']:
+        best_data[test_name] = {}
+        for idx in all_data[test_name]:
+            for style in all_data[test_name][idx]:
+                good_score = True
+                for score_type in desired_scores:
+                    if score_type in all_data[test_name][idx][style]:
+                        if all_data[test_name][idx][style][score_type] < scores_th[score_type]:
+                            good_score = False
+                        # if all_data[test_name][idx][style][score_type] < all_data['CapDec'][idx][style][score_type]:
+                        #     good_score = False
+                if score_type in all_data[test_name][idx][style] and good_score:
+                    if idx not in best_data[test_name]:
+                        best_data[test_name][idx] = {}
+                    best_data[test_name][idx][style] = all_data[test_name][idx][style]
     return best_data
 
 def merge_debug_files(debug_dir_for_file_paths, merged_debug_file_name):
@@ -362,21 +387,42 @@ def main():
     #                "capdec": "/Users/danielabendavid/experiments/capdec/27_2_23/evaluation_all_frames_capdec.csv"}
     score_files = {
         # "capdec": "/Users/danielabendavid/experiments/capdec/27_2_23/evaluation_all_frames.csv"}
-        "APOLLO-CAP-DEC": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/evaluation_all_frames_update_vit_focus_clip_v15pos_test_best_fluence.csv"}
+        #"APOLLO-CAP-DEC": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/evaluation_all_frames_update_vit_focus_clip_v15pos_test_best_fluence.csv"}
+        # "update": "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/final/evaluation_all_frames_total_results_text_style_StylizedZeroCap_update_vit_style_v2_humor_test_humor.csv"}
+
+        #flickrstyle10k
+        # "capdec": "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/final/get_best_res/evaluation_all_frames_total_results_capdec_romantic.csv",
+        # "update": "/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/total_results/final/get_best_res/evaluation_all_frames_total_results_zero_style_cap_romantic_update.csv"}
+        # # senticap - positive
+        # "CapDec": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/final/capdec_evaluation_all_frames.csv",
+        # "APOLLO-Cap+decentralization+normalization": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/final/evaluation_all_frames_update_vit_focus_clip_v15pos_test_best_fluence.csv"}
+        # senticap - negative
+        # "CapDec": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/final/capdec_evaluation_all_frames.csv",
+        "APOLLO-Cap+decentralization+normalization": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/final/evaluation_all_frames_total_results_text_style_31_07_2023_negative_update.csv"}
+
     data_split = 'test' # 'test'
     base_dir4tgt_pdf_file_path = os.path.join(os.path.expanduser('~'),'experiments')
     img_dir_path = os.path.join(os.path.expanduser('~'),'data/senticap/images/'+data_split)
     desired_scores = ['fluency', 'CLIPScore', 'style_classification']
     scores_th = {'fluency':0.9, 'CLIPScore':0.3, 'style_classification':1}
+
+    # desired_scores = ['fluency', 'CLIPScore', 'style_classification_emoji']  # todo
+    # scores_th = {'fluency': 0.8, 'CLIPScore': 0.30, 'style_classification_emoji': 0.3} # todo
+    #senticap
+    desired_scores = ['fluency', 'CLIPScore', 'style_classification_roberta']  # todo
+    scores_th = {'fluency': 0.8, 'CLIPScore': 0.30, 'style_classification_roberta': 0.3} # todo
+
     # scores_th = {'fluency':0.9, 'CLIPScore':0.32, 'style_classification':1}
     all_model_names = '_'.join([k for k in score_files])
-    all_data_tgt_pdf_file_name = f"res_all_data_{all_model_names}.pdf"
+    all_data_tgt_pdf_file_name = f"16_8_23_res_all_data_{all_model_names}.pdf"
     tgt_pdf_file_path = os.path.join(base_dir4tgt_pdf_file_path, all_data_tgt_pdf_file_name)
 
     mapping_idx2img_name, mapping_img_name2idx = get_mapping_idx_img_name(configfile)
     # scores data
     all_data = get_scores_data(score_files, mapping_img_name2idx, desired_scores)
-    write_to_pdf(all_data, desired_scores, tgt_pdf_file_path)
+
+    best_data = get_best_data(all_data, desired_scores, scores_th,list(score_files.keys()))
+    write_to_pdf(best_data, desired_scores, tgt_pdf_file_path)
 
     print("finish main")
 
