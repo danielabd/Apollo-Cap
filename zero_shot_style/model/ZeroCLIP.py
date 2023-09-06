@@ -34,6 +34,11 @@ from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
 from evaluate import load
 
+from datasets import load_dataset
+from transformers import AutoProcessor
+from transformers import ClapModel
+
+
 factor_clip_style=1000
 TOP_SZIE = 512 #200
 max_prob_len = -1 #500
@@ -332,6 +337,18 @@ class CLIPTextGenerator:
             # TEXT_STYLE: tokenizer for text style analysis module
             #self.text_style_tokenizer_name = self.text_style_model_name
             #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
+
+        if config.get("use_audio_model", False):
+            dataset = load_dataset("ashraq/esc50") #todo: hard coded audio
+            self.audio_sample = dataset["train"]["audio"][0]["array"]
+
+            self.audio_model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
+            self.audio_processor = AutoProcessor.from_pretrained("laion/clap-htsat-unfused")
+            self.audio_temperature = config.get('audio_temperature', 0.01) #todo: define it
+
+
+
+
 
     def update_config(self,config):
         self.config = config
@@ -682,6 +699,78 @@ class CLIPTextGenerator:
             else:
                 loss_string = loss_string+'%, '+f'{losses[idx_p]}'
         return sentiment_loss, losses, style_probs, target
+
+
+    def get_audio_loss(self, probs, context_tokens):
+
+        top_size = TOP_SZIE
+        _, top_indices = probs.topk(top_size, -1)
+
+        prefix_texts = [self.lm_tokenizer.decode(x).replace(self.lm_tokenizer.bos_token, '') for x in context_tokens]
+
+        audio_loss = 0
+        losses = []
+        audio_probs = {}
+        for idx_p in range(probs.shape[0]): #go over all beams
+            top_texts = []
+            prefix_text = prefix_texts[idx_p]
+            for x in top_indices[idx_p]: #go over all optional topk next word
+                top_texts.append(prefix_text + self.lm_tokenizer.decode(x))
+            # ######todo: daniela debug    effect of update CLIP
+            # # top_texts = ["The bedroom used child abuse"]*DEBUG_NUM_WORDS+["The bedroom of a sweet baby"]*DEBUG_NUM_WORDS
+            # for i in range(len(top_texts)):
+            #     if i<=len(top_texts)/2:
+            #         top_texts[i] = "The bedroom used child abuse"
+            #     else:
+            #         top_texts[i] = "The bedroom of a sweet baby"
+            # ######todo: daniela debug    effect of update CLIP
+            #get score for text
+            with torch.no_grad():
+                inputs = self.audio_processor(text=top_texts, audios=self.audio_sample, return_tensors="pt",
+                                              padding=True)
+
+                outputs = self.audio_model(**inputs)
+                logits_per_audio = outputs.logits_per_audio  # this is the audio-text similarity score
+                # audio_probs = logits_per_audio.softmax(dim=-1)  # we can take the softmax to get the label probabilities
+                # audio_probs = logits_per_audio.softmax(dim=-1)  # we can take the softmax to get the label probabilities
+
+
+
+
+                audio_grades = logits_per_audio.unsqueeze(0)
+
+                # predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()
+                predicted_probs = nn.functional.softmax(audio_grades / self.audio_temperature, dim=-1).detach() #todo: parametrize it
+                predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+
+
+            target = torch.zeros_like(probs[idx_p], device=self.device)
+            target[top_indices[idx_p]] = predicted_probs[0]
+            # target = target.unsqueeze(0)
+            cur_audio_loss = torch.sum(-(target * torch.log(probs[idx_p:(idx_p + 1)])))
+
+            # x = np.arange(0,probs.shape[1],1)#top_indices[idx_p]
+            # y = target.cpu().numpy()
+            # plt.figure()
+            # plt.plot(x, y)
+            # plt.title(f"style probs for beam_idx={idx_p}")
+            # plt.show(block=False)
+
+            audio_loss += cur_audio_loss
+            losses.append(cur_audio_loss)
+
+            if self.config.get('update_ViT',False):
+                audio_probs[idx_p] = target
+
+        loss_string = ''
+        for idx_p in range(probs.shape[0]): #go over all beams
+            if idx_p==0:
+                loss_string = f'{losses[0]}'
+            else:
+                loss_string = loss_string+'%, '+f'{losses[idx_p]}'
+        return audio_loss, losses, audio_probs, target
+
+
 
     def get_text_style_loss_with_clip(self, probs, context_tokens):
         for p_ in self.clip.transformer.parameters():
@@ -1494,6 +1583,12 @@ class CLIPTextGenerator:
                         loss += self.text_style_scale * text_style_loss
                     else:
                         target_probs_style = torch.zeros_like(probs[-1])
+
+            #audio:
+            if self.config.get("use_audio_model",False):
+                audio_loss, losses, audio_probs, target = self.get_audio_loss(probs, context_tokens)
+                self.audio_scale = 1 #todo: generalize it
+                loss += self.audio_scale * audio_loss
 
             # CLIP LOSS
             if self.clip_scale!=0:
