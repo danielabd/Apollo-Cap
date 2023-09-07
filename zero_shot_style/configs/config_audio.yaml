@@ -14,10 +14,17 @@ plot_only_clustering: False
 ###audio
 use_audio_model: True
 use_img_path: ~/data/for_audio/monkey_dog_img.jpg
-#audio_path: ~/data/for_audio/dog_1.wav
-#audio_sampling_rate: 16000
-audio_path: ~/data/for_audio/maymun_1.wav
-audio_sampling_rate: 11025
+audio_path: ~/data/for_audio/dog_1.wav
+audio_sampling_rate: 16000
+#audio_path: ~/data/for_audio/maymun_1.wav
+#audio_sampling_rate: 11025
+
+
+experiement_global_name:
+  senticap: StylizedZeroCap_audio_dog #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+#  senticap: StylizedZeroCap_audio_monkey #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
+
 
 audio_model_sampling_rate: 48000
 
@@ -50,9 +57,6 @@ desired_labels:
   senticap: [positive] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 
-experiement_global_name:
-  senticap: StylizedZeroCap_audio_monkey #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 ###### update clip ViT tensors
 update_ViT: False #todo !!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
