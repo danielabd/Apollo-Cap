@@ -976,7 +976,10 @@ def main():
         print(f"Img num = {img_path_idx}")
         img_name = img_path.split('/')[-1].split('.')[0]
         if config["dataset"] == "senticap":
-            img_name = int(img_name)
+            try:
+                img_name = int(img_name)
+            except:
+                pass
         config['img_path'] = img_path
         config['img_path_idx'] = img_path_idx
         evaluation_results[img_name] = {'img_path': img_path}

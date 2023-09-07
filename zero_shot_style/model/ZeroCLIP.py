@@ -28,6 +28,7 @@ from zero_shot_style.model.text_style_embedding_senticap import TextStyleEmbed
 from zero_shot_style.model.text_style_embedding_senticap_based_on_clip import TextStyleEmbedCLIP
 # from zero_shot_style.evaluation.evaluation_all import STYLE_CLS
 import pickle
+from scipy.io.wavfile import read
 
 import json
 from torchmoji.sentence_tokenizer import SentenceTokenizer
@@ -340,8 +341,11 @@ class CLIPTextGenerator:
 
         if config.get("use_audio_model", False):
             dataset = load_dataset("ashraq/esc50") #todo: hard coded audio
-            self.audio_sample = dataset["train"]["audio"][0]["array"]
-
+            # self.audio_sample = dataset["train"]["audio"][0]["array"]
+            audio_dog_file_name = "dog_1.wav"
+            audio_path = self.config["audio_path"]
+            a = read(audio_path)
+            self.audio_sample = np.array(a[1], dtype=float)
             self.audio_model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
             self.audio_processor = AutoProcessor.from_pretrained("laion/clap-htsat-unfused")
             self.audio_temperature = config.get('audio_temperature', 0.01) #todo: define it
