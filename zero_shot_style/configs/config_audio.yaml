@@ -13,11 +13,20 @@ plot_prob_graphs: False #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 plot_only_clustering: False
 ###audio
 use_audio_model: True
+audio_model_sampling_rate: 48000
+
 use_img_path: ~/data/for_audio/monkey_dog_img.jpg
-audio_path: ~/data/for_audio/dog_1.wav
-audio_sampling_rate: 16000
+# element audio
+#audio_path: ~/data/for_audio/dog_1.wav
+#audio_sampling_rate: 16000
 #audio_path: ~/data/for_audio/maymun_1.wav
 #audio_sampling_rate: 11025
+
+#background audio
+audio_path: ~/data/for_audio/running_stream.wav
+audio_sampling_rate: 22050
+#audio_path: ~/data/for_audio/driving-by-noisy-car-33855.wav
+#audio_sampling_rate: 24000
 
 
 experiement_global_name:
@@ -26,7 +35,6 @@ experiement_global_name:
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
 
-audio_model_sampling_rate: 48000
 
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
