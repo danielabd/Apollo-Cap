@@ -2269,13 +2269,14 @@ class CLIPTextGenerator:
                                                       sampling_rate=self.config['audio_model_sampling_rate'])
                         outputs = self.audio_model(**inputs)
                         logits_per_audio = outputs.logits_per_audio  # this is the audio-text similarity score
-                        audio_grades = logits_per_audio.unsqueeze(0)
-                        predicted_probs = nn.functional.softmax(audio_grades / self.audio_temperature,
+                        # audio_grades = logits_per_audio.unsqueeze(0)
+                        predicted_probs = nn.functional.softmax(logits_per_audio / self.audio_temperature,
                                                                 dim=-1).detach()  # todo: parametrize it
                         audio_predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+                        clip_target_probs_weightes_style = clip_target_probs_weightes_style * audio_predicted_probs
                         #end of adding audio
 
-                        clip_target_probs_weightes_style = clip_target_probs_weightes_style * audio_predicted_probs
+
                         clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
                         target_probs = clip_target_probs_weightes_style_normalized
             else: #'update_ViT'=True: collect grad

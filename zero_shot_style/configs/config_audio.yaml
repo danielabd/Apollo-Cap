@@ -18,6 +18,7 @@ use_img_path: ~/data/for_audio/monkey_dog_img.jpg
 #audio_sampling_rate: 16000
 audio_path: ~/data/for_audio/maymun_1.wav
 audio_sampling_rate: 11025
+
 audio_model_sampling_rate: 48000
 
 ##for validation
