@@ -12,7 +12,9 @@ plot_prob_graphs: False #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 plot_only_clustering: False
 ###audio
-use_audio_model: True
+use_audio_model: False
+use_img_path: ~/data/for_audio/monkey_dog_img.jpg
+
 
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
@@ -37,7 +39,7 @@ max_batch_size_style_cls: 10
 ##########
 mul_clip_style: True
 only_clip_styled_clip_loss: True
-sentiment_temperature: 0.24623292682459005 #0.04
+sentiment_temperature: 0.01 #0.04
 ######
 desired_labels:
   senticap: [positive] #[factual, positive, negative] #todo!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
@@ -56,10 +58,10 @@ start_loop_clip_style_in_word_num: 1
 
 num_iterations_clip_style: 1 #sweep 9
 ce_scale:
-  senticap: 0.15891468132173847 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
+  senticap: 4 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap: 1 #1.6 #- comparison to other baselines
+  senticap: 8 #1.6 #- comparison to other baselines
   flickrstyle10k: 4.587441437503964
 text_style_scale:
   senticap: 0 #8.7 #- comparison to other baselines
