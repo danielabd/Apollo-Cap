@@ -29,6 +29,7 @@ from zero_shot_style.model.text_style_embedding_senticap_based_on_clip import Te
 # from zero_shot_style.evaluation.evaluation_all import STYLE_CLS
 import pickle
 from scipy.io.wavfile import read
+import librosa
 
 import json
 from torchmoji.sentence_tokenizer import SentenceTokenizer
@@ -340,18 +341,16 @@ class CLIPTextGenerator:
             #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
 
         if config.get("use_audio_model", False):
-            dataset = load_dataset("ashraq/esc50") #todo: hard coded audio
-            # self.audio_sample = dataset["train"]["audio"][0]["array"]
-            audio_dog_file_name = "dog_1.wav"
-            audio_path = self.config["audio_path"]
-            a = read(audio_path)
-            self.audio_sample = np.array(a[1], dtype=float)
             self.audio_model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
             self.audio_processor = AutoProcessor.from_pretrained("laion/clap-htsat-unfused")
             self.audio_temperature = config.get('audio_temperature', 0.01) #todo: define it
-
-
-
+            # dataset = load_dataset("ashraq/esc50") #todo: hard coded audio
+            # self.audio_sample = dataset["train"]["audio"][0]["array"]
+            # audio_path = self.config["audio_path"]
+            # a = read(audio_path)
+            # self.audio_sample = np.array(a[1], dtype=float)
+            audio_sample, _ = librosa.load(self.config["audio_path"], sr=self.config["audio_sampling_rate"])
+            self.audio_sample_resampled = librosa.resample(audio_sample, orig_sr=self.config["audio_sampling_rate"], target_sr=self.config["audio_model_sampling_rate"])
 
 
     def update_config(self,config):
@@ -730,16 +729,12 @@ class CLIPTextGenerator:
             # ######todo: daniela debug    effect of update CLIP
             #get score for text
             with torch.no_grad():
-                inputs = self.audio_processor(text=top_texts, audios=self.audio_sample, return_tensors="pt",
-                                              padding=True)
-
+                inputs = self.audio_processor(text=top_texts, audios=self.audio_sample_resampled, return_tensors="pt",
+                                              padding=True, sampling_rate=self.config['audio_model_sampling_rate'])
                 outputs = self.audio_model(**inputs)
                 logits_per_audio = outputs.logits_per_audio  # this is the audio-text similarity score
                 # audio_probs = logits_per_audio.softmax(dim=-1)  # we can take the softmax to get the label probabilities
                 # audio_probs = logits_per_audio.softmax(dim=-1)  # we can take the softmax to get the label probabilities
-
-
-
 
                 audio_grades = logits_per_audio.unsqueeze(0)
 
@@ -1588,11 +1583,11 @@ class CLIPTextGenerator:
                     else:
                         target_probs_style = torch.zeros_like(probs[-1])
 
-            #audio:
-            if self.config.get("use_audio_model",False):
-                audio_loss, losses, audio_probs, target = self.get_audio_loss(probs, context_tokens)
-                self.audio_scale = 1 #todo: generalize it
-                loss += self.audio_scale * audio_loss
+            # #audio:
+            # if self.config.get("use_audio_model",False):
+            #     audio_loss, losses, audio_probs, target = self.get_audio_loss(probs, context_tokens)
+            #     self.audio_scale = 1 #todo: generalize it
+            #     loss += self.audio_scale * audio_loss
 
             # CLIP LOSS
             if self.clip_scale!=0:
@@ -2266,8 +2261,22 @@ class CLIPTextGenerator:
                         clip_target_probs_before_style = clip_target_probs
                         sentiment_grades_after_temp = sentiment_grades
                         clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
-                        clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
 
+                        #adding_audio
+                        inputs = self.audio_processor(text=top_texts, audios=self.audio_sample_resampled,
+                                                      return_tensors="pt",
+                                                      padding=True,
+                                                      sampling_rate=self.config['audio_model_sampling_rate'])
+                        outputs = self.audio_model(**inputs)
+                        logits_per_audio = outputs.logits_per_audio  # this is the audio-text similarity score
+                        audio_grades = logits_per_audio.unsqueeze(0)
+                        predicted_probs = nn.functional.softmax(audio_grades / self.audio_temperature,
+                                                                dim=-1).detach()  # todo: parametrize it
+                        audio_predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+                        #end of adding audio
+
+                        clip_target_probs_weightes_style = clip_target_probs_weightes_style * audio_predicted_probs
+                        clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
                         target_probs = clip_target_probs_weightes_style_normalized
             else: #'update_ViT'=True: collect grad
                 similiraties = (self.image_features @ text_features.T)
