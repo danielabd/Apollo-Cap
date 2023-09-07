@@ -28,9 +28,8 @@ audio_sampling_rate: 22050
 #audio_path: ~/data/for_audio/driving-by-noisy-car-33855.wav
 #audio_sampling_rate: 24000
 
-
 experiement_global_name:
-  senticap: StylizedZeroCap_audio_dog #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_audio_stream #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_monkey #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
 
