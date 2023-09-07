@@ -14,8 +14,8 @@ plot_only_clustering: False
 ###audio
 use_audio_model: True
 use_img_path: ~/data/for_audio/monkey_dog_img.jpg
-audio_path: ~/data/for_audio/dog_1.wav
-#audio_path: ~/data/for_audio/maymun_1.wav
+#audio_path: ~/data/for_audio/dog_1.wav
+audio_path: ~/data/for_audio/maymun_1.wav
 
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
