@@ -32,7 +32,7 @@ use_img_path: ~/data/for_audio/monkey_dog_img.jpg
 #background audio
 #audio_path: ~/data/for_audio/cry_baby.wav
 #audio_sampling_rate: 44100
-audio_path: ~/data/for_audio/dchild_laughing.wav
+audio_path: ~/data/for_audio/child_laughing.wav
 audio_sampling_rate: 44100
 
 experiement_global_name:
