@@ -2260,7 +2260,10 @@ class CLIPTextGenerator:
                         clip_target_probs = target_probs
                         clip_target_probs_before_style = clip_target_probs
                         sentiment_grades_after_temp = sentiment_grades
-                        clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
+                        # clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
+
+
+                        clip_target_probs_weightes_style = clip_target_probs #todo: remove - no style
 
                         #adding_audio
                         inputs = self.audio_processor(text=top_texts, audios=self.audio_sample_resampled,
@@ -2275,7 +2278,6 @@ class CLIPTextGenerator:
                         audio_predicted_probs = predicted_probs.type(torch.float32).to(self.device)
                         clip_target_probs_weightes_style = clip_target_probs_weightes_style * audio_predicted_probs
                         #end of adding audio
-
 
                         clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
                         target_probs = clip_target_probs_weightes_style_normalized
