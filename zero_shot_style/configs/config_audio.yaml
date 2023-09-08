@@ -14,7 +14,7 @@ plot_only_clustering: False
 ###audio
 use_audio_model: True
 audio_model_sampling_rate: 48000
-audio_temperature: 1
+audio_temperature: 0.01
 
 use_img_path: ~/data/for_audio/monkey_dog_img.jpg
 # element audio
@@ -24,13 +24,19 @@ use_img_path: ~/data/for_audio/monkey_dog_img.jpg
 #audio_sampling_rate: 11025
 
 #background audio
-audio_path: ~/data/for_audio/running_stream.wav
-audio_sampling_rate: 22050
+#audio_path: ~/data/for_audio/running_stream.wav
+#audio_sampling_rate: 22050
 #audio_path: ~/data/for_audio/driving-by-noisy-car-33855.wav
 #audio_sampling_rate: 24000
 
+#background audio
+audio_path: ~/data/for_audio/cry_baby.wav
+audio_sampling_rate: 44100
+#audio_path: ~/data/for_audio/dchild_laughing.wav
+#audio_sampling_rate: 44100
+
 experiement_global_name:
-  senticap: StylizedZeroCap_audio_stream_0.5 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_audio_cry_0.01 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_road_0.5 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_monkey #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
