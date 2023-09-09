@@ -1591,7 +1591,7 @@ class CLIPTextGenerator:
 
             # CLIP LOSS
             if self.clip_scale!=0:
-                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs, target_probs_clip,clip_target_probs_before_style2,sentiment_grades_before_temp ,sentiment_grades_after_temp = self.clip_loss(probs, context_tokens, grad_lm=True,print_probs=print_probs)
+                clip_loss, clip_losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip,  total_best_sentences_LM, clip_probs, target_probs_clip,clip_target_probs_before_style2,sentiment_grades_before_temp ,sentiment_grades_after_temp,audio_after_softmax = self.clip_loss(probs, context_tokens, grad_lm=True,print_probs=print_probs)
                 if i == self.num_iterations - 1 and word_loc == 2:
                     STYLEK_512_prob_w3_b_3 = range(len(sentiment_grades_after_temp[1][0]));
                     STYLEK_512_text_w3_b_3 = []
@@ -1873,7 +1873,7 @@ class CLIPTextGenerator:
             #    break
             # # print probs graphs
             # if i==0 or i==self.num_iterations-1:
-            if False:
+            if False: #todo remove
                 if self.config.get('plot_prob_graphs', False):
                     for i_beam in range(probs.shape[0]):
                         # if i_beam>0: #plot only first
@@ -1894,9 +1894,9 @@ class CLIPTextGenerator:
                         if len(sentiment_grades_before_temp_plot[i_beam].shape) > 1:
                             sentiment_grades_before_temp_plot[i_beam] = torch.squeeze(
                                 sentiment_grades_before_temp_plot[i_beam])
-                        # axs[1, 0].plot(x, sentiment_grades_before_temp_plot[i_beam].cpu().numpy(),
-                        #                label='sentiment_grades_before_temp')
-                        # axs[1, 0].set_title('sentiment probs before temp')
+                        axs[1, 0].plot(x, sentiment_grades_before_temp_plot[i_beam].cpu().numpy(),
+                                       label='sentiment_grades_before_temp')
+                        axs[1, 0].set_title('sentiment probs before temp')
 
                         if len(sentiment_grades_after_temp_plot[i_beam].shape) > 1:
                             sentiment_grades_after_temp_plot[i_beam] = torch.squeeze(
@@ -1905,22 +1905,49 @@ class CLIPTextGenerator:
                                        label='sentiment_grades_after_temp')
                         axs[1, 1].set_title(f'style prob')
 
+                        # #todo: remove. it is for audio. 8.9.23
+                        # if len(audio_after_softmax[i_beam].shape) > 1:
+                        #     audio_after_softmax[i_beam] = torch.squeeze(
+                        #         audio_after_softmax[i_beam])
+                        # axs[2, 1].plot(x, audio_after_softmax[i_beam].cpu().numpy(),
+                        #                label='sentiment_grades_after_temp')
+                        # axs[2, 1].set_title(f'audio_after_softmax')
+
                         # if len(clip_target_probs_before_style.shape)<2:
                         #     clip_target_probs_before_style = torch.unsqueeze(clip_target_probs_before_style,1)
-                        try:
-                            if len(clip_target_probs_before_style_plot[i_beam].shape) > 1:
-                                clip_target_probs_before_style_plot[i_beam] = torch.squeeze(
-                                    clip_target_probs_before_style_plot[i_beam])
-                            axs[2, 0].plot(x, clip_target_probs_before_style_plot[i_beam].cpu().detach().numpy(),
+
+                        audio = True #todo: remove it 8.9.23
+                        if audio:
+                            if len(clip_target_probs_before_style2[i_beam].shape) > 1:
+                                clip_target_probs_before_style2[i_beam] = torch.squeeze(
+                                    clip_target_probs_before_style2[i_beam])
+                            axs[2, 0].plot(x, clip_target_probs_before_style2[i_beam].cpu().detach().numpy(),
                                            label='clip_target_probs_before_style')
                             axs[2, 0].set_title(f'CLIP_0 prob')
-                        except:
-                            pass
 
-                        if len(target_probs_clip_plot[i_beam].shape) > 1:
-                            target_probs_clip_plot[i_beam] = torch.squeeze(target_probs_clip_plot[i_beam])
-                        axs[2, 1].plot(x, target_probs_clip_plot[i_beam].cpu().detach().numpy(), label='target_probs_clip')
-                        axs[2, 1].set_title(f'final CLIP prob')
+                            if len(target_probs_clip[i_beam].shape) > 1:
+                                target_probs_clip_plot[i_beam] = torch.squeeze(target_probs_clip[i_beam])
+                            axs[2, 1].plot(x, target_probs_clip[i_beam].cpu().detach().numpy(),
+                                           label='target_probs_clip')
+                            axs[2, 1].set_title(f'final CLIP prob')
+
+                        else:
+
+                            try:
+                                if len(clip_target_probs_before_style_plot[i_beam].shape) > 1:
+                                    clip_target_probs_before_style_plot[i_beam] = torch.squeeze(
+                                        clip_target_probs_before_style_plot[i_beam])
+                                axs[2, 0].plot(x, clip_target_probs_before_style_plot[i_beam].cpu().detach().numpy(),
+                                               label='clip_target_probs_before_style')
+                                axs[2, 0].set_title(f'CLIP_0 prob')
+                            except:
+                                pass
+
+
+                            if len(target_probs_clip_plot[i_beam].shape) > 1:
+                                target_probs_clip_plot[i_beam] = torch.squeeze(target_probs_clip_plot[i_beam])
+                            axs[2, 1].plot(x, target_probs_clip_plot[i_beam].cpu().detach().numpy(), label='target_probs_clip')
+                            axs[2, 1].set_title(f'final CLIP prob')
 
                         # Add a global title
                         # fig.suptitle(f'word loc = {word_loc}, i_beam={i_beam}, iteration number={i}')
@@ -2005,6 +2032,7 @@ class CLIPTextGenerator:
         clip_target_probs_before_style_t = {} #for all beams
         sentiment_grades_before_temp_t = {} #for all beams
         sentiment_grades_after_temp_t = {} #for all beams
+        audio_after_softmax_t = {} #for all beams
 
         # my debugging of update CLIP
         # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~") #todo:
@@ -2273,10 +2301,19 @@ class CLIPTextGenerator:
                         outputs = self.audio_model(**inputs)
                         logits_per_audio = outputs.logits_per_audio  # this is the audio-text similarity score
                         # audio_grades = logits_per_audio.unsqueeze(0)
-                        predicted_probs = nn.functional.softmax(logits_per_audio / self.audio_temperature,
+                        sentiment_grades_before_temp = nn.functional.softmax(logits_per_audio,
                                                                 dim=-1).detach()  # todo: parametrize it
+
+                        logits_per_audio_fixed = torch.log(logits_per_audio-torch.min(logits_per_audio)+1)
+                        sentiment_grades_after_temp = logits_per_audio_fixed
+                        audio_after_softmax = nn.functional.softmax(logits_per_audio_fixed,
+                                                                dim=-1).detach()  # todo: remove it
+                        predicted_probs = audio_after_softmax
+                        # predicted_probs = nn.functional.softmax(logits_per_audio / self.audio_temperature,
+                        #                                         dim=-1).detach()  # todo: parametrize it
                         audio_predicted_probs = predicted_probs.type(torch.float32).to(self.device)
-                        clip_target_probs_weightes_style = clip_target_probs_weightes_style * audio_predicted_probs
+
+                        clip_target_probs_weightes_style = clip_target_probs_weightes_style * sentiment_grades_before_temp
                         #end of adding audio
 
                         clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
@@ -2481,6 +2518,8 @@ class CLIPTextGenerator:
             target = torch.zeros_like(probs[idx_p])
             target[top_indices[idx_p]] = target_probs
             target = target.unsqueeze(0)
+            # clip_loss = target
+            clip_probs[idx_p] = target
 
             sentiment_grades_before_temp_t[idx_p] = torch.zeros_like(probs[idx_p])
             if sentiment_grades_before_temp is not None:
@@ -2491,6 +2530,12 @@ class CLIPTextGenerator:
             if sentiment_grades_after_temp is not None:
                 sentiment_grades_after_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_after_temp
             sentiment_grades_after_temp_t[idx_p] = sentiment_grades_after_temp_t[idx_p].unsqueeze(0)
+
+
+            audio_after_softmax_t[idx_p] = torch.zeros_like(probs[idx_p])
+            if audio_after_softmax_t is not None:
+                audio_after_softmax_t[idx_p][top_indices[idx_p]] = audio_after_softmax
+            audio_after_softmax_t[idx_p] = audio_after_softmax_t[idx_p].unsqueeze(0)
 
             clip_target_probs_before_style_t[idx_p] = torch.zeros_like(probs[idx_p])
             if clip_target_probs_before_style is not None:
@@ -2566,7 +2611,7 @@ class CLIPTextGenerator:
         #     total_best_sentences_clip[debug_best_top_texts_clip[i]] = debug_best_probs_vals_clip[i]
         # for i in np.argsort(debug_best_probs_vals_LM)[-DEBUG_NUM_WORDS:]:
         #     total_best_sentences_LM[debug_best_top_texts_LM[i]] = debug_best_probs_vals_LM[i]
-        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs, clip_probs, clip_target_probs_before_style_t,sentiment_grades_before_temp_t,sentiment_grades_after_temp_t
+        return clip_loss, losses, best_sentences_clip, best_sentences_LM, total_best_sentences_clip, total_best_sentences_LM, clip_probs, clip_probs, clip_target_probs_before_style_t,sentiment_grades_before_temp_t,sentiment_grades_after_temp_t, audio_after_softmax_t
 
 
     def get_clip_probs(self, probs, context_tokens, print_probs=False):

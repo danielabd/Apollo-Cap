@@ -8,7 +8,7 @@ debug_mac: False
 print_for_debug : False # todo
 print_for_debug_redundant : False
 wandb_mode: disabled #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-plot_prob_graphs: False #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+plot_prob_graphs: True #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 plot_only_clustering: False
 ###audio
@@ -159,7 +159,7 @@ threshold_sentiment:
 model_based_on: 'bert' # 'clip' /  'bert'
 #
 #max_num_of_imgs: -1
-target_seq_length: 30
+target_seq_length: 3 #30 #todo:remove
 #desired_labels: #todo
 #  senticap: [positive, negative] #[factual, positive, negative]
 #  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
