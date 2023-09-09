@@ -2291,7 +2291,7 @@ class CLIPTextGenerator:
                         # clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
 
 
-                        clip_target_probs_weightes_style = clip_target_probs #todo: remove - no style
+                        clip_target_probs_weightes_style = clip_target_probs.to(self.device) #todo: remove - no style
 
                         #adding_audio
                         inputs = self.audio_processor(text=top_texts, audios=self.audio_sample_resampled,
@@ -2299,7 +2299,7 @@ class CLIPTextGenerator:
                                                       padding=True,
                                                       sampling_rate=self.config['audio_model_sampling_rate'])
                         outputs = self.audio_model(**inputs)
-                        logits_per_audio = outputs.logits_per_audio  # this is the audio-text similarity score
+                        logits_per_audio = outputs.logits_per_audio.to(self.device)  # this is the audio-text similarity score
                         # audio_grades = logits_per_audio.unsqueeze(0)
                         sentiment_grades_before_temp = nn.functional.softmax(logits_per_audio,
                                                                 dim=-1).detach()  # todo: parametrize it
