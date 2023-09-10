@@ -16,7 +16,8 @@ use_audio_model: True
 audio_model_sampling_rate: 48000
 audio_temperature: 0.01
 
-use_img_path: ~/data/for_audio/monkey_dog_img.jpg
+#use_img_path: ~/data/for_audio/monkey_dog_img.jpg
+
 # element audio
 #audio_path: ~/data/for_audio/dog_1.wav
 #audio_sampling_rate: 16000
@@ -26,20 +27,20 @@ use_img_path: ~/data/for_audio/monkey_dog_img.jpg
 #background audio
 #audio_path: ~/data/for_audio/running_stream.wav
 #audio_sampling_rate: 22050
-audio_path: ~/data/for_audio/driving-by-noisy-car-33855.wav
-audio_sampling_rate: 24000
+#audio_path: ~/data/for_audio/driving-by-noisy-car-33855.wav
+#audio_sampling_rate: 24000
 
 #background audio
 #audio_path: ~/data/for_audio/cry_baby.wav
 #audio_sampling_rate: 44100
-#audio_path: ~/data/for_audio/child_laughing.wav
-#audio_sampling_rate: 44100
+audio_path: ~/data/for_audio/child_laughing.wav
+audio_sampling_rate: 44100
 
 experiement_global_name:
 #  senticap: StylizedZeroCap_audio_cry #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-#  senticap: StylizedZeroCap_audio_laugh #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-#  senticap: StylizedZeroCap_audio_stream #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  senticap: StylizedZeroCap_audio_noise_car #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_audio_laugh #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+#  senticap: StylizedZeroCap_audio_stream #StylizedZeroCap_audio_streamtmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+#  senticap: StylizedZeroCap_audio_noise_car #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_road_0.5 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_monkey #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
@@ -51,7 +52,7 @@ specific_idxs_to_skip: []#[2,3] #todo
 max_num_of_imgs: 1 #todo
 reverse_imgs_list: False
 data_type: test #val, test #todo:!!!!!!!!
-#specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+specific_imgs_to_test: [58949] # [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
 #specific_img_idxs_to_test: [5,6,207]
 #specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
 #specific_img_idxs_to_test: [5,6,134,144,155]
