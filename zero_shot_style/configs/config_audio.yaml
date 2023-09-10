@@ -33,12 +33,15 @@ audio_temperature: 0.01
 #background audio
 #audio_path: ~/data/for_audio/cry_baby.wav
 #audio_sampling_rate: 44100
-audio_path: ~/data/for_audio/child_laughing.wav
-audio_sampling_rate: 44100
+#audio_path: ~/data/for_audio/child_laughing.wav
+#audio_sampling_rate: 44100
+audio_path: ~/data/for_audio/child-crying-in-yard-72009.wav
+audio_sampling_rate: 24000
 
 experiement_global_name:
 #  senticap: StylizedZeroCap_audio_cry #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  senticap: StylizedZeroCap_audio_laugh #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+#  senticap: StylizedZeroCap_audio_laugh #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_audio_child_cry #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_stream #StylizedZeroCap_audio_streamtmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_noise_car #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_road_0.5 #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
