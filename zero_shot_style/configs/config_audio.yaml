@@ -34,10 +34,10 @@ use_img_path: ~/data/for_audio/kids3.jpg
 #background audio
 #audio_path: ~/data/for_audio/cry_baby.wav
 #audio_sampling_rate: 44100
-audio_path: ~/data/for_audio/child_laughing.wav
-audio_sampling_rate: 44100
-#audio_path: ~/data/for_audio/child-crying-in-yard-72009.wav
-#audio_sampling_rate: 24000
+#audio_path: ~/data/for_audio/child_laughing.wav
+#audio_sampling_rate: 44100
+audio_path: ~/data/for_audio/child-crying-in-yard-72009.wav
+audio_sampling_rate: 24000
 #audio_path: ~/data/for_audio/happy_back.wav
 #audio_sampling_rate: 44100
 #audio_path: ~/data/for_audio/wah-wah-sad-trombone-6347.wav
@@ -51,8 +51,8 @@ audio_sampling_rate: 44100
 
 experiement_global_name:
 #  senticap: StylizedZeroCap_audio_cry #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  senticap: StylizedZeroCap_audio_laugh #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-#  senticap: StylizedZeroCap_audio_child_cry #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+#  senticap: StylizedZeroCap_audio_laugh #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_audio_child_cry #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_bomb #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_happy_back #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_wah #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
