@@ -37,7 +37,7 @@ audio_temperature: 0.01
 #audio_sampling_rate: 44100
 #audio_path: ~/data/for_audio/child-crying-in-yard-72009.wav
 #audio_sampling_rate: 24000
-audio_path: ~/data/for_audio/"happy_back.wav"
+audio_path: ~/data/for_audio/happy_back.wav
 audio_sampling_rate: 44100
 
 experiement_global_name:
