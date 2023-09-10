@@ -17,6 +17,7 @@ audio_model_sampling_rate: 48000
 audio_temperature: 0.01
 
 #use_img_path: ~/data/for_audio/monkey_dog_img.jpg
+use_img_path: ~/data/for_audio/kids.jpeg
 
 # element audio
 #audio_path: ~/data/for_audio/dog_1.wav
@@ -31,10 +32,10 @@ audio_temperature: 0.01
 #audio_sampling_rate: 24000
 
 #background audio
-audio_path: ~/data/for_audio/cry_baby.wav
-audio_sampling_rate: 44100
-#audio_path: ~/data/for_audio/child_laughing.wav
+#audio_path: ~/data/for_audio/cry_baby.wav
 #audio_sampling_rate: 44100
+audio_path: ~/data/for_audio/child_laughing.wav
+audio_sampling_rate: 44100
 #audio_path: ~/data/for_audio/child-crying-in-yard-72009.wav
 #audio_sampling_rate: 24000
 #audio_path: ~/data/for_audio/happy_back.wav
@@ -48,7 +49,7 @@ audio_sampling_rate: 44100
 
 experiement_global_name:
 #  senticap: StylizedZeroCap_audio_cry #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-#  senticap: StylizedZeroCap_audio_laugh #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+  senticap: StylizedZeroCap_audio_laugh #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_child_cry #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_happy_back #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_wah #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
@@ -70,7 +71,7 @@ max_num_of_imgs: 1 #todo
 reverse_imgs_list: False
 data_type: test #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [58949] # [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
-specific_imgs_to_test: [572147] # [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+#specific_imgs_to_test: [572147] # [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
 #specific_imgs_to_test: [509590] # [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
 #specific_imgs_to_test: [531816] # [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
 #specific_img_idxs_to_test: [5,6,207]
