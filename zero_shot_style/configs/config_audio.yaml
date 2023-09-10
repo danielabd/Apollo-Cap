@@ -55,7 +55,7 @@ experiement_global_name:
 #  senticap: StylizedZeroCap_audio_wah #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_glass #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_eating #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
-  senticap: StylizedZeroCap_audio_baby_crying #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
+#  senticap: StylizedZeroCap_audio_baby_crying #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_child_laugh #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_stream #StylizedZeroCap_audio_streamtmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
 #  senticap: StylizedZeroCap_audio_noise_car #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
