@@ -2079,7 +2079,7 @@ class CLIPTextGenerator:
         # similiraties_specific_test = (self.image_features @ text_features_specific_test.T)
         # print(f"similiraties_specific_test = {similiraties_specific_test.item()}")
         # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        clip_target_probs_before_style = None; sentiment_grades_after_temp=None;sentiment_grades_before_temp=None
+        clip_target_probs_before_style = None; sentiment_grades_after_temp=None;sentiment_grades_before_temp=None;audio_after_softmax=None
         for idx_p in range(probs.shape[0]): # for beam search
             top_texts = []
             prefix_text = prefix_texts[idx_p]
