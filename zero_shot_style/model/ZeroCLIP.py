@@ -2533,7 +2533,7 @@ class CLIPTextGenerator:
 
 
             audio_after_softmax_t[idx_p] = torch.zeros_like(probs[idx_p])
-            if audio_after_softmax_t is not None:
+            if audio_after_softmax is not None:
                 audio_after_softmax_t[idx_p][top_indices[idx_p]] = audio_after_softmax
             audio_after_softmax_t[idx_p] = audio_after_softmax_t[idx_p].unsqueeze(0)
 
