@@ -11,6 +11,9 @@ import json
 from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
 from torch import nn
+from transformers import AutoProcessor
+from transformers import ClapModel
+import librosa
 
 import pandas as pds
 import shutil
@@ -90,6 +93,56 @@ class CLIPScoreRef:
         # print('CLIPScoreRef = %s' % avg_score)
         return avg_score, scores_for_all
 
+
+class CLAPScore:
+    def __init__(self, audio_model_sampling_rate, audio_sampling_rate,audio_path):
+        self.audio_model_sampling_rate = audio_model_sampling_rate
+        self.audio_sampling_rate = audio_sampling_rate
+        self.audio_path = audio_path
+
+        self.audio_model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
+        self.audio_processor = AutoProcessor.from_pretrained("laion/clap-htsat-unfused")
+        self.device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
+        self.audio_model.to(self.device)
+        for param in self.audio_model.parameters():
+            param.requires_grad = False
+        self.audio_model.eval()
+
+        audio_sample, _ = librosa.load(self.audio_path, sr=self.audio_sampling_rate)
+        self.audio_sample_resampled = librosa.resample(audio_sample, orig_sr=audio_sampling_rate,
+                                                       target_sr=self.audio_model_sampling_rate)
+
+
+    def compute_score(self, res):
+        '''
+
+        :param image_path: str full path to the image
+        :param res: str
+        :return:
+        '''
+        # print("calculate CLIPScore...")
+        res_val = res
+        if type(res) == dict:
+            res_val = [list(res.values())[0][0][:77]]
+        inputs = self.audio_processor(text=res_val, audios=self.audio_sample_resampled,
+                                      return_tensors="pt",
+                                      padding=True,
+                                      sampling_rate=self.audio_model_sampling_rate)
+        outputs = self.audio_model(**inputs)
+        audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
+
+
+
+        # image_features = self.text_generator.get_img_feature([image_path], None, source_clip=True)
+        # text_features = self.text_generator.get_txt_features(res_val, source_clip=True)
+        # with torch.no_grad():
+        #     clip_score = (image_features @ text_features.T)
+
+        # score = clip_score.cpu().numpy()
+        score = audio_similiraties.cpu().numpy()
+        # print(f'text: {res}')
+        # print('CLIPScore = %s' % score[0][0])
+        return score[0][0], [score]
 
 class CLIPScore:
     def __init__(self, text_generator):
@@ -525,6 +578,8 @@ def evaluate_single_res(res, gt, image_path, label, metrics, evaluation_obj):
                 evaluation[metric], _ = evaluation_obj[metric].compute_score(res, label)
         elif metric == 'CLIPScore':
             evaluation['CLIPScore'], _ = evaluation_obj[metric].compute_score(image_path, res)
+        elif metric == 'CLAPScore':
+            evaluation['CLAPScore'], _ = evaluation_obj[metric].compute_score(res)
         elif metric == 'fluency':  # calc fluency only on all data
             continue
         else:
@@ -570,6 +625,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
         for metric in metrics:
             print(f"    Calc scores for metric: ***{metric}***")
             t1_metric = timeit.default_timer();
+            if metric == 'CLAPScore':
+                scorer = CLAPScore(config['audio_model_sampling_rate'], config['audio_sampling_rate'],config['audio_path'])
             if metric == 'bleu1':
                 scorer = Bleu(n=1)
             if metric == 'bleu3':
@@ -622,6 +679,14 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                             # if not gts_per_data_set[k][style]:
                             #     continue
                             tmp_res = {k: [res[test_name][k][style]]}
+                            if metric == 'CLAPScore':
+                                score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
+                                    style] = scorer.compute_score(gts_per_data_set[k]['image_path'], tmp_res)
+                                score_per_metric_and_style[metric][style].append(
+                                    score_dict_per_metric[metric][k][style])
+                                all_scores = save_all_data_k(all_scores, k, test_name, style, metric,
+                                                             score_dict_per_metric, res=tmp_res[k][0],
+                                                             image_path=gts_per_data_set[k]['image_path'])
                             if metric == 'CLIPScore':
                                 # score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(os.path.join(config['test_imgs'],gts_per_data_set[k]['image_path'].split('/')[-1]), tmp_res)
                                 score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][

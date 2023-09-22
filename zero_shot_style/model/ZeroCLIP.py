@@ -352,6 +352,13 @@ class CLIPTextGenerator:
             audio_sample, _ = librosa.load(self.config["audio_path"], sr=self.config["audio_sampling_rate"])
             self.audio_sample_resampled = librosa.resample(audio_sample, orig_sr=self.config["audio_sampling_rate"], target_sr=self.config["audio_model_sampling_rate"])
 
+            self.audio_model.to(self.device)
+            for param in self.audio_model.parameters():
+                param.requires_grad = False
+            self.audio_model.eval()
+
+
+
 
     def update_config(self,config):
         self.config = config
@@ -2301,6 +2308,9 @@ class CLIPTextGenerator:
                         outputs = self.audio_model(**inputs)
                         logits_per_audio = outputs.logits_per_audio.to(self.device)  # this is the audio-text similarity score
                         # audio_grades = logits_per_audio.unsqueeze(0)
+
+                        # audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
+
                         sentiment_grades_before_temp = nn.functional.softmax(logits_per_audio,
                                                                 dim=-1).detach()  # todo: parametrize it
 

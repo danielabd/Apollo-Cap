@@ -174,8 +174,8 @@ def write_evaluation_results(total_captions,avg_total_score, results_dir, config
     print(f'Writing evaluation results into: {tgt_results_path}')
     with open(tgt_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
-        title = ['img_name', 'style', 'caption', 'gt_captions', 'factual_captions', 'avg_style_cls_score', 'avg_clip_score', 'avg_fluency_score', 'avg_total_score', 'ce_scale','clip_scale','text_style_scale','beam_size','num_iterations','img_path']
+        title = ['img_name', 'style', 'caption', 'gt_captions', 'factual_captions', 'avg_style_cls_score', 'avg_clip_score','avg_clap_score', 'avg_fluency_score', 'avg_total_score', 'ce_scale','clip_scale','text_style_scale','beam_size','num_iterations','img_path']
         writer.writerow(title)
         for i in total_captions:
-            cur_row = [i.get_img_name(), i.get_style(), i.get_caption_text(),i.get_gt_caption_text(), i.get_factual_captions(), i.get_style_cls_score(),i.get_clip_score(), i.get_fluency_score(), i.get_total_score(),config['ce_scale'],config['clip_scale'],config['text_style_scale'],config['beam_size'],config['num_iterations'], i.get_img_path()]
+            cur_row = [i.get_img_name(), i.get_style(), i.get_caption_text(),i.get_gt_caption_text(), i.get_factual_captions(), i.get_style_cls_score(),i.get_clip_score(),i.get_clap_score(), i.get_fluency_score(), i.get_total_score(),config['ce_scale'],config['clip_scale'],config['text_style_scale'],config['beam_size'],config['num_iterations'], i.get_img_path()]
             writer.writerow(cur_row)

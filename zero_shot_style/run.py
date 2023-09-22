@@ -10,7 +10,7 @@ import clip
 import wandb
 import yaml
 from zero_shot_style.evaluation.evaluation_all import get_gts_data, CLIPScoreRef, CLIPScore, STYLE_CLS, STYLE_CLS_EMOJI, \
-    STYLE_CLS_ROBERTA
+    STYLE_CLS_ROBERTA, CLAPScore
 from zero_shot_style.evaluation.evaluation_all import evaluate_single_res
 from zero_shot_style.evaluation.pycocoevalcap.bleu.bleu import Bleu
 from zero_shot_style.evaluation.pycocoevalcap.rouge.rouge import Rouge
@@ -33,6 +33,7 @@ from evaluate import load
 MAX_PERPLEXITY = 1500
 DEFAULT_PERPLEXITY_SCORE = 1
 DEFAULT_CLIP_SCORE = 1
+DEFAULT_CLAP_SCORE = 1
 DEFAULT_STYLE_CLS_SCORE = 1
 DEFAULT_STYLE_CLS_EMOJI_SCORE = 1
 EPSILON = 0.0000000001
@@ -363,7 +364,7 @@ def get_img_full_path(base_path, i):
 
 class Caption:
     def __init__(self, img_name, style, res_caption_text, gt_caption_text, img_path, classification, clip_score,
-                 fluency, avg_total_score, factual_captions, style_cls_score, style_cls_score_emoji):
+                 fluency, avg_total_score, factual_captions, style_cls_score, style_cls_score_emoji,clap_score=1):
         self.img_name = img_name
         self.style = style
         self.res_caption_text = res_caption_text
@@ -373,6 +374,7 @@ class Caption:
         self.avg_style_cls_score = style_cls_score
         self.avg_style_cls_score_emoji = style_cls_score_emoji
         self.avg_clip_score = clip_score
+        self.avg_clap_score = clap_score
         self.avg_fluency_score = fluency
         self.classification = classification
         self.avg_total_score = avg_total_score
@@ -408,6 +410,9 @@ class Caption:
     def get_clip_score(self):
         return self.avg_clip_score
 
+    def get_clap_score(self):
+        return self.avg_clap_score
+
     def get_fluency_score(self):
         return self.avg_fluency_score
 
@@ -425,6 +430,9 @@ class Caption:
 
     def set_clip_score(self, avg_clip_score):
         self.avg_clip_score = avg_clip_score
+
+    def set_clap_score(self, avg_clap_score):
+        self.avg_clap_score = avg_clap_score
 
     def set_fluency_score(self, avg_fluency_score):
         self.avg_fluency_score = avg_fluency_score
@@ -597,6 +605,8 @@ def get_evaluation_obj(config, text_generator, evaluation_obj):
                 evaluation_obj['clip_score_ref'] = CLIPScoreRef(text_generator)
             if metric == 'CLIPScore' and 'CLIPScore' not in evaluation_obj:
                 evaluation_obj['CLIPScore'] = CLIPScore(text_generator)
+            if metric == 'CLAPScore' and 'CLAPScore' not in evaluation_obj:
+                evaluation_obj['CLAPScore'] = CLAPScore(config['audio_model_sampling_rate'], config['audio_sampling_rate'],config['audio_path'])
             if metric == 'fluency' and 'fluency' not in evaluation_obj:
                 evaluation_obj['fluency'] = Fluency(config['desired_labels'])
 
@@ -639,6 +649,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     style_cls_scores = []
     style_cls_emoji_scores = []
     clip_scores = []
+    clap_scores = []
     fluency_scores = []
     total_captions = []
     total_res_text = []
@@ -659,6 +670,10 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                 clip_score = evaluation_results[img_name][label]['scores']['CLIPScore']
             else:
                 clip_score = DEFAULT_CLIP_SCORE
+            if 'CLAPScore' in config['evaluation_metrics']:
+                clap_score = evaluation_results[img_name][label]['scores']['CLAPScore']
+            else:
+                clip_score = DEFAULT_CLAP_SCORE
             if config['calc_fluency'] and 'fluency' in config['evaluation_metrics']:
                 # fluency_score = perplexities[img_name][label]
                 fluency_score = evaluation_results[img_name][label]['scores']['fluency']
@@ -680,6 +695,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                 style_cls_score = DEFAULT_STYLE_CLS_SCORE
 
             avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
+            # avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)#todo: remove
 
             #todo: I removed the option that there is no style cls  in eval metrics
             # if 'style_classification' in evaluation_results[img_name][label]['scores']:
@@ -691,6 +707,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             #     avg_total_score = calculate_avg_score(clip_score, fluency_score)
 
             clip_scores.append(clip_score)
+            clap_scores.append(clap_score)
             fluency_scores.append(fluency_score)
             # style_cls_scores.append(style_cls_score)
             if 'style_classification_emoji' in config['evaluation_metrics']:
@@ -707,7 +724,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             total_gt_text.append(gt_text)
             total_captions.append(Caption(img_name, label, res_text, gt_text, evaluation_results[img_name]['img_path'],
                                           label, clip_score, fluency_score, avg_total_score, gts_data[img_name]['factual'],
-                                          style_cls_score, style_cls_emoji_scores))
+                                          style_cls_score, style_cls_emoji_scores,clap_scores))
 
     clip_scores_table = get_table_for_wandb(clip_scores)
     fluency_scores_table = get_table_for_wandb(fluency_scores)
@@ -1069,6 +1086,11 @@ def main():
                     print(f"style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
                 elif "style_classification_emoji" in config["evaluation_metrics"]:
                     print(f"style_classification_emoji={evaluation_results[img_name][label]['scores']['style_classification_emoji']}")
+                if "CLIPScore" in config["evaluation_metrics"]:
+                    print(f"CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}")
+                if "CLAPScore" in config["evaluation_metrics"]:
+                    print(f"CLAPScore={evaluation_results[img_name][label]['scores']['CLAPScore']}")
+
             # except:
             #     print("check why it failed")
             #     failed_img_names.append(img_name)
