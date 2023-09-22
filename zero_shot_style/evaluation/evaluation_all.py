@@ -30,11 +30,11 @@ import pickle
 
 from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
-# from zero_shot_style.evaluation.pycocoevalcap.bleu.bleu import Bleu
-# from zero_shot_style.evaluation.pycocoevalcap.cider.cider import Cider
-# from zero_shot_style.evaluation.pycocoevalcap.meteor.meteor import Meteor
-# from zero_shot_style.evaluation.pycocoevalcap.rouge.rouge import Rouge
-# from zero_shot_style.evaluation.pycocoevalcap.spice import Spice
+from zero_shot_style.evaluation.pycocoevalcap.bleu.bleu import Bleu
+from zero_shot_style.evaluation.pycocoevalcap.cider.cider import Cider
+from zero_shot_style.evaluation.pycocoevalcap.meteor.meteor import Meteor
+from zero_shot_style.evaluation.pycocoevalcap.rouge.rouge import Rouge
+from zero_shot_style.evaluation.pycocoevalcap.spice import Spice
 
 from zero_shot_style.model.ZeroCLIP import CLIPTextGenerator
 from zero_shot_style.evaluation.text_style_classification import evaluate as evaluate_text_style_classification
@@ -644,6 +644,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     continue
                                 scorer.add_test(tmp_res, metric, k, style)
                             else:
+                                if gts_per_data_set[k][style]==[]:
+                                    continue
                                 tmp_gts = {k: gts_per_data_set[k][style]}
                                 score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
                                     style] = scorer.compute_score(tmp_gts, tmp_res)

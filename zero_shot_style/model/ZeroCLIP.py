@@ -2088,7 +2088,7 @@ class CLIPTextGenerator:
                 if len(text)>77:
                     text = text[:77]
                 top_texts.append(text)
-            ######todo: daniela debug    effect of update CLIP
+            ######todo: daniela debug effect of update CLIP
             # top_texts = ["The bedroom used child abuse"]+["The bedroom of a sweet baby"]
             # if  update_initial_clip: #todo:remove it
             #     for i in range(len(top_texts)):

@@ -132,8 +132,13 @@ def get_hparams(args):
     for k1 in hparams:
         if type(hparams[k1])==dict:
             for k2 in hparams[k1]:
-                if '/' in str(hparams[k1][k2]):
-                    hparams[k1][k2] = replace_user_home_dir(hparams[k1][k2])
+                if type(hparams[k1][k2]) == dict:
+                    for k3 in hparams[k1][k2]:
+                        if '/' in str(hparams[k1][k2][k3]):
+                            hparams[k1][k2][k3] = replace_user_home_dir(hparams[k1][k2][k3])
+                else:
+                    if '/' in str(hparams[k1][k2]):
+                        hparams[k1][k2] = replace_user_home_dir(hparams[k1][k2])
         else:
             if '/' in str(hparams[k1]):
                 hparams[k1] = replace_user_home_dir(hparams[k1])
