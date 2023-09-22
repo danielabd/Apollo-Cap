@@ -2305,6 +2305,7 @@ class CLIPTextGenerator:
                                                       return_tensors="pt",
                                                       padding=True,
                                                       sampling_rate=self.config['audio_model_sampling_rate'])
+                        inputs=inputs.to(self.device)
                         outputs = self.audio_model(**inputs)
                         logits_per_audio = outputs.logits_per_audio.to(self.device)  # this is the audio-text similarity score
                         # audio_grades = logits_per_audio.unsqueeze(0)
