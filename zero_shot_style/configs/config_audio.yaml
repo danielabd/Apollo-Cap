@@ -107,7 +107,7 @@ desired_min_clip_score: 0.28
 heavy_max_num_iterations: 7
 max_batch_size_style_cls: 10
 ##########
-mul_clip_style: False #for original zerocap #todo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+mul_clip_style: True #for original zerocap #todo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 only_clip_styled_clip_loss: True
 sentiment_temperature: 0.01 #0.04
 ######
@@ -201,7 +201,7 @@ threshold_sentiment:
 model_based_on: 'bert' # 'clip' /  'bert'
 #
 #max_num_of_imgs: -1
-target_seq_length: 30 #30 #todo:remove
+target_seq_length: 30 #todo:remove
 #desired_labels: #todo
 #  senticap: [positive, negative] #[factual, positive, negative]
 #  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
