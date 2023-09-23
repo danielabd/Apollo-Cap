@@ -128,6 +128,7 @@ class CLAPScore:
                                       return_tensors="pt",
                                       padding=True,
                                       sampling_rate=self.audio_model_sampling_rate)
+        inputs = inputs.to(self.device)
         outputs = self.audio_model(**inputs)
         audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
 
