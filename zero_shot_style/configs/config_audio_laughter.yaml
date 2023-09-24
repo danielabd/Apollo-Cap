@@ -88,7 +88,7 @@ experiement_global_name:
 
 ##for validation
 specific_idxs_to_skip: []#[2,3] #todo
-max_num_of_imgs: 1 #-1 #todo
+max_num_of_imgs: -1 #todo
 reverse_imgs_list: False
 data_type: test #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [58949] # [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
@@ -97,7 +97,7 @@ data_type: test #val, test #todo:!!!!!!!!
 #specific_imgs_to_test: [531816] # [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
 #specific_img_idxs_to_test: [5,6,207]
 #specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
-#specific_img_idxs_to_test: [5,6,134,144,155]
+specific_img_idxs_to_test: [5,6,134,144,155]
 #specific_img_idxs_to_test: [5,6]
 ########## 10.5.23
 cut_cand2clip: False
@@ -203,7 +203,7 @@ threshold_sentiment:
 model_based_on: 'bert' # 'clip' /  'bert'
 #
 #max_num_of_imgs: -1
-target_seq_length: 2 #30 #todo:remove
+target_seq_length: 30 #todo:remove
 #desired_labels: #todo
 #  senticap: [positive, negative] #[factual, positive, negative]
 #  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
