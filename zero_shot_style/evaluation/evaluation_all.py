@@ -165,10 +165,11 @@ class CLAPScore:
         #     clip_score = (image_features @ text_features.T)
 
         # score = clip_score.cpu().numpy()
-        score = audio_similiraties.cpu().numpy()
+        scores = audio_similiraties.cpu().numpy()
         # print(f'text: {res}')
         # print('CLIPScore = %s' % score[0][0])
-        return score[0][0], [score]
+        # return score[0][0], [score]
+        return scores
 
 class CLIPScore:
     def __init__(self, text_generator):
