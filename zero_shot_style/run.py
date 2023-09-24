@@ -4,8 +4,11 @@ import os
 # import pdb
 
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
-import pandas as pd
 import torch
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+# print(f"cuda={torch.cuda.is_available()}")
+import pandas as pd
+# import torch
 import clip
 import wandb
 import yaml
@@ -48,6 +51,7 @@ def get_args():
                         # default=os.path.join('.', 'configs', 'config_update_vit15pos_test_best_fluence.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_update_vit17neg_check.yaml'), #todo: change config file
                         default=os.path.join('.', 'configs', 'config_audio.yaml'), #todo: change config file
+                        # default=os.path.join('.', 'configs', 'config_update_vit_audio.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -194,6 +198,13 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     best_clip_idx = (torch.cat(encoded_captions) @ image_features.t()).squeeze().argmax().item()
     device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
     clip_grades = (torch.cat(encoded_captions) @ image_features.t()).squeeze()
+
+    if evaluation_obj and ('CLAPScore' in evaluation_obj):
+        style_cls_grades = torch.tensor(
+            evaluation_obj['CLAPScore'].compute_score_for_list(captions).to(device))
+        best_harmonic_mean_idx = (
+                    len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
+
     if evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj):
         if 'style_classification' in evaluation_obj:
             style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
@@ -693,6 +704,12 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                 style_cls_score = style_cls_emoji_score
             else:
                 style_cls_score = DEFAULT_STYLE_CLS_SCORE
+
+            if not config.get('use_style_model',False): #todo
+                if config.get('use_audio_model', False):
+                    style_cls_score = clap_score
+                    style_cls_scores = clap_scores
+
 
             avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
             # avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)#todo: remove

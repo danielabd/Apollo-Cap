@@ -144,6 +144,31 @@ class CLAPScore:
         # print(f'text: {res}')
         # print('CLIPScore = %s' % score[0][0])
         return score[0][0], [score]
+    def compute_score_for_list(self, captions):
+        '''
+
+        :param captions: list of text
+        :return:
+        '''
+        inputs = self.audio_processor(text=captions, audios=self.audio_sample_resampled,
+                                      return_tensors="pt",
+                                      padding=True,
+                                      sampling_rate=self.audio_model_sampling_rate)
+        inputs = inputs.to(self.device)
+        outputs = self.audio_model(**inputs)
+        audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
+
+
+        # image_features = self.text_generator.get_img_feature([image_path], None, source_clip=True)
+        # text_features = self.text_generator.get_txt_features(res_val, source_clip=True)
+        # with torch.no_grad():
+        #     clip_score = (image_features @ text_features.T)
+
+        # score = clip_score.cpu().numpy()
+        score = audio_similiraties.cpu().numpy()
+        # print(f'text: {res}')
+        # print('CLIPScore = %s' % score[0][0])
+        return score[0][0], [score]
 
 class CLIPScore:
     def __init__(self, text_generator):
@@ -682,13 +707,13 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                             tmp_res = {k: [res[test_name][k][style]]}
                             if metric == 'CLAPScore':
                                 score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
-                                    style] = scorer.compute_score(gts_per_data_set[k]['image_path'], tmp_res)
+                                    style] = scorer.compute_score(tmp_res)
                                 score_per_metric_and_style[metric][style].append(
                                     score_dict_per_metric[metric][k][style])
                                 all_scores = save_all_data_k(all_scores, k, test_name, style, metric,
                                                              score_dict_per_metric, res=tmp_res[k][0],
                                                              image_path=gts_per_data_set[k]['image_path'])
-                            if metric == 'CLIPScore':
+                            elif metric == 'CLIPScore':
                                 # score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][style] = scorer.compute_score(os.path.join(config['test_imgs'],gts_per_data_set[k]['image_path'].split('/')[-1]), tmp_res)
                                 score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
                                     style] = scorer.compute_score(gts_per_data_set[k]['image_path'], tmp_res)

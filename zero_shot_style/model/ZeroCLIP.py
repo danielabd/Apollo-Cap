@@ -254,7 +254,8 @@ class CLIPTextGenerator:
             self.sentiment_type = 'none' # SENTIMENT: sentiment_type can be one of ['positive','negative','neutral', 'none']
 
         self.use_style_model = use_style_model
-        if config['style_type'] == 'erc':
+
+        if self.use_style_model and config['style_type'] == 'erc':
             #########use erc model:
             self.text_style_tokenizer_erc = AutoTokenizer.from_pretrained("tae898/emoberta-large")
             self.text_style_erc_model = AutoModelForSequenceClassification.from_pretrained(
@@ -269,76 +270,77 @@ class CLIPTextGenerator:
 
 
         # TorchEmoji: emoji style model
-        if config['style_type'] == 'emoji':
-            print('Tokenizing using dictionary from {}'.format(config['emoji_vocab_path']))
-            with open(config['emoji_vocab_path'], 'r') as f:
-                vocabulary = json.load(f)
-            self.emoji_st_tokenizer = SentenceTokenizer(vocabulary, config['maxlen_emoji_sentence'])
-            print('Loading emoji style model  from {}.'.format(config['emoji_pretrained_path']))
-            self.emoji_style_model = torchmoji_emojis(config['emoji_pretrained_path']).to(self.device)
-            # self.emoji_style_model.to(self.device)
-            # TEXT_STYLE: Freeze text style model weights
-            for param in self.emoji_style_model.parameters():
-                param.requires_grad = False
-            self.emoji_style_model.eval()
-            self.check_if_cut_score = True
-            # self.check_if_cut_score = {}
-            # for idx_p in range(self.beam_size):
-            #     self.check_if_cut_score[idx_p] = True
-
-
-        # TEXT STYLE: adding the text style model
-        elif config['style_type'] == 'style_embed':
-            data_dir = os.path.join(os.path.expanduser('~'),'data')
-            if self.use_text_style_cutting:
-                self.text_style_cls = STYLE_CLS(config['txt_cls_model_paths'], data_dir, self.cuda_idx, config['labels_dict_idxs'],
-                                 config['hidden_state_to_take_txt_cls'])
-            else:
-                if self.model_based_on == 'bert':
-                    self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
-                elif self.model_based_on == 'clip':
-                    self.text_style_model = TextStyleEmbedCLIP(device=self.device)
-
-                if 'cpu' in self.device:
-                    checkpoint = torch.load(config['txt_embed_model_paths'], map_location=torch.device('cpu'))
-                else:
-                    checkpoint = torch.load(config['txt_embed_model_paths'], map_location='cuda:0')
-
-                self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
-                self.text_style_model.to(self.device)
-                self.text_style_model.eval()
-
-            ##############
-            self.use_text_style = True
-            #self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-            self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-            self.text_style_model_name = model_path
-
-            if self.use_style_model and self.style_type != 'erc':
-                print(f"Loading embedding style model from: {self.text_style_model_name}")
-                if self.model_based_on == 'bert':
-                    self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
-                elif self.model_based_on == 'clip':
-                    self.text_style_model = TextStyleEmbedCLIP(device=self.device)
-
-                if 'cpu' in self.device:
-                    checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
-                else:
-                    checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
-
-                self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
-                self.text_style_model.to(self.device)
-                self.text_style_model.eval()
-
+        if self.use_style_model:
+            if config['style_type'] == 'emoji':
+                print('Tokenizing using dictionary from {}'.format(config['emoji_vocab_path']))
+                with open(config['emoji_vocab_path'], 'r') as f:
+                    vocabulary = json.load(f)
+                self.emoji_st_tokenizer = SentenceTokenizer(vocabulary, config['maxlen_emoji_sentence'])
+                print('Loading emoji style model  from {}.'.format(config['emoji_pretrained_path']))
+                self.emoji_style_model = torchmoji_emojis(config['emoji_pretrained_path']).to(self.device)
+                # self.emoji_style_model.to(self.device)
                 # TEXT_STYLE: Freeze text style model weights
-                for param in self.text_style_model.parameters():
+                for param in self.emoji_style_model.parameters():
                     param.requires_grad = False
+                self.emoji_style_model.eval()
+                self.check_if_cut_score = True
+                # self.check_if_cut_score = {}
+                # for idx_p in range(self.beam_size):
+                #     self.check_if_cut_score[idx_p] = True
 
-            self.desired_style_embedding_vector = ''
-            self.desired_style_embedding_std_vector = ''
-            # TEXT_STYLE: tokenizer for text style analysis module
-            #self.text_style_tokenizer_name = self.text_style_model_name
-            #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
+
+            # TEXT STYLE: adding the text style model
+            elif config['style_type'] == 'style_embed':
+                data_dir = os.path.join(os.path.expanduser('~'),'data')
+                if self.use_text_style_cutting:
+                    self.text_style_cls = STYLE_CLS(config['txt_cls_model_paths'], data_dir, self.cuda_idx, config['labels_dict_idxs'],
+                                     config['hidden_state_to_take_txt_cls'])
+                else:
+                    if self.model_based_on == 'bert':
+                        self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
+                    elif self.model_based_on == 'clip':
+                        self.text_style_model = TextStyleEmbedCLIP(device=self.device)
+
+                    if 'cpu' in self.device:
+                        checkpoint = torch.load(config['txt_embed_model_paths'], map_location=torch.device('cpu'))
+                    else:
+                        checkpoint = torch.load(config['txt_embed_model_paths'], map_location='cuda:0')
+
+                    self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
+                    self.text_style_model.to(self.device)
+                    self.text_style_model.eval()
+
+                ##############
+                self.use_text_style = True
+                #self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+                self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+                self.text_style_model_name = model_path
+
+                if self.use_style_model and self.style_type != 'erc':
+                    print(f"Loading embedding style model from: {self.text_style_model_name}")
+                    if self.model_based_on == 'bert':
+                        self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
+                    elif self.model_based_on == 'clip':
+                        self.text_style_model = TextStyleEmbedCLIP(device=self.device)
+
+                    if 'cpu' in self.device:
+                        checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
+                    else:
+                        checkpoint = torch.load(self.text_style_model_name, map_location='cuda:0')
+
+                    self.text_style_model.load_state_dict(checkpoint['model_state_dict'])
+                    self.text_style_model.to(self.device)
+                    self.text_style_model.eval()
+
+                    # TEXT_STYLE: Freeze text style model weights
+                    for param in self.text_style_model.parameters():
+                        param.requires_grad = False
+
+                self.desired_style_embedding_vector = ''
+                self.desired_style_embedding_std_vector = ''
+                # TEXT_STYLE: tokenizer for text style analysis module
+                #self.text_style_tokenizer_name = self.text_style_model_name
+                #self.text_style_tokenizer = AutoTokenizer.from_pretrained(self.text_style_tokenizer_name)
 
         if config.get("use_audio_model", False):
             self.audio_model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
@@ -2261,72 +2263,73 @@ class CLIPTextGenerator:
                     if self.config.get('mul_clip_style',False):
                         ########adding style effect#todo
                         text_list = self.preprocess_text_for_roberta(top_texts)
-                        if self.config['style_type'] == 'roberta':
-                            encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
-                                self.device)
-                            output = self.sentiment_model(**encoded_input)
-                            scores = output[0].detach()
-                            scores = nn.functional.softmax(scores, dim=-1) #get grades for each image
-                            sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
-                            scores = nn.functional.softmax(scores/self.sentiment_temperature, dim=0) #rank grades between all images
-                            # sentiment_grades = None
-                            if self.style == 'positive':
-                                sentiment_grades = scores[:, 2]
-                                sentiment_grades_before_temp=sentiment_grades_before_temp[:,2]
-                            elif self.style == 'neutral':
-                                sentiment_grades = scores[:, 1]
-                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                            elif self.style == 'negative':
-                                sentiment_grades = scores[:, 0]
-                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                            sentiment_grades = sentiment_grades.unsqueeze(0)
-                            sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
-                        elif self.config['style_type'] == 'emoji':
-                            tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
-                            tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
-                            emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
-                            scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
-                            # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
-                            sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
-                            scores = nn.functional.softmax(scores / self.sentiment_temperature,
-                                                           dim=0)  # rank grades between all images
-                            sentiment_grades = scores.unsqueeze(0).to(self.device)
+                        if self.config.get('use_style_model', False):
+                            if self.config['style_type'] == 'roberta':
+                                encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                                    self.device)
+                                output = self.sentiment_model(**encoded_input)
+                                scores = output[0].detach()
+                                scores = nn.functional.softmax(scores, dim=-1) #get grades for each image
+                                sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                                scores = nn.functional.softmax(scores/self.sentiment_temperature, dim=0) #rank grades between all images
+                                # sentiment_grades = None
+                                if self.style == 'positive':
+                                    sentiment_grades = scores[:, 2]
+                                    sentiment_grades_before_temp=sentiment_grades_before_temp[:,2]
+                                elif self.style == 'neutral':
+                                    sentiment_grades = scores[:, 1]
+                                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                                elif self.style == 'negative':
+                                    sentiment_grades = scores[:, 0]
+                                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                                sentiment_grades = sentiment_grades.unsqueeze(0)
+                                sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
+                            elif self.config['style_type'] == 'emoji':
+                                tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                                tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
+                                emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
+                                scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                                # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
+                                sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                                scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                               dim=0)  # rank grades between all images
+                                sentiment_grades = scores.unsqueeze(0).to(self.device)
+
+
+                            sentiment_grades_after_temp = sentiment_grades
+                            # clip_target_probs_weightes_style = sentiment_grades * clip_target_prob
+                            # clip_target_probs_weightes_style = clip_target_probs.to(self.device) #todo: remove - no style
+
+                        elif self.config.get('use_audio_model', False):
+                            #adding_audio
+                            inputs = self.audio_processor(text=top_texts, audios=self.audio_sample_resampled,
+                                                          return_tensors="pt",
+                                                          padding=True,
+                                                          sampling_rate=self.config['audio_model_sampling_rate'])
+                            inputs=inputs.to(self.device)
+                            outputs = self.audio_model(**inputs)
+                            logits_per_audio = outputs.logits_per_audio.to(self.device)  # this is the audio-text similarity score
+                            # audio_grades = logits_per_audio.unsqueeze(0)
+
+                            # audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
+
+                            sentiment_grades_before_temp = nn.functional.softmax(logits_per_audio,
+                                                                    dim=-1).detach()  # todo: parametrize it
+
+                            logits_per_audio_fixed = torch.log(logits_per_audio-torch.min(logits_per_audio)+1)
+                            sentiment_grades_after_temp = logits_per_audio_fixed
+                            audio_after_softmax = nn.functional.softmax(logits_per_audio_fixed,
+                                                                    dim=-1).detach()  # todo: remove it
+                            predicted_probs = audio_after_softmax
+                            # predicted_probs = nn.functional.softmax(logits_per_audio / self.audio_temperature,
+                            #                                         dim=-1).detach()  # todo: parametrize it
+                            audio_predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+
+                            clip_target_probs_weightes_style = target_probs * sentiment_grades_before_temp
+                            #end of adding audio
 
                         clip_target_probs = target_probs
                         clip_target_probs_before_style = clip_target_probs
-                        sentiment_grades_after_temp = sentiment_grades
-                        # clip_target_probs_weightes_style = sentiment_grades * clip_target_probs
-
-
-                        clip_target_probs_weightes_style = clip_target_probs.to(self.device) #todo: remove - no style
-
-                        #adding_audio
-                        inputs = self.audio_processor(text=top_texts, audios=self.audio_sample_resampled,
-                                                      return_tensors="pt",
-                                                      padding=True,
-                                                      sampling_rate=self.config['audio_model_sampling_rate'])
-                        inputs=inputs.to(self.device)
-                        outputs = self.audio_model(**inputs)
-                        logits_per_audio = outputs.logits_per_audio.to(self.device)  # this is the audio-text similarity score
-                        # audio_grades = logits_per_audio.unsqueeze(0)
-
-                        # audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
-
-                        sentiment_grades_before_temp = nn.functional.softmax(logits_per_audio,
-                                                                dim=-1).detach()  # todo: parametrize it
-
-                        logits_per_audio_fixed = torch.log(logits_per_audio-torch.min(logits_per_audio)+1)
-                        sentiment_grades_after_temp = logits_per_audio_fixed
-                        audio_after_softmax = nn.functional.softmax(logits_per_audio_fixed,
-                                                                dim=-1).detach()  # todo: remove it
-                        predicted_probs = audio_after_softmax
-                        # predicted_probs = nn.functional.softmax(logits_per_audio / self.audio_temperature,
-                        #                                         dim=-1).detach()  # todo: parametrize it
-                        audio_predicted_probs = predicted_probs.type(torch.float32).to(self.device)
-
-                        clip_target_probs_weightes_style = clip_target_probs_weightes_style * sentiment_grades_before_temp
-                        #end of adding audio
-
                         clip_target_probs_weightes_style_normalized = clip_target_probs_weightes_style/clip_target_probs_weightes_style.sum()
                         target_probs = clip_target_probs_weightes_style_normalized
             else: #'update_ViT'=True: collect grad
@@ -2475,37 +2478,66 @@ class CLIPTextGenerator:
                     ########adding style effect#todo
                     with torch.no_grad():
                         text_list = self.preprocess_text_for_roberta(top_texts)
-                        if self.config['style_type'] == 'roberta':
-                            encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
-                                self.device)
-                            output = self.sentiment_model(**encoded_input)
-                            scores = output[0].detach()
-                            scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
-                            sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
-                            scores = nn.functional.softmax(scores / self.sentiment_temperature,
-                                                           dim=0)  # rank grades between all images
-                            # sentiment_grades = None
-                            if self.style == 'positive':
-                                sentiment_grades = scores[:, 2]
-                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                            elif self.style == 'neutral':
-                                sentiment_grades = scores[:, 1]
-                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                            elif self.style == 'negative':
-                                sentiment_grades = scores[:, 0]
-                                sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
-                            sentiment_grades = sentiment_grades.unsqueeze(0)
-                            sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
-                        elif self.config['style_type'] == 'emoji':
-                            tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
-                            tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
-                            emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
-                            scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
-                            # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
-                            sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
-                            scores = nn.functional.softmax(scores / self.sentiment_temperature,
-                                                           dim=0)  # rank grades between all images
-                            sentiment_grades = scores.unsqueeze(0).to(self.device)
+                        if self.config.get('use_style_model', False):
+                            if self.config['style_type'] == 'roberta':
+                                encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                                    self.device)
+                                output = self.sentiment_model(**encoded_input)
+                                scores = output[0].detach()
+                                scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
+                                sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                                scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                               dim=0)  # rank grades between all images
+                                # sentiment_grades = None
+                                if self.style == 'positive':
+                                    sentiment_grades = scores[:, 2]
+                                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                                elif self.style == 'neutral':
+                                    sentiment_grades = scores[:, 1]
+                                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                                elif self.style == 'negative':
+                                    sentiment_grades = scores[:, 0]
+                                    sentiment_grades_before_temp = sentiment_grades_before_temp[:, 2]
+                                sentiment_grades = sentiment_grades.unsqueeze(0)
+                                sentiment_grades_before_temp = sentiment_grades_before_temp.unsqueeze(0)
+                            elif self.config['style_type'] == 'emoji':
+                                tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                                tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
+                                emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
+                                scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                                # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
+                                sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                                scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                               dim=0)  # rank grades between all images
+                                sentiment_grades = scores.unsqueeze(0).to(self.device)
+                        elif self.config.get('use_audio_model', False):
+                            for i_text, text in enumerate(top_texts):
+                                if '\t' in text:
+                                    top_texts[i_text] = text.replace("\t", " ")
+                                if '\n' in text:
+                                    top_texts[i_text] = text.replace("\n", " ")
+                                if text == '':
+                                    top_texts[i_text] = ' '
+                            inputs = self.audio_processor(text=top_texts, audios=self.audio_sample_resampled,
+                                                          return_tensors="pt",
+                                                          padding=True,
+                                                          sampling_rate=self.config['audio_model_sampling_rate'])
+                            inputs = inputs.to(self.device)
+                            outputs = self.audio_model(**inputs)
+                            logits_per_audio = outputs.logits_per_audio  # this is the audio-text similarity score
+                            # audio_probs = logits_per_audio.softmax(dim=-1)  # we can take the softmax to get the label probabilities
+                            audio_grades = logits_per_audio.unsqueeze(0).to(self.device)
+
+                            # predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()
+                            sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = nn.functional.softmax(
+                                audio_grades, dim=0)
+                            sentiment_grades_before_temp_t[idx_p] = sentiment_grades_before_temp_t[idx_p][
+                                top_indices[idx_p]].unsqueeze(0)
+
+                            predicted_probs = nn.functional.softmax(audio_grades / self.audio_temperature,
+                                                                    dim=-1).detach()  # todo: parametrize it
+                            predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+                            sentiment_grades = predicted_probs  # instead of style
 
                     clip_target_probs = target_probs
                     clip_target_probs_before_style = clip_target_probs
@@ -2680,50 +2712,79 @@ class CLIPTextGenerator:
                                                      dim=-1)  # .detach() todo: check if it is ok
                 target_probs_source = target_probs_source.type(torch.float32)
                 ########adding style effect#todo
-                text_list = self.preprocess_text_for_roberta(top_texts)
                 sentiment_grades_before_temp_t[idx_p] = torch.zeros_like(probs[idx_p])
-                if self.config['style_type'] == 'roberta':
-                    encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
-                        self.device)
-                    output = self.sentiment_model(**encoded_input)
-                    scores = output[0].detach()
-                    scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
-                    sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
-                    scores = nn.functional.softmax(scores / self.sentiment_temperature,
-                                                   dim=0)  # rank grades between all images
+                if self.use_style_model:
+                    text_list = self.preprocess_text_for_roberta(top_texts)
+                    if self.config['style_type'] == 'roberta':
+                        encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
+                            self.device)
+                        output = self.sentiment_model(**encoded_input)
+                        scores = output[0].detach()
+                        scores = nn.functional.softmax(scores, dim=-1)  # get grades for each image
+                        sentiment_grades_before_temp = nn.functional.softmax(scores, dim=0)
+                        scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                       dim=0)  # rank grades between all images
 
-                    # sentiment_grades = None
-                    if self.style == 'positive':
-                        sentiment_grades = scores[:, 2]
-                        sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_before_temp[:, 2]
-                    elif self.style == 'neutral':
-                        sentiment_grades = scores[:, 1]
-                        sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_before_temp[:, 2]
-                    elif self.style == 'negative':
-                        sentiment_grades = scores[:, 0]
-                        sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_before_temp[:, 2]
-                    sentiment_grades = sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]].unsqueeze(0)
-                elif self.config['style_type'] == 'emoji':
-                    for i_text,text in enumerate(top_texts):
+                        # sentiment_grades = None
+                        if self.style == 'positive':
+                            sentiment_grades = scores[:, 2]
+                            sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_before_temp[:, 2]
+                        elif self.style == 'neutral':
+                            sentiment_grades = scores[:, 1]
+                            sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_before_temp[:, 2]
+                        elif self.style == 'negative':
+                            sentiment_grades = scores[:, 0]
+                            sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = sentiment_grades_before_temp[:, 2]
+                        sentiment_grades = sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]].unsqueeze(0)
+                    elif self.config['style_type'] == 'emoji':
+                        for i_text,text in enumerate(top_texts):
+                            if '\t' in text:
+                                top_texts[i_text] = text.replace("\t", " " )
+                            if '\n' in text:
+                                top_texts[i_text] = text.replace("\n", " ")
+                            if text=='':
+                                top_texts[i_text] = ' '
+                        tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
+                        tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
+                        emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
+                        scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
+                        # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
+                        # sentiment_grades_before_temp[idx_p] = nn.functional.softmax(scores, dim=0)
+                        sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = nn.functional.softmax(scores, dim=0)
+                        sentiment_grades_before_temp_t[idx_p] = sentiment_grades_before_temp_t[idx_p][
+                            top_indices[idx_p]].unsqueeze(0)
+
+                        scores = nn.functional.softmax(scores / self.sentiment_temperature,
+                                                       dim=0)  # rank grades between all images
+                        sentiment_grades = scores.unsqueeze(0).to(self.device)
+                elif self.config.get("use_audio_model", False):
+                    for i_text, text in enumerate(top_texts):
                         if '\t' in text:
-                            top_texts[i_text] = text.replace("\t", " " )
+                            top_texts[i_text] = text.replace("\t", " ")
                         if '\n' in text:
                             top_texts[i_text] = text.replace("\n", " ")
-                        if text=='':
+                        if text == '':
                             top_texts[i_text] = ' '
-                    tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences(top_texts)
-                    tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
-                    emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized)).to(self.device)
-                    scores = emoji_style_probs[:, self.config['idx_emoji_style_dict'][self.style]].sum(-1)
-                    # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
-                    # sentiment_grades_before_temp[idx_p] = nn.functional.softmax(scores, dim=0)
-                    sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = nn.functional.softmax(scores, dim=0)
+                    inputs = self.audio_processor(text=top_texts, audios=self.audio_sample_resampled,
+                                                  return_tensors="pt",
+                                                  padding=True, sampling_rate=self.config['audio_model_sampling_rate'])
+                    inputs=inputs.to(self.device)
+                    outputs = self.audio_model(**inputs)
+                    logits_per_audio = outputs.logits_per_audio  # this is the audio-text similarity score
+                    # audio_probs = logits_per_audio.softmax(dim=-1)  # we can take the softmax to get the label probabilities
+
+                    audio_grades = logits_per_audio.unsqueeze(0).to(self.device)
+
+                    # predicted_probs = nn.functional.softmax(sentiment_grades / self.clip_loss_temperature, dim=-1).detach()
+                    sentiment_grades_before_temp_t[idx_p][top_indices[idx_p]] = nn.functional.softmax(logits_per_audio, dim=0)
                     sentiment_grades_before_temp_t[idx_p] = sentiment_grades_before_temp_t[idx_p][
                         top_indices[idx_p]].unsqueeze(0)
 
-                    scores = nn.functional.softmax(scores / self.sentiment_temperature,
-                                                   dim=0)  # rank grades between all images
-                    sentiment_grades = scores.unsqueeze(0).to(self.device)
+
+                    predicted_probs = nn.functional.softmax(audio_grades / self.audio_temperature,
+                                                            dim=-1).detach()  # todo: parametrize it
+                    predicted_probs = predicted_probs.type(torch.float32).to(self.device)
+                    sentiment_grades = predicted_probs # instead of style
 
             clip_target_probs_source = target_probs_source
             # clip_target_probs_before_style[idx_p] = clip_target_probs_source

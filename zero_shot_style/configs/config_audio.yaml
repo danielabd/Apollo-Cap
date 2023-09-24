@@ -11,6 +11,8 @@ wandb_mode: disabled #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!
 plot_prob_graphs: True #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 plot_only_clustering: False
+use_style_model: False #toodo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
+
 ###audio
 use_audio_model: True
 audio_model_sampling_rate: 48000
@@ -100,7 +102,6 @@ specific_imgs_to_test: [572147] # [461692] #[551518] #[221272]       #[510864] #
 cut_cand2clip: False
 iterate_until_good_fluency: False
 start_word_loc_heavy_iteration: 2
-use_style_model: True #toodo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
 desired_min_style_score: 1
 desired_min_fluency_score: 0.9
 desired_min_clip_score: 0.28
@@ -138,7 +139,8 @@ save_config_file: True # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-evaluation_metrics: [CLIPScore, style_classification_roberta, fluency, CLAPScore]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#evaluation_metrics: [CLIPScore, style_classification_roberta, fluency, CLAPScore]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+evaluation_metrics: [CLIPScore, fluency, CLAPScore]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
 
 # finetuned roBERTa

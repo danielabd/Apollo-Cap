@@ -11,6 +11,8 @@ wandb_mode: disabled #'disabled, offline, online' #todo:!!!!!!!!!!!!!!!!!!!!!!!!
 plot_prob_graphs: True #todo:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 plot_only_clustering: False
+use_style_model: False #toodo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
+
 ###audio
 use_audio_model: True
 audio_model_sampling_rate: 48000
@@ -101,7 +103,6 @@ data_type: test #val, test #todo:!!!!!!!!
 cut_cand2clip: False
 iterate_until_good_fluency: False
 start_word_loc_heavy_iteration: 2
-use_style_model: True #toodo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!⁄!!!!
 desired_min_style_score: 1
 desired_min_fluency_score: 0.9
 desired_min_clip_score: 0.28
