@@ -1,5 +1,5 @@
 program: run_mul_crying1.py
-project: StylizedZeroCap_mul_crying1
+project: StylizedZeroCap_mul_crying1_f
 method: bayes
 metric:
   goal: maximize #minimize
