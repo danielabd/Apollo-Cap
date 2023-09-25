@@ -255,7 +255,7 @@ class CLIPTextGenerator:
 
         self.use_style_model = use_style_model
 
-        if self.use_style_model and config['style_type'] == 'erc':
+        if self.use_style_model and config['style_type'] == 'erc' and not config.get("use_audio_model", False):
             #########use erc model:
             self.text_style_tokenizer_erc = AutoTokenizer.from_pretrained("tae898/emoberta-large")
             self.text_style_erc_model = AutoModelForSequenceClassification.from_pretrained(
@@ -270,7 +270,7 @@ class CLIPTextGenerator:
 
 
         # TorchEmoji: emoji style model
-        if self.use_style_model:
+        if self.use_style_model and not config.get("use_audio_model", False):
             if config['style_type'] == 'emoji':
                 print('Tokenizing using dictionary from {}'.format(config['emoji_vocab_path']))
                 with open(config['emoji_vocab_path'], 'r') as f:
@@ -316,7 +316,7 @@ class CLIPTextGenerator:
                 self.text_style_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
                 self.text_style_model_name = model_path
 
-                if self.use_style_model and self.style_type != 'erc':
+                if self.use_style_model and self.style_type != 'erc' and not config.get("use_audio_model", False):
                     print(f"Loading embedding style model from: {self.text_style_model_name}")
                     if self.model_based_on == 'bert':
                         self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
@@ -477,7 +477,7 @@ class CLIPTextGenerator:
         # self.check_if_cut_score = {}
         # for idx_p in range(self.beam_size):
         #     self.check_if_cut_score[idx_p] = True
-        if self.use_style_model:
+        if self.use_style_model and not self.config.get("use_audio_model", False):
             self.text_style_scale = text_style_scale
             self.style_type = style_type #'clip','twitter','emotions' , 'erc' or 'roberta'
             if self.style_type == 'style_embed':
@@ -1433,7 +1433,7 @@ class CLIPTextGenerator:
                             #     loss += self.clip_scale * clip_loss # change to variable scale
                         # TEXT_STYLE loss:
                         text_style_loss = -100
-                        if self.use_style_model and not self.use_text_style_cutting:
+                        if self.use_style_model and not self.use_text_style_cutting and not self.config.get("use_audio_model", False):
                             if self.text_style_scale!=0:
                                 total_best_sentences_style = None
                                 if self.style_type == 'erc':
@@ -1564,7 +1564,7 @@ class CLIPTextGenerator:
             if not self.config.get('update_ViT', False):
                 # TEXT_STYLE loss:
                 text_style_loss = -100
-                if self.use_style_model and not self.use_text_style_cutting:
+                if self.use_style_model and not self.use_text_style_cutting and not self.config.get("use_audio_model", False):
                     if self.text_style_scale != 0:
                         total_best_sentences_style = None
                         if self.style_type == 'erc':
@@ -1971,7 +1971,7 @@ class CLIPTextGenerator:
         if self.config['print_for_debug']:
             print(f'{word_loc+1}/{self.target_seq_length}: clip_loss = {clip_loss}')
             print(f'{word_loc+1}/{self.target_seq_length}: ce_loss = {ce_loss.sum()}')
-        if self.use_style_model and not self.use_text_style_cutting:
+        if self.use_style_model and not self.use_text_style_cutting and not self.config.get("use_audio_model", False):
             if self.config['print_for_debug']:
                 print(f'{word_loc+1}/{self.target_seq_length}: style_loss = {text_style_loss}')
 
@@ -2263,7 +2263,7 @@ class CLIPTextGenerator:
                     if self.config.get('mul_clip_style',False):
                         ########adding style effect#todo
                         text_list = self.preprocess_text_for_roberta(top_texts)
-                        if self.config.get('use_style_model', False):
+                        if self.config.get('use_style_model', False) and not self.config.get("use_audio_model", False):
                             if self.config['style_type'] == 'roberta':
                                 encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
                                     self.device)
@@ -2478,7 +2478,7 @@ class CLIPTextGenerator:
                     ########adding style effect#todo
                     with torch.no_grad():
                         text_list = self.preprocess_text_for_roberta(top_texts)
-                        if self.config.get('use_style_model', False):
+                        if self.config.get('use_style_model', False)and not self.config.get("use_audio_model", False):
                             if self.config['style_type'] == 'roberta':
                                 encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(
                                     self.device)
@@ -2713,7 +2713,7 @@ class CLIPTextGenerator:
                 target_probs_source = target_probs_source.type(torch.float32)
                 ########adding style effect#todo
                 sentiment_grades_before_temp_t[idx_p] = torch.zeros_like(probs[idx_p])
-                if self.use_style_model:
+                if self.use_style_model and not self.config.get("use_audio_model", False):
                     text_list = self.preprocess_text_for_roberta(top_texts)
                     if self.config['style_type'] == 'roberta':
                         encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(

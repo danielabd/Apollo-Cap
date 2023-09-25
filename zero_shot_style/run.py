@@ -202,7 +202,8 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
     if evaluation_obj and ('CLAPScore' in evaluation_obj):
         style_cls_grades = torch.tensor(
-            evaluation_obj['CLAPScore'].compute_score_for_list(captions).to(device))
+            evaluation_obj['CLAPScore'].compute_score_for_list(captions))
+        style_cls_grades = style_cls_grades.to(device)
         best_harmonic_mean_idx = (
                     len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
 
@@ -706,10 +707,9 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             else:
                 style_cls_score = DEFAULT_STYLE_CLS_SCORE
 
-            if not config.get('use_style_model',False): #todo
-                if config.get('use_audio_model', False):
-                    style_cls_score = clap_score
-                    style_cls_scores = clap_scores
+            if config.get('use_audio_model', False):
+                style_cls_score = clap_score
+                style_cls_scores = clap_scores
 
 
             avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
@@ -812,7 +812,7 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
 
 
 def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vectors, std_embedding_vectors = None):
-    if config['use_style_model'] and (config['style_type'] == 'emoji' or config['style_type'] == 'style_embed'):
+    if config['use_style_model'] and (config['style_type'] == 'emoji' or config['style_type'] == 'style_embed') and not config.get('use_audio_model',False): #todo:
         if config['style_type'] == 'emoji':
             if config['use_single_emoji_style']:
                 desired_style_embedding_vector = torch.nn.functional.one_hot(torch.tensor(config['desired_labels'].index(label)), num_classes=len(config['desired_labels']))+EPSILON
@@ -845,7 +845,7 @@ def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vec
 
 def initial_variables():
     def get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path):
-        if config['use_style_model'] and config['style_type'] == 'style_embed':
+        if config['use_style_model'] and config['style_type'] == 'style_embed' and not config.get('use_audio_model',False):
             with open(mean_embedding_vec_path, 'rb') as fp:
                 mean_embedding_vectors = pickle.load(fp)
             # desired_labels_list = list(mean_embedding_vectors.keys())
