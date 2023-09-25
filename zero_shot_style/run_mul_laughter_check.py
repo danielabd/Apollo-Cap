@@ -51,7 +51,7 @@ def get_args():
                         # default=os.path.join('.', 'configs', 'config_update_vit15pos_test_best_fluence.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_update_vit17neg_check.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_audio.yaml'), #todo: change config file
-                        default=os.path.join('.', 'configs', 'config_audio_laughter1.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_audio_laughter1_check.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_update_vit_audio.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils

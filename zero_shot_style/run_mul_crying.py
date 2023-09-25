@@ -203,7 +203,8 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
 
     if evaluation_obj and ('CLAPScore' in evaluation_obj):
         style_cls_grades = torch.tensor(
-            evaluation_obj['CLAPScore'].compute_score_for_list(captions).to(device))
+            evaluation_obj['CLAPScore'].compute_score_for_list(captions))
+        style_cls_grades = style_cls_grades.to(device)
         best_harmonic_mean_idx = (
                     len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
 

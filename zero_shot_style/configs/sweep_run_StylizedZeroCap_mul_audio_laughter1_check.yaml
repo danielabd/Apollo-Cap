@@ -1,5 +1,5 @@
-program: run_mul_laughter1.py
-project: StylizedZeroCap_mul_laughte1
+program: run_mul_laughter_check.py
+project: StylizedZeroCap_mul_laughte1_check
 method: bayes
 metric:
   goal: maximize #minimize
