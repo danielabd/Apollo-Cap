@@ -185,7 +185,8 @@ res_path2eval:
 #    update: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence/total_results_text_style_StylizedZeroCap_update_vit_focus_clip_v15pos_test_best_fluence.csv
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/audio/StylizedZeroCap_audio_crying_kids1/23_09_2023/tmp/total_results_audio_crying.csv
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/audio/StylizedZeroCap_audio_laughter_kids1/23_09_2023/tmp/total_results_audio_laughter.csv
-    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_crying_kids1_final/26_09_2023/tmp/total_results_audio_crying_final.csv
+#    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_crying_kids1_final/26_09_2023/tmp/total_results_audio_crying_final.csv
+    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_final/26_09_2023/tmp/total_results_audio_laughter_final.csv
 #    #neg
 #    #neg
 #    #neg
