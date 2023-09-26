@@ -2316,10 +2316,11 @@ class CLIPTextGenerator:
                             sentiment_grades_before_temp = nn.functional.softmax(logits_per_audio,
                                                                     dim=-1).detach()  # todo: parametrize it
 
-                            logits_per_audio_fixed = torch.log(logits_per_audio-torch.min(logits_per_audio)+1)
-                            sentiment_grades_after_temp = logits_per_audio_fixed
-                            audio_after_softmax = nn.functional.softmax(logits_per_audio_fixed/self.audio_temperature,
+                            # logits_per_audio_fixed = torch.log(logits_per_audio-torch.min(logits_per_audio)+1)
+                            # sentiment_grades_after_temp = logits_per_audio_fixed
+                            audio_after_softmax = nn.functional.softmax(logits_per_audio/self.audio_temperature,
                                                                     dim=-1).detach()  # todo: remove it
+                            sentiment_grades_after_temp = audio_after_softmax
                             predicted_probs = audio_after_softmax
                             # predicted_probs = nn.functional.softmax(logits_per_audio / self.audio_temperature,
                             #                                         dim=-1).detach()  # todo: parametrize it
