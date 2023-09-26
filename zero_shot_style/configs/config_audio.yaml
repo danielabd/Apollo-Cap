@@ -35,8 +35,8 @@ audio_temperature: 0.01
 
 #background audio
 #audio_path: ~/data/for_audio/cry_baby.wav
-#audio_sampling_rate: 44100
-#audio_path: ~/data/for_audio/child_laughing.wav
+audio_sampling_rate: 44100
+audio_path: ~/data/for_audio/child_laughing.wav
 #audio_sampling_rate: 44100
 #audio_path: ~/data/for_audio/child-crying-in-yard-72009.wav
 #audio_sampling_rate: 24000
@@ -58,8 +58,8 @@ audio_temperature: 0.01
 #audio_sampling_rate: 44100
 #audio_path: ~/data/for_audio/sad.wav
 #audio_sampling_rate: 44100
-audio_path: ~/data/for_audio/argumentwav.wav
-audio_sampling_rate: 24000
+#audio_path: ~/data/for_audio/argumentwav.wav
+#audio_sampling_rate: 24000
 
 experiement_global_name:
 #  senticap: StylizedZeroCap_audio_cry #tmp_debug_clip_keys_vals  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
@@ -203,7 +203,7 @@ threshold_sentiment:
 model_based_on: 'bert' # 'clip' /  'bert'
 #
 #max_num_of_imgs: -1
-target_seq_length: 2 #30 #todo:remove
+target_seq_length: 30 #todo:remove
 #desired_labels: #todo
 #  senticap: [positive, negative] #[factual, positive, negative]
 #  flickrstyle10k: [humor, romantic] #[factual, humor, romantic]

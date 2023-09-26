@@ -200,6 +200,8 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
     clip_grades = (torch.cat(encoded_captions) @ image_features.t()).squeeze()
 
+    best_harmonic_mean_idx = best_clip_idx
+
     if evaluation_obj and ('CLAPScore' in evaluation_obj):
         style_cls_grades = torch.tensor(
             evaluation_obj['CLAPScore'].compute_score_for_list(captions))
@@ -207,7 +209,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
         best_harmonic_mean_idx = (
                     len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
 
-    if evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj):
+    elif evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj):
         if 'style_classification' in evaluation_obj:
             style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
         elif 'style_classification_roberta' in evaluation_obj:
@@ -225,8 +227,8 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
             style_cls_grades = torch.tensor(style_cls_grades)
             # calc harmonic average:
             best_harmonic_mean_idx = (len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
-        else:
-            best_harmonic_mean_idx = best_clip_idx
+        # else:
+        #     best_harmonic_mean_idx = best_clip_idx
     # if config['style_type'] == 'emoji':
     #     device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
     #     tokenized, _, _ = text_generator.emoji_st_tokenizer.tokenize_sentences(captions)
@@ -236,8 +238,8 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     #     #calc harmonic average:
     #     best_harmonic_mean_idx = (len(captions)*clip_grades*emoji_style_grades/(clip_grades+emoji_style_grades)).argmax()
     #     # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
-    else:
-        best_harmonic_mean_idx = best_clip_idx
+    # else:
+    #     best_harmonic_mean_idx = best_clip_idx
     print(captions)
 
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -946,7 +948,6 @@ def initial_variables():
 
         if 'fluency' in config['evaluation_metrics'] and config['calc_fluency']:
             evaluation_obj['fluency'] = Fluency(config['desired_labels'])
-
     desired_labels_list, mean_embedding_vectors, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
     # if config['debug']:
     #     config['desired_labels'] = [config['desired_labels'][0]]
@@ -1021,6 +1022,7 @@ def main():
         if not os.path.isfile(config['img_path']):
             continue
         # go over all labels
+        evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
         for label_idx, label in enumerate(desired_labels_list):
             if config['wandb_mode'] == 'online':
                 wandb.log({'test/img_idx': img_path_idx, 'img_name': img_name, 'style': label})
@@ -1092,7 +1094,7 @@ def main():
                 evaluation_results[img_name][label]['gt'] = None  # todo: handle style type
                 evaluation_results[img_name][label]['scores'] = {}
                 # evaluation_obj['fluency'].add_results(evaluation_results)
-                evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
+                # evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
                 evaluation_results[img_name][label]['scores'] = evaluate_single_res(
                     evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
                     evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
