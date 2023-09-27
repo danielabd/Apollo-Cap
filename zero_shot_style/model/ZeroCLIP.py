@@ -2326,7 +2326,7 @@ class CLIPTextGenerator:
                             #                                         dim=-1).detach()  # todo: parametrize it
                             audio_predicted_probs = predicted_probs.type(torch.float32).to(self.device)
 
-                            clip_target_probs_weightes_style = target_probs * sentiment_grades_before_temp
+                            clip_target_probs_weightes_style = target_probs * sentiment_grades_after_temp
                             #end of adding audio
 
                         clip_target_probs = target_probs

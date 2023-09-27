@@ -50,7 +50,7 @@ def get_args():
                         # default=os.path.join('.', 'configs', 'config_mul_clip_style_roberta_v20neg_test.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_update_vit15pos_test_best_fluence.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_update_vit17neg_check.yaml'), #todo: change config file
-                        default=os.path.join('.', 'configs', 'config_mul_laughter_fn2.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_mul_crying_fn2.yaml'), #todo: change config file
                         # default=os.path.join('.', 'configs', 'config_update_vit_audio.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
