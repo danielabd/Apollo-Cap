@@ -105,8 +105,8 @@ save_config_file: True # False, True todo
 #evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [CLIPScore, style_classification,  style_classification_emoji, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 #evaluation_metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-evaluation_metrics: [CLIPScore, style_classification_roberta, fluency, CLAPScore]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
-#evaluation_metrics: [CLIPScore, fluency, CLAPScore]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#evaluation_metrics: [CLIPScore, style_classification_roberta, fluency, CLAPScore]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+evaluation_metrics: [CLIPScore, fluency, CLAPScore]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
 
 # finetuned roBERTa
 finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
