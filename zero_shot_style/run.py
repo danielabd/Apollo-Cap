@@ -711,9 +711,9 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
             else:
                 style_cls_score = DEFAULT_STYLE_CLS_SCORE
 
-            # if config.get('use_audio_model', False):
-            #     style_cls_score = clap_score
-            #     style_cls_scores = clap_scores
+            if config.get('use_audio_model', False):
+                style_cls_score = clap_score
+                style_cls_scores = clap_scores
 
 
             avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
