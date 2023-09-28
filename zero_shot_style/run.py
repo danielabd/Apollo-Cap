@@ -200,44 +200,49 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
     clip_grades = (torch.cat(encoded_captions) @ image_features.t()).squeeze()
 
-    if evaluation_obj and ('CLAPScore' in evaluation_obj):
-        style_cls_grades = torch.tensor(
-            evaluation_obj['CLAPScore'].compute_score_for_list(captions))
-        style_cls_grades = style_cls_grades.to(device)
-        best_harmonic_mean_idx = (
-                    len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
+    best_harmonic_mean_idx = best_clip_idx
 
-    if evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj):
-        if 'style_classification' in evaluation_obj:
-            style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
-        elif 'style_classification_roberta' in evaluation_obj:
+    if config['use_style_model']:
+        if evaluation_obj and ('CLAPScore' in evaluation_obj):
             style_cls_grades = torch.tensor(
-                evaluation_obj['style_classification_roberta'].compute_label_for_list(captions, label)).to(device)
-        #check if there is caption with correct style
-        consider_style = False
-        for i in style_cls_grades:
-            if type(i)==type((1,1)):
-                i = i[0]
-            if i>0:
-                consider_style = True
-                break
-        if consider_style:
-            style_cls_grades = torch.tensor(style_cls_grades)
-            # calc harmonic average:
-            best_harmonic_mean_idx = (len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
-        else:
-            best_harmonic_mean_idx = best_clip_idx
-    # if config['style_type'] == 'emoji':
-    #     device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
-    #     tokenized, _, _ = text_generator.emoji_st_tokenizer.tokenize_sentences(captions)
-    #     tokenized = torch.from_numpy(tokenized.astype(np.int32))
-    #     emoji_style_probs = torch.tensor(text_generator.emoji_style_model(tokenized)).to(device)
-    #     emoji_style_grades = emoji_style_probs[:, text_generator.config['idx_emoji_style_dict'][text_generator.style]].sum(-1)
-    #     #calc harmonic average:
-    #     best_harmonic_mean_idx = (len(captions)*clip_grades*emoji_style_grades/(clip_grades+emoji_style_grades)).argmax()
-    #     # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
-    else:
-        best_harmonic_mean_idx = best_clip_idx
+                evaluation_obj['CLAPScore'].compute_score_for_list(captions))
+            style_cls_grades = style_cls_grades.to(device)
+            best_harmonic_mean_idx = (
+                        len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
+
+        # if evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj):
+        elif evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj) and not config.get("use_audio_model", False):
+            if 'style_classification' in evaluation_obj:
+                style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
+            elif 'style_classification_roberta' in evaluation_obj:
+                style_cls_grades = torch.tensor(
+                    evaluation_obj['style_classification_roberta'].compute_label_for_list(captions, label)).to(device)
+            #check if there is caption with correct style
+            consider_style = False
+            for i in style_cls_grades:
+                if type(i)==type((1,1)):
+                    i = i[0]
+                if i>0:
+                    consider_style = True
+                    break
+            if consider_style:
+                style_cls_grades = torch.tensor(style_cls_grades)
+                # calc harmonic average:
+                best_harmonic_mean_idx = (len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
+            # else:
+            #     best_harmonic_mean_idx = best_clip_idx
+        # if config['style_type'] == 'emoji':
+        #     device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
+        #     tokenized, _, _ = text_generator.emoji_st_tokenizer.tokenize_sentences(captions)
+        #     tokenized = torch.from_numpy(tokenized.astype(np.int32))
+        #     emoji_style_probs = torch.tensor(text_generator.emoji_style_model(tokenized)).to(device)
+        #     emoji_style_grades = emoji_style_probs[:, text_generator.config['idx_emoji_style_dict'][text_generator.style]].sum(-1)
+        #     #calc harmonic average:
+        #     best_harmonic_mean_idx = (len(captions)*clip_grades*emoji_style_grades/(clip_grades+emoji_style_grades)).argmax()
+        #     # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
+
+        # else:
+        #     best_harmonic_mean_idx = best_clip_idx
     print(captions)
 
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
