@@ -189,24 +189,24 @@ sentiment_temperature: 0.01
 specific_idxs_to_skip: []
 specific_img_idxs_to_test: []
 specific_imgs_to_test:
--13783
--71738
--575135
--31280
--230701
--478404
--544065
--424842
--360818
--155617
--504732
--462635
--89154
--356002
--96351
--35222
--547258
--160531
+- 13783
+- 71738
+- 575135
+- 31280
+- 230701
+- 478404
+- 544065
+- 424842
+- 360818
+- 155617
+- 504732
+- 462635
+- 89154
+- 356002
+- 96351
+- 35222
+- 547258
+- 160531
 start_loop_clip_style_in_word_num: 1
 start_word_loc_heavy_iteration: 2
 std_embedding_vectors_negative: 0.020412436
