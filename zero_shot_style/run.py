@@ -207,7 +207,7 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
         best_harmonic_mean_idx = (
                     len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
 
-    if evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj):
+    if evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj) and not config.get('use_audio_model','False'):
         if 'style_classification' in evaluation_obj:
             style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
         elif 'style_classification_roberta' in evaluation_obj:
@@ -236,8 +236,9 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     #     #calc harmonic average:
     #     best_harmonic_mean_idx = (len(captions)*clip_grades*emoji_style_grades/(clip_grades+emoji_style_grades)).argmax()
     #     # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades)
-    else:
-        best_harmonic_mean_idx = best_clip_idx
+
+    # else:
+    #     best_harmonic_mean_idx = best_clip_idx
     print(captions)
 
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
