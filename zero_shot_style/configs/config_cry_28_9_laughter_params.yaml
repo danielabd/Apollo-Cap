@@ -206,7 +206,7 @@ specific_imgs_to_test:
 -96351
 -35222
 -547258
--160531-
+-160531
 start_loop_clip_style_in_word_num: 1
 start_word_loc_heavy_iteration: 2
 std_embedding_vectors_negative: 0.020412436
