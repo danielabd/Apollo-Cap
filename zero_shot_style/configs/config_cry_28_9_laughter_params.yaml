@@ -41,7 +41,7 @@ cut_cand2clip: false
 data_dir: /home/nlp/tzufar/data
 data_file: null
 data_name: go_emotions
-data_type: val
+data_type: test
 dataset: senticap
 debug: false
 debug_mac: false
