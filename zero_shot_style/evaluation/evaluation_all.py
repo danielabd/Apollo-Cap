@@ -1467,6 +1467,8 @@ def main():
         if i not in current:
             comp.append(i)
             res_data_per_test['audio'].remove(i)
+    print(f"run over {len(list(res_data_per_test['audio'].keys()))} images.")
+    print(f"imgs are:{list(res_data_per_test['audio'].keys())}")
     if True:
     # #todo: remove
     # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
