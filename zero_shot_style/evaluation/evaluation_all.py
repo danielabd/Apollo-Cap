@@ -1466,6 +1466,7 @@ def main():
     for i in desired:
         if i not in current:
             comp.append(i)
+            res_data_per_test['audio'].remove(i)
     if True:
     # #todo: remove
     # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
