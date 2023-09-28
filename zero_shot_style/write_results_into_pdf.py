@@ -347,7 +347,8 @@ def get_best_data(all_data, desired_scores, scores_th,test_names):
     best_data = {}
     # for test_name in test_names:
     # for test_name in ['update']:
-    for test_name in ['APOLLO-Cap+decentralization+normalization']:
+    # for test_name in ['APOLLO-Cap+decentralization+normalization']:
+    for test_name in ['audio']:
         best_data[test_name] = {}
         for idx in all_data[test_name]:
             for style in all_data[test_name][idx]:
@@ -382,6 +383,7 @@ def merge_debug_files(debug_dir_for_file_paths, merged_debug_file_name):
 
 def main():
     configfile = os.path.join('.', 'configs', 'config.yaml')
+    configfile = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_final/26_09_2023/tmp/config.yaml"
     # score_files = {"ZeroStyleCap": "/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_real_std/evaluation_all_frames_real_std.csv",
     # score_files = {"ZeroStyleCap": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/baselines/capdec_evaluation_all_frames.csv",
     #                "capdec": "/Users/danielabendavid/experiments/capdec/27_2_23/evaluation_all_frames_capdec.csv"}
@@ -398,7 +400,8 @@ def main():
         # "APOLLO-Cap+decentralization+normalization": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/final/evaluation_all_frames_update_vit_focus_clip_v15pos_test_best_fluence.csv"}
         # senticap - negative
         # "CapDec": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/final/capdec_evaluation_all_frames.csv",
-        "APOLLO-Cap+decentralization+normalization": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/final/evaluation_all_frames_total_results_text_style_31_07_2023_negative_update.csv"}
+        # "APOLLO-Cap+decentralization+normalization": "/Users/danielabendavid/experiments/zero_style_cap/senticap/total_evaluation_senticap/APOLLO-Cap-all_versions_best fluency/final/evaluation_all_frames_total_results_text_style_31_07_2023_negative_update.csv"}
+        "audio": "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_final/26_09_2023/tmp/evaluation_all_frames_total_results_audio_laughter_final.csv"}
 
     data_split = 'test' # 'test'
     base_dir4tgt_pdf_file_path = os.path.join(os.path.expanduser('~'),'experiments')
@@ -411,6 +414,10 @@ def main():
     #senticap
     desired_scores = ['fluency', 'CLIPScore', 'style_classification_roberta']  # todo
     scores_th = {'fluency': 0.8, 'CLIPScore': 0.30, 'style_classification_roberta': 0.3} # todo
+    #CLAPScore
+    desired_scores = ['fluency', 'CLIPScore', 'CLAPScore']  # todo
+    scores_th = {'fluency': 0.9, 'CLIPScore': 0.10, 'CLAPScore': 0.5}  # todo
+
 
     # scores_th = {'fluency':0.9, 'CLIPScore':0.32, 'style_classification':1}
     all_model_names = '_'.join([k for k in score_files])

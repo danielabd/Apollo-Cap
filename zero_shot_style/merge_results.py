@@ -398,7 +398,8 @@ def bu_get_all_paths(cur_time, factual_wo_prompt, exp_to_merge,suffix_name):
 def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
     # exp_to_merge = ["prompt_manipulation", "image_and_prompt_manipulation", "image_manipulation", "text_style"]
     # base_path = '/Users/danielabendavid/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss'
-    base_path = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8'
+    # base_path = '/Users/danielabendavid/experiments/zero_style_cap/senticap/style_embed/senticap_StylizedZeroCap_my_embedding_model_8'
+    base_path = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_sw_f_zerocap/28_09_2023'
 
     #text_style
     if 'zerostylecap' in exp_to_merge:
@@ -500,6 +501,7 @@ def get_all_paths(cur_time, factual_wo_prompt, exp_to_merge, suffix_name):
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v30neg_v30"
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v30neg_v31"
         src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v32neg_test/31_07_2023"
+        src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_sw_f_zerocap/28_09_2023"
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v21neg/28_07_2023"
         # src_dir_text_style = "/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_update_vit_focus_clip_v22neg/28_07_2023"
 
@@ -678,7 +680,7 @@ def main():
     # dataset = 'flickrstyle10k' #'senticap'
     dataset = 'senticap' #'senticap'
     test_split = 'test' #'test'
-    merge_dirs = False
+    merge_dirs = True
     merge_res_of_sweep = False
 
     if merge_dirs:
