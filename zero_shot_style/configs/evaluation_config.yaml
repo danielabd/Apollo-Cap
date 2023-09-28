@@ -20,8 +20,8 @@ model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 
 metrics:
 #  senticap: [CLIPScore, style_classification_roberta, fluency]
-#  senticap: [CLAPScore, CLIPScore, fluency]
-  senticap: [ fluency]
+  senticap: [CLAPScore, CLIPScore, fluency]
+#  senticap: [ fluency]
 #  senticap: [bleu1,bleu3,bleu4,rouge,meteor, spice]
 #  senticap: [bleu1,bleu3,bleu4,rouge]
   flickrstyle10k: [CLIPScore, style_classification_emoji, fluency]
