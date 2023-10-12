@@ -1016,7 +1016,7 @@ def main():
             continue
         print(f"Img num = {img_path_idx}")
         img_name = img_path.split('/')[-1].split('.')[0]
-        if config["dataset"] == "senticap":
+        if config["dataset"] == "Senticap":
             try:
                 img_name = int(img_name)
             except:

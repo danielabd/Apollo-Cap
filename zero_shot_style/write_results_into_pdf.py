@@ -417,11 +417,13 @@ def main():
     #CLAPScore
     desired_scores = ['fluency', 'CLIPScore', 'CLAPScore']  # todo
     scores_th = {'fluency': 0.9, 'CLIPScore': 0.10, 'CLAPScore': 0.5}  # todo
+    scores_th = {'fluency': 0.8, 'CLIPScore': 0.10, 'CLAPScore': 0.5}  # todo
 
 
     # scores_th = {'fluency':0.9, 'CLIPScore':0.32, 'style_classification':1}
     all_model_names = '_'.join([k for k in score_files])
-    all_data_tgt_pdf_file_name = f"16_8_23_res_all_data_{all_model_names}.pdf"
+    # all_data_tgt_pdf_file_name = f"16_8_23_res_all_data_{all_model_names}.pdf"
+    all_data_tgt_pdf_file_name = f"12_10_23_res_all_data_{all_model_names}.pdf"
     tgt_pdf_file_path = os.path.join(base_dir4tgt_pdf_file_path, all_data_tgt_pdf_file_name)
 
     mapping_idx2img_name, mapping_img_name2idx = get_mapping_idx_img_name(configfile)
