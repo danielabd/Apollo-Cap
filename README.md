@@ -11,7 +11,7 @@ $ pip install git+https://github.com/openai/CLIP.git
 ### To generate positive caption for an image:
 python run.py --desired_labels style
 \\3 loss - positive:
-python run.py --dataset senticap --desired_labels positive --ce_scale 1.96 --clip_scale 2.19 --text_style_scale 9.68 --sentiment_temperature 0.001 --specific_imgs_to_test 361245 --experiement_global_name 3loss_pos 
+python run.py --dataset senticap --desired_labels positive --ce_scale 1.96 --clip_scale 2.19 --text_style_scale 9.68 --sentiment_temperature 0.001  --experiement_global_name 3loss_pos 
 3 loss - negative:
 python run.py --dataset senticap --desired_labels negative --ce_scale 2.855 --clip_scale 5.036 --text_style_scale 11.9 --sentiment_temperature 0.001 --max_num_of_imgs 1 --experiement_global_name 3loss_neg
 mul - positive:

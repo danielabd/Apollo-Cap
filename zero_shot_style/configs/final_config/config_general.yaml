@@ -39,7 +39,7 @@ print_for_debug_redundant : False
 wandb_mode: disabled #'disabled, offline, online'
 plot_prob_graphs: False
 ##for validation
-specific_imgs_to_test: [361245]
+specific_imgs_to_test: [276434] #all approachs- 276434. 361245-positive, 77954-negative, 940973925_a2e6d7951c-humor, 1489286545_8df476fa26-romantic
 specific_idxs_to_skip: []#[2,3] #todo
 reverse_imgs_list: False
 img_idx_to_start_from: 0
