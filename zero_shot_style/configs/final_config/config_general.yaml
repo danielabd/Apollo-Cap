@@ -39,7 +39,7 @@ print_for_debug_redundant : False
 wandb_mode: disabled #'disabled, offline, online'
 plot_prob_graphs: False
 ##for validation
-specific_imgs_to_test: []
+specific_imgs_to_test: [361245]
 specific_idxs_to_skip: []#[2,3] #todo
 reverse_imgs_list: False
 img_idx_to_start_from: 0
