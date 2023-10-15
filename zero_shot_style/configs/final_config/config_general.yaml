@@ -47,12 +47,12 @@ calc_evaluation: True
 
 ########## product of clip and style probabilities
 use_style_model: True
-mul_clip_style: True
+mul_clip_style: False
 only_clip_styled_clip_loss: True
 sentiment_temperature: 0.17425402664880124 #0.04
 
 ###### update clip ViT tensors
-update_ViT: True #todo
+update_ViT: False #todo
 kv_only_first_layer: True
 num_iterations_clip_style: 1
 loss_scale_style_clip: 4.013
