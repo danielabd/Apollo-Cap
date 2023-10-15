@@ -44,8 +44,8 @@ MAX_NUM_IMGS_TO_TEST = 1000
 
 def get_args():
     parser.add_argument('--config_file', type=str,
-                        default=os.path.join('.', 'configs', 'config_audio_laughter_zerocap.yaml'), #todo: change config file
-                        # default=os.path.join('.', 'configs', 'config_update_vit_audio.yaml'), #todo: change config file
+                        # default=os.path.join('.', 'configs', 'config_audio_laughter_zerocap.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs','final_config', 'config_general.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
@@ -66,7 +66,8 @@ def get_args():
                         help="Should we reverse the order of images list we run on")
     parser.add_argument("--update_ViT", action="store_true",
                         help="Should update CLIP tensors also")
-
+    parser.add_argument("--mul_clip_style", action="store_true",
+                        help="Should multiply  CLIP and style probs")
     parser.add_argument("--clip_loss_temperature", type=float, default=0.01)
     parser.add_argument("--audio_temperature", type=float, default=1)
     parser.add_argument("--std_embedding_vectors_positive", type=float, default=0.028914157)
