@@ -107,6 +107,7 @@ def get_args():
     parser.add_argument("--cuda_idx_num", type=str, default="0")
     parser.add_argument("--img_idx_to_start_from", type=int, default=0)
 
+
     parser.add_argument('--run_type',
                         default='caption',
                         nargs='?',
@@ -137,6 +138,7 @@ def get_args():
     parser.add_argument("--use_style_model", action="store_true", default=False)
     parser.add_argument("--use_audio_model", action="store_true", default=False)
     parser.add_argument("--use_img_path", type=str, help="path to specific image")
+    parser.add_argument("--experiement_global_name", type=str, help="path to the global experiement name")
     parser.add_argument("--use_text_style_example", action="store_true", default=False)
 
     parser.add_argument("--desired_improvement_loss", type=float, default=0.01)
