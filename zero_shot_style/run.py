@@ -690,7 +690,8 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir):
             avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
 
             clip_scores.append(clip_score)
-            clap_scores.append(clap_score)
+            if config.get('use_audio_model', False):
+                clap_scores.append(clap_score)
             fluency_scores.append(fluency_score)
             # style_cls_scores.append(style_cls_score)
             if 'style_classification_emoji' in config['evaluation_metrics']:

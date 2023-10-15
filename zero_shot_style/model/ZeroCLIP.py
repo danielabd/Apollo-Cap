@@ -1005,7 +1005,7 @@ class CLIPTextGenerator:
                 print_probs = False #True #todo: move to false
             else:
                 print_probs = False
-            print(f"iteration num: {i}")
+            #print(f"iteration num: {i}")
             if self.config['print_for_debug']:
                 print(f"************** word_loc =  {word_loc}, iter num = {i} **************")
             if new_weighted_loss:
@@ -1301,7 +1301,7 @@ class CLIPTextGenerator:
                         image_fts = image_fts[0]
                     image_features = sum(image_fts)
                     self.image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-                print("****************************************")
+                #print("****************************************")
 
             if not self.config.get('update_ViT', False):
                 # TEXT_STYLE loss:
@@ -2179,7 +2179,7 @@ class CLIPTextGenerator:
         sentiment_grades_after_temp_t = {}
         # clip_target_probs_before_style = None; sentiment_grades_after_temp=None;sentiment_grades_before_temp=None
         for idx_p in range(probs.shape[0]): # for beam search
-            print(f"idx beam = {idx_p}")
+            #print(f"idx beam = {idx_p}")
             top_texts = []
             prefix_text = prefix_texts[idx_p]
             for x in top_indices[idx_p]:
