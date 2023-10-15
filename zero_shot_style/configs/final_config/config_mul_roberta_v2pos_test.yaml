@@ -13,7 +13,7 @@ specific_idxs_to_skip: []#[2,3] #todo
 max_num_of_imgs: 743 #5 #todo
 reverse_imgs_list: False
 data_type: test #val, test #todo:!!!!!!!!
-#specific_imgs_to_test: [461692] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
+specific_imgs_to_test: [276434] #[551518] #[221272]       #[510864] #[440093] #[221272] todo!!!!
 #specific_img_idxs_to_test: [5,6,207]
 #specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168]
 #specific_img_idxs_to_test: [5,6,134,144,155,152,148, 168,179,178,232,197,236,249,217,213,226,90,241,207]
