@@ -1820,7 +1820,7 @@ class CLIPTextGenerator:
 
 
                             sentiment_grades_after_temp = sentiment_grades
-                            clip_target_probs_weightes_style = sentiment_grades * clip_target_prob
+                            clip_target_probs_weightes_style = sentiment_grades * target_probs
 
                         elif self.config.get('use_audio_model', False):
                             #adding_audio
