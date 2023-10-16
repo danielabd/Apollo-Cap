@@ -138,6 +138,8 @@ def get_args():
     parser.add_argument("--use_style_model", action="store_true", default=False)
     parser.add_argument("--use_audio_model", action="store_true", default=False)
     parser.add_argument("--use_img_path", type=str, help="path to specific image")
+    parser.add_argument("--audio_path", type=str, help="path to specific audio")
+    parser.add_argument("--audio_sampling_rate", type=int, default=24000)
     parser.add_argument("--experiement_global_name", type=str, help="path to the global experiement name")
     parser.add_argument("--use_text_style_example", action="store_true", default=False)
 

@@ -27,7 +27,7 @@ python run.py --dataset senticap --desired_labels negative --mul_clip_style --up
 python run.py --dataset flickrstyle10k --desired_labels humor --ce_scale 0.6604141408776456 --clip_scale 1 --text_style_scale 2.9876837003652907 --sentiment_temperature  0.001 --max_num_of_imgs 1 --experiement_global_name 3loss_humor --use_img_path ~/data/flickrstyle10k/images/test/940973925_a2e6d7951c.jpg
 
 3loss-romantic:
-python run.py --dataset flickrstyle10k --desired_labels romantic --ce_scale 0.7097647446401579 --clip_scale 1 --text_style_scale 4.332869432646197 --sentiment_temperature  0.001 --max_num_of_imgs 1 --experiement_global_name 3loss_romantic
+python run.py --dataset flickrstyle10k --desired_labels romantic --ce_scale 0.7097647446401579 --clip_scale 1 --text_style_scale 4.332869432646197 --sentiment_temperature  0.001 --max_num_of_imgs 1 --experiement_global_name 3loss_romantic --use_img_path ~/data/flickrstyle10k/images/test/940973925_a2e6d7951c.jpg
 mul-humor:
 python run.py --dataset flickrstyle10k --desired_labels humor --mul_clip_style --ce_scale 0.4173438996507689 --clip_scale 1 --text_style_scale 0 --sentiment_temperature 0.05089738868653932 --max_num_of_imgs 1 --experiement_global_name mul_humor
 mul-romatic:
@@ -39,7 +39,7 @@ python run.py --dataset flickrstyle10k  --desired_labels romantic --mul_clip_sty
 
 
 audio:
-python run.py --mul_clip_style --ce_scale 4 --clip_scale 8 --text_style_scale 0 --sentiment_temperature 0.01  --use_audio_model --max_num_of_imgs 1 --experiement_global_name audio_laughter --use_img_path ~/data/flickrstyle10k/images/test/940973925_a2e6d7951c.jpg
+python run.py --mul_clip_style --ce_scale 4 --clip_scale 8 --text_style_scale 0 --sentiment_temperature 0.01  --use_audio_model --max_num_of_imgs 1 --experiement_global_name audio_laughter --use_img_path ~/data/flickrstyle10k/images/test/940973925_a2e6d7951c.jpg --audio_path ~/data/for_audio/argumentwav.wav --audio_sampling_rate 24000
 
 
 humorous:
