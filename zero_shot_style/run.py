@@ -114,6 +114,7 @@ def get_args():
                         choices=['caption', 'arithmetics', 'img_prompt_manipulation'])
 
     parser.add_argument("--dataset", type=str, default="senticap")  #  senticap/flickrstyle10k
+    parser.add_argument("--style_type", type=str, default="roberta")  #  senticap/flickrstyle10k
 
     parser.add_argument("--imgs_dict", type=str, default=os.path.join(os.path.expanduser('~'), 'data', 'senticap'),
                         help="Path to images dict for captioning")
