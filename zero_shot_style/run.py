@@ -710,9 +710,11 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir):
             total_gt_text.append(gt_text)
             if img_name in gts_data:
                 factual_caption = gts_data[img_name]['factual']
+            else:
+                factual_caption = None
             total_captions.append(Caption(img_name, label, res_text, gt_text, evaluation_results[img_name]['img_path'],
                                           label, clip_score, fluency_score, avg_total_score,
-                                          style_cls_score, style_cls_emoji_scores,clap_scores,factual_caption))
+                                          style_cls_score, style_cls_emoji_scores,clap_scores, factual_caption))
 
     clip_scores_table = get_table_for_wandb(clip_scores)
     fluency_scores_table = get_table_for_wandb(fluency_scores)
