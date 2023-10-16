@@ -624,8 +624,7 @@ def get_evaluation_obj(config, text_generator, evaluation_obj):
                                                                        'hidden_state_to_take_txt_cls'],config['max_batch_size_style_cls'])
                 print(f"style_cls_obj = STYLE_CLS")
             if metric == 'style_classification_roberta' and 'style_classification_roberta' not in evaluation_obj:
-                evaluation_obj['style_classification_roberta'] = STYLE_CLS_ROBERTA(config['finetuned_roberta_config'],
-                                                  config['finetuned_roberta_model_path'], config['cuda_idx_num'], config['labels_dict_idxs_roberta'],
+                evaluation_obj['style_classification_roberta'] = STYLE_CLS_ROBERTA(config['cuda_idx_num'], config['labels_dict_idxs_roberta'],
                                                   None)
                 print(f"style_cls_obj = STYLE_CLS_ROBERTA")
 
