@@ -16,6 +16,10 @@ emoji_pretrained_path: ~/projects/torchMoji/model/pytorch_model.bin
 maxlen_emoji_sentence: 30
 num_classes: 64
 
+#audio
+audio_model_sampling_rate: 48000
+audio_temperature: 0.01
+
 use_single_emoji_style: False
 idx_emoji_style_dict:
   senticap:
