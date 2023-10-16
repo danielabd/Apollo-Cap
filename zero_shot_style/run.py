@@ -374,7 +374,7 @@ def get_img_full_path(base_path, i):
 
 class Caption:
     def __init__(self, img_name, style, res_caption_text, gt_caption_text, img_path, classification, clip_score,
-                 fluency, avg_total_score, factual_captions, style_cls_score, style_cls_score_emoji,clap_score=1):
+                 fluency, avg_total_score, style_cls_score, style_cls_score_emoji,clap_score=1,factual_captions=None):
         self.img_name = img_name
         self.style = style
         self.res_caption_text = res_caption_text
@@ -708,9 +708,11 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir):
 
             total_res_text.append(res_text)
             total_gt_text.append(gt_text)
+            if img_name in gts_data:
+                factual_caption = gts_data[img_name]['factual']
             total_captions.append(Caption(img_name, label, res_text, gt_text, evaluation_results[img_name]['img_path'],
-                                          label, clip_score, fluency_score, avg_total_score, gts_data[img_name]['factual'],
-                                          style_cls_score, style_cls_emoji_scores,clap_scores))
+                                          label, clip_score, fluency_score, avg_total_score,
+                                          style_cls_score, style_cls_emoji_scores,clap_scores,factual_caption))
 
     clip_scores_table = get_table_for_wandb(clip_scores)
     fluency_scores_table = get_table_for_wandb(fluency_scores)
