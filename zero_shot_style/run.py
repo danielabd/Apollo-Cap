@@ -876,24 +876,31 @@ def initial_variables():
         wandb.config.update(config, allow_val_change=True)
     txt_cls_model_path = os.path.join(os.path.expanduser('~'), config['txt_cls_model_path'])
     evaluation_obj = {}
-    if 'evaluation_metrics' in config:
-        if config.get('use_style_threshold', False) or config.get('iterate_until_good_fluency', False):
-            if 'style_classification' in config['evaluation_metrics']:
-                evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
-                                                        config['labels_dict_idxs'], data_dir, config[
-                                                            'hidden_state_to_take_txt_cls'], config['max_batch_size_style_cls'])
-                print(f"style_cls_obj = STYLE_CLS")
-            if 'style_classification_roberta' in config['metrics']:
-                evaluation_obj['style_classification_roberta'] = STYLE_CLS_ROBERTA(config['finetuned_roberta_config'],
-                                                  config['finetuned_roberta_model_path'], config['cuda_idx_num'], config['labels_dict_idxs_roberta'],
-                                                  data_dir)
-                print(f"style_cls_obj = STYLE_CLS_ROBERTA")
+    if 'evaluation_metrics' not in config:
+        config['evaluation_metrics'] = []
+    if config.get('dataset',False) == "senticap" and 'style_classification_roberta' not in config['evaluation_metrics']:
+        config['evaluation_metrics'].append('style_classification_roberta')
+    if config.get('dataset',False) == "flickrstyle10k" and 'style_classification_emoji' not in config['evaluation_metrics']:
+        config['evaluation_metrics'].append('style_classification_emoji')
+    else:
+        config['evaluation_metrics'].append('style_classification')
 
-            if 'style_classification_emoji' in config['evaluation_metrics']:
-                evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
+    if config.get('use_style_threshold', False) or config.get('iterate_until_good_fluency', False):
+        if 'style_classification' in config['evaluation_metrics']:
+            evaluation_obj['style_classification'] = STYLE_CLS(txt_cls_model_path, config['cuda_idx_num'],
+                                                    config['labels_dict_idxs'], data_dir, config[
+                                                        'hidden_state_to_take_txt_cls'], config['max_batch_size_style_cls'])
+            print(f"style_cls_obj = STYLE_CLS")
+        if 'style_classification_roberta' in config['metrics']:
+            evaluation_obj['style_classification_roberta'] = STYLE_CLS_ROBERTA(config['cuda_idx_num'], config['labels_dict_idxs_roberta'],
+                                              data_dir)
+            print(f"style_cls_obj = STYLE_CLS_ROBERTA")
 
-        if 'fluency' in config['evaluation_metrics'] and config['calc_fluency']:
-            evaluation_obj['fluency'] = Fluency(config['desired_labels'])
+        if 'style_classification_emoji' in config['evaluation_metrics']:
+            evaluation_obj['style_classification_emoji'] = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'], config['emoji_pretrained_path'], config['idx_emoji_style_dict'])
+
+    if 'fluency' in config['evaluation_metrics'] and config['calc_fluency']:
+        evaluation_obj['fluency'] = Fluency(config['desired_labels'])
 
     desired_labels_list, mean_embedding_vectors, std_embedding_vectors = get_desired_labels(config, mean_embedding_vec_path, std_embedding_vec_path)
     # if config['debug']:
@@ -957,7 +964,7 @@ def main():
             continue
         print(f"Img num = {img_path_idx}")
         img_name = img_path.split('/')[-1].split('.')[0]
-        if config["dataset"] == "Senticap":
+        if config["dataset"] == "senticap":
             try:
                 img_name = int(img_name)
             except:

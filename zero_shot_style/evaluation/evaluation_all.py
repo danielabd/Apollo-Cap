@@ -196,7 +196,7 @@ class CLIPScore:
         return score[0][0], [score]
 
 class STYLE_CLS_ROBERTA:
-    def __init__(self, finetuned_roberta_config,finetuned_roberta_model_path, desired_cuda_num, labels_dict_idxs_roberta, data_dir=None, max_batch_size=100):
+    def __init__(self, desired_cuda_num, labels_dict_idxs_roberta, data_dir=None, max_batch_size=100):
         self.data_dir = data_dir
         self.desired_cuda_num = desired_cuda_num
         self.labels_dict_idxs_roberta = labels_dict_idxs_roberta
@@ -630,7 +630,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
         style_cls_emoji_obj = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'],
                                                       config['emoji_pretrained_path'], config['idx_emoji_style_dict'], config['use_single_emoji_style'], config['desired_labels'])
     if 'style_classification_roberta' in config['metrics']:
-        style_cls_obj = STYLE_CLS_ROBERTA(config['finetuned_roberta_config'],config['finetuned_roberta_model_path'], cuda_idx, config['labels_dict_idxs_roberta'], data_dir)
+        style_cls_obj = STYLE_CLS_ROBERTA(cuda_idx, config['labels_dict_idxs_roberta'], data_dir)
         print(f"style_cls_obj = STYLE_CLS_ROBERTA")
 
 
