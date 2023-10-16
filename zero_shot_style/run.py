@@ -877,12 +877,16 @@ def initial_variables():
     evaluation_obj = {}
     if 'evaluation_metrics' not in config:
         config['evaluation_metrics'] = []
-    if config.get('dataset',False) == "senticap" and 'style_classification_roberta' not in config['evaluation_metrics']:
-        config['evaluation_metrics'].append('style_classification_roberta')
-    if config.get('dataset',False) == "flickrstyle10k" and 'style_classification_emoji' not in config['evaluation_metrics']:
-        config['evaluation_metrics'].append('style_classification_emoji')
+    if config.get('use_audio_model',False):
+        if 'CLAPScore' not in config['evaluation_metrics']:
+            config['evaluation_metrics'].append('CLAPScore')
     else:
-        config['evaluation_metrics'].append('style_classification')
+        if config.get('dataset',False) == "senticap" and 'style_classification_roberta' not in config['evaluation_metrics']:
+            config['evaluation_metrics'].append('style_classification_roberta')
+        if config.get('dataset',False) == "flickrstyle10k" and 'style_classification_emoji' not in config['evaluation_metrics']:
+            config['evaluation_metrics'].append('style_classification_emoji')
+        elif ('style_classification_roberta' or 'style_classification_emoji') not in config['evaluation_metrics']:
+            config['evaluation_metrics'].append('style_classification')
 
     if config.get('use_style_threshold', False) or config.get('iterate_until_good_fluency', False):
         if 'style_classification' in config['evaluation_metrics']:

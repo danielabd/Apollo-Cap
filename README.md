@@ -23,8 +23,6 @@ python run.py --dataset senticap --desired_labels positive --mul_clip_style --up
 decent-neg
 python run.py --dataset senticap --desired_labels negative --mul_clip_style --update_ViT --ce_scale 0.6070550610590508 --clip_scale 2 --text_style_scale 0 --sentiment_temperature 0.17425402664880124 --num_iterations_clip_style 1 --max_num_of_imgs 1 --experiement_global_name update_neg
 
-
-
 3loss-humor:
 python run.py --dataset flickrstyle10k --desired_labels humor --ce_scale 0.6604141408776456 --clip_scale 1 --text_style_scale 2.9876837003652907 --sentiment_temperature  0.001 --max_num_of_imgs 1 --experiement_global_name 3loss_humor --use_img_path ~/data/flickrstyle10k/images/test/940973925_a2e6d7951c.jpg
 
@@ -41,7 +39,7 @@ python run.py --dataset flickrstyle10k  --desired_labels romantic --mul_clip_sty
 
 
 audio:
-python run.py --mul_clip_style --ce_scale 4 --clip_scale 8 --text_style_scale 0 --sentiment_temperature 0.01  --use_audio_model --max_num_of_imgs 1 --experiement_global_name audio_laughter
+python run.py --mul_clip_style --ce_scale 4 --clip_scale 8 --text_style_scale 0 --sentiment_temperature 0.01  --use_audio_model --max_num_of_imgs 1 --experiement_global_name audio_laughter --use_img_path ~/data/flickrstyle10k/images/test/940973925_a2e6d7951c.jpg
 
 
 humorous:
