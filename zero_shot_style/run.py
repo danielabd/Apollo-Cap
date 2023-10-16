@@ -241,8 +241,8 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
     new_title2print = f'~~~~~~~~\n{dt_string} | Work on img path:' + title2print.split(' | Work on img path:')[1]
     print(new_title2print)
 
-    print('best clip:', config['cond_text'] + captions[best_harmonic_mean_idx])
-    print(f"Time to create caption is: {(t2 - t1) / 60} minutes = {t2 - t1} seconds.")
+    print('best:', config['cond_text'] + captions[best_harmonic_mean_idx])
+    #print(f"Time to create caption is: {(t2 - t1) / 60} minutes = {t2 - t1} seconds.")
     img_dict[img_path][style_type][config['text_style_scale']][label] = config['cond_text'] + captions[best_harmonic_mean_idx]
     return config['cond_text'] + captions[best_harmonic_mean_idx]
 
