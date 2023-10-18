@@ -58,5 +58,5 @@ python run.py --mul_clip_style --ce_scale 4 --clip_scale 8 --text_style_scale 0 
 
 
 ## Citation
-If you use our work for your research, please cite:
+If you use our work for your research, please cite us. <!--- TODO: put bib tex ---> 
 
