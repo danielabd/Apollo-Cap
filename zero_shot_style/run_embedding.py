@@ -605,16 +605,6 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
     if 'evaluation_metrics' not in config:
         return
     print("Calc evaluation of the results...")
-    # calc perplexity
-    # if 'fluency' in config['evaluation_metrics'] and config['calc_fluency']:
-    #     evaluation_obj['fluency'] = Fluency(config['desired_labels'])
-    #     evaluation_obj['fluency'].add_results(evaluation_results)
-    #     perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score()
-    # else:
-    #     mean_perplexity = DEFAULT_PERPLEXITY_SCORE
-
-    # evaluation_obj = get_evaluation_obj(config, text_generator, evaluation_obj)
-
     style_cls_scores = []
     style_cls_emoji_scores = []
     clip_scores = []
@@ -627,13 +617,6 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
         for label in list(evaluation_results[img_name].keys()):
             if label == 'img_path':
                 continue
-            # if config["dataset"] == "senticap":
-            # evaluation_results[img_name][label]['gt'] = gts_data[img_name][label]  # todo: handle style type
-            # evaluation_results[img_name][label]['scores'] = evaluate_single_res(
-            #     evaluation_results[img_name][label]['res'], evaluation_results[img_name][label]['gt'],
-            #     evaluation_results[img_name]['img_path'], label, config['evaluation_metrics'],
-            #     evaluation_obj)
-
             if 'CLIPScore' in config['evaluation_metrics']:
                 clip_score = evaluation_results[img_name][label]['scores']['CLIPScore']
             else:
@@ -655,15 +638,6 @@ def evaluate_results(config, evaluation_results, gts_data, results_dir, factual_
                 style_cls_emoji_score = DEFAULT_STYLE_CLS_EMOJI_SCORE
 
             avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
-
-            #todo: I removed the option that there is no style cls  in eval metrics
-            # if 'style_classification' in evaluation_results[img_name][label]['scores']:
-            #     style_cls_score = evaluation_results[img_name][label]['scores']['style_classification']
-            #     style_cls_scores.append(style_cls_score)
-            #     avg_total_score = calculate_avg_score(clip_score, fluency_score, style_cls_score)
-            # else:
-            #     style_cls_score = 'None'
-            #     avg_total_score = calculate_avg_score(clip_score, fluency_score)
 
             clip_scores.append(clip_score)
             fluency_scores.append(fluency_score)
@@ -769,10 +743,6 @@ def get_desired_style_embedding_vector_and_std(config, label, mean_embedding_vec
                 desired_style_embedding_vector_std = std_embedding_vectors[label]
             else:
                 desired_style_embedding_vector_std = config['embedding_vectors_std'][label]
-            # if label == 'positive':
-            #     desired_style_embedding_vector_std = config['std_embedding_vectors_positive']
-            # elif label == 'negative':
-            #     desired_style_embedding_vector_std = config['std_embedding_vectors_negative']
     else:
         desired_style_embedding_vector = None;
         desired_style_embedding_vector_std = None

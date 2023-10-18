@@ -44,7 +44,6 @@ MAX_NUM_IMGS_TO_TEST = 1000
 
 def get_args():
     parser.add_argument('--config_file', type=str,
-                        # default=os.path.join('.', 'configs', 'config_audio_laughter_zerocap.yaml'), #todo: change config file
                         default=os.path.join('.', 'configs','final_config', 'config_general.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
@@ -139,6 +138,7 @@ def get_args():
     parser.add_argument("--use_style_model", action="store_true", default=False)
     parser.add_argument("--use_audio_model", action="store_true", default=False)
     parser.add_argument("--use_img_path", type=str, help="path to specific image")
+    parser.add_argument("--style", type=str, nargs='+', default='positive', help='desired styles')
     parser.add_argument("--audio_path", type=str, help="path to specific audio")
     parser.add_argument("--audio_sampling_rate", type=int, default=24000)
     parser.add_argument("--experiement_global_name", type=str, help="path to the global experiement name")
@@ -202,7 +202,6 @@ def run(config, img_path, desired_style_embedding_vector, desired_style_embeddin
             best_harmonic_mean_idx = (
                         len(captions) * clip_grades * style_cls_grades / (clip_grades + style_cls_grades)).argmax()
 
-        # if evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj):
         elif evaluation_obj and ('style_classification' in evaluation_obj or 'style_classification_roberta' in evaluation_obj) and not config.get("use_audio_model", False):
             if 'style_classification' in evaluation_obj:
                 style_cls_grades = torch.tensor(evaluation_obj['style_classification'].compute_label_for_list(captions,label)).to(device)
@@ -1049,20 +1048,21 @@ def main():
                 evaluation_obj)
             perplexities, mean_perplexity = evaluation_obj['fluency'].compute_score_for_single_text(best_caption)
             evaluation_results[img_name][label]['scores']['fluency'] = mean_perplexity
-            print(f"evaluation scores: CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}, fluency={evaluation_results[img_name][label]['scores']['fluency']}, ")
-            if "style_classification_roberta" in config["evaluation_metrics"]:
-                print(f"style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
-            elif "style_classification_emoji" in config["evaluation_metrics"]:
-                print(f"style_classification_emoji={evaluation_results[img_name][label]['scores']['style_classification_emoji']}")
-            if "CLIPScore" in config["evaluation_metrics"]:
-                print(f"CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}")
-            if "CLAPScore" in config["evaluation_metrics"]:
-                print(f"CLAPScore={evaluation_results[img_name][label]['scores']['CLAPScore']}")
+            #print scores:
+            # print(f"evaluation scores: CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}, fluency={evaluation_results[img_name][label]['scores']['fluency']}, ")
+            # if "style_classification_roberta" in config["evaluation_metrics"]:
+            #     print(f"style_classification_roberta={evaluation_results[img_name][label]['scores']['style_classification_roberta']}")
+            # elif "style_classification_emoji" in config["evaluation_metrics"]:
+            #     print(f"style_classification_emoji={evaluation_results[img_name][label]['scores']['style_classification_emoji']}")
+            # if "CLIPScore" in config["evaluation_metrics"]:
+            #     print(f"CLIPScore={evaluation_results[img_name][label]['scores']['CLIPScore']}")
+            # if "CLAPScore" in config["evaluation_metrics"]:
+            #     print(f"CLAPScore={evaluation_results[img_name][label]['scores']['CLAPScore']}")
 
     evaluate_results(config, evaluation_results, gts_data, results_dir)
-    print("images that failed:")
-    print(failed_img_names)
-    print('Finish of program!')
+    # print("images that failed:")
+    # print(failed_img_names)
+    print('End of the program!')
 
 
 if __name__ == "__main__":

@@ -1,12 +1,3 @@
-# try to use it: for adapting to python3
-# https: // github.com / sks3i / pycocoevalcap
-# https://github.com/wangleihitcs/CaptionMetrics
-# from nltk.translate.bleu_score import sentence_bleu
-# from nltk.translate import meteor
-# from nltk import word_tokenize
-# import os
-# import pickle
-# import matplotlib.pyplot as plt
 import json
 from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
@@ -15,19 +6,14 @@ from transformers import AutoProcessor
 from transformers import ClapModel
 import librosa
 
-import pandas as pds
 import shutil
 import timeit
-from datetime import datetime
 from evaluate import load
-import math
 import pandas as pd
 import torch
 import csv
 import numpy as np
 import nltk
-from nltk.lm.preprocessing import padded_everygram_pipeline
-from nltk.lm import MLE
 import os
 import pickle
 
@@ -62,10 +48,6 @@ class CLIPScoreRef:
         :param res: str
         :return:
         '''
-        # print("calculate CLIPScoreRef...")
-        res_val = res
-        if type(res) == dict:
-            res_val = list(res.values())[0]
         scores_for_all = []
         for k in gts:
             for gt in gts[k]:
@@ -120,7 +102,7 @@ class CLAPScore:
         :param res: str
         :return:
         '''
-        # print("calculate CLIPScore...")
+        # print("calculate CLAPScore...")
         res_val = res
         if type(res) == dict:
             res_val = [list(res.values())[0][0][:77]]
@@ -131,18 +113,9 @@ class CLAPScore:
         inputs = inputs.to(self.device)
         outputs = self.audio_model(**inputs)
         audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
-
-
-
-        # image_features = self.text_generator.get_img_feature([image_path], None, source_clip=True)
-        # text_features = self.text_generator.get_txt_features(res_val, source_clip=True)
-        # with torch.no_grad():
-        #     clip_score = (image_features @ text_features.T)
-
-        # score = clip_score.cpu().numpy()
         score = audio_similiraties.cpu().numpy()
         # print(f'text: {res}')
-        # print('CLIPScore = %s' % score[0][0])
+        # print('CLAPScore = %s' % score[0][0])
         return score[0][0], [score]
     def compute_score_for_list(self, captions):
         '''
@@ -157,19 +130,9 @@ class CLAPScore:
         inputs = inputs.to(self.device)
         outputs = self.audio_model(**inputs)
         audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
-
-
-        # image_features = self.text_generator.get_img_feature([image_path], None, source_clip=True)
-        # text_features = self.text_generator.get_txt_features(res_val, source_clip=True)
-        # with torch.no_grad():
-        #     clip_score = (image_features @ text_features.T)
-
-        # score = clip_score.cpu().numpy()
         scores = audio_similiraties.cpu().numpy()
-        # print(f'text: {res}')
-        # print('CLIPScore = %s' % score[0][0])
-        # return score[0][0], [score]
         return scores
+
 
 class CLIPScore:
     def __init__(self, text_generator):
@@ -270,14 +233,6 @@ class STYLE_CLS_ROBERTA:
             output = self.sentiment_model(**encoded_input)
             scores = output[0][0].detach()
             scores = nn.functional.softmax(scores)
-
-            # inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
-            # inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
-            # logits = self.sentiment_model(**inputs)['logits']
-            # output = nn.functional.softmax(logits[0], dim=-1)  # todo:check it
-
-            # relevant_logits = torch.tensor([logits[:,i] for i in [0,2]])
-            # output = nn.functional.softmax(relevant_logits, dim=-1) #todo:check it
             cls_score = scores[self.labels_dict_idxs_roberta[gt_label]].item()
         return cls_score, None
 
@@ -288,12 +243,6 @@ class STYLE_CLS_ROBERTA:
         :param res: list of sentences
         :return:
         '''
-        # text = self.preprocess(res)
-        # with torch.no_grad():
-        #     # inputs = self.sentiment_tokenizer([text], padding=True, return_tensors="pt")
-        #     encoded_input = self.sentiment_tokenizer(text, return_tensors="pt")
-        #     output = self.sentiment_model(**encoded_input)
-        #
         with torch.no_grad():
             text_list = self.preprocess(res)
             encoded_input = self.sentiment_tokenizer(text_list, padding=True, return_tensors='pt').to(self.device)
@@ -303,28 +252,12 @@ class STYLE_CLS_ROBERTA:
             cls_scores = scores1[:,self.labels_dict_idxs_roberta[gt_label]]
         return cls_scores
 
-        # with torch.no_grad():
-        #     # if type(gt_label_idx)==type('str'):
-        #     #     gt_label_idx = self.labels_dict_idxs[gt_label_idx]
-        #     total_outputs = torch.tensor([]).to(self.device)
-        #     for i in range(round(np.ceil(len(res)/self.max_batch_size))):
-        #         part_res = res[i*self.max_batch_size:(i+1)*self.max_batch_size]
-        #         inputs = self.sentiment_tokenizer(part_res, padding=True, return_tensors="pt")
-        #         inputs['input_ids'] = inputs['input_ids'].to(self.sentiment_model.device)
-        #         inputs['attention_mask'] = inputs['attention_mask'].to(self.sentiment_model.device)
-        #         logits = self.sentiment_model(**inputs)['logits']
-        #         relevant_logits = [logits[:, i] for i in [0, 2]] # todo:check it
-        #         output = nn.functional.softmax(relevant_logits, dim=-1)  # todo:check it
-        #         cls_scores = torch.sum(output[:,self.labels_dict_idxs_roberta[gt_label]])#todo
-        #     return cls_scores
 
     def compute_score_for_total_data(self, gts, res, dataset_name):
         self.df_test = pd.read_csv(os.path.join(self.data_dir, 'test.csv'))
         total_acc_test_for_all_data = evaluate_text_style_classification(self.model[dataset_name], self.df_test,
                                                                          self.labels_dict_idxs, self.desired_cuda_num)
         return total_acc_test_for_all_data, None
-
-
 
 
 class STYLE_CLS:
@@ -356,20 +289,12 @@ class STYLE_CLS:
         return model
 
     def compute_score(self, res, gt_label):
-        '''
-
-        :param gts: list of text
-        :param res: dict. key=str. value=list of single str
-        :return:
-        '''
         res_val = res
         if type(res) == dict:
             res_val = list(res.values())[0][0]
         res_tokens = tokenizer(res_val, padding='max_length', max_length=512, truncation=True,
                                # todo: check if need to put 40
                                return_tensors="pt")
-        # print(f"self.labels_dict_idxs = {self.labels_dict_idxs}")
-        # print(f"self.labels_dict_idxs[gt_label] = {self.labels_dict_idxs[gt_label]}")
         gt_label_idx = torch.tensor(self.labels_dict_idxs[gt_label]).to(self.device)
         mask = res_tokens['attention_mask'].to(self.device)
         input_id = res_tokens['input_ids'].squeeze(1).to(self.device)
@@ -469,17 +394,7 @@ class STYLE_CLS_EMOJI:
         with torch.no_grad():
             tokenized, _, _ = self.emoji_st_tokenizer.tokenize_sentences([res_val])
             tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
-            # tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
-            # self.emoji_style_model.to(torch.device("cuda"))
-            # self.emoji_style_model = self.emoji_style_model.to(self.device)
-
-            # print(f"next(self.emoji_style_model.parameters()).is_cuda = {next(self.emoji_style_model.parameters()).is_cuda}")
-            # print(f"tokenized.is_cuda={tokenized.is_cuda}")
             emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
-            # cls_score = emoji_style_probs[0,self.idx_emoji_style_dict[gt_label]]
-
-
-
             ##############
             #suppose there is only one example
             emoji_style_grades = emoji_style_probs[:, self.idx_emoji_style_dict[gt_label]].sum(-1)
@@ -548,23 +463,12 @@ class Fluency:
         results = self.perplexity.compute(data=sentence, model_id=self.model_id, add_start_token=False)
         return results['mean_perplexity'], results['perplexities']
         '''
-        # print(f"data=self.tests:")
-        # print(f"{self.tests}")
-        # print(f"data=self.tests")
-        # self.tests = ['Despite the efforts, the final finish of the ski touring system ended in disappointment.',
-        #                 'Regrettably, the inefficient sucksling board is utilized for extracting water from educational materials.',
-        #                 'Winter hiking in the Canadian wilderness can be extremely challenging, as depicted in this evocative photograph by The Man.']
-        # results = f.perplexity.compute(data=["A wonderful banner parachute-fold over double."], model_id=self.model_id,
-        #                                   add_start_token=True)  # check is the source
-
         results = self.perplexity.compute(data=self.tests, model_id=self.model_id,
                                           add_start_token=True)  # check is the source
-        # results = self.perplexity.compute(data=self.tests, model_id=self.model_id, add_start_token=True)
         for i, pp in enumerate(results['perplexities']):
             k = self.k[i]
             style = self.style[i]
             metric = self.metric[i]
-            # print(1 - np.min([pp, MAX_PERPLEXITY]) / MAX_PERPLEXITY)
             score_dict_per_metric[metric][k][style] = 1 - np.min([pp, MAX_PERPLEXITY]) / MAX_PERPLEXITY
             score_per_metric_and_style[metric][style].append(score_dict_per_metric[metric][k][style])
             all_scores = save_all_data_k(all_scores, k, test_name, style, metric, score_dict_per_metric,
@@ -835,10 +739,6 @@ def spice(gts, res):
     print('spice = %s' % score)
     return score
 '''
-
-
-def style_accuracy():
-    pass
 
 
 def diversitiy(res, gts):
@@ -1497,28 +1397,11 @@ def main():
             print(f'Vocabulary size for experiment {test_name} dataset is {vocab_size[test_name]}')
 
         test_name = list(config['res_path2eval'].values())[0].rsplit('/', 1)[1]
-        # tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-        #                                           config['tgt_eval_results_file_name'])
-        # tgt_eval_results_file_name_for_all_frames = os.path.join(
-        #     list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-        #     config['tgt_eval_results_file_name_for_all_frames'])
-        #
         tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
                                                   config['tgt_eval_results_file_name'].split('.')[0]+'_'+'_'.join(config['styles'])+'_'+test_name)
         tgt_eval_results_file_name_for_all_frames = os.path.join(
             list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
             config['tgt_eval_results_file_name_for_all_frames'].split('.')[0]+'_'+test_name+'_'+'_'.join(config['styles']))
-
-    # todo: remove
-        # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
-        # tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-        #                                           prefix_file_name+config['tgt_eval_results_file_name'])
-        #
-        # tgt_eval_results_file_name_for_all_frames = os.path.join(
-        #     list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-        #     prefix_file_name+config['tgt_eval_results_file_name_for_all_frames'])
-
-
 
         print(f"finished to evaluat on {len(all_scores)} images.")
         write_results(mean_score, tgt_eval_results_file_name, config['dataset'], config['metrics'].copy(), config['styles'],

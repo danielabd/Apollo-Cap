@@ -95,11 +95,11 @@ plt.hold()
 '''
 
 
-
-plt.subplot(211)
-plt.imshow(np.random.random((100, 100)))
-plt.subplot(212)
-plt.imshow(np.random.random((100, 100)))
+#
+# plt.subplot(211)
+# plt.imshow(np.random.random((100, 100)))
+# plt.subplot(212)
+# plt.imshow(np.random.random((100, 100)))
 
 
 

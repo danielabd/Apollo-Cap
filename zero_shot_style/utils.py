@@ -43,14 +43,6 @@ parser.add_argument('--override', type=str2bool, default=False, help='override r
 parser.add_argument('--data_dir', type=str, default=os.path.join(os.path.expanduser('~'), 'data'), help='data path')
 #parser.add_argument('--wandb_mode', type=str, default='online', help='disabled, offline, online')
 parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
-# parser.add_argument('--config_file', type=str, default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'configs','default_config.yaml'), help='full path to config file')
-
-#parser.add_argument('--config_file', type=str, default=os.path.join('.', 'configs','emotions_config_all_classes.yaml'), help='full path to config file')
-#parser.add_argument('--config_file', type=str, default=os.spath.join('.', 'configs','twitter_config.yaml'), help='full path to config file')
-# parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','flickrstyle10k_config.yaml'), help='full path to config file')
-#parser.add_argument('--config_file', type=str, default=os.path.join('.',  'configs','senticap_config.yaml'), help='full path to config file')
-# parser.add_argument('--config_file', type=str, default=os.path.join('..',  'configs','flickrstyle10k_text_style_classification.yaml'), help='full path to config file')
-# parser.add_argument('--config_file', type=str, default=os.path.join('..',  'configs','senticap_text_style_classification.yaml'), help='full path to config file')
 
 parser.add_argument('--plot_only_clustering', type=str2bool, default=False, help='plot only clustering of the best model')
 # parser.add_argument('--rundry', type=str2bool, default=False)
@@ -118,6 +110,13 @@ def get_hparams(args):
     # update hparams with system args
     # hparams = update_hparams(hparams, args)
     hparams = update_hparams(experiment_config, args)
+    hparams['desired_labels']= hparams['style'] #for adaptance to source code
+    if hparams['style'][0] in ['positive', 'negative']:
+        hparams['dataset'] = 'senticap'
+        hparams['style_type'] = 'roberta'
+    elif hparams['style'][0] in ['humor', 'romantic']:
+        hparams['dataset'] = 'flickrstyle10k'
+        hparams['style_type'] = 'emoji'
     if hparams['style_type'] == 'style_embed' and hparams['dataset'] == 'senticap':
         if 'labels_dict_idxs_roberta' in hparams:
             hparams['labels_dict_idxs_roberta']['senticap']['positive'] = 1
