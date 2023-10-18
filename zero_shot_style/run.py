@@ -44,7 +44,7 @@ MAX_NUM_IMGS_TO_TEST = 1000
 
 def get_args():
     parser.add_argument('--config_file', type=str,
-                        default=os.path.join('.', 'configs','final_config', 'config_general.yaml'), #todo: change config file
+                        default=os.path.join('.', 'configs', 'config_general.yaml'), #todo: change config file
                         help='full path to config file')
     # parser = argparse.ArgumentParser() #comment when using, in addition, the arguments from zero_shot_style.utils
     # parser.add_argument('--wandb_mode', type=str, default='disabled', help='disabled, offline, online')
