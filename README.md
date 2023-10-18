@@ -6,7 +6,7 @@ Pytorch implementation of [Apollo: Zero-Shot Multimodal Reasoning with Multiple 
 ### Examples from Senticap and Flickrstyle10k datasets:
 ![](git_images/Apollo_examples_r.png)
 <!--- - Comparing all approaches with a focus on positive image captions:--->
-### Ablation study of our approach
+### Ablation study of our approach for positive caption
 ![](git_images/all_approaches_cake.png)
 ## Audio-Aware Image Caption Generation
 ### APOLLO-CAP-P caption examples for images and audio clips featuring children’s laughter:
