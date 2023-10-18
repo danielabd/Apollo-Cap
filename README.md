@@ -54,7 +54,7 @@ python run.py --style romantic --update_ViT --mul_clip_style --ce_scale 0.3735 -
 
 ### To generate audio-aware image caption:
 #### Apollo-Cap-PD:
-python run.py --mul_clip_style --ce_scale 4 --clip_scale 8 --text_style_scale 0 --sentiment_temperature 0.01  --use_audio_model --use_img_path <image_path> --audio_path ~/data/for_audio/argumentwav.wav --audio_sampling_rate 24000 --use_img_path <image_path>
+python run.py --mul_clip_style --ce_scale 4 --clip_scale 8 --text_style_scale 0 --sentiment_temperature 0.01  --use_audio_model --use_img_path <image_path> --audio_path child_laughing.wav --audio_sampling_rate 24000 --use_img_path <image_path>
 
 
 ## Citation
