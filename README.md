@@ -3,7 +3,7 @@ Pytorch implementation of [Apollo: Zero-Shot Multimodal Reasoning with Multiple 
 
 ## Stylized Image Caption Generation
 <!--- - Comparing APOLLO-CAP-PD, CapDec, and ZeroCap+IPM approaches across positive, negative, humorous, and romantic styles:---> 
-### Examples from Senticap and Flickrstyle10k datasets:
+### Examples from SentiCap and Flickrstyle10k datasets:
 ![](git_images/Apollo_examples_r.png)
 <!--- - Comparing all approaches with a focus on positive image captions:--->
 ### Ablation study of our approach for positive caption
