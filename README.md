@@ -20,6 +20,12 @@ $ pip install git+https://github.com/openai/CLIP.git
 ```
 The code was tested successfully on Intel Xeon with NVIDIA RTX 2080 Ti and CUDA 11.4.
 
+In order to use Apollo-Cap-PD:
+```bash
+git clone https://github.com/danielabd/CLIP
+```
+
+
 ## Usage
 To execute the following commands, go to `zero_shot_style/`.
 ### To generate stylized image caption:
