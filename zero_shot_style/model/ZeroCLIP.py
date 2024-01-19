@@ -24,8 +24,11 @@ from transformers import AutoModelForCausalLM #gpt-J
 from transformers import BertModel
 from torch.optim import Adam, SGD
 # from zero_shot_style.model.text_style_embedding import TextStyleEmbed
-from zero_shot_style.model.text_style_embedding_senticap import TextStyleEmbed
-from zero_shot_style.model.text_style_embedding_senticap_based_on_clip import TextStyleEmbedCLIP
+
+#from zero_shot_style.model.text_style_embedding_senticap import TextStyleEmbed
+from zero_shot_style.model.text_style_embedding import TextStyleEmbed
+
+# from zero_shot_style.model.text_style_embedding_senticap_based_on_clip import TextStyleEmbedCLIP
 # from zero_shot_style.evaluation.evaluation_all import STYLE_CLS
 import pickle
 from scipy.io.wavfile import read
@@ -269,8 +272,8 @@ class CLIPTextGenerator:
                 else:
                     if self.model_based_on == 'bert':
                         self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
-                    elif self.model_based_on == 'clip':
-                        self.text_style_model = TextStyleEmbedCLIP(device=self.device)
+                    # elif self.model_based_on == 'clip':
+                        # self.text_style_model = TextStyleEmbedCLIP(device=self.device)
 
                     if 'cpu' in self.device:
                         checkpoint = torch.load(config['txt_embed_model_paths'], map_location=torch.device('cpu'))
@@ -291,8 +294,8 @@ class CLIPTextGenerator:
                     print(f"Loading embedding style model from: {self.text_style_model_name}")
                     if self.model_based_on == 'bert':
                         self.text_style_model = TextStyleEmbed(device=self.device, hidden_state_to_take=config['hidden_state_to_take_txt_style_embedding'])
-                    elif self.model_based_on == 'clip':
-                        self.text_style_model = TextStyleEmbedCLIP(device=self.device)
+                    # elif self.model_based_on == 'clip':
+                    #     self.text_style_model = TextStyleEmbedCLIP(device=self.device)
 
                     if 'cpu' in self.device:
                         checkpoint = torch.load(self.text_style_model_name, map_location=torch.device('cpu'))
