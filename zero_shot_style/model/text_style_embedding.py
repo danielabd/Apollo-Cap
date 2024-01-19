@@ -10,7 +10,7 @@ from zero_shot_style.model import mining
 import wandb
 import pickle
 from datetime import datetime
-from zero_shot_style.datasets.create_dataset_from_twitter import clean_text
+from zero_shot_style.datasets_zero_shot_style.create_dataset_from_twitter import clean_text
 from itertools import combinations, product
 from sklearn.metrics import roc_curve, auc
 import os
