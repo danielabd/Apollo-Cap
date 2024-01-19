@@ -1,0 +1,297 @@
+#dataset
+dataset: senticap # senticap,flickrstyle10k
+style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta'
+#style_type: 'style_embed' #'style_embed' or 'emoji'
+use_style_threshold: False
+max_num_of_imgs: 743 #5
+data_type: test #val, test
+desired_labels:
+  senticap: [positive] #[factual, positive, negative]
+  flickrstyle10k: [humor] #[factual, humor, romantic]
+target_seq_length: 30
+
+#emoji
+emoji_vocab_path: ~/projects/torchMoji/model/vocabulary.json
+emoji_pretrained_path: ~/projects/torchMoji/model/pytorch_model.bin
+maxlen_emoji_sentence: 30
+num_classes: 64
+
+#audio
+audio_model_sampling_rate: 48000
+audio_temperature: 0.01
+
+use_single_emoji_style: False
+idx_emoji_style_dict:
+  senticap:
+#    positive: 53
+#    negative: 34
+    positive: [0,4,6,7,8,13,15,16,17,18,23,24,36,40,53,60] # 53
+    negative: [1,2,3,5,12,22,27,29,32,34,35,37,39,42,43,44,45,46,52,55,56,58] # 34
+  flickrstyle10k:
+    humor: [0,53] #0
+    romantic: [4, 8, 18, 23, 24] #23
+
+experiement_global_name:
+  senticap: experiement_folder
+  flickrstyle10k: experiement_folder
+
+#debugging
+debug: False #False #todo
+debug_mac: False
+print_for_debug : False # todo
+print_for_debug_redundant : False
+wandb_mode: disabled #'disabled, offline, online'
+plot_prob_graphs: False
+##for validation
+specific_imgs_to_test: [276434] #all approachs- 276434. 361245-positive, 77954-negative, 940973925_a2e6d7951c-humor, 1489286545_8df476fa26-romantic
+specific_idxs_to_skip: []#[2,3] #todo
+reverse_imgs_list: False
+img_idx_to_start_from: 0
+calc_evaluation: True
+
+########## product of clip and style probabilities
+use_style_model: True
+mul_clip_style: False
+only_clip_styled_clip_loss: True
+sentiment_temperature: 0.17425402664880124 #0.04
+
+###### update clip ViT tensors
+update_ViT: False #todo
+kv_only_first_layer: True
+num_iterations_clip_style: 1
+loss_scale_style_clip: 4.013
+loss_scale_src_clip_clip: 0.000002
+start_loop_clip_style_in_word_num: 1
+ce_scale:
+  senticap: 0.6070550610590508
+  flickrstyle10k: 3.876555048088627
+clip_scale:
+  senticap: 2
+  flickrstyle10k: 4.587441437503964
+text_style_scale:
+  senticap: 0
+  flickrstyle10k: 4.518869472661613
+save_config_file: True # False, True
+#evaluation_metrics: [bleu1, bleu3, bleu4, rouge, CLIPScoreRef, CLIPScore, style_classification, fluency, style_classification_emoji]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#evaluation_metrics: [CLIPScore, style_classification, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#evaluation_metrics: [CLIPScore, style_classification_roberta, fluency]   # ['bleu','rouge','meteor', 'spice', 'CLIPScoreRef','CLIPScore','style_classification', 'fluency']
+#evaluation_metrics: [CLIPScore, style_classification_emoji, fluency]
+evaluation_metrics: [CLIPScore, fluency]
+
+# finetuned roBERTa
+finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
+finetuned_roberta_config: ~/checkpoints/finetuned_roberta/config.json
+labels_dict_idxs_roberta:
+  senticap:
+#    positive: 1
+    positive: 2
+    negative: 0
+  flickrstyle10k:
+    humor: 0
+    romantic: 1
+
+#baselines
+run_type: caption #caption, arithmetics, img_prompt_manipulation
+#for using prompt manipulation
+#cond_text_dict:
+#  positive: The beautiful image of a
+#  negative: The disturbing image of a
+#  factual: Image of a
+
+#without prompt manipulation
+cond_text_dict:
+  senticap:
+    positive: ""
+    negative: ""
+    factual: ""
+  flickrstyle10k:
+    humor: ""
+    romantic: ""
+    factual: ""
+
+#params to take like zerocap
+beam_size:
+  senticap: 5 #4 #3
+  flickrstyle10k: 5 #3
+num_iterations:
+  senticap: 5
+  flickrstyle10k: 5
+#ZeroCap source params
+zerocap_clip_scale: 1
+zerocap_ce_scale: 0.2
+zerocap_beam_size: 5
+zerocap_num_iterations: 5
+zerocap_text_style_scale: 0
+
+style_img:
+  senticap:
+    factual: 49
+    positive: 50
+    negative: 51
+  flickrstyle10k:
+    factual: 49
+    humor: 52
+    romantic: 53
+arithmetics_weights: [1, -0.5, 0.5]
+reset_context_delta: True
+calc_fluency: True
+
+
+#some optional ways to check
+cut_cand2clip: False
+iterate_until_good_fluency: False
+start_word_loc_heavy_iteration: 2
+desired_min_style_score: 1
+desired_min_fluency_score: 0.9
+desired_min_clip_score: 0.28
+heavy_max_num_iterations: 7
+max_batch_size_style_cls: 10
+# weighted loss
+new_weighted_loss: False
+desired_improvement_loss: 0.01
+th_clip_loss: 33
+th_ce_loss: 10
+th_style_loss: 33
+max_num_iterations: 5
+check_if_cut_score: False
+
+use_text_style_cutting: False
+style_mul_not_cut: False
+desired_min_CLIP_score: 1
+requires_min_fluency_score: 0 #0.8 # 0.86
+requires_min_clip_score_val:
+  senticap:
+    positive: 0.26
+    negative: 0.26
+  flickrstyle10k:
+    humor: 0
+    romantic: 0
+requires_num_min_clip_score_val:
+  senticap:
+    positive: 10
+    negative: 10
+  flickrstyle10k:
+    humor: 0
+    romantic: 0
+requires_min_style_score:
+  senticap:
+    positive: 0.35
+    negative: 0.35
+  flickrstyle10k:
+    humor: 0
+    romantic: 0
+threshold_sentiment:
+  senticap:
+    positive: 0.3597
+    negative: 0.3597
+  flickrstyle10k:
+    humor: 0
+    romantic: 0
+model_based_on: bert # 'clip' /  'bert'
+use_text_style_example: False
+write_debug_tracking_file: False
+imitate_text_style: False
+text_to_imitate_list: ["positive"]
+
+
+# for style classification
+hidden_state_to_take_txt_cls:
+  senticap: -1
+  flickrstyle10k: -2
+scale_noise_txt_cls:
+  senticap: 0
+  flickrstyle10k:
+
+txt_cls_model_path:
+  senticap: ~/checkpoints/best_models/senticap/best_senticap_text_style_classification_model.pth
+  flickrstyle10k: ~/checkpoints/best_models/flickrstyle10k/best_flickrstyle10k_text_style_classification_model.pth
+
+#while using style embedding space
+embedding_vectors_std:
+  senticap:
+    positive: 0.031123760342107343 #0.015731973987010497 # 0.030191882925088297 #0.028914157
+    negative: 0.14634644370317826 #0.03894146313631765 #0.002273661603177639 #0.020412436
+  flickrstyle10k:
+    humor: 0.05536 #0.028914157
+    romantic: 0.007185  #0.020412436
+
+hidden_state_to_take_txt_style_embedding:
+  senticap: -2
+  flickrstyle10k: -2
+
+epochs: 20
+lr:
+  senticap: 0.00001
+  flickrstyle10k: 0.00001
+
+batch_size:
+  senticap: 16
+  flickrstyle10k:
+
+margin:
+  senticap: 0.26
+  flickrstyle10k: 0.26
+
+freeze_after_n_epochs:
+  senticap: 4
+  flickrstyle10k: 4
+
+inner_batch_size: 1
+
+best_model_name:
+  senticap: checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth
+  flickrstyle10k: checkpoints/best_models/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth
+
+model_name:
+  senticap: latest_text_style_embedding_model_senticap.pth
+  flickrstyle10k:
+
+txt_embed_model_paths:
+  senticap: ~/checkpoints/best_models/senticap/best_text_style_embedding_model_senticap.pth
+  flickrstyle10k: ~/checkpoints/best_models/flickrstyle10k/best_text_style_embedding_model_flickrstyle10k.pth
+
+mean_vec_emb_file:
+  senticap: checkpoints/best_models/senticap/senticap_mean_class_embedding.p
+  flickrstyle10k: checkpoints/best_models/flickrstyle10k/flickrstyle10k_mean_class_embedding.p
+
+std_vec_emb_file:
+  senticap: checkpoints/best_models/senticap/senticap_std_class_embedding.p
+  flickrstyle10k: checkpoints/best_models/flickrstyle10k/flickrstyle10k_std_class_embedding.p
+
+plot_only_clustering: False
+#desired_labels: 'all' #[embarrassment, joy, anger, love, annoyance, nervousness]
+undesired_label: 'neutral'
+resume: False # resume running in wb
+load_model: False
+run_id:
+
+num_workers: 10
+
+labels_dict_idxs:
+  senticap:
+    positive: 0
+    negative: 1
+  flickrstyle10k:
+    humor: 0
+    romantic: 1
+
+max_num_imgs2test:
+  senticap: -1
+  flickrstyle10k: 1000
+
+annotations_path:
+  senticap: /Users/danielabendavid/data/senticap/annotations
+  flickrstyle10k: /Users/danielabendavid/data/flickrstyle10k/annotations
+
+imgs_path:
+  senticap: /home/nlp/tzufar/data/senticap/images
+  flickrstyle10k: /home/nlp/tzufar/data/flickrstyle10k/images
+
+data_file: #['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
+  senticap:
+  flickrstyle10k: ['flickrstyle10k/annotations/funny_train.txt', 'flickrstyle10k/annotations/romantic_train.txt']
+
+factual_captions_path:
+  senticap: /Users/danielabendavid/data/source/coco/factual_captions.pkl
+  flickrstyle10k:
+

@@ -1,0 +1,166 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.13.7
+    framework: huggingface
+    huggingface_version: 4.25.1
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.9.13
+    start_time: 1673216721.119828
+    t:
+      1:
+      - 1
+      - 5
+      - 11
+      - 41
+      - 49
+      - 53
+      - 55
+      2:
+      - 1
+      - 5
+      - 11
+      - 41
+      - 49
+      - 53
+      - 55
+      3:
+      - 16
+      - 23
+      4: 3.9.13
+      5: 0.13.7
+      6: 4.25.1
+      8:
+      - 5
+batch_size:
+  desc: null
+  value: 16
+best_model_name:
+  desc: null
+  value: best_text_style_embedding_model_senticap.pth
+checkpoints_dir:
+  desc: null
+  value: /Users/danielabendavid/checkpoints
+config_file:
+  desc: null
+  value: ../configs/senticap_config.yaml
+csv_file_name_test:
+  desc: null
+  value: senticap_test.csv
+csv_file_name_train:
+  desc: null
+  value: senticap_train.csv
+data_dir:
+  desc: null
+  value: /Users/danielabendavid/data
+data_file:
+  desc: null
+  value: null
+data_name:
+  desc: null
+  value:
+  - senticap
+desired_labels:
+  desc: null
+  value: all
+epochs:
+  desc: null
+  value: 3
+experiment_name:
+  desc: null
+  value: cur_time
+freeze_after_n_epochs:
+  desc: null
+  value: 3
+hidden_state_to_take:
+  desc: null
+  value: -2
+inner_batch_size:
+  desc: null
+  value: 1
+last_layer_idx_to_freeze:
+  desc: null
+  value: 11
+load_model:
+  desc: null
+  value: false
+lr:
+  desc: null
+  value: 1e-6
+margin:
+  desc: null
+  value: 1.2
+mean_vec_emb_file:
+  desc: null
+  value: senticap_mean_class_embedding.p
+median_vec_emb_file:
+  desc: null
+  value: senticap_median_class_embedding.p
+model_name:
+  desc: null
+  value: latest_text_style_embedding_model_senticap.pth
+num_workers:
+  desc: null
+  value: 10
+override:
+  desc: null
+  value: false
+param_dict:
+  desc: null
+  value:
+    k0: v0
+    k1: v1
+    nested_k:
+      and_so_on: more_values
+      k00: v00
+param_float:
+  desc: null
+  value: 1.0
+param_int:
+  desc: null
+  value: 1
+param_list_of_everything:
+  desc: null
+  value:
+  - a
+  - 1
+  - '1'
+param_str:
+  desc: null
+  value: hi
+plot_only_clustering:
+  desc: null
+  value: false
+results_dir:
+  desc: null
+  value: /Users/danielabendavid/results
+resume:
+  desc: null
+  value: false
+run_id:
+  desc: null
+  value: 0
+tags:
+  desc: null
+  value: null
+tgt_file_pairs_list:
+  desc: null
+  value: senticap_pairs_list.p
+undesired_label:
+  desc: null
+  value: neutral
+visual_csv_file_name_test:
+  desc: null
+  value: visual_senticap_test.csv
+visual_csv_file_name_train:
+  desc: null
+  value: visual_senticap_train.csv
+wandb_mode:
+  desc: null
+  value: online
+weight_decay:
+  desc: null
+  value: 1.0e-05

@@ -1,0 +1,38 @@
+program: model/text_style_embedding.py
+project: text_style_embedding
+method: bayes
+metric:
+  goal: minimize
+  name: val/best_val_all_triplet_loss_avg
+parameters:
+  margin:
+    max: 2
+    min: 0.2
+    distribution: uniform
+  lr:
+    values:
+    - 0.001
+    - 0.0001
+    - 0.00001
+    - 0.000001
+    distribution: categorical
+  hidden_state_to_take:
+    max: -1
+    min: -4
+    distribution: int_uniform
+  last_layer_idx_to_freeze:
+    max: 11
+    min: 0
+    distribution: int_uniform
+  freeze_after_n_epochs:
+    max: 10
+    min: 0
+    distribution: int_uniform
+  scale_noise:
+    values:
+      - 0.16
+      - 0.12
+      - 0.08
+      - 0.04
+      - 0
+    distribution: categorical

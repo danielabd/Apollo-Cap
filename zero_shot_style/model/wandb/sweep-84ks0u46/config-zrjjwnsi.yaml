@@ -1,0 +1,8 @@
+wandb_version: 1
+
+epochs:
+  value: 25
+lr:
+  value: 0.001
+margin:
+  value: 1.4851403889381984
