@@ -110,7 +110,7 @@ def get_hparams(args):
     # update hparams with system args
     # hparams = update_hparams(hparams, args)
     hparams = update_hparams(experiment_config, args)
-    hparams['desired_labels']= hparams['style'] #for adaptance to source code
+    #hparams['desired_labels']= hparams['style'] #for adaptance to source code #todo:check if need it
     if hparams['style'][0] in ['positive', 'negative']:
         hparams['dataset'] = 'senticap'
         hparams['style_type'] = 'roberta'

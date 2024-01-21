@@ -921,9 +921,9 @@ def initial_variables():
     if not os.path.exists(config['experiment_dir']):
         os.makedirs(config['experiment_dir'])
     print('------------------------------------------------------------------------------------------------------')
-    print('Training config:')
-    for k, v in config.items():
-        print(f'{k}: {v}')
+    #print('Training config:')
+    #for k, v in config.items():
+    #    print(f'{k}: {v}')
     print('------------------------------------------------------------------------------------------------------')
     with open(os.path.join(config['experiment_dir'], 'config.pkl'), 'wb') as f:
         pickle.dump(config, f)
