@@ -130,7 +130,7 @@ ce_scale:
   senticap: 4 #1 #0.43 #3.34 #2.2 #- comparison to other baselines
   flickrstyle10k: 3.876555048088627
 clip_scale:
-  senticap: 8 #1.6 #- comparison to other baselines
+  senticap: 1 #8 #1.6 #- comparison to other baselines
   flickrstyle10k: 4.587441437503964
 text_style_scale:
   senticap: 0 #8.7 #- comparison to other baselines
