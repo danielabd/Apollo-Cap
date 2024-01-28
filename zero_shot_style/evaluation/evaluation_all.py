@@ -3,8 +3,8 @@ from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
 from torch import nn
 from transformers import AutoProcessor
-# from transformers import ClapModel #todo: remove comment
-# import librosa #todo:remove comment
+from transformers import ClapModel
+import librosa
 
 import shutil
 import timeit
@@ -76,62 +76,62 @@ class CLIPScoreRef:
         return avg_score, scores_for_all
 
 
-# class CLAPScore: #todo:remove comment
-#     def __init__(self, audio_model_sampling_rate, audio_sampling_rate,audio_path):
-#         self.audio_model_sampling_rate = audio_model_sampling_rate
-#         self.audio_sampling_rate = audio_sampling_rate
-#         self.audio_path = audio_path
-#
-#         self.audio_model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
-#         self.audio_processor = AutoProcessor.from_pretrained("laion/clap-htsat-unfused")
-#         self.device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
-#         self.audio_model.to(self.device)
-#         for param in self.audio_model.parameters():
-#             param.requires_grad = False
-#         self.audio_model.eval()
-#
-#         audio_sample, _ = librosa.load(self.audio_path, sr=self.audio_sampling_rate)
-#         self.audio_sample_resampled = librosa.resample(audio_sample, orig_sr=audio_sampling_rate,
-#                                                        target_sr=self.audio_model_sampling_rate)
-#
-#
-#     def compute_score(self, res):
-#         '''
-#
-#         :param image_path: str full path to the image
-#         :param res: str
-#         :return:
-#         '''
-#         # print("calculate CLAPScore...")
-#         res_val = res
-#         if type(res) == dict:
-#             res_val = [list(res.values())[0][0][:77]]
-#         inputs = self.audio_processor(text=res_val, audios=self.audio_sample_resampled,
-#                                       return_tensors="pt",
-#                                       padding=True,
-#                                       sampling_rate=self.audio_model_sampling_rate)
-#         inputs = inputs.to(self.device)
-#         outputs = self.audio_model(**inputs)
-#         audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
-#         score = audio_similiraties.cpu().numpy()
-#         # print(f'text: {res}')
-#         # print('CLAPScore = %s' % score[0][0])
-#         return score[0][0], [score]
-#     def compute_score_for_list(self, captions):
-#         '''
-#
-#         :param captions: list of text
-#         :return:
-#         '''
-#         inputs = self.audio_processor(text=captions, audios=self.audio_sample_resampled,
-#                                       return_tensors="pt",
-#                                       padding=True,
-#                                       sampling_rate=self.audio_model_sampling_rate)
-#         inputs = inputs.to(self.device)
-#         outputs = self.audio_model(**inputs)
-#         audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
-#         scores = audio_similiraties.cpu().numpy()
-#         return scores
+class CLAPScore:
+    def __init__(self, audio_model_sampling_rate, audio_sampling_rate, audio_path):
+        self.audio_model_sampling_rate = audio_model_sampling_rate
+        self.audio_sampling_rate = audio_sampling_rate
+        self.audio_path = audio_path
+
+        self.audio_model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
+        self.audio_processor = AutoProcessor.from_pretrained("laion/clap-htsat-unfused")
+        self.device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
+        self.audio_model.to(self.device)
+        for param in self.audio_model.parameters():
+            param.requires_grad = False
+        self.audio_model.eval()
+
+        audio_sample, _ = librosa.load(self.audio_path, sr=self.audio_sampling_rate)
+        self.audio_sample_resampled = librosa.resample(audio_sample, orig_sr=audio_sampling_rate,
+                                                       target_sr=self.audio_model_sampling_rate)
+
+    def compute_score(self, res):
+        '''
+
+        :param image_path: str full path to the image
+        :param res: str
+        :return:
+        '''
+        # print("calculate CLAPScore...")
+        res_val = res
+        if type(res) == dict:
+            res_val = [list(res.values())[0][0][:77]]
+        inputs = self.audio_processor(text=res_val, audios=self.audio_sample_resampled,
+                                      return_tensors="pt",
+                                      padding=True,
+                                      sampling_rate=self.audio_model_sampling_rate)
+        inputs = inputs.to(self.device)
+        outputs = self.audio_model(**inputs)
+        audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
+        score = audio_similiraties.cpu().numpy()
+        # print(f'text: {res}')
+        # print('CLAPScore = %s' % score[0][0])
+        return score[0][0], [score]
+
+    def compute_score_for_list(self, captions):
+        '''
+
+        :param captions: list of text
+        :return:
+        '''
+        inputs = self.audio_processor(text=captions, audios=self.audio_sample_resampled,
+                                      return_tensors="pt",
+                                      padding=True,
+                                      sampling_rate=self.audio_model_sampling_rate)
+        inputs = inputs.to(self.device)
+        outputs = self.audio_model(**inputs)
+        audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
+        scores = audio_similiraties.cpu().numpy()
+        return scores
 
 
 class CLIPScore:
@@ -157,6 +157,7 @@ class CLIPScore:
         # print(f'text: {res}')
         # print('CLIPScore = %s' % score[0][0])
         return score[0][0], [score]
+
 
 class STYLE_CLS_ROBERTA:
     def __init__(self, desired_cuda_num, labels_dict_idxs_roberta, data_dir=None, max_batch_size=100):
@@ -202,7 +203,7 @@ class STYLE_CLS_ROBERTA:
         else:
             return preprocess_single_text(text)
 
-    def load_model(self, finetuned_roberta_config,finetuned_roberta_model_path):
+    def load_model(self, finetuned_roberta_config, finetuned_roberta_model_path):
         f_roberta_config = AutoConfig.from_pretrained(finetuned_roberta_config)
         sentiment_model = AutoModelForSequenceClassification.from_pretrained(
             finetuned_roberta_model_path,
@@ -249,9 +250,8 @@ class STYLE_CLS_ROBERTA:
             output = self.sentiment_model(**encoded_input)
             scores = output[0].detach()
             scores1 = nn.functional.softmax(scores, dim=-1)
-            cls_scores = scores1[:,self.labels_dict_idxs_roberta[gt_label]]
+            cls_scores = scores1[:, self.labels_dict_idxs_roberta[gt_label]]
         return cls_scores
-
 
     def compute_score_for_total_data(self, gts, res, dataset_name):
         self.df_test = pd.read_csv(os.path.join(self.data_dir, 'test.csv'))
@@ -330,11 +330,11 @@ class STYLE_CLS:
         :return:
         '''
         with torch.no_grad():
-            if type(gt_label_idx)==type('str'):
+            if type(gt_label_idx) == type('str'):
                 gt_label_idx = self.labels_dict_idxs[gt_label_idx]
             total_outputs = torch.tensor([]).to(self.device)
-            for i in range(round(np.ceil(len(res)/self.max_batch_size))):
-                part_res = res[i*self.max_batch_size:(i+1)*self.max_batch_size]
+            for i in range(round(np.ceil(len(res) / self.max_batch_size))):
+                part_res = res[i * self.max_batch_size:(i + 1) * self.max_batch_size]
                 res_tokens = tokenizer(part_res, padding='max_length', max_length=512, truncation=True,
                                        # todo check if max need to be 40 like in train
                                        return_tensors="pt")
@@ -360,7 +360,8 @@ class STYLE_CLS:
 
 
 class STYLE_CLS_EMOJI:
-    def __init__(self, emoji_vocab_path, maxlen_emoji_sentence, emoji_pretrained_path, idx_emoji_style_dict, use_single_emoji_style, desired_labels):
+    def __init__(self, emoji_vocab_path, maxlen_emoji_sentence, emoji_pretrained_path, idx_emoji_style_dict,
+                 use_single_emoji_style, desired_labels):
         with open(emoji_vocab_path, 'r') as f:
             self.vocabulary = json.load(f)
         self.emoji_st_tokenizer = SentenceTokenizer(self.vocabulary, maxlen_emoji_sentence)
@@ -370,7 +371,6 @@ class STYLE_CLS_EMOJI:
         self.desired_labels = desired_labels
         use_cuda = torch.cuda.is_available()
         self.device = torch.device(f"cuda" if use_cuda else "cpu")
-
 
     def load_model(self, emoji_pretrained_path):
         use_cuda = torch.cuda.is_available()
@@ -396,7 +396,7 @@ class STYLE_CLS_EMOJI:
             tokenized = torch.from_numpy(tokenized.astype(np.int32)).to(self.device)
             emoji_style_probs = torch.tensor(self.emoji_style_model(tokenized))
             ##############
-            #suppose there is only one example
+            # suppose there is only one example
             emoji_style_grades = emoji_style_probs[:, self.idx_emoji_style_dict[gt_label]].sum(-1)
             cls_score = emoji_style_grades
             # emoji_style_grades_normalized = emoji_style_grades / torch.sum(emoji_style_grades) # for several examples
@@ -435,6 +435,7 @@ class STYLE_CLS_EMOJI:
         total_acc_test_for_all_data = evaluate_text_style_classification(self.model[dataset_name], self.df_test,
                                                                          self.labels_dict_idxs, self.desired_cuda_num)
         return total_acc_test_for_all_data, None
+
 
 class Fluency:
     def __init__(self):
@@ -528,20 +529,20 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
         text_generator = CLIPTextGenerator(cuda_idx=cuda_idx, config=config)
     if 'style_classification' in metrics:
         style_cls_obj = STYLE_CLS(txt_cls_model_paths_to_load, cuda_idx, labels_dict_idxs, data_dir,
-                                                config['hidden_state_to_take_txt_cls'])
+                                  config['hidden_state_to_take_txt_cls'])
         print(f"style_cls_obj = STYLE_CLS")
     if 'style_classification_emoji' in config['metrics']:
         style_cls_emoji_obj = STYLE_CLS_EMOJI(config['emoji_vocab_path'], config['maxlen_emoji_sentence'],
-                                                      config['emoji_pretrained_path'], config['idx_emoji_style_dict'], config['use_single_emoji_style'], config['desired_labels'])
+                                              config['emoji_pretrained_path'], config['idx_emoji_style_dict'],
+                                              config['use_single_emoji_style'], config['desired_labels'])
     if 'style_classification_roberta' in config['metrics']:
         style_cls_obj = STYLE_CLS_ROBERTA(cuda_idx, config['labels_dict_idxs_roberta'], data_dir)
         print(f"style_cls_obj = STYLE_CLS_ROBERTA")
 
-
     if 'fluency' in metrics:
         fluency_obj = Fluency()
     all_scores = {}
-    #go over all experiements
+    # go over all experiements
     for test_name in res:
         print(f"Calc scores for experiment: **** {test_name} *****")
         t1_exp = timeit.default_timer();
@@ -557,7 +558,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
             print(f"    Calc scores for metric: ***{metric}***")
             t1_metric = timeit.default_timer();
             if metric == 'CLAPScore':
-                scorer = CLAPScore(config['audio_model_sampling_rate'], config['audio_sampling_rate'],config['audio_path'])
+                scorer = CLAPScore(config['audio_model_sampling_rate'], config['audio_sampling_rate'],
+                                   config['audio_path'])
             if metric == 'bleu1':
                 scorer = Bleu(n=1)
             if metric == 'bleu3':
@@ -599,11 +601,12 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                 if k not in gts_per_data_set:
                     continue
                 if True:
-                # if k in gts_per_data_set:
+                    # if k in gts_per_data_set:
                     score_dict_per_metric[metric][k] = {}
                     scores_dict_per_metric[metric][k] = {}
                     for i2, style in enumerate(styles):
-                        if style == 'factual' and (metric == 'style_classification' or metric == 'style_classification_roberta'):
+                        if style == 'factual' and (
+                                metric == 'style_classification' or metric == 'style_classification_roberta'):
                             continue
                         # if style in gts_per_data_set[k] and style in res[test_name][k]:
                         if style in res[test_name][k]:
@@ -627,7 +630,8 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                 all_scores = save_all_data_k(all_scores, k, test_name, style, metric,
                                                              score_dict_per_metric, res=tmp_res[k][0],
                                                              image_path=gts_per_data_set[k]['image_path'])
-                            elif metric in ['style_classification','style_classification_roberta', 'style_classification_emoji']:
+                            elif metric in ['style_classification', 'style_classification_roberta',
+                                            'style_classification_emoji']:
                                 score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
                                     style] = scorer.compute_score(tmp_res, style)
                                 score_per_metric_and_style[metric][style].append(
@@ -640,7 +644,7 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                                     continue
                                 scorer.add_test(tmp_res, metric, k, style)
                             else:
-                                if gts_per_data_set[k][style]==[]:
+                                if gts_per_data_set[k][style] == []:
                                     continue
                                 tmp_gts = {k: gts_per_data_set[k][style]}
                                 score_dict_per_metric[metric][k][style], scores_dict_per_metric[metric][k][
@@ -661,25 +665,28 @@ def calc_score(gts_per_data_set, res, styles, metrics, cuda_idx, data_dir, txt_c
                 if metric == 'fluency':
                     mean_score_per_metric_and_style[metric][style] = np.mean(score_per_metric_and_style[metric][style])
                     std_score_per_metric_and_style[metric][style] = np.std(score_per_metric_and_style[metric][style])
-                    median_score_per_metric_and_style[metric][style] = np.median(score_per_metric_and_style[metric][style])
+                    median_score_per_metric_and_style[metric][style] = np.median(
+                        score_per_metric_and_style[metric][style])
                 else:
                     try:
                         mean_score_per_metric_and_style[metric][style] = np.mean(
-                        score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
+                            score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
                         std_score_per_metric_and_style[metric][style] = np.std(
-                        score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
+                            score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
                         median_score_per_metric_and_style[metric][style] = np.median(
-                        score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
+                            score_per_metric_and_style[metric][style]) * NORMALIZE_GRADE_SCALE
 
                     except:
                         mean_score_per_metric_and_style[metric][style] = np.mean([s[0].cpu() for s in
-                            score_per_metric_and_style[metric][style]]) * NORMALIZE_GRADE_SCALE
+                                                                                  score_per_metric_and_style[metric][
+                                                                                      style]]) * NORMALIZE_GRADE_SCALE
                         std_score_per_metric_and_style[metric][style] = np.std([s[0].cpu() for s in
-                                                                                  score_per_metric_and_style[metric][
-                                                                                      style]]) * NORMALIZE_GRADE_SCALE
+                                                                                score_per_metric_and_style[metric][
+                                                                                    style]]) * NORMALIZE_GRADE_SCALE
                         median_score_per_metric_and_style[metric][style] = np.median([s[0].cpu() for s in
-                                                                                  score_per_metric_and_style[metric][
-                                                                                      style]]) * NORMALIZE_GRADE_SCALE
+                                                                                      score_per_metric_and_style[
+                                                                                          metric][
+                                                                                          style]]) * NORMALIZE_GRADE_SCALE
                 print(
                     f"mean_score_per_metric_and_style[metric][{style}] = {mean_score_per_metric_and_style[metric][style]},\
                     std_score_per_metric_and_style[metric][{style}] = {std_score_per_metric_and_style[metric][style]},\
@@ -731,7 +738,7 @@ def meteor(gts, res):
     score, scores = scorer.compute_score(gts, res)
     print('meter = %s' % score)
     return score
-    
+
 def spice(gts, res):
     print("Calculate spice score...")
     scorer = Spice()
@@ -783,19 +790,20 @@ def get_all_sentences(data_dir, dataset_name, type_set):
     return sentences
 
 
-def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None, max_num_imgs2test=-1,imgs2test_list=[]):
+def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None, max_num_imgs2test=-1,
+                 imgs2test_list=[]):
     '''
     :param annotations_path: dictionary:keys=dataset names, values=path to pickle file
     factual_captions: need to b none for flickrstyle10k
     :return: gts_per_data_set: key=img_name,values=dict:keys=['image_path','factual','humor','romantic','positive','negative'], values=gt text
     '''
     gts = {}
-    with open(os.path.join(annotations_path,data_split+'.pkl'), 'rb') as r:
+    with open(os.path.join(annotations_path, data_split + '.pkl'), 'rb') as r:
         data = pickle.load(r)
     # import random
     # print(random.sample(list(data.keys()), 20))
     for k in data:
-        if len(imgs2test_list)>0 and k not in imgs2test_list:
+        if len(imgs2test_list) > 0 and k not in imgs2test_list:
             continue
         gts[k] = {}
         if factual_captions:
@@ -814,7 +822,6 @@ def get_gts_data(annotations_path, imgs_path, data_split, factual_captions=None,
     return gts
 
 
-
 def get_res_data_GPT(res_paths):
     '''
 
@@ -823,8 +830,8 @@ def get_res_data_GPT(res_paths):
     '''
     res_data_per_test_source = {}
     res_data_per_test_gpt = {}
-    i = 1 #0 - idx_img_name_in_res
-    j = 2 # caption res in column idx=2
+    i = 1  # 0 - idx_img_name_in_res
+    j = 2  # caption res in column idx=2
     idxs_source = []
     idxs_gpt = []
     for test_name in res_paths:
@@ -838,9 +845,9 @@ def get_res_data_GPT(res_paths):
             title = True
             styles = []
             for row in spamreader:
-                if row[1]=='':
+                if row[1] == '':
                     continue
-                if row[0]=='gpt':
+                if row[0] == 'gpt':
                     s_row = row.copy()
                     row[1] = s_row[1].split(' ')[0]
                     row[2] = s_row[1].split(' - ')[1]
@@ -851,11 +858,11 @@ def get_res_data_GPT(res_paths):
                 if 'COCO' in k:
                     k = k.split('_')[-1]
                 try:
-                    k = int(k)  
+                    k = int(k)
                 except:
                     pass
                 if title:
-                    if row[1]=='factual':
+                    if row[1] == 'factual':
                         i = 0
                         j = 1
                     try:
@@ -863,7 +870,7 @@ def get_res_data_GPT(res_paths):
                         j = row.index('img_num') + 1
                     except:
                         pass
-                    styles = row[i+1:]
+                    styles = row[i + 1:]
                     styles.remove('')
                     title = False
                     continue
@@ -882,7 +889,7 @@ def get_res_data_GPT(res_paths):
                             for i_s, s in enumerate(styles):
                                 # res_data[k][s] = row[i+1]
                                 # limit sentence to target_seq_length as we create in ZeroStyleCap
-                                if row[i_s + j]=="":
+                                if row[i_s + j] == "":
                                     continue
                                 res_data_gpt[k][s] = ' '.join(row[i_s + j].split()[:target_seq_length])
                     except:
@@ -905,10 +912,10 @@ def get_res_data(res_paths, dataset):
     :return: res_data_per_test: dict. keys:  'prompt_manipulation', 'image_manipulation'. values: dict to res per image name and style
     '''
     res_data_per_test = {}
-    i = 1 #0 - idx_img_name_in_res
-    j = 2 # caption res in column idx=2
+    i = 1  # 0 - idx_img_name_in_res
+    j = 2  # caption res in column idx=2
     keys2test = []
-    for test_name_i,test_name in enumerate(res_paths):
+    for test_name_i, test_name in enumerate(res_paths):
         if test_name.startswith('capdec'):
             i = 0
             j = 1
@@ -917,12 +924,12 @@ def get_res_data(res_paths, dataset):
         encoding_options = ['utf-8', 'latin-1', 'cp1252']
         for encoding in encoding_options:
             try:
-                with open(res_paths[test_name], 'r',encoding=encoding) as csvfile:
+                with open(res_paths[test_name], 'r', encoding=encoding) as csvfile:
                     csv_reader = csv.reader(csvfile)
                     title = True
                     styles = []
-                    for r_i,row in enumerate(csv_reader):
-                        if r_i==0:
+                    for r_i, row in enumerate(csv_reader):
+                        if r_i == 0:
                             title_row = row
                         if '.jpg' in row[i]:
                             k = row[i].split('.jpg')[0]
@@ -936,7 +943,7 @@ def get_res_data(res_paths, dataset):
                         except:
                             pass
                         if title:
-                            if row[1]=='factual':
+                            if row[1] == 'factual':
                                 i = 0
                                 j = 1
                             try:
@@ -944,7 +951,7 @@ def get_res_data(res_paths, dataset):
                                 j = row.index('img_num') + 1
                             except:
                                 pass
-                            styles = row[i+1:]
+                            styles = row[i + 1:]
                             title = False
                             continue
                         else:
@@ -1000,7 +1007,8 @@ def write_results_for_all_frames(all_scores, tgt_eval_results_path_for_all_frame
     print(f"finished to write results for all frames in {tgt_eval_results_path_for_all_frames}")
 
 
-def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, vocab_size,  std_score = None, median_score=None):
+def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, vocab_size, std_score=None,
+                  median_score=None):
     print(f"Write results to {tgt_eval_results_path}...")
     with open(tgt_eval_results_path, 'w') as results_file:
         writer = csv.writer(results_file)
@@ -1021,17 +1029,17 @@ def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, v
         avg_metric_std = {}
         avg_metric_median = {}
         metrics.append("diversity-vocab_size")
-        for test_name in mean_score: #go over each experiement
-            row = [test_name] #first column
+        for test_name in mean_score:  # go over each experiement
+            row = [test_name]  # first column
             for style in styles:
                 for metric in metrics:
                     if test_name.startswith('capdec') and style not in vocab_size[test_name]:
                         continue
-                    if metric=="diversity-vocab_size" or not np.isnan(mean_score[test_name][metric][style]):
+                    if metric == "diversity-vocab_size" or not np.isnan(mean_score[test_name][metric][style]):
                         if title:
-                            dataset_row.append(dataset+'-avg')
-                            style_row.append(style+'-avg')
-                            metrics_row.append(metric+'-avg')
+                            dataset_row.append(dataset + '-avg')
+                            style_row.append(style + '-avg')
+                            metrics_row.append(metric + '-avg')
                             if metric != "diversity-vocab_size":
                                 dataset_row.append(dataset)
                                 dataset_row.append(dataset)
@@ -1041,7 +1049,7 @@ def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, v
                                 metrics_row.append(metric + '-median')
                         if metric == "diversity-vocab_size":
                             row.append(vocab_size[test_name][style])
-                        else: # append score values
+                        else:  # append score values
                             row.append(mean_score[test_name][metric][style])
                             row.append(std_score[test_name][metric][style])
                             row.append(median_score[test_name][metric][style])
@@ -1054,7 +1062,7 @@ def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, v
                                 val_for_metric_median = median_score[test_name][metric][style]
                                 avg_metric_std[metric] = [val_for_metric_std]  # list for total avg over styles
                                 avg_metric_median[metric] = [val_for_metric_median]  # list for total avg over styles
-                            avg_metric[metric] = [val_for_metric] #list for total avg over styles
+                            avg_metric[metric] = [val_for_metric]  # list for total avg over styles
                         else:
                             if metric == "diversity-vocab_size":
                                 val_for_metric = vocab_size[test_name][style]
@@ -1071,11 +1079,11 @@ def write_results(mean_score, tgt_eval_results_path, dataset, metrics, styles, v
             for m in avg_metric:
                 if m != "diversity-vocab_size":
                     if title:
-                        dataset_row.extend(['total avg.']*3)
-                        style_row.extend(['total avg.']*3)
+                        dataset_row.extend(['total avg.'] * 3)
+                        style_row.extend(['total avg.'] * 3)
                         metrics_row.append(m)
-                        metrics_row.append(m+'-std')
-                        metrics_row.append(m+'-median')
+                        metrics_row.append(m + '-std')
+                        metrics_row.append(m + '-median')
                     row.append(np.mean(avg_metric[m]))
                     row.append(np.mean(avg_metric_std[m]))
                     row.append(np.mean(avg_metric_median[m]))
@@ -1224,9 +1232,10 @@ def get_args():
     args = parser.parse_args()
     return args
 
+
 def get_final_results():
-    #24/4/23 results from 23.3.23:
-    #senticap:
+    # 24/4/23 results from 23.3.23:
+    # senticap:
     log_prompt_manipulation = "senticap_prompt_manipulation_debug.txt"
     prompt_manipulation = "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss/25_03_2023/d4jnwh7t-copper-cherry-13/results_23_36_32__25_03_2023.csv"
 
@@ -1240,48 +1249,51 @@ def get_final_results():
     zerostylecap = "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/senticap_ZeroStyleCap_embed_debug_loss/23_03_2023/xuk6u1fz-eternal-night-7/results_21_29_00__23_03_2023.csv"
 
     # flickrstyle10k:
-    log_prompt_manipulation = ["flickr_prompt_manipulation_debug_25_3_23.txt",\
-                               "flickr_prompt_manipulation_debug_29_3_23_v0.txt",\
-                           "flickr_prompt_manipulation_debug_29_3_23_v1.txt",\
-                           "flickr_prompt_manipulation_debug_29_3_23_v2.txt",\
-                           "flickr_prompt_manipulation_debug_29_3_23_v3.txt",\
-                           "flickr_prompt_manipulation_debug_25_3_23_v2.txt"]
-    prompt_manipulation = ["/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/n1knhbfh-dainty-cosmos-50/results_23_46_15__25_03_2023.csv",\
-                           "home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/j8pq7aru-bright-bee-60/results_12_49_19__29_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/1m1aqhch-azure-leaf-59/results_12_49_19__29_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/mt0pvyea-upbeat-vortex-61/results_12_49_29__29_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/chp8yi87-ancient-fire-62/results_12_49_53__29_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/19i488ig-ancient-brook-51/results_23_47_58__25_03_2023.csv"]
+    log_prompt_manipulation = ["flickr_prompt_manipulation_debug_25_3_23.txt", \
+                               "flickr_prompt_manipulation_debug_29_3_23_v0.txt", \
+                               "flickr_prompt_manipulation_debug_29_3_23_v1.txt", \
+                               "flickr_prompt_manipulation_debug_29_3_23_v2.txt", \
+                               "flickr_prompt_manipulation_debug_29_3_23_v3.txt", \
+                               "flickr_prompt_manipulation_debug_25_3_23_v2.txt"]
+    prompt_manipulation = [
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/n1knhbfh-dainty-cosmos-50/results_23_46_15__25_03_2023.csv", \
+        "home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/j8pq7aru-bright-bee-60/results_12_49_19__29_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/1m1aqhch-azure-leaf-59/results_12_49_19__29_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/mt0pvyea-upbeat-vortex-61/results_12_49_29__29_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/29_03_2023/chp8yi87-ancient-fire-62/results_12_49_53__29_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/19i488ig-ancient-brook-51/results_23_47_58__25_03_2023.csv"]
 
-    log_image_manipulation = ["flickr_image_manipulation_debug_25_3_23_v0.txt",\
-                           "flickr_image_manipulation_debug_25_3_23_v1.txt",\
-                           "flickr_image_manipulation_debug_25_3_23_v2.txt"]
-    image_manipulation = ["/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/k350v2ad-sandy-grass-56/results_23_58_20__25_03_2023.csv",\
-                           "home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/pbdt09l9-fast-eon-57/results_23_59_05__25_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/26_03_2023/bc466z75-sage-grass-58/results_00_00_40__26_03_2023.csv"]
+    log_image_manipulation = ["flickr_image_manipulation_debug_25_3_23_v0.txt", \
+                              "flickr_image_manipulation_debug_25_3_23_v1.txt", \
+                              "flickr_image_manipulation_debug_25_3_23_v2.txt"]
+    image_manipulation = [
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/k350v2ad-sandy-grass-56/results_23_58_20__25_03_2023.csv", \
+        "home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/pbdt09l9-fast-eon-57/results_23_59_05__25_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/26_03_2023/bc466z75-sage-grass-58/results_00_00_40__26_03_2023.csv"]
 
-    log_image_an_prompt_manipulation = ["flickr_image_and_prompt_manipulation_debug_25_3_23_v0.txt",\
-                           "flickr_image_and_prompt_manipulation_debug_25_3_23_v1.txt",\
-                           "flickr_image_and_prompt_manipulation_debug_25_3_23_v2.txt"]
-    image_an_prompt_manipulation = ["/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/l00kj482-rural-cloud-52/results_23_50_52__25_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/3b5cwh3h-comic-bush-54/results_23_54_41__25_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/9olhnst5-electric-terrain-55/results_23_55_39__25_03_2023.csv"]
+    log_image_an_prompt_manipulation = ["flickr_image_and_prompt_manipulation_debug_25_3_23_v0.txt", \
+                                        "flickr_image_and_prompt_manipulation_debug_25_3_23_v1.txt", \
+                                        "flickr_image_and_prompt_manipulation_debug_25_3_23_v2.txt"]
+    image_an_prompt_manipulation = [
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/l00kj482-rural-cloud-52/results_23_50_52__25_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/3b5cwh3h-comic-bush-54/results_23_54_41__25_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/25_03_2023/9olhnst5-electric-terrain-55/results_23_55_39__25_03_2023.csv"]
 
-    log_zerostylecap = ["debug_loss_flickr_23_2_v0.txt",\
-                           "debug_loss_flickr_23_2_v1.txt",\
-                           "debug_loss_flickr_23_2_v3.txt",\
-                           "debug_loss_flickr_23_2_v4.txt",\
-                           "debug_loss_flickr_23_2_v5.txt",\
-                           "debug_loss_flickr_23_2_v6.txt",\
-                           "debug_loss_flickr_23_2_v7.txt"]
-    zerostylecap = ["/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/az2h2lu8-lucky-night-34/results_13_37_13__23_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/l8ep47kj-graceful-water-33/results_13_32_30__23_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/zm963t5c-iconic-pyramid-47/results_21_40_14__23_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/rakysj3j-firm-water-45/results_21_35_24__23_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/i3x63emn-unique-universe-49/results_21_52_42__23_03_2023.csv",\
-                           "home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/kc5j6ra3-young-shape-43/results_13_44_10__23_03_2023.csv",\
-                           "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/nucvqzc2-divine-serenity-44/results_13_44_14__23_03_2023.csv"]
-
+    log_zerostylecap = ["debug_loss_flickr_23_2_v0.txt", \
+                        "debug_loss_flickr_23_2_v1.txt", \
+                        "debug_loss_flickr_23_2_v3.txt", \
+                        "debug_loss_flickr_23_2_v4.txt", \
+                        "debug_loss_flickr_23_2_v5.txt", \
+                        "debug_loss_flickr_23_2_v6.txt", \
+                        "debug_loss_flickr_23_2_v7.txt"]
+    zerostylecap = [
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/az2h2lu8-lucky-night-34/results_13_37_13__23_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/l8ep47kj-graceful-water-33/results_13_32_30__23_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/zm963t5c-iconic-pyramid-47/results_21_40_14__23_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/rakysj3j-firm-water-45/results_21_35_24__23_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/i3x63emn-unique-universe-49/results_21_52_42__23_03_2023.csv", \
+        "home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/kc5j6ra3-young-shape-43/results_13_44_10__23_03_2023.csv", \
+        "/home/nlp/tzufar/experiments/stylized_zero_cap_experiments/flickrstyle10k_ZeroStyleCap_embed/23_03_2023/nucvqzc2-divine-serenity-44/results_13_44_14__23_03_2023.csv"]
 
 
 def main():
@@ -1289,7 +1301,7 @@ def main():
     args = get_args()
     config = get_hparams(args)
 
-    if config['dataset']=='flickrstyle10k':
+    if config['dataset'] == 'flickrstyle10k':
         imgs2test_path = '/Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/imgs2test.csv'
         imgs2test_path_fixed = replace_user_home_dir(imgs2test_path)
         imgs2test = pd.read_csv(imgs2test_path_fixed)
@@ -1308,59 +1320,59 @@ def main():
     else:
         factual_captions = None
     gts_per_data_set = get_gts_data(config['annotations_path'], config['imgs_path'], config['data_split'],
-                                    factual_captions, config['max_num_imgs2test'],imgs2test_list=imgs2test_list)
+                                    factual_captions, config['max_num_imgs2test'], imgs2test_list=imgs2test_list)
 
-    res_data_per_test = get_res_data(config['res_path2eval'],config['dataset'])
-    desired= [13783
-,20069
-,64146
-,68745
-,71738
-,74629
-,81594
-,88162
-,96351
-,141760
-,146123
-,151896
-,153392
-,155617
-,160531
-,179930
-,183287
-,184606
-,196699
-,202880
-,210221
-,217303
-,241668
-,247639
-,269975
-,295656
-,340844
-,344003
-,347529
-,360818
-,361245
-,374061
-,392687
-,399384
-,404655
-,406591
-,424842
-,449190
-,461839
-,478404
-,478798
-,480793
-,504732
-,522427
-,526044
-,532295
-,544065
-,547258
-,554037
-,577169]
+    res_data_per_test = get_res_data(config['res_path2eval'], config['dataset'])
+    desired = [13783
+        , 20069
+        , 64146
+        , 68745
+        , 71738
+        , 74629
+        , 81594
+        , 88162
+        , 96351
+        , 141760
+        , 146123
+        , 151896
+        , 153392
+        , 155617
+        , 160531
+        , 179930
+        , 183287
+        , 184606
+        , 196699
+        , 202880
+        , 210221
+        , 217303
+        , 241668
+        , 247639
+        , 269975
+        , 295656
+        , 340844
+        , 344003
+        , 347529
+        , 360818
+        , 361245
+        , 374061
+        , 392687
+        , 399384
+        , 404655
+        , 406591
+        , 424842
+        , 449190
+        , 461839
+        , 478404
+        , 478798
+        , 480793
+        , 504732
+        , 522427
+        , 526044
+        , 532295
+        , 544065
+        , 547258
+        , 554037
+        , 577169]
     current = list(res_data_per_test['audio'].keys())
     comp = []
     for i in current:
@@ -1370,19 +1382,22 @@ def main():
     print(f"run over {len(list(res_data_per_test['audio'].keys()))} images.")
     print(f"imgs are:{list(res_data_per_test['audio'].keys())}")
     if True:
-    # #todo: remove
-    # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
-    # res_data_per_test_source, res_data_per_test_gpt = get_res_data_GPT(config['res_path2eval'])
-    # for res_data_idx, res_data_per_test in enumerate([res_data_per_test_source, res_data_per_test_gpt]):
-    #     if res_data_idx == 0:
-    #         prefix_file_name = 'source_'
-    #     elif res_data_idx == 1:
-    #         prefix_file_name = 'gpt_'
+        # #todo: remove
+        # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
+        # res_data_per_test_source, res_data_per_test_gpt = get_res_data_GPT(config['res_path2eval'])
+        # for res_data_idx, res_data_per_test in enumerate([res_data_per_test_source, res_data_per_test_gpt]):
+        #     if res_data_idx == 0:
+        #         prefix_file_name = 'source_'
+        #     elif res_data_idx == 1:
+        #         prefix_file_name = 'gpt_'
         # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
         # exit(0)
-        mean_score, all_scores, std_score, median_score = calc_score(gts_per_data_set, res_data_per_test, config['styles'], config['metrics'],
-                                            config['cuda_idx'], data_dir, config['txt_cls_model_paths'],
-                                            config['labels_dict_idxs'], gt_imgs_for_test, config)
+        mean_score, all_scores, std_score, median_score = calc_score(gts_per_data_set, res_data_per_test,
+                                                                     config['styles'], config['metrics'],
+                                                                     config['cuda_idx'], data_dir,
+                                                                     config['txt_cls_model_paths'],
+                                                                     config['labels_dict_idxs'], gt_imgs_for_test,
+                                                                     config)
 
         vocab_size = diversitiy(res_data_per_test, gts_per_data_set)
         # analyze_fluency(all_scores,config)
@@ -1390,21 +1405,27 @@ def main():
         for test_name in res_data_per_test:
             for metric in config['metrics']:
                 for style in config['styles']:
-                    print(f"{test_name}: {config['dataset']}: {metric} mean score for {style} = {mean_score[test_name][metric][style]}")
-                    print(f"{test_name}: {config['dataset']}: {metric} std score for {style} = {std_score[test_name][metric][style]}")
-                    print(f"{test_name}: {config['dataset']}: {metric} median score for {style} = {median_score[test_name][metric][style]}")
+                    print(
+                        f"{test_name}: {config['dataset']}: {metric} mean score for {style} = {mean_score[test_name][metric][style]}")
+                    print(
+                        f"{test_name}: {config['dataset']}: {metric} std score for {style} = {std_score[test_name][metric][style]}")
+                    print(
+                        f"{test_name}: {config['dataset']}: {metric} median score for {style} = {median_score[test_name][metric][style]}")
         for test_name in res_data_per_test:
             print(f'Vocabulary size for experiment {test_name} dataset is {vocab_size[test_name]}')
 
         test_name = list(config['res_path2eval'].values())[0].rsplit('/', 1)[1]
         tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-                                                  config['tgt_eval_results_file_name'].split('.')[0]+'_'+'_'.join(config['styles'])+'_'+test_name)
+                                                  config['tgt_eval_results_file_name'].split('.')[0] + '_' + '_'.join(
+                                                      config['styles']) + '_' + test_name)
         tgt_eval_results_file_name_for_all_frames = os.path.join(
             list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-            config['tgt_eval_results_file_name_for_all_frames'].split('.')[0]+'_'+test_name+'_'+'_'.join(config['styles']))
+            config['tgt_eval_results_file_name_for_all_frames'].split('.')[0] + '_' + test_name + '_' + '_'.join(
+                config['styles']))
 
         print(f"finished to evaluat on {len(all_scores)} images.")
-        write_results(mean_score, tgt_eval_results_file_name, config['dataset'], config['metrics'].copy(), config['styles'],
+        write_results(mean_score, tgt_eval_results_file_name, config['dataset'], config['metrics'].copy(),
+                      config['styles'],
                       vocab_size, std_score, median_score)
         write_results_for_all_frames(all_scores, tgt_eval_results_file_name_for_all_frames, config['metrics'])
 
