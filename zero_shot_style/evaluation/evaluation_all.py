@@ -3,8 +3,8 @@ from torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchmoji.model_def import torchmoji_emojis
 from torch import nn
 from transformers import AutoProcessor
-from transformers import ClapModel
-import librosa
+# from transformers import ClapModel #todo: remove comment
+# import librosa #todo:remove comment
 
 import shutil
 import timeit
@@ -76,62 +76,62 @@ class CLIPScoreRef:
         return avg_score, scores_for_all
 
 
-class CLAPScore:
-    def __init__(self, audio_model_sampling_rate, audio_sampling_rate,audio_path):
-        self.audio_model_sampling_rate = audio_model_sampling_rate
-        self.audio_sampling_rate = audio_sampling_rate
-        self.audio_path = audio_path
-
-        self.audio_model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
-        self.audio_processor = AutoProcessor.from_pretrained("laion/clap-htsat-unfused")
-        self.device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
-        self.audio_model.to(self.device)
-        for param in self.audio_model.parameters():
-            param.requires_grad = False
-        self.audio_model.eval()
-
-        audio_sample, _ = librosa.load(self.audio_path, sr=self.audio_sampling_rate)
-        self.audio_sample_resampled = librosa.resample(audio_sample, orig_sr=audio_sampling_rate,
-                                                       target_sr=self.audio_model_sampling_rate)
-
-
-    def compute_score(self, res):
-        '''
-
-        :param image_path: str full path to the image
-        :param res: str
-        :return:
-        '''
-        # print("calculate CLAPScore...")
-        res_val = res
-        if type(res) == dict:
-            res_val = [list(res.values())[0][0][:77]]
-        inputs = self.audio_processor(text=res_val, audios=self.audio_sample_resampled,
-                                      return_tensors="pt",
-                                      padding=True,
-                                      sampling_rate=self.audio_model_sampling_rate)
-        inputs = inputs.to(self.device)
-        outputs = self.audio_model(**inputs)
-        audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
-        score = audio_similiraties.cpu().numpy()
-        # print(f'text: {res}')
-        # print('CLAPScore = %s' % score[0][0])
-        return score[0][0], [score]
-    def compute_score_for_list(self, captions):
-        '''
-
-        :param captions: list of text
-        :return:
-        '''
-        inputs = self.audio_processor(text=captions, audios=self.audio_sample_resampled,
-                                      return_tensors="pt",
-                                      padding=True,
-                                      sampling_rate=self.audio_model_sampling_rate)
-        inputs = inputs.to(self.device)
-        outputs = self.audio_model(**inputs)
-        audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
-        scores = audio_similiraties.cpu().numpy()
-        return scores
+# class CLAPScore: #todo:remove comment
+#     def __init__(self, audio_model_sampling_rate, audio_sampling_rate,audio_path):
+#         self.audio_model_sampling_rate = audio_model_sampling_rate
+#         self.audio_sampling_rate = audio_sampling_rate
+#         self.audio_path = audio_path
+#
+#         self.audio_model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
+#         self.audio_processor = AutoProcessor.from_pretrained("laion/clap-htsat-unfused")
+#         self.device = f"cuda" if torch.cuda.is_available() else "cpu"  # todo: change
+#         self.audio_model.to(self.device)
+#         for param in self.audio_model.parameters():
+#             param.requires_grad = False
+#         self.audio_model.eval()
+#
+#         audio_sample, _ = librosa.load(self.audio_path, sr=self.audio_sampling_rate)
+#         self.audio_sample_resampled = librosa.resample(audio_sample, orig_sr=audio_sampling_rate,
+#                                                        target_sr=self.audio_model_sampling_rate)
+#
+#
+#     def compute_score(self, res):
+#         '''
+#
+#         :param image_path: str full path to the image
+#         :param res: str
+#         :return:
+#         '''
+#         # print("calculate CLAPScore...")
+#         res_val = res
+#         if type(res) == dict:
+#             res_val = [list(res.values())[0][0][:77]]
+#         inputs = self.audio_processor(text=res_val, audios=self.audio_sample_resampled,
+#                                       return_tensors="pt",
+#                                       padding=True,
+#                                       sampling_rate=self.audio_model_sampling_rate)
+#         inputs = inputs.to(self.device)
+#         outputs = self.audio_model(**inputs)
+#         audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
+#         score = audio_similiraties.cpu().numpy()
+#         # print(f'text: {res}')
+#         # print('CLAPScore = %s' % score[0][0])
+#         return score[0][0], [score]
+#     def compute_score_for_list(self, captions):
+#         '''
+#
+#         :param captions: list of text
+#         :return:
+#         '''
+#         inputs = self.audio_processor(text=captions, audios=self.audio_sample_resampled,
+#                                       return_tensors="pt",
+#                                       padding=True,
+#                                       sampling_rate=self.audio_model_sampling_rate)
+#         inputs = inputs.to(self.device)
+#         outputs = self.audio_model(**inputs)
+#         audio_similiraties = (outputs.audio_embeds @ outputs.text_embeds.T)
+#         scores = audio_similiraties.cpu().numpy()
+#         return scores
 
 
 class CLIPScore:
