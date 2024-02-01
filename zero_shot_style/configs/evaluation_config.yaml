@@ -8,6 +8,7 @@ metrics:
   senticap: [CLAPScore, CLIPScore, fluency]
   flickrstyle10k: [CLIPScore, style_classification_emoji, fluency]
 style: ['negative']
+styles: ['negative']`
 
 ###audio
 use_audio_model: True
