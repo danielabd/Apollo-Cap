@@ -683,7 +683,7 @@ def main():
     # dataset = 'flickrstyle10k' #'senticap'
     dataset = 'senticap' #'senticap'
     test_split = 'test' #'test'
-    merge_dirs = True
+    merge_dirs = False
     merge_res_of_sweep = False
 
     if merge_dirs:
@@ -707,6 +707,7 @@ def main():
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_roberta_mul_v1_neg_test/26_07_2023/tmp'
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/audio/StylizedZeroCap_audio_crying_kids1/23_09_2023/tmp'
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/audio/StylizedZeroCap_audio_laughter_kids1/23_09_2023/tmp'
+        dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test/30_01_2024/tmp/tmp'
 
         file_list = [os.path.join(dir_files,f) for f in os.listdir(dir_files) if f.endswith('.csv') and f.startswith('results')]
         tgt_path = os.path.join(dir_files,'total_results_text_style_tmp.csv')

@@ -24,7 +24,9 @@ desired_labels:
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 res_path2eval:
   senticap:
-    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_sw_f_zerocap/28_09_2023/total_results_text_style_28_09_2023.csv
+#    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_sw_f_zerocap/28_09_2023/total_results_text_style_28_09_2023.csv
+    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test/30_01_2024/tmp/tmp/total_results_text_style_tmp.csv
+
   flickrstyle10k:
     mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v2_romantic_test/total_results_text_style_StylizedZeroCap_mul_clip_style_v2_romantic_test.csv
 
