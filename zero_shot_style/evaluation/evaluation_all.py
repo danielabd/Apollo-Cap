@@ -1420,8 +1420,8 @@ def main():
                                                       config['styles']) + '_' + test_name)
         tgt_eval_results_file_name_for_all_frames = os.path.join(
             list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
-            config['tgt_eval_results_file_name_for_all_frames'].split('.')[0] + '_' + test_name + '_' + '_'.join(
-                config['styles']))
+            config['tgt_eval_results_file_name_for_all_frames'].split('.')[0] + '_' + test_name[:test_name.find(".csv")] + '_' + '_'.join(
+                config['styles'])) + '_' + '.csv'
 
         print(f"finished to evaluat on {len(all_scores)} images.")
         write_results(mean_score, tgt_eval_results_file_name, config['dataset'], config['metrics'].copy(),
