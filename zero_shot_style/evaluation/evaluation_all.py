@@ -1323,64 +1323,65 @@ def main():
                                     factual_captions, config['max_num_imgs2test'], imgs2test_list=imgs2test_list)
 
     res_data_per_test = get_res_data(config['res_path2eval'], config['dataset'])
-    desired = [13783
-        , 20069
-        , 64146
-        , 68745
-        , 71738
-        , 74629
-        , 81594
-        , 88162
-        , 96351
-        , 141760
-        , 146123
-        , 151896
-        , 153392
-        , 155617
-        , 160531
-        , 179930
-        , 183287
-        , 184606
-        , 196699
-        , 202880
-        , 210221
-        , 217303
-        , 241668
-        , 247639
-        , 269975
-        , 295656
-        , 340844
-        , 344003
-        , 347529
-        , 360818
-        , 361245
-        , 374061
-        , 392687
-        , 399384
-        , 404655
-        , 406591
-        , 424842
-        , 449190
-        , 461839
-        , 478404
-        , 478798
-        , 480793
-        , 504732
-        , 522427
-        , 526044
-        , 532295
-        , 544065
-        , 547258
-        , 554037
-        , 577169]
-    current = list(res_data_per_test['audio'].keys())
-    comp = []
-    for i in current:
-        if i not in desired:
-            # comp.append(i)
-            res_data_per_test['audio'].pop(i)
+    if False:
+        desired = [13783
+            , 20069
+            , 64146
+            , 68745
+            , 71738
+            , 74629
+            , 81594
+            , 88162
+            , 96351
+            , 141760
+            , 146123
+            , 151896
+            , 153392
+            , 155617
+            , 160531
+            , 179930
+            , 183287
+            , 184606
+            , 196699
+            , 202880
+            , 210221
+            , 217303
+            , 241668
+            , 247639
+            , 269975
+            , 295656
+            , 340844
+            , 344003
+            , 347529
+            , 360818
+            , 361245
+            , 374061
+            , 392687
+            , 399384
+            , 404655
+            , 406591
+            , 424842
+            , 449190
+            , 461839
+            , 478404
+            , 478798
+            , 480793
+            , 504732
+            , 522427
+            , 526044
+            , 532295
+            , 544065
+            , 547258
+            , 554037
+            , 577169]
+        current = list(res_data_per_test['audio'].keys())
+        comp = []
+        for i in current:
+            if i not in desired:
+                # comp.append(i)
+                res_data_per_test['audio'].pop(i)
     print(f"run over {len(list(res_data_per_test['audio'].keys()))} images.")
-    print(f"imgs are:{list(res_data_per_test['audio'].keys())}")
+    # print(f"imgs are:{list(res_data_per_test['audio'].keys())}")
     if True:
         # #todo: remove
         # print("!!!!!!!!!!!!!!remove!!!!!!!!!!!!!!!")
@@ -1389,6 +1390,7 @@ def main():
         #     if res_data_idx == 0:
         #         prefix_file_name = 'source_'
         #     elif res_data_idx == 1:
+        #         prefix_file_name = 'gpt_'
         #         prefix_file_name = 'gpt_'
         # copy_imgs_to_test_dir(gts_per_data_set, res_data_per_test, styles, metrics, gt_imgs_for_test)
         # exit(0)
