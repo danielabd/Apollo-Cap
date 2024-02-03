@@ -47,6 +47,7 @@ evaluation_metrics: [CLIPScore, fluency, CLAPScore]   # ['bleu','rouge','meteor'
 experiement_global_name:
   senticap: source_zero_stylecap_test  #my_model_scale_params #senticap_StylizedZeroCap_finetuned_roberta
   flickrstyle10k: flickrstyle10k_ZeroStyleCap_with_emoji
+audio_model_sampling_rate: 48000
 
 # finetuned roBERTa
 finetuned_roberta_model_path: ~/checkpoints/finetuned_roberta/pytorch_model.bin
