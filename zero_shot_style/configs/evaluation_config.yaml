@@ -1,6 +1,6 @@
 dataset: senticap # senticap,flickrstyle10k
 style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta'
-data_split: test #val, test #todo
+data_split: val #val, test #todo
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 
 metrics:
