@@ -46,8 +46,10 @@ res_path2eval:
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_crying2_test/26_01_2024/tmp/results_13_01_44__26_01_2024.csv
 # laughter
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_final/12_01_2024/tmp/results_02_34_13__12_01_2024.csv
-    #source_zerocap
-    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/source_zero_stylecap_test/03_02_2024/tmp/total_results_text_style_tmp.csv
+    #source_zerocap - test
+#    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/source_zero_stylecap_test/03_02_2024/tmp/total_results_text_style_tmp.csv
+    #source_zerocap - val
+    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/source_zero_stylecap_val/03_02_2024/tmp/results_23_22_04__03_02_2024.csv
 
   flickrstyle10k:
     mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v2_romantic_test/total_results_text_style_StylizedZeroCap_mul_clip_style_v2_romantic_test.csv
