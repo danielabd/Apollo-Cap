@@ -15,8 +15,12 @@ use_audio_model: True
 audio_model_sampling_rate: 48000
 audio_temperature: 0.01
 #background audio
-audio_path: ~/data/for_audio/child_laughing.wav
-audio_sampling_rate: 44100
+#audio_path: ~/data/for_audio/child_laughing.wav
+#audio_sampling_rate: 44100
+
+#ambulance
+audio_path: ~/data/for_audio/ambulance.wav
+audio_sampling_rate: 24000
 
 update_ViT: False
 
@@ -26,9 +30,10 @@ desired_labels:
 res_path2eval:
   senticap:
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_sw_f_zerocap/28_09_2023/total_results_text_style_28_09_2023.csv
-    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test/30_01_2024/tmp/tmp/total_results_text_style_tmp.csv
+#    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test/30_01_2024/tmp/tmp/total_results_text_style_tmp.csv
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_crying2_test/26_01_2024/tmp/results_13_01_44__26_01_2024.csv
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_final/12_01_2024/tmp/results_02_34_13__12_01_2024.csv
+    audio_psource_zerocap_ambulance: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/source_zero_stylecap_test/03_02_2024/tmp/total_results_text_style_tmp.csv
 
   flickrstyle10k:
     mul: /Users/danielabendavid/experiments/zero_style_cap/flickrstyle10k/emoji/StylizedZeroCap_mul_clip_style_v2_romantic_test/total_results_text_style_StylizedZeroCap_mul_clip_style_v2_romantic_test.csv
