@@ -30,7 +30,7 @@ audio_sampling_rate: 44100
 #audio_path: ~/data/for_audio/crying.wav
 #audio_sampling_rate: 48000
 
-suffix_file_name: "laughter" "#""
+suffix_file_name: "laughter" #""
 
 update_ViT: False
 
