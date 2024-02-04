@@ -15,16 +15,16 @@ use_audio_model: True
 audio_model_sampling_rate: 48000
 #background audio
 #laughter
-#audio_temperature: 0.16774988500573 #0.01
-#audio_path: ~/data/for_audio/child_laughing.wav
-#audio_sampling_rate: 44100
-#suffix_file_name: "laughter" #""
+audio_temperature: 0.16774988500573 #0.01
+audio_path: ~/data/for_audio/child_laughing.wav
+audio_sampling_rate: 44100
+suffix_file_name: "laughter" #""
 
 #crying2_test
-audio_temperature: 0.595 #0.01
-audio_path: ~/data/for_audio/crying.wav
-audio_sampling_rate: 48000
-suffix_file_name: "crying" #""
+#audio_temperature: 0.595 #0.01
+#audio_path: ~/data/for_audio/crying.wav
+#audio_sampling_rate: 48000
+#suffix_file_name: "crying" #""
 
 #ambulance
 #audio_temperature: 0.07437
