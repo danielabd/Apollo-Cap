@@ -20,17 +20,17 @@ audio_model_sampling_rate: 48000
 #audio_sampling_rate: 44100
 
 #crying2_test
-audio_temperature: 0.595 #0.01
-audio_path: ~/data/for_audio/crying.wav
-audio_sampling_rate: 48000
+#audio_temperature: 0.595 #0.01
+#audio_path: ~/data/for_audio/crying.wav
+#audio_sampling_rate: 48000
 
 #ambulance
-#audio_temperature: 0.07437
-#audio_path: ~/data/for_audio/ambulance.wav
-#audio_sampling_rate: 24000
+audio_temperature: 0.07437
+audio_path: ~/data/for_audio/ambulance.wav
+audio_sampling_rate: 24000
 
 
-suffix_file_name: "crying" #""
+suffix_file_name: "ambulance" #""
 
 update_ViT: False
 
