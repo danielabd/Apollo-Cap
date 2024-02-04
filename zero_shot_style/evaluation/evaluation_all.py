@@ -1419,7 +1419,7 @@ def main():
         test_name = list(config['res_path2eval'].values())[0].rsplit('/', 1)[1]
         tgt_eval_results_file_name = os.path.join(list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
                                                   config['tgt_eval_results_file_name'].split('.')[0] + '_' + '_'.join(
-                                                      config['styles']) + '_' + test_name)
+                                                      config['styles']) + '_' + test_name[:test_name.find(".csv")]+'_' +config['suffix_file_name']+'.csv')
         tgt_eval_results_file_name_for_all_frames = os.path.join(
             list(config['res_path2eval'].values())[0].rsplit('/', 1)[0],
             config['tgt_eval_results_file_name_for_all_frames'].split('.')[0] + '_' + test_name[:test_name.find(".csv")] + '_' + '_'.join(
