@@ -42,7 +42,7 @@ suffix_file_name: "ambulance" #""
 update_ViT: False
 
 desired_labels:
-  senticap: [positive, negative] #[factual, positive, negative]
+  senticap: [negative] #[factual, positive, negative]
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 res_path2eval:
   senticap:
