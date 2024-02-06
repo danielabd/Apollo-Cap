@@ -1,6 +1,6 @@
 dataset: senticap # senticap,flickrstyle10k
 style_type: roberta  #'style_embed' or 'emoji' or 'erc' or 'roberta'
-data_split: val #val, test #todo
+data_split: test #val, test #todo
 model: stylized_zero_cap_experiments # stylized_zero_cap_experiments, capdec
 
 metrics:
@@ -42,7 +42,7 @@ suffix_file_name: "ambulance" #""
 update_ViT: False
 
 desired_labels:
-  senticap: [negative] #[factual, positive, negative]
+  senticap: [positive, negative] #[factual, positive, negative]
   flickrstyle10k: [humor, romantic] #[factual, humor, romantic]
 res_path2eval:
   senticap:
