@@ -31,7 +31,7 @@ audio_model_sampling_rate: 48000
 #audio_path: ~/data/for_audio/ambulance.wav
 #audio_sampling_rate: 24000
 
-audio_temperature: 0.06705
+audio_temperature: 0.06441
 audio_path: ~/data/for_audio/ambulance.wav
 audio_sampling_rate: 48000
 
@@ -49,7 +49,8 @@ res_path2eval:
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_laughter_kids1_sw_f_zerocap/28_09_2023/total_results_text_style_28_09_2023.csv
 # ambulance
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test/30_01_2024/tmp/tmp/total_results_text_style_tmp.csv
-    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test2/06_02_2024/tmp/total_results_text_style_tmp.csv
+#    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test2/06_02_2024/tmp/total_results_text_style_tmp.csv
+    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test3/07_02_2024/tmp/total_results_text_style_tmp.csv
 # crying
 #    audio: /Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_crying2_test/26_01_2024/tmp/results_13_01_44__26_01_2024.csv
 # laughter

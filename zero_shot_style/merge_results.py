@@ -710,6 +710,7 @@ def main():
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test/30_01_2024/tmp/tmp'
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/source_zero_stylecap_test/03_02_2024/tmp'
         dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test2/06_02_2024/tmp'
+        dir_files = '/Users/danielabendavid/experiments/zero_style_cap/senticap/roberta/StylizedZeroCap_audio_ambulance3_test3/07_02_2024/tmp'
 
         file_list = [os.path.join(dir_files,f) for f in os.listdir(dir_files) if f.endswith('.csv') and f.startswith('results')]
         tgt_path = os.path.join(dir_files,'total_results_text_style_tmp.csv')
